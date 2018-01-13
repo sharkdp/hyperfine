@@ -59,6 +59,94 @@ fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
     bar
 }
 
+/// Run the benchmark for a single shell command
+fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
+    println!("Command: {}", Cyan.paint(cmd));
+    println!();
+
+    let mut results = vec![];
+
+    // Warmup phase
+    if let Some(warmup_count) = options.warmup_count
+    {
+        let bar = get_progress_bar(warmup_count, "Performing warmup runs");
+
+        for _ in 1..warmup_count {
+            bar.inc(1);
+            let _ = time_shell_command(cmd);
+        }
+        bar.finish_and_clear();
+    }
+
+    // Set up progress bar (and spinner for initial measurement)
+    let bar = get_progress_bar(options.min_runs, "Initial time measurement");
+
+    // Initial timing run
+    let res = time_shell_command(cmd);
+
+    let runs_in_min_time = (options.min_time_sec / res.execution_time_sec) as u64;
+
+    let count = if runs_in_min_time >= options.min_runs {
+        runs_in_min_time
+    } else {
+        options.min_runs
+    };
+
+    // Save the first result
+    results.push(res);
+
+    // Re-configure the progress bar
+    bar.set_length(count);
+    bar.set_message("Collecting statistics");
+
+    // Gather statistics
+    for _ in 1..count {
+        bar.inc(1);
+        let res = time_shell_command(cmd);
+        results.push(res);
+    }
+    bar.finish_and_clear();
+
+    // Compute statistical quantities
+    let t_sum: f64 = results.iter().map(|r| r.execution_time_sec).sum();
+    let t_mean = t_sum / (results.len() as f64);
+
+    let t2_sum: f64 = results.iter().map(|r| r.execution_time_sec.powi(2)).sum();
+    let t2_mean = t2_sum / (results.len() as f64);
+
+    let stddev = (t2_mean - t_mean.powi(2)).sqrt();
+
+    // Formatting and console output
+    let time_fmt = format!("{:.3} s ± {:.3} s", t_mean, stddev);
+
+    println!("  Time: {}", Green.paint(time_fmt));
+
+    if !results.iter().all(|r| r.success) {
+        println!(
+            "  {}: Program returned non-zero exit status",
+            Red.paint("Warning")
+        );
+    };
+
+    println!();
+}
+
+pub struct HyperfineOptions {
+    pub warmup_count: Option<u64>,
+    pub min_runs: u64,
+    pub min_time_sec: f64,
+}
+
+impl Default for HyperfineOptions {
+    fn default() -> HyperfineOptions {
+        HyperfineOptions {
+            warmup_count: None,
+            min_runs: 10,
+            min_time_sec: 5.0
+        }
+    }
+}
+
 fn main() {
     let matches = App::new("hyperfine")
         .global_settings(&[AppSettings::ColoredHelp])
@@ -81,81 +169,14 @@ fn main() {
         )
         .get_matches();
 
-    let min_time_sec = 5.0;
-    let min_runs = 10;
+
+    let mut options = HyperfineOptions::default();
+    options.warmup_count =
+        matches.value_of("warmup")
+        .and_then(|n| u64::from_str_radix(n, 10).ok());
 
     let commands = matches.values_of("command").unwrap();
-
     for cmd in commands {
-        println!("Command: {}", Cyan.paint(cmd));
-        println!();
-
-        let mut results = vec![];
-
-        // Warmup phase
-        if let Some(warmup_count) = matches
-            .value_of("warmup")
-            .and_then(|n| u64::from_str_radix(n, 10).ok())
-        {
-            let bar = get_progress_bar(warmup_count, "Performing warmup runs");
-
-            for _ in 1..warmup_count {
-                bar.inc(1);
-                let _ = time_shell_command(cmd);
-            }
-            bar.finish_and_clear();
-        }
-
-        // Set up progress bar (and spinner for initial measurement)
-        let bar = get_progress_bar(min_runs, "Initial time measurement");
-
-        // Initial timing run
-        let res = time_shell_command(cmd);
-
-        let runs_in_min_time = (min_time_sec / res.execution_time_sec) as u64;
-
-        let count = if runs_in_min_time >= min_runs {
-            runs_in_min_time
-        } else {
-            min_runs
-        };
-
-        // Save the first result
-        results.push(res);
-
-        // Re-configure the progress bar
-        bar.set_length(count);
-        bar.set_message("Collecting statistics");
-
-        // Gather statistics
-        for _ in 1..count {
-            bar.inc(1);
-            let res = time_shell_command(cmd);
-            results.push(res);
-        }
-        bar.finish_and_clear();
-
-        // Compute statistical quantities
-        let t_sum: f64 = results.iter().map(|r| r.execution_time_sec).sum();
-        let t_mean = t_sum / (results.len() as f64);
-
-        let t2_sum: f64 = results.iter().map(|r| r.execution_time_sec.powi(2)).sum();
-        let t2_mean = t2_sum / (results.len() as f64);
-
-        let stddev = (t2_mean - t_mean.powi(2)).sqrt();
-
-        // Formatting and console output
-        let time_fmt = format!("{:.3} s ± {:.3} s", t_mean, stddev);
-
-        println!("  Time: {}", Green.paint(time_fmt));
-
-        if !results.iter().all(|r| r.success) {
-            println!(
-                "  {}: Program returned non-zero exit status",
-                Red.paint("Warning")
-            );
-        };
-
-        println!();
+        run_benchmark(&cmd, &options);
     }
 }
