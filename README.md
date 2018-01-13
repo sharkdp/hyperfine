@@ -2,10 +2,13 @@
 
 A command-line benchmarking tool (inspired by [bench](https://github.com/Gabriel439/bench)).
 
-Usage:
+Usage
 ``` bash
 > hyperfine 'sleep 0.3' 'sleep 1.7'
 ```
+
+## Demo
+![hyperfine](https://i.imgur.com/iVd5lQ8.gif)
 
 ## Features
 
