@@ -1,4 +1,5 @@
 extern crate ansi_term;
+#[macro_use]
 extern crate clap;
 extern crate indicatif;
 
@@ -67,8 +68,7 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
     let mut results = vec![];
 
     // Warmup phase
-    if let Some(warmup_count) = options.warmup_count
-    {
+    if let Some(warmup_count) = options.warmup_count {
         let bar = get_progress_bar(warmup_count, "Performing warmup runs");
 
         for _ in 1..warmup_count {
@@ -142,17 +142,17 @@ impl Default for HyperfineOptions {
         HyperfineOptions {
             warmup_count: None,
             min_runs: 10,
-            min_time_sec: 5.0
+            min_time_sec: 5.0,
         }
     }
 }
 
 fn main() {
     let matches = App::new("hyperfine")
-        .global_settings(&[AppSettings::ColoredHelp])
-        .version("0.1")
+        .version(crate_version!())
+        .setting(AppSettings::ColoredHelp)
+        .setting(AppSettings::DeriveDisplayOrder)
         .about("A command-line benchmarking tool")
-        .author("David Peter <mail@david-peter.de>")
         .arg(
             Arg::with_name("command")
                 .help("Command to benchmark")
@@ -169,10 +169,9 @@ fn main() {
         )
         .get_matches();
 
-
     let mut options = HyperfineOptions::default();
-    options.warmup_count =
-        matches.value_of("warmup")
+    options.warmup_count = matches
+        .value_of("warmup")
         .and_then(|n| u64::from_str_radix(n, 10).ok());
 
     let commands = matches.values_of("command").unwrap();

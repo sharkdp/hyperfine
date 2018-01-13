@@ -16,5 +16,4 @@ indicatif = "0.8"
 [dependencies.clap]
 version = "2"
 default-features = false
-
 features = ["suggestions", "color", "wrap_help"]
