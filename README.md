@@ -9,10 +9,16 @@ Usage:
 
 ## Features
 
-* Statistical analysis across multiple runs.
-* Support for arbitrary shell commands-
-* Visual indication of the benchmark progress.
-* Warmup runs that are executed before the actual benchmark.
+* Statistical analysis across multiple runs
+* Support for arbitrary shell commands
+* Visual indication of the benchmark progress
+* Warmup runs that are executed before the actual benchmark
+
+## Installation
+
+```
+cargo install hyperfine
+```
 
 ## Origin of the name
 
