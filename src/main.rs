@@ -3,6 +3,7 @@ extern crate ansi_term;
 extern crate clap;
 extern crate indicatif;
 
+use std::cmp;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
@@ -167,13 +168,27 @@ fn main() {
                 .value_name("NUM")
                 .help("Perform NUM warmup runs before the actual benchmark"),
         )
+        .arg(
+            Arg::with_name("min-runs")
+                .long("min-runs")
+                .short("m")
+                .takes_value(true)
+                .value_name("NUM")
+                .help("Perform at least NUM runs for each command"),
+        )
         .get_matches();
 
-    let mut options = HyperfineOptions::default();
-    options.warmup_count = matches
-        .value_of("warmup")
-        .and_then(|n| u64::from_str_radix(n, 10).ok());
+    let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
+    // Process command line options
+    let mut options = HyperfineOptions::default();
+    options.warmup_count = matches.value_of("warmup").and_then(&str_to_u64);
+
+    if let Some(min_runs) = matches.value_of("min-runs").and_then(&str_to_u64) {
+        options.min_runs = cmp::max(1, min_runs);
+    }
+
+    // Run the benchmarks
     let commands = matches.values_of("command").unwrap();
     for cmd in commands {
         run_benchmark(&cmd, &options);
