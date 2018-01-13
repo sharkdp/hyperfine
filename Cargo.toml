@@ -1,0 +1,13 @@
+[package]
+name = "hyperfine"
+version = "0.1.0"
+authors = ["David Peter <mail@david-peter.de>"]
+
+[dependencies]
+ansi_term = "0.9"
+
+[dependencies.clap]
+version = "2"
+default-features = false
+
+features = ["suggestions", "color", "wrap_help"]
