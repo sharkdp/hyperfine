@@ -1,10 +1,11 @@
 extern crate ansi_term;
 extern crate clap;
+extern crate indicatif;
 
 use std::process::{Command, Stdio};
 use std::time::Instant;
-use std::io::{stdout, Write};
 
+use indicatif::{ProgressBar, ProgressStyle};
 use ansi_term::Colour::{Cyan, Green, Red};
 use clap::{App, AppSettings, Arg};
 
@@ -54,27 +55,66 @@ fn main() {
         )
         .get_matches();
 
+    let min_time_sec = 5.0;
+    let min_runs = 10;
+
     let commands = matches.values_of("command").unwrap();
     for cmd in commands {
-        println!("Command  '{}'", Cyan.paint(cmd));
-        print!("Running benchmark ");
+        println!("Command: {}", Cyan.paint(cmd));
+        println!();
 
         let mut results = vec![];
-        for _ in 1..10 {
-            print!(".");
+
+        // Set up progress bar
+        let bar = ProgressBar::new(min_runs);
+        bar.set_style(
+            ProgressStyle::default_spinner()
+                .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+                .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
+        );
+        bar.enable_steady_tick(80);
+        bar.set_message("Initial time measurement");
+
+        // Initial run
+        let res = run_shell_command(cmd);
+
+        let runs_in_min_time = (min_time_sec / res.duration_sec) as u64;
+
+        let count = if runs_in_min_time >= min_runs {
+            runs_in_min_time
+        } else {
+            min_runs
+        };
+
+        results.push(res);
+
+        bar.set_length(count);
+        bar.set_message("Collecting statistics");
+
+        for _ in 1..count {
+            bar.inc(1);
             let res = run_shell_command(cmd);
             results.push(res);
-            let _ = stdout().flush();
         }
-        println!(" done");
+        bar.finish_and_clear();
 
-        let duration_sum: f64 = results.iter().map(|r| r.duration_sec).sum();
-        let duration_mean = duration_sum / (results.len() as f64);
-        let duration_str = format!("{:.3} s", duration_mean);
-        println!("  Time: {:.3}", Green.paint(duration_str));
+        let t_sum: f64 = results.iter().map(|r| r.duration_sec).sum();
+        let t_mean = t_sum / (results.len() as f64);
+
+        let t2_sum: f64 = results.iter().map(|r| r.duration_sec.powi(2)).sum();
+        let t2_mean = t2_sum / (results.len() as f64);
+
+        let stddev = (t2_mean - t_mean.powi(2)).sqrt();
+
+        let time_fmt = format!("({:.3} ± {:.3}) s", t_mean, stddev);
+
+        println!("  Time: {}", Green.paint(time_fmt));
 
         if !results.iter().all(|r| r.success) {
-            println!("{}", Red.paint("Warning: non-zero exit code"));
+            println!(
+                "  {}: Program returned non-zero exit status",
+                Red.paint("Warning")
+            );
         };
 
         println!();
