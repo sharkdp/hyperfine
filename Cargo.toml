@@ -1,7 +1,13 @@
 [package]
-name = "hyperfine"
-version = "0.1.0"
 authors = ["David Peter <mail@david-peter.de>"]
+categories = ["command-line-utilities"]
+description = "A command-line benchmarking tool"
+homepage = "https://github.com/sharkdp/hyperfine"
+license = "MIT/Apache-2.0"
+name = "hyperfine"
+readme = "README.md"
+repository = "https://github.com/sharkdp/hyperfine"
+version = "0.1.0"
 
 [dependencies]
 ansi_term = "0.10"
