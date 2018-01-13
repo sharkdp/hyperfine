@@ -4,12 +4,20 @@ extern crate clap;
 extern crate indicatif;
 
 use std::cmp;
+use std::error::Error;
+use std::io;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use ansi_term::Colour::{Cyan, Green, Red};
 use clap::{App, AppSettings, Arg};
+
+/// Print error message to stderr and terminate
+pub fn error(message: &str) -> ! {
+    eprintln!("{}", message);
+    std::process::exit(1);
+}
 
 struct CmdResult {
     /// Execution time in seconds
@@ -29,7 +37,7 @@ impl CmdResult {
 }
 
 /// Run the given shell command and measure the execution time
-fn time_shell_command(shell_cmd: &str) -> CmdResult {
+fn time_shell_command(shell_cmd: &str) -> io::Result<CmdResult> {
     let start = Instant::now();
 
     let status = Command::new("sh")
@@ -37,14 +45,21 @@ fn time_shell_command(shell_cmd: &str) -> CmdResult {
         .arg(shell_cmd)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status()
-        .expect("failed to execute process");
+        .status()?;
 
     let duration = start.elapsed();
 
     let execution_time_sec = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
-    CmdResult::new(execution_time_sec, status.success())
+    const MILLISECOND: f64 = 1e-3;
+    if execution_time_sec < MILLISECOND {
+        Err(io::Error::new(io::ErrorKind::Other, format!{
+            "Command took only {:.6} s to complete.  Execution is probably dominated by shell overhead.",
+            execution_time_sec
+        }))
+    } else {
+        Ok(CmdResult::new(execution_time_sec, status.success()))
+    }
 }
 
 /// Return a pre-configured progress bar
@@ -83,7 +98,10 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
     let bar = get_progress_bar(options.min_runs, "Initial time measurement");
 
     // Initial timing run
-    let res = time_shell_command(cmd);
+    let res = match time_shell_command(cmd) {
+        Ok(s) => s,
+        Err(e) => error(e.description()),
+    };
 
     let runs_in_min_time = (options.min_time_sec / res.execution_time_sec) as u64;
 
@@ -103,7 +121,10 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
     // Gather statistics
     for _ in 1..count {
         bar.inc(1);
-        let res = time_shell_command(cmd);
+        let res = match time_shell_command(cmd) {
+            Ok(s) => s,
+            Err(e) => error(e.description()),
+        };
         results.push(res);
     }
     bar.finish_and_clear();
@@ -158,7 +179,8 @@ fn main() {
             Arg::with_name("command")
                 .help("Command to benchmark")
                 .required(true)
-                .multiple(true),
+                .multiple(true)
+                .empty_values(false),
         )
         .arg(
             Arg::with_name("warmup")
