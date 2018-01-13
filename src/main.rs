@@ -45,6 +45,20 @@ fn time_shell_command(shell_cmd: &str) -> CmdResult {
     CmdResult::new(execution_time_sec, status.success())
 }
 
+/// Return a pre-configured progress bar
+fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
+    let progressbar_style = ProgressStyle::default_spinner()
+        .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+        .template(" {spinner} {msg:<28} {wide_bar} ETA {eta_precise}");
+
+    let bar = ProgressBar::new(length);
+    bar.set_style(progressbar_style.clone());
+    bar.enable_steady_tick(80);
+    bar.set_message(msg);
+
+    bar
+}
+
 fn main() {
     let matches = App::new("hyperfine")
         .global_settings(&[AppSettings::ColoredHelp])
@@ -57,14 +71,18 @@ fn main() {
                 .required(true)
                 .multiple(true),
         )
+        .arg(
+            Arg::with_name("warmup")
+                .long("warmup")
+                .short("w")
+                .takes_value(true)
+                .value_name("NUM")
+                .help("Perform NUM warmup runs before the actual benchmark"),
+        )
         .get_matches();
 
     let min_time_sec = 5.0;
     let min_runs = 10;
-
-    let progressbar_style = ProgressStyle::default_spinner()
-        .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-        .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}");
 
     let commands = matches.values_of("command").unwrap();
 
@@ -74,13 +92,24 @@ fn main() {
 
         let mut results = vec![];
 
-        // Set up progress bar
-        let bar = ProgressBar::new(min_runs);
-        bar.set_style(progressbar_style.clone());
-        bar.enable_steady_tick(80);
-        bar.set_message("Initial time measurement");
+        // Warmup phase
+        if let Some(warmup_count) = matches
+            .value_of("warmup")
+            .and_then(|n| u64::from_str_radix(n, 10).ok())
+        {
+            let bar = get_progress_bar(warmup_count, "Performing warmup runs");
 
-        // Initial run
+            for _ in 1..warmup_count {
+                bar.inc(1);
+                let _ = time_shell_command(cmd);
+            }
+            bar.finish_and_clear();
+        }
+
+        // Set up progress bar (and spinner for initial measurement)
+        let bar = get_progress_bar(min_runs, "Initial time measurement");
+
+        // Initial timing run
         let res = time_shell_command(cmd);
 
         let runs_in_min_time = (min_time_sec / res.execution_time_sec) as u64;
@@ -91,11 +120,14 @@ fn main() {
             min_runs
         };
 
+        // Save the first result
         results.push(res);
 
+        // Re-configure the progress bar
         bar.set_length(count);
         bar.set_message("Collecting statistics");
 
+        // Gather statistics
         for _ in 1..count {
             bar.inc(1);
             let res = time_shell_command(cmd);
@@ -103,6 +135,7 @@ fn main() {
         }
         bar.finish_and_clear();
 
+        // Compute statistical quantities
         let t_sum: f64 = results.iter().map(|r| r.execution_time_sec).sum();
         let t_mean = t_sum / (results.len() as f64);
 
@@ -111,6 +144,7 @@ fn main() {
 
         let stddev = (t2_mean - t_mean.powi(2)).sqrt();
 
+        // Formatting and console output
         let time_fmt = format!("{:.3} s ± {:.3} s", t_mean, stddev);
 
         println!("  Time: {}", Green.paint(time_fmt));
