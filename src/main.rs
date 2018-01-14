@@ -122,10 +122,10 @@ fn run_benchmark(
     let mut results = vec![];
 
     // Warmup phase
-    if let Some(warmup_count) = options.warmup_count {
-        let bar = get_progress_bar(warmup_count, "Performing warmup runs");
+    if options.warmup_count > 0 {
+        let bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
 
-        for _ in 1..warmup_count {
+        for _ in 1..options.warmup_count {
             bar.inc(1);
             let _ = time_shell_command(cmd);
         }
@@ -226,11 +226,6 @@ fn mean_shell_spawning_time() -> io::Result<Second> {
 fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
     let shell_spawning_time = mean_shell_spawning_time()?;
 
-    println!(
-        "Mean shell spawning time: {:.3} ms",
-        1e3 * shell_spawning_time
-    );
-
     // Run the benchmarks
     for cmd in commands {
         run_benchmark(&cmd, shell_spawning_time, &options)?;
@@ -240,15 +235,20 @@ fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
 }
 
 pub struct HyperfineOptions {
-    pub warmup_count: Option<u64>,
+    /// Number of warmup runs
+    pub warmup_count: u64,
+
+    /// Minimum number of benchmark runs
     pub min_runs: u64,
+
+    /// Minimum benchmarking time
     pub min_time_sec: Second,
 }
 
 impl Default for HyperfineOptions {
     fn default() -> HyperfineOptions {
         HyperfineOptions {
-            warmup_count: None,
+            warmup_count: 0,
             min_runs: 10,
             min_time_sec: 3.0,
         }
@@ -290,7 +290,10 @@ fn main() {
 
     // Process command line options
     let mut options = HyperfineOptions::default();
-    options.warmup_count = matches.value_of("warmup").and_then(&str_to_u64);
+    options.warmup_count = matches
+        .value_of("warmup")
+        .and_then(&str_to_u64)
+        .unwrap_or(0);
 
     if let Some(min_runs) = matches.value_of("min-runs").and_then(&str_to_u64) {
         options.min_runs = cmp::max(1, min_runs);
