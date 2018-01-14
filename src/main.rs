@@ -8,10 +8,17 @@ use std::error::Error;
 use std::io;
 use std::process::{Command, Stdio};
 use std::time::Instant;
+use std::fmt;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use ansi_term::Colour::{Cyan, Green, Red};
+use ansi_term::Colour::{Cyan, Green, Yellow};
 use clap::{App, AppSettings, Arg};
+
+/// Type alias for unit of time
+type Second = f64;
+
+/// Threshold for warning about fast execution time
+const MIN_EXECUTION_TIME: Second = 5e-3;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -21,14 +28,14 @@ pub fn error(message: &str) -> ! {
 
 struct CmdResult {
     /// Execution time in seconds
-    execution_time_sec: f64,
+    execution_time_sec: Second,
 
     /// True if the command finished with exit code zero
     success: bool,
 }
 
 impl CmdResult {
-    fn new(execution_time_sec: f64, success: bool) -> CmdResult {
+    fn new(execution_time_sec: Second, success: bool) -> CmdResult {
         CmdResult {
             execution_time_sec,
             success,
@@ -51,15 +58,7 @@ fn time_shell_command(shell_cmd: &str) -> io::Result<CmdResult> {
 
     let execution_time_sec = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
-    const MILLISECOND: f64 = 1e-3;
-    if execution_time_sec < MILLISECOND {
-        Err(io::Error::new(io::ErrorKind::Other, format!{
-            "Command took only {:.6} s to complete.  Execution is probably dominated by shell overhead.",
-            execution_time_sec
-        }))
-    } else {
-        Ok(CmdResult::new(execution_time_sec, status.success()))
-    }
+    Ok(CmdResult::new(execution_time_sec, status.success()))
 }
 
 /// Return a pre-configured progress bar
@@ -76,8 +75,28 @@ fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
     bar
 }
 
+/// Possible benchmark warnings
+enum Warnings {
+    FastExecutionTime,
+    NonZeroExitCode,
+}
+
+impl fmt::Display for Warnings {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Warnings::FastExecutionTime => write!(
+                f,
+                "Command took less than {:.0} ms to complete. \
+                 The execution time is likely to be dominated by the intermediate shell.",
+                MIN_EXECUTION_TIME * 1e3
+            ),
+            &Warnings::NonZeroExitCode => write!(f, "Process exited with a non-zero exit code"),
+        }
+    }
+}
+
 /// Run the benchmark for a single shell command
-fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
+fn run_benchmark(cmd: &str, options: &HyperfineOptions) -> io::Result<()> {
     println!("Command: {}", Cyan.paint(cmd));
     println!();
 
@@ -98,10 +117,7 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
     let bar = get_progress_bar(options.min_runs, "Initial time measurement");
 
     // Initial timing run
-    let res = match time_shell_command(cmd) {
-        Ok(s) => s,
-        Err(e) => error(e.description()),
-    };
+    let res = time_shell_command(cmd)?;
 
     let runs_in_min_time = (options.min_time_sec / res.execution_time_sec) as u64;
 
@@ -121,19 +137,21 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
     // Gather statistics
     for _ in 1..count {
         bar.inc(1);
-        let res = match time_shell_command(cmd) {
-            Ok(s) => s,
-            Err(e) => error(e.description()),
-        };
+        let res = time_shell_command(cmd)?;
         results.push(res);
     }
     bar.finish_and_clear();
 
     // Compute statistical quantities
-    let t_sum: f64 = results.iter().map(|r| r.execution_time_sec).sum();
+    let get_execution_time = |r: &CmdResult| -> Second { r.execution_time_sec };
+
+    // Iterator over execution times
+    let execution_times = results.iter().map(&get_execution_time);
+
+    let t_sum: Second = execution_times.clone().sum();
     let t_mean = t_sum / (results.len() as f64);
 
-    let t2_sum: f64 = results.iter().map(|r| r.execution_time_sec.powi(2)).sum();
+    let t2_sum: Second = execution_times.clone().map(|t| t.powi(2)).sum();
     let t2_mean = t2_sum / (results.len() as f64);
 
     let stddev = (t2_mean - t_mean.powi(2)).sqrt();
@@ -143,20 +161,32 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) {
 
     println!("  Time: {}", Green.paint(time_fmt));
 
-    if !results.iter().all(|r| r.success) {
-        println!(
-            "  {}: Program returned non-zero exit status",
-            Red.paint("Warning")
-        );
-    };
+    // Warnings
+    let mut warnings = vec![];
+
+    // Check execution time
+    if execution_times.clone().any(|t| t < MIN_EXECUTION_TIME) {
+        warnings.push(Warnings::FastExecutionTime);
+    }
+
+    // Check programm exit codes
+    if results.iter().any(|r| !r.success) {
+        warnings.push(Warnings::NonZeroExitCode);
+    }
+
+    for warning in &warnings {
+        eprintln!("  {}: {}", Yellow.paint("Warning"), warning);
+    }
 
     println!();
+
+    Ok(())
 }
 
 pub struct HyperfineOptions {
     pub warmup_count: Option<u64>,
     pub min_runs: u64,
-    pub min_time_sec: f64,
+    pub min_time_sec: Second,
 }
 
 impl Default for HyperfineOptions {
@@ -164,7 +194,7 @@ impl Default for HyperfineOptions {
         HyperfineOptions {
             warmup_count: None,
             min_runs: 10,
-            min_time_sec: 5.0,
+            min_time_sec: 3.0,
         }
     }
 }
@@ -213,6 +243,11 @@ fn main() {
     // Run the benchmarks
     let commands = matches.values_of("command").unwrap();
     for cmd in commands {
-        run_benchmark(&cmd, &options);
+        let res = run_benchmark(&cmd, &options);
+
+        match res {
+            Err(err) => error(err.description()),
+            Ok(_) => {}
+        }
     }
 }
