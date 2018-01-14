@@ -66,3 +66,19 @@ impl fmt::Display for Warnings {
         }
     }
 }
+
+/// A max function for f64's without NaNs
+pub fn max(vals: &[f64]) -> f64 {
+    vals.iter()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap()
+        .clone()
+}
+
+/// A min function for f64's without NaNs
+pub fn min(vals: &[f64]) -> f64 {
+    vals.iter()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap()
+        .clone()
+}

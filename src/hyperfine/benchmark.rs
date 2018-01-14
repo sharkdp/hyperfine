@@ -2,10 +2,11 @@ use std::io;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
-use ansi_term::Colour::{Cyan, Green, White, Yellow};
+use ansi_term::Colour::{Cyan, Green, White, Yellow, Purple};
 use statistical::{mean, standard_deviation};
 
-use hyperfine::internal::{get_progress_bar, HyperfineOptions, Second, Warnings, MIN_EXECUTION_TIME};
+use hyperfine::internal::{get_progress_bar, max, min, HyperfineOptions, Second, Warnings,
+                          MIN_EXECUTION_TIME};
 use hyperfine::format::{format_duration, format_duration_unit, Unit};
 
 /// Results from timing a single shell command
@@ -172,17 +173,28 @@ pub fn run_benchmark(
     bar.finish_and_clear();
 
     // Compute statistical quantities
-
-    // Corrected execution times
-    let mean = mean(&execution_times);
-    let stddev = standard_deviation(&execution_times, Some(mean));
+    let t_mean = mean(&execution_times);
+    let t_stddev = standard_deviation(&execution_times, Some(t_mean));
+    let t_min = min(&execution_times);
+    let t_max = max(&execution_times);
 
     // Formatting and console output
-    let (mean_str, unit_mean) = format_duration_unit(mean, Unit::Auto);
-    let stddev_str = format_duration(stddev, unit_mean);
-    let time_fmt = format!("{} ± {}", mean_str, stddev_str);
+    let (mean_str, unit_mean) = format_duration_unit(t_mean, Unit::Auto);
+    let stddev_str = format_duration(t_stddev, unit_mean);
+    let min_str = format_duration(t_min, unit_mean);
+    let max_str = format_duration(t_max, unit_mean);
 
-    println!("  Time: {}", Green.paint(time_fmt));
+    let mean_stddev = format!("{} ± {}", Green.bold().paint(mean_str), Green.paint(stddev_str));
+    println!(
+        "  Time:  {:<40}    mean ± stddev",
+        mean_stddev
+    );
+
+    let min_max = format!("{} … {}", Purple.paint(min_str), Purple.paint(max_str));
+    println!(
+        "  Range: {:<38}     min … max",
+        min_max
+    );
 
     // Warnings
     let mut warnings = vec![];
