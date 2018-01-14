@@ -50,6 +50,7 @@ fn time_shell_command(shell_cmd: &str) -> io::Result<CmdResult> {
     let status = Command::new("sh")
         .arg("-c")
         .arg(shell_cmd)
+        .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()?;
