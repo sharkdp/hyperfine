@@ -74,7 +74,7 @@ fn time_shell_command(shell_cmd: &str, ignore_failure: bool) -> io::Result<CmdRe
 fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
     let progressbar_style = ProgressStyle::default_spinner()
         .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-        .template(" {spinner} {msg:<28} {wide_bar} ETA {eta_precise}");
+        .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}");
 
     let bar = ProgressBar::new(length);
     bar.set_style(progressbar_style.clone());
@@ -124,6 +124,15 @@ fn run_benchmark(
     shell_spawning_time: Second,
     options: &HyperfineOptions,
 ) -> io::Result<()> {
+    // Helper function to compute corrected execution times
+    let get_execution_time = |r: &CmdResult| -> Second {
+        if r.execution_time_sec < shell_spawning_time {
+            0.0
+        } else {
+            r.execution_time_sec - shell_spawning_time
+        }
+    };
+
     println!(
         "{}{}: {}",
         White.bold().paint("Benchmark #"),
@@ -165,10 +174,16 @@ fn run_benchmark(
 
     // Re-configure the progress bar
     bar.set_length(count);
-    bar.set_message("Collecting statistics");
 
     // Gather statistics
     for _ in 0..count {
+        let msg = {
+            let execution_times = results.iter().map(&get_execution_time);
+            let mean = format!("{:.3} s", mean(execution_times));
+            format!("Current estimate: {:.3}", Green.paint(mean))
+        };
+        bar.set_message(&msg);
+
         let res = time_shell_command(cmd, options.ignore_failure)?;
         results.push(res);
         bar.inc(1);
@@ -176,15 +191,8 @@ fn run_benchmark(
     bar.finish_and_clear();
 
     // Compute statistical quantities
-    let get_execution_time = |r: &CmdResult| -> Second {
-        if r.execution_time_sec < shell_spawning_time {
-            0.0
-        } else {
-            r.execution_time_sec - shell_spawning_time
-        }
-    };
 
-    // Iterator over (corrected) execution times
+    // Corrected execution times
     let execution_times = results.iter().map(&get_execution_time);
 
     let t_mean = mean(execution_times.clone());
