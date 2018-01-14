@@ -87,7 +87,7 @@ impl fmt::Display for Warnings {
             &Warnings::FastExecutionTime => write!(
                 f,
                 "Command took less than {:.0} ms to complete. \
-                 The execution time is likely to be dominated by the intermediate shell.",
+                 Results might be inaccurate due to the intermediate shell call.",
                 MIN_EXECUTION_TIME * 1e3
             ),
             &Warnings::NonZeroExitCode => write!(f, "Process exited with a non-zero exit code"),
@@ -95,8 +95,26 @@ impl fmt::Display for Warnings {
     }
 }
 
+/// Calculate statistical average
+fn mean<I>(values: I) -> f64
+where
+    I: IntoIterator<Item = f64>,
+{
+    let mut sum: f64 = 0.0;
+    let mut len: u64 = 0;
+    for v in values {
+        sum += v;
+        len += 1;
+    }
+    sum / (len as f64)
+}
+
 /// Run the benchmark for a single shell command
-fn run_benchmark(cmd: &str, options: &HyperfineOptions) -> io::Result<()> {
+fn run_benchmark(
+    cmd: &str,
+    shell_spawning_time: Second,
+    options: &HyperfineOptions,
+) -> io::Result<()> {
     println!("Command: {}", Cyan.paint(cmd));
     println!();
 
@@ -143,16 +161,19 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) -> io::Result<()> {
     bar.finish_and_clear();
 
     // Compute statistical quantities
-    let get_execution_time = |r: &CmdResult| -> Second { r.execution_time_sec };
+    let get_execution_time = |r: &CmdResult| -> Second {
+        if r.execution_time_sec < shell_spawning_time {
+            0.0
+        } else {
+            r.execution_time_sec - shell_spawning_time
+        }
+    };
 
-    // Iterator over execution times
+    // Iterator over (corrected) execution times
     let execution_times = results.iter().map(&get_execution_time);
 
-    let t_sum: Second = execution_times.clone().sum();
-    let t_mean = t_sum / (results.len() as f64);
-
-    let t2_sum: Second = execution_times.clone().map(|t| t.powi(2)).sum();
-    let t2_mean = t2_sum / (results.len() as f64);
+    let t_mean = mean(execution_times.clone());
+    let t2_mean = mean(execution_times.clone().map(|t| t.powi(2)));
 
     let stddev = (t2_mean - t_mean.powi(2)).sqrt();
 
@@ -179,6 +200,40 @@ fn run_benchmark(cmd: &str, options: &HyperfineOptions) -> io::Result<()> {
     }
 
     println!();
+
+    Ok(())
+}
+
+// Measure the average shell spawning time
+fn mean_shell_spawning_time() -> io::Result<Second> {
+    const COUNT: u64 = 200;
+    let bar = get_progress_bar(COUNT, "Measuring shell spawning time");
+
+    let mut times: Vec<Second> = vec![];
+    for _ in 1..COUNT {
+        bar.inc(1);
+        let res = time_shell_command("")?;
+        times.push(res.execution_time_sec);
+    }
+    bar.finish_and_clear();
+
+    let mean: f64 = mean(times.iter().cloned()); // TODO: get rid of .cloned()
+    Ok(mean)
+}
+
+/// Runs the benchmark for the given commands
+fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
+    let shell_spawning_time = mean_shell_spawning_time()?;
+
+    println!(
+        "Mean shell spawning time: {:.3} ms",
+        1e3 * shell_spawning_time
+    );
+
+    // Run the benchmarks
+    for cmd in commands {
+        run_benchmark(&cmd, shell_spawning_time, &options)?;
+    }
 
     Ok(())
 }
@@ -240,14 +295,11 @@ fn main() {
         options.min_runs = cmp::max(1, min_runs);
     }
 
-    // Run the benchmarks
-    let commands = matches.values_of("command").unwrap();
-    for cmd in commands {
-        let res = run_benchmark(&cmd, &options);
+    let commands = matches.values_of("command").unwrap().collect();
+    let res = run(&commands, &options);
 
-        match res {
-            Err(err) => error(err.description()),
-            Ok(_) => {}
-        }
+    match res {
+        Err(e) => error(e.description()),
+        Ok(_) => {}
     }
 }
