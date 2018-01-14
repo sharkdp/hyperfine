@@ -112,7 +112,7 @@ pub fn run_benchmark(
         "{}{}: {}",
         White.bold().paint("Benchmark #"),
         White.bold().paint((num + 1).to_string()),
-        Cyan.paint(cmd)
+        cmd
     );
     println!();
 
@@ -184,16 +184,21 @@ pub fn run_benchmark(
     let min_str = format_duration(t_min, unit_mean);
     let max_str = format_duration(t_max, unit_mean);
 
-    let mean_stddev = format!("{} ± {}", Green.bold().paint(mean_str), Green.paint(stddev_str));
     println!(
-        "  Time:  {:<40}    mean ± stddev",
-        mean_stddev
+        "  Time ({} ± {}):     {} ± {}",
+        Green.bold().paint("mean"),
+        Green.paint("σ"),
+        Green.bold().paint(mean_str),
+        Green.paint(stddev_str)
     );
+    println!();
 
-    let min_max = format!("{} … {}", Purple.paint(min_str), Purple.paint(max_str));
     println!(
-        "  Range: {:<38}     min … max",
-        min_max
+        "  Range ({} … {}):   {} … {}",
+        Cyan.paint("min"),
+        Purple.paint("max"),
+        Cyan.paint(min_str),
+        Purple.paint(max_str)
     );
 
     // Warnings
