@@ -11,7 +11,7 @@ use std::time::Instant;
 use std::fmt;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use ansi_term::Colour::{Cyan, Green, Red, Yellow};
+use ansi_term::Colour::{Cyan, Green, Red, White, Yellow};
 use clap::{App, AppSettings, Arg};
 
 /// Type alias for unit of time
@@ -95,8 +95,7 @@ impl fmt::Display for Warnings {
         match self {
             &Warnings::FastExecutionTime => write!(
                 f,
-                "Command took less than {:.0} ms to complete. \
-                 Results might be inaccurate due to the intermediate shell call.",
+                "Command took less than {:.0} ms to complete. Results might be inaccurate.",
                 MIN_EXECUTION_TIME * 1e3
             ),
             &Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
@@ -120,11 +119,17 @@ where
 
 /// Run the benchmark for a single shell command
 fn run_benchmark(
+    num: usize,
     cmd: &str,
     shell_spawning_time: Second,
     options: &HyperfineOptions,
 ) -> io::Result<()> {
-    println!("Command: {}", Cyan.paint(cmd));
+    println!(
+        "{}{}: {}",
+        White.bold().paint("Benchmark #"),
+        White.bold().paint((num + 1).to_string()),
+        Cyan.paint(cmd)
+    );
     println!();
 
     let mut results = vec![];
@@ -204,8 +209,11 @@ fn run_benchmark(
         warnings.push(Warnings::NonZeroExitCode);
     }
 
-    for warning in &warnings {
-        eprintln!("  {}: {}", Yellow.paint("Warning"), warning);
+    if warnings.len() > 0 {
+        eprintln!();
+        for warning in &warnings {
+            eprintln!("  {}: {}", Yellow.paint("Warning"), warning);
+        }
     }
 
     println!();
@@ -247,8 +255,8 @@ fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
     let shell_spawning_time = mean_shell_spawning_time()?;
 
     // Run the benchmarks
-    for cmd in commands {
-        run_benchmark(&cmd, shell_spawning_time, &options)?;
+    for (num, cmd) in commands.iter().enumerate() {
+        run_benchmark(num, &cmd, shell_spawning_time, &options)?;
     }
 
     Ok(())
