@@ -5,6 +5,7 @@ use std::time::Instant;
 use ansi_term::Colour::{Cyan, Green, White, Yellow};
 
 use hyperfine::internal::{get_progress_bar, HyperfineOptions, Second, Warnings, MIN_EXECUTION_TIME};
+use hyperfine::format::{format_duration, format_duration_unit, Unit};
 use hyperfine::statistics::mean;
 
 /// Results from timing a single shell command
@@ -145,8 +146,8 @@ pub fn run_benchmark(
     for _ in 0..count_remaining {
         let msg = {
             let execution_times = results.iter().map(&get_execution_time);
-            let mean = format!("{:.3} s", mean(execution_times));
-            format!("Current estimate: {:.3}", Green.paint(mean))
+            let mean = format_duration(mean(execution_times), Unit::Auto);
+            format!("Current estimate: {}", Green.paint(mean))
         };
         bar.set_message(&msg);
 
@@ -167,7 +168,9 @@ pub fn run_benchmark(
     let stddev = (t2_mean - t_mean.powi(2)).sqrt();
 
     // Formatting and console output
-    let time_fmt = format!("{:.3} s ± {:.3} s", t_mean, stddev);
+    let (mean_str, unit_mean) = format_duration_unit(t_mean, Unit::Auto);
+    let stddev_str = format_duration(stddev, unit_mean);
+    let time_fmt = format!("{} ± {}", mean_str, stddev_str);
 
     println!("  Time: {}", Green.paint(time_fmt));
 
