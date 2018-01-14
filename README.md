@@ -8,7 +8,8 @@ Usage
 ```
 
 ## Demo
-![hyperfine](https://i.imgur.com/iVd5lQ8.gif)
+
+![hyperfine](https://i.imgur.com/5OqrGWe.gif)
 
 ## Features
 
@@ -19,6 +20,7 @@ Usage
 
 ## Installation
 
+Hyperfine can be install via [cargo](https://doc.rust-lang.org/cargo/):
 ```
 cargo install hyperfine
 ```
