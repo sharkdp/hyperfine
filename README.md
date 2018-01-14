@@ -1,12 +1,12 @@
 # hyperfine
 
-A command-line benchmarking tool (inspired by [bench](https://github.com/Gabriel439/bench)).
+A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabriel439/bench)*).
 
 ``` bash
 > hyperfine [OPTIONS] <command>...
 ```
 
-**Demo**: benchmarking [`fd`](https://github.com/sharkdp/fd) and [`find`](https://www.gnu.org/software/findutils/):
+**Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and [`find`](https://www.gnu.org/software/findutils/):
 
 ![hyperfine](https://i.imgur.com/5OqrGWe.gif)
 
@@ -14,12 +14,12 @@ A command-line benchmarking tool (inspired by [bench](https://github.com/Gabriel
 
 * Statistical analysis across multiple runs
 * Support for arbitrary shell commands
-* Visual indication of the benchmark progress
-* Warmup runs that are executed before the actual benchmark
+* Constant feedback about the benchmark progress and current estimates
+* Warmup runs can be executed before the actual benchmark
 
 ## Installation
 
-Hyperfine can be install via [cargo](https://doc.rust-lang.org/cargo/):
+Hyperfine can be installed via [cargo](https://doc.rust-lang.org/cargo/):
 ```
 cargo install hyperfine
 ```
