@@ -11,7 +11,7 @@ use std::time::Instant;
 use std::fmt;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use ansi_term::Colour::{Cyan, Green, Yellow};
+use ansi_term::Colour::{Cyan, Green, Red, Yellow};
 use clap::{App, AppSettings, Arg};
 
 /// Type alias for unit of time
@@ -22,7 +22,7 @@ const MIN_EXECUTION_TIME: Second = 5e-3;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
-    eprintln!("{}", message);
+    eprintln!("{}: {}", Red.paint("Error"), message);
     std::process::exit(1);
 }
 
@@ -44,7 +44,7 @@ impl CmdResult {
 }
 
 /// Run the given shell command and measure the execution time
-fn time_shell_command(shell_cmd: &str) -> io::Result<CmdResult> {
+fn time_shell_command(shell_cmd: &str, ignore_failure: bool) -> io::Result<CmdResult> {
     let start = Instant::now();
 
     let status = Command::new("sh")
@@ -54,6 +54,14 @@ fn time_shell_command(shell_cmd: &str) -> io::Result<CmdResult> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()?;
+
+    if !ignore_failure && !status.success() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Command terminated with non-zero exit code. \
+             Use the '-i'/'--ignore-failure' option if you want to ignore this.",
+        ));
+    }
 
     let duration = start.elapsed();
 
@@ -91,7 +99,7 @@ impl fmt::Display for Warnings {
                  Results might be inaccurate due to the intermediate shell call.",
                 MIN_EXECUTION_TIME * 1e3
             ),
-            &Warnings::NonZeroExitCode => write!(f, "Process exited with a non-zero exit code"),
+            &Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
         }
     }
 }
@@ -127,7 +135,7 @@ fn run_benchmark(
 
         for _ in 1..options.warmup_count {
             bar.inc(1);
-            let _ = time_shell_command(cmd);
+            let _ = time_shell_command(cmd, options.ignore_failure)?;
         }
         bar.finish_and_clear();
     }
@@ -136,7 +144,7 @@ fn run_benchmark(
     let bar = get_progress_bar(options.min_runs, "Initial time measurement");
 
     // Initial timing run
-    let res = time_shell_command(cmd)?;
+    let res = time_shell_command(cmd, options.ignore_failure)?;
 
     let runs_in_min_time = (options.min_time_sec / res.execution_time_sec) as u64;
 
@@ -156,7 +164,7 @@ fn run_benchmark(
     // Gather statistics
     for _ in 1..count {
         bar.inc(1);
-        let res = time_shell_command(cmd)?;
+        let res = time_shell_command(cmd, options.ignore_failure)?;
         results.push(res);
     }
     bar.finish_and_clear();
@@ -213,8 +221,20 @@ fn mean_shell_spawning_time() -> io::Result<Second> {
     let mut times: Vec<Second> = vec![];
     for _ in 1..COUNT {
         bar.inc(1);
-        let res = time_shell_command("")?;
-        times.push(res.execution_time_sec);
+        let res = time_shell_command("", false);
+
+        match res {
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Could not measure shell execution time. \
+                     Make sure you can run 'sh -c \"\"'.",
+                ))
+            }
+            Ok(r) => {
+                times.push(r.execution_time_sec);
+            }
+        }
     }
     bar.finish_and_clear();
 
@@ -243,6 +263,9 @@ pub struct HyperfineOptions {
 
     /// Minimum benchmarking time
     pub min_time_sec: Second,
+
+    /// Whether or not to ignore non-zero exit codes
+    pub ignore_failure: bool,
 }
 
 impl Default for HyperfineOptions {
@@ -251,6 +274,7 @@ impl Default for HyperfineOptions {
             warmup_count: 0,
             min_runs: 10,
             min_time_sec: 3.0,
+            ignore_failure: false,
         }
     }
 }
@@ -284,12 +308,19 @@ fn main() {
                 .value_name("NUM")
                 .help("Perform at least NUM runs for each command"),
         )
+        .arg(
+            Arg::with_name("ignore-failure")
+                .long("ignore-failure")
+                .short("i")
+                .help("Ignore non-zero exit codes"),
+        )
         .get_matches();
 
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
     // Process command line options
     let mut options = HyperfineOptions::default();
+
     options.warmup_count = matches
         .value_of("warmup")
         .and_then(&str_to_u64)
@@ -298,6 +329,8 @@ fn main() {
     if let Some(min_runs) = matches.value_of("min-runs").and_then(&str_to_u64) {
         options.min_runs = cmp::max(1, min_runs);
     }
+
+    options.ignore_failure = matches.is_present("ignore-failure");
 
     let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);
