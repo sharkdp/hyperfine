@@ -3,31 +3,35 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 
 use ansi_term::Colour::{Cyan, Green, White, Yellow};
+use statistical::{mean, standard_deviation};
 
 use hyperfine::internal::{get_progress_bar, HyperfineOptions, Second, Warnings, MIN_EXECUTION_TIME};
 use hyperfine::format::{format_duration, format_duration_unit, Unit};
-use hyperfine::statistics::mean;
 
 /// Results from timing a single shell command
 pub struct TimingResult {
     /// Execution time in seconds
-    pub execution_time_sec: Second,
+    pub execution_time: Second,
 
     /// True if the command finished with exit code zero
     pub success: bool,
 }
 
 impl TimingResult {
-    fn new(execution_time_sec: Second, success: bool) -> TimingResult {
+    fn new(execution_time: Second, success: bool) -> TimingResult {
         TimingResult {
-            execution_time_sec,
+            execution_time,
             success,
         }
     }
 }
 
 /// Run the given shell command and measure the execution time
-pub fn time_shell_command(shell_cmd: &str, ignore_failure: bool) -> io::Result<TimingResult> {
+pub fn time_shell_command(
+    shell_cmd: &str,
+    ignore_failure: bool,
+    shell_spawning_time: Option<Second>,
+) -> io::Result<TimingResult> {
     let start = Instant::now();
 
     let status = Command::new("sh")
@@ -48,9 +52,23 @@ pub fn time_shell_command(shell_cmd: &str, ignore_failure: bool) -> io::Result<T
 
     let duration = start.elapsed();
 
-    let execution_time_sec = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
+    let execution_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
-    Ok(TimingResult::new(execution_time_sec, status.success()))
+    // Correct for shell spawning time
+    let execution_time_corrected = if let Some(spawning_time) = shell_spawning_time {
+        if execution_time < spawning_time {
+            0.0
+        } else {
+            execution_time - spawning_time
+        }
+    } else {
+        execution_time
+    };
+
+    Ok(TimingResult::new(
+        execution_time_corrected,
+        status.success(),
+    ))
 }
 
 /// Measure the average shell spawning time
@@ -60,7 +78,8 @@ pub fn mean_shell_spawning_time() -> io::Result<Second> {
 
     let mut times: Vec<Second> = vec![];
     for _ in 0..COUNT {
-        let res = time_shell_command("", false);
+        // Just run the shell without any command
+        let res = time_shell_command("", false, None);
 
         match res {
             Err(_) => {
@@ -71,15 +90,14 @@ pub fn mean_shell_spawning_time() -> io::Result<Second> {
                 ))
             }
             Ok(r) => {
-                times.push(r.execution_time_sec);
+                times.push(r.execution_time);
             }
         }
         bar.inc(1);
     }
     bar.finish_and_clear();
 
-    let mean: f64 = mean(times.iter().cloned()); // TODO: get rid of .cloned()
-    Ok(mean)
+    Ok(mean(&times))
 }
 
 /// Run the benchmark for a single shell command
@@ -89,15 +107,6 @@ pub fn run_benchmark(
     shell_spawning_time: Second,
     options: &HyperfineOptions,
 ) -> io::Result<()> {
-    // Helper function to compute corrected execution times
-    let get_execution_time = |r: &TimingResult| -> Second {
-        if r.execution_time_sec < shell_spawning_time {
-            0.0
-        } else {
-            r.execution_time_sec - shell_spawning_time
-        }
-    };
-
     println!(
         "{}{}: {}",
         White.bold().paint("Benchmark #"),
@@ -106,14 +115,15 @@ pub fn run_benchmark(
     );
     println!();
 
-    let mut results = vec![];
+    let mut execution_times: Vec<Second> = vec![];
+    let mut all_succeeded = true;
 
     // Warmup phase
     if options.warmup_count > 0 {
         let bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
 
         for _ in 0..options.warmup_count {
-            let _ = time_shell_command(cmd, options.ignore_failure)?;
+            let _ = time_shell_command(cmd, options.ignore_failure, None)?;
             bar.inc(1);
         }
         bar.finish_and_clear();
@@ -123,10 +133,11 @@ pub fn run_benchmark(
     let bar = get_progress_bar(options.min_runs, "Initial time measurement");
 
     // Initial timing run
-    let res = time_shell_command(cmd, options.ignore_failure)?;
+    let res = time_shell_command(cmd, options.ignore_failure, Some(shell_spawning_time))?;
 
     // Determine number of benchmark runs
-    let runs_in_min_time = (options.min_time_sec / res.execution_time_sec) as u64;
+    let runs_in_min_time =
+        (options.min_time_sec / (res.execution_time + shell_spawning_time)) as u64;
 
     let count = if runs_in_min_time >= options.min_runs {
         runs_in_min_time
@@ -137,7 +148,8 @@ pub fn run_benchmark(
     let count_remaining = count - 1;
 
     // Save the first result
-    results.push(res);
+    execution_times.push(res.execution_time);
+    all_succeeded = all_succeeded && res.success;
 
     // Re-configure the progress bar
     bar.set_length(count_remaining);
@@ -145,14 +157,16 @@ pub fn run_benchmark(
     // Gather statistics
     for _ in 0..count_remaining {
         let msg = {
-            let execution_times = results.iter().map(&get_execution_time);
-            let mean = format_duration(mean(execution_times), Unit::Auto);
+            let mean = format_duration(mean(&execution_times), Unit::Auto);
             format!("Current estimate: {}", Green.paint(mean))
         };
         bar.set_message(&msg);
 
-        let res = time_shell_command(cmd, options.ignore_failure)?;
-        results.push(res);
+        let res = time_shell_command(cmd, options.ignore_failure, Some(shell_spawning_time))?;
+
+        execution_times.push(res.execution_time);
+        all_succeeded = all_succeeded && res.success;
+
         bar.inc(1);
     }
     bar.finish_and_clear();
@@ -160,15 +174,11 @@ pub fn run_benchmark(
     // Compute statistical quantities
 
     // Corrected execution times
-    let execution_times = results.iter().map(&get_execution_time);
-
-    let t_mean = mean(execution_times.clone());
-    let t2_mean = mean(execution_times.clone().map(|t| t.powi(2)));
-
-    let stddev = (t2_mean - t_mean.powi(2)).sqrt();
+    let mean = mean(&execution_times);
+    let stddev = standard_deviation(&execution_times, Some(mean));
 
     // Formatting and console output
-    let (mean_str, unit_mean) = format_duration_unit(t_mean, Unit::Auto);
+    let (mean_str, unit_mean) = format_duration_unit(mean, Unit::Auto);
     let stddev_str = format_duration(stddev, unit_mean);
     let time_fmt = format!("{} ± {}", mean_str, stddev_str);
 
@@ -178,12 +188,12 @@ pub fn run_benchmark(
     let mut warnings = vec![];
 
     // Check execution time
-    if execution_times.clone().any(|t| t < MIN_EXECUTION_TIME) {
+    if execution_times.iter().any(|&t| t < MIN_EXECUTION_TIME) {
         warnings.push(Warnings::FastExecutionTime);
     }
 
     // Check programm exit codes
-    if results.iter().any(|r| !r.success) {
+    if !all_succeeded {
         warnings.push(Warnings::NonZeroExitCode);
     }
 

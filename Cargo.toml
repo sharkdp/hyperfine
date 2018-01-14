@@ -12,6 +12,7 @@ version = "0.2.0"
 [dependencies]
 ansi_term = "0.10"
 indicatif = "0.8"
+statistical = "0.1"
 
 [dependencies.clap]
 version = "2"

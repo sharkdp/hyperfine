@@ -2,6 +2,7 @@ extern crate ansi_term;
 #[macro_use]
 extern crate clap;
 extern crate indicatif;
+extern crate statistical;
 
 use std::cmp;
 use std::error::Error;
@@ -81,7 +82,8 @@ fn main() {
         .unwrap_or(0);
 
     if let Some(min_runs) = matches.value_of("min-runs").and_then(&str_to_u64) {
-        options.min_runs = cmp::max(1, min_runs);
+        // we need at least two runs to compute a variance
+        options.min_runs = cmp::max(2, min_runs);
     }
 
     options.ignore_failure = matches.is_present("ignore-failure");
