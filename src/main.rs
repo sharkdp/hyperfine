@@ -169,14 +169,16 @@ fn run_benchmark(
         options.min_runs
     };
 
+    let count_remaining = count - 1;
+
     // Save the first result
     results.push(res);
 
     // Re-configure the progress bar
-    bar.set_length(count);
+    bar.set_length(count_remaining);
 
     // Gather statistics
-    for _ in 0..count {
+    for _ in 0..count_remaining {
         let msg = {
             let execution_times = results.iter().map(&get_execution_time);
             let mean = format!("{:.3} s", mean(execution_times));
