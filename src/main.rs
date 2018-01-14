@@ -138,9 +138,9 @@ fn run_benchmark(
     if options.warmup_count > 0 {
         let bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
 
-        for _ in 1..options.warmup_count {
-            bar.inc(1);
+        for _ in 0..options.warmup_count {
             let _ = time_shell_command(cmd, options.ignore_failure)?;
+            bar.inc(1);
         }
         bar.finish_and_clear();
     }
@@ -151,6 +151,7 @@ fn run_benchmark(
     // Initial timing run
     let res = time_shell_command(cmd, options.ignore_failure)?;
 
+    // Determine number of benchmark runs
     let runs_in_min_time = (options.min_time_sec / res.execution_time_sec) as u64;
 
     let count = if runs_in_min_time >= options.min_runs {
@@ -167,10 +168,10 @@ fn run_benchmark(
     bar.set_message("Collecting statistics");
 
     // Gather statistics
-    for _ in 1..count {
-        bar.inc(1);
+    for _ in 0..count {
         let res = time_shell_command(cmd, options.ignore_failure)?;
         results.push(res);
+        bar.inc(1);
     }
     bar.finish_and_clear();
 
@@ -227,8 +228,7 @@ fn mean_shell_spawning_time() -> io::Result<Second> {
     let bar = get_progress_bar(COUNT, "Measuring shell spawning time");
 
     let mut times: Vec<Second> = vec![];
-    for _ in 1..COUNT {
-        bar.inc(1);
+    for _ in 0..COUNT {
         let res = time_shell_command("", false);
 
         match res {
@@ -243,6 +243,7 @@ fn mean_shell_spawning_time() -> io::Result<Second> {
                 times.push(r.execution_time_sec);
             }
         }
+        bar.inc(1);
     }
     bar.finish_and_clear();
 
