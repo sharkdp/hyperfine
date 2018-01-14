@@ -2,12 +2,14 @@
 
 A command-line benchmarking tool (inspired by [bench](https://github.com/Gabriel439/bench)).
 
-Usage
+Usage:
 ``` bash
-> hyperfine 'sleep 0.3' 'sleep 1.7'
+> hyperfine [OPTIONS] <command>...
 ```
 
 ## Demo
+
+Benchmarking [`fd`](https://github.com/sharkdp/fd) and [`find`](https://www.gnu.org/software/findutils/):
 
 ![hyperfine](https://i.imgur.com/5OqrGWe.gif)
 
