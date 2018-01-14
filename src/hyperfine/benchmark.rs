@@ -191,7 +191,7 @@ pub fn run_benchmark(
         Green.bold().paint(mean_str),
         Green.paint(stddev_str)
     );
-    println!();
+    println!(" ");
 
     println!(
         "  Range ({} … {}):   {} … {}",
@@ -215,13 +215,13 @@ pub fn run_benchmark(
     }
 
     if warnings.len() > 0 {
-        eprintln!();
+        eprintln!(" ");
         for warning in &warnings {
             eprintln!("  {}: {}", Yellow.paint("Warning"), warning);
         }
     }
 
-    println!();
+    println!(" ");
 
     Ok(())
 }
