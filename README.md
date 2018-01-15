@@ -24,6 +24,13 @@ Hyperfine can be installed via [cargo](https://doc.rust-lang.org/cargo/):
 cargo install hyperfine
 ```
 
+### Arch Linux
+
+On Arch Linux, hyperfine can be installed [from the AUR](https://aur.archlinux.org/packages/hyperfine):
+```
+yaourt -S hyperfine
+```
+
 ## Origin of the name
 
 The name *hyperfine* was chosen in reference to the hyperfine levels of caesium 133 which play a crucial role in the
