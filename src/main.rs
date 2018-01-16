@@ -42,6 +42,8 @@ fn main() {
         .version(crate_version!())
         .setting(AppSettings::ColoredHelp)
         .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::UnifiedHelpMessage)
+        .max_term_width(90)
         .about("A command-line benchmarking tool")
         .arg(
             Arg::with_name("command")
@@ -57,17 +59,6 @@ fn main() {
                 .help("Ignore non-zero exit codes"),
         )
         .arg(
-            Arg::with_name("setup")
-                .long("setup")
-                .short("S")
-                .takes_value(true)
-                .value_name("CMD")
-                .help(
-                    "Execute CMD before each benchmark run. This is useful for \
-                     clearing disk caches, for example.",
-                ),
-        )
-        .arg(
             Arg::with_name("warmup")
                 .long("warmup")
                 .short("w")
@@ -75,7 +66,7 @@ fn main() {
                 .value_name("NUM")
                 .help(
                     "Perform NUM warmup runs before the actual benchmark. This can be used \
-                     to fill (disk) caches for I/O-heavy programs.",
+                     to fill (disk) caches for I/O-heavy programs",
                 ),
         )
         .arg(
@@ -85,15 +76,24 @@ fn main() {
                 .takes_value(true)
                 .value_name("NUM")
                 .help(&format!(
-                    "Perform at least NUM runs for each command (default: {}).",
+                    "Perform at least NUM runs for each command (default: {})",
                     options.min_runs
                 )),
+        )
+        .arg(
+            Arg::with_name("setup")
+                .long("setup")
+                .short("S")
+                .takes_value(true)
+                .value_name("CMD")
+                .help(
+                    "Execute CMD before each benchmark run. This is useful for \
+                     clearing disk caches, for example",
+                ),
         )
         .get_matches();
 
     options.ignore_failure = matches.is_present("ignore-failure");
-
-    options.setup_command = matches.value_of("setup").map(String::from);
 
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
@@ -106,6 +106,8 @@ fn main() {
         // we need at least two runs to compute a variance
         options.min_runs = cmp::max(2, min_runs);
     }
+
+    options.setup_command = matches.value_of("setup").map(String::from);
 
     let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);
