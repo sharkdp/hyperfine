@@ -35,6 +35,9 @@ fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
 }
 
 fn main() {
+    // Process command line options
+    let mut options = HyperfineOptions::default();
+
     let matches = App::new("hyperfine")
         .version(crate_version!())
         .setting(AppSettings::ColoredHelp)
@@ -48,12 +51,32 @@ fn main() {
                 .empty_values(false),
         )
         .arg(
+            Arg::with_name("ignore-failure")
+                .long("ignore-failure")
+                .short("i")
+                .help("Ignore non-zero exit codes"),
+        )
+        .arg(
+            Arg::with_name("setup")
+                .long("setup")
+                .short("S")
+                .takes_value(true)
+                .value_name("CMD")
+                .help(
+                    "Execute CMD before each benchmark run. This is useful for \
+                     clearing disk caches, for example.",
+                ),
+        )
+        .arg(
             Arg::with_name("warmup")
                 .long("warmup")
                 .short("w")
                 .takes_value(true)
                 .value_name("NUM")
-                .help("Perform NUM warmup runs before the actual benchmark"),
+                .help(
+                    "Perform NUM warmup runs before the actual benchmark. This can be used \
+                     to fill (disk) caches for I/O-heavy programs.",
+                ),
         )
         .arg(
             Arg::with_name("min-runs")
@@ -61,20 +84,18 @@ fn main() {
                 .short("m")
                 .takes_value(true)
                 .value_name("NUM")
-                .help("Perform at least NUM runs for each command"),
-        )
-        .arg(
-            Arg::with_name("ignore-failure")
-                .long("ignore-failure")
-                .short("i")
-                .help("Ignore non-zero exit codes"),
+                .help(&format!(
+                    "Perform at least NUM runs for each command (default: {}).",
+                    options.min_runs
+                )),
         )
         .get_matches();
 
-    let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
+    options.ignore_failure = matches.is_present("ignore-failure");
 
-    // Process command line options
-    let mut options = HyperfineOptions::default();
+    options.setup_command = matches.value_of("setup").map(String::from);
+
+    let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
     options.warmup_count = matches
         .value_of("warmup")
@@ -85,8 +106,6 @@ fn main() {
         // we need at least two runs to compute a variance
         options.min_runs = cmp::max(2, min_runs);
     }
-
-    options.ignore_failure = matches.is_present("ignore-failure");
 
     let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);

@@ -21,6 +21,9 @@ pub struct HyperfineOptions {
 
     /// Whether or not to ignore non-zero exit codes
     pub ignore_failure: bool,
+
+    /// Command to run before each benchmark run
+    pub setup_command: Option<String>,
 }
 
 impl Default for HyperfineOptions {
@@ -30,6 +33,7 @@ impl Default for HyperfineOptions {
             min_runs: 10,
             min_time_sec: 3.0,
             ignore_failure: false,
+            setup_command: None,
         }
     }
 }
