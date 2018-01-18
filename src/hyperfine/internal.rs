@@ -96,3 +96,12 @@ pub fn min(vals: &[f64]) -> f64 {
         .unwrap()
         .clone()
 }
+
+#[test]
+fn test_max() {
+    assert_eq!(1.0, max(&[1.0]));
+    assert_eq!(-1.0, max(&[-1.0]));
+    assert_eq!(-1.0, max(&[-2.0, -1.0]));
+    assert_eq!(1.0, max(&[-1.0, 1.0]));
+    assert_eq!(1.0, max(&[-1.0, 1.0, 0.0]));
+}
