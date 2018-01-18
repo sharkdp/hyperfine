@@ -6,7 +6,7 @@ use ansi_term::Colour::{Cyan, Green, Purple, White, Yellow};
 use statistical::{mean, standard_deviation};
 
 use hyperfine::internal::{get_progress_bar, max, min, HyperfineOptions, Second, Warnings,
-                          MIN_EXECUTION_TIME};
+                          MIN_EXECUTION_TIME, CmdFailureAction};
 use hyperfine::format::{format_duration, format_duration_unit, Unit};
 
 /// Results from timing a single shell command
@@ -30,7 +30,7 @@ impl TimingResult {
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
     shell_cmd: &str,
-    ignore_failure: bool,
+    failure_action: CmdFailureAction,
     shell_spawning_time: Option<Second>,
 ) -> io::Result<TimingResult> {
     let start = Instant::now();
@@ -43,7 +43,7 @@ pub fn time_shell_command(
         .stderr(Stdio::null())
         .status()?;
 
-    if !ignore_failure && !status.success() {
+    if failure_action == CmdFailureAction::RaiseError && !status.success() {
         return Err(io::Error::new(
             io::ErrorKind::Other,
             "Command terminated with non-zero exit code. \
@@ -80,7 +80,7 @@ pub fn mean_shell_spawning_time() -> io::Result<Second> {
     let mut times: Vec<Second> = vec![];
     for _ in 0..COUNT {
         // Just run the shell without any command
-        let res = time_shell_command("", false, None);
+        let res = time_shell_command("", CmdFailureAction::RaiseError, None);
 
         match res {
             Err(_) => {
@@ -124,7 +124,7 @@ pub fn run_benchmark(
         let bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
 
         for _ in 0..options.warmup_count {
-            let _ = time_shell_command(cmd, options.ignore_failure, None)?;
+            let _ = time_shell_command(cmd, options.failure_action, None)?;
             bar.inc(1);
         }
         bar.finish_and_clear();
@@ -136,13 +136,13 @@ pub fn run_benchmark(
     // Run init / cleanup command
     let run_preparation_command = || {
         if let Some(ref preparation_command) = options.preparation_command {
-            let _ = time_shell_command(preparation_command, options.ignore_failure, None);
+            let _ = time_shell_command(preparation_command, options.failure_action, None);
         }
     };
     run_preparation_command();
 
     // Initial timing run
-    let res = time_shell_command(cmd, options.ignore_failure, Some(shell_spawning_time))?;
+    let res = time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
 
     // Determine number of benchmark runs
     let runs_in_min_time =
@@ -173,7 +173,7 @@ pub fn run_benchmark(
         };
         bar.set_message(&msg);
 
-        let res = time_shell_command(cmd, options.ignore_failure, Some(shell_spawning_time))?;
+        let res = time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
 
         execution_times.push(res.execution_time);
         all_succeeded = all_succeeded && res.success;

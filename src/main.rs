@@ -13,7 +13,7 @@ use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
 
-use hyperfine::internal::HyperfineOptions;
+use hyperfine::internal::{HyperfineOptions, CmdFailureAction};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 
 /// Print error message to stderr and terminate
@@ -109,7 +109,9 @@ fn main() {
 
     options.preparation_command = matches.value_of("prepare").map(String::from);
 
-    options.ignore_failure = matches.is_present("ignore-failure");
+    if matches.is_present("ignore-failure") {
+        options.failure_action = CmdFailureAction::Ignore;
+    }
 
     let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);

@@ -8,6 +8,16 @@ pub type Second = f64;
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;
 
+/// Action to take when an executed command fails.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CmdFailureAction {
+    /// Exit with an error message
+    RaiseError,
+
+    /// Simply ignore the non-zero exit code
+    Ignore,
+}
+
 /// A set of options for hyperfine
 pub struct HyperfineOptions {
     /// Number of warmup runs
@@ -20,7 +30,7 @@ pub struct HyperfineOptions {
     pub min_time_sec: Second,
 
     /// Whether or not to ignore non-zero exit codes
-    pub ignore_failure: bool,
+    pub failure_action: CmdFailureAction,
 
     /// Command to run before each timing run
     pub preparation_command: Option<String>,
@@ -32,7 +42,7 @@ impl Default for HyperfineOptions {
             warmup_count: 0,
             min_runs: 10,
             min_time_sec: 3.0,
-            ignore_failure: false,
+            failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
         }
     }
