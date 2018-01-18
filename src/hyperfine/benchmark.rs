@@ -7,7 +7,7 @@ use statistical::{mean, standard_deviation};
 
 use hyperfine::internal::{get_progress_bar, max, min, HyperfineOptions, Second, Warnings,
                           MIN_EXECUTION_TIME, CmdFailureAction};
-use hyperfine::format::{format_duration, format_duration_unit, Unit};
+use hyperfine::format::{format_duration, format_duration_unit};
 
 /// Results from timing a single shell command
 pub struct TimingResult {
@@ -168,7 +168,7 @@ pub fn run_benchmark(
         run_preparation_command();
 
         let msg = {
-            let mean = format_duration(mean(&execution_times), Unit::Auto);
+            let mean = format_duration(mean(&execution_times), None);
             format!("Current estimate: {}", Green.paint(mean))
         };
         bar.set_message(&msg);
@@ -189,10 +189,10 @@ pub fn run_benchmark(
     let t_max = max(&execution_times);
 
     // Formatting and console output
-    let (mean_str, unit_mean) = format_duration_unit(t_mean, Unit::Auto);
-    let stddev_str = format_duration(t_stddev, unit_mean);
-    let min_str = format_duration(t_min, unit_mean);
-    let max_str = format_duration(t_max, unit_mean);
+    let (mean_str, unit_mean) = format_duration_unit(t_mean, None);
+    let stddev_str = format_duration(t_stddev, Some(unit_mean));
+    let min_str = format_duration(t_min, Some(unit_mean));
+    let max_str = format_duration(t_max, Some(unit_mean));
 
     println!(
         "  Time ({} ± {}):     {} ± {}",
