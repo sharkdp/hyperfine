@@ -54,12 +54,12 @@ pub fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
         .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
         .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}");
 
-    let bar = ProgressBar::new(length);
-    bar.set_style(progressbar_style.clone());
-    bar.enable_steady_tick(80);
-    bar.set_message(msg);
+    let progress_bar = ProgressBar::new(length);
+    progress_bar.set_style(progressbar_style.clone());
+    progress_bar.enable_steady_tick(80);
+    progress_bar.set_message(msg);
 
-    bar
+    progress_bar
 }
 
 /// Possible benchmark warnings
@@ -70,31 +70,29 @@ pub enum Warnings {
 
 impl fmt::Display for Warnings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Warnings::FastExecutionTime => write!(
+        match *self {
+            Warnings::FastExecutionTime => write!(
                 f,
                 "Command took less than {:.0} ms to complete. Results might be inaccurate.",
                 MIN_EXECUTION_TIME * 1e3
             ),
-            &Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
+            Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
         }
     }
 }
 
 /// A max function for f64's without NaNs
 pub fn max(vals: &[f64]) -> f64 {
-    vals.iter()
+    *vals.iter()
         .max_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap()
-        .clone()
 }
 
 /// A min function for f64's without NaNs
 pub fn min(vals: &[f64]) -> f64 {
-    vals.iter()
+    *vals.iter()
         .min_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap()
-        .clone()
 }
 
 #[test]

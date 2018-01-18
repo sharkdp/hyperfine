@@ -53,7 +53,7 @@ pub fn time_shell_command(
 
     let duration = start.elapsed();
 
-    let execution_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
+    let execution_time = duration.as_secs() as f64 + (duration.subsec_nanos() as f64) * 1e-9;
 
     // Correct for shell spawning time
     let execution_time_corrected = if let Some(spawning_time) = shell_spawning_time {
@@ -75,7 +75,7 @@ pub fn time_shell_command(
 /// Measure the average shell spawning time
 pub fn mean_shell_spawning_time() -> io::Result<Second> {
     const COUNT: u64 = 200;
-    let bar = get_progress_bar(COUNT, "Measuring shell spawning time");
+    let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time");
 
     let mut times: Vec<Second> = vec![];
     for _ in 0..COUNT {
@@ -94,9 +94,9 @@ pub fn mean_shell_spawning_time() -> io::Result<Second> {
                 times.push(r.execution_time);
             }
         }
-        bar.inc(1);
+        progress_bar.inc(1);
     }
-    bar.finish_and_clear();
+    progress_bar.finish_and_clear();
 
     Ok(mean(&times))
 }
@@ -121,17 +121,17 @@ pub fn run_benchmark(
 
     // Warmup phase
     if options.warmup_count > 0 {
-        let bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
+        let progress_bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
 
         for _ in 0..options.warmup_count {
             let _ = time_shell_command(cmd, options.failure_action, None)?;
-            bar.inc(1);
+            progress_bar.inc(1);
         }
-        bar.finish_and_clear();
+        progress_bar.finish_and_clear();
     }
 
     // Set up progress bar (and spinner for initial measurement)
-    let bar = get_progress_bar(options.min_runs, "Initial time measurement");
+    let progress_bar = get_progress_bar(options.min_runs, "Initial time measurement");
 
     // Run init / cleanup command
     let run_preparation_command = || {
@@ -161,7 +161,7 @@ pub fn run_benchmark(
     all_succeeded = all_succeeded && res.success;
 
     // Re-configure the progress bar
-    bar.set_length(count_remaining);
+    progress_bar.set_length(count_remaining);
 
     // Gather statistics
     for _ in 0..count_remaining {
@@ -171,16 +171,16 @@ pub fn run_benchmark(
             let mean = format_duration(mean(&execution_times), None);
             format!("Current estimate: {}", Green.paint(mean))
         };
-        bar.set_message(&msg);
+        progress_bar.set_message(&msg);
 
         let res = time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
 
         execution_times.push(res.execution_time);
         all_succeeded = all_succeeded && res.success;
 
-        bar.inc(1);
+        progress_bar.inc(1);
     }
-    bar.finish_and_clear();
+    progress_bar.finish_and_clear();
 
     // Compute statistical quantities
     let t_mean = mean(&execution_times);
@@ -224,7 +224,7 @@ pub fn run_benchmark(
         warnings.push(Warnings::NonZeroExitCode);
     }
 
-    if warnings.len() > 0 {
+    if !warnings.is_empty() {
         eprintln!(" ");
         for warning in &warnings {
             eprintln!("  {}: {}", Yellow.paint("Warning"), warning);

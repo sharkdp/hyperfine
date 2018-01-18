@@ -28,7 +28,7 @@ fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
 
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
-        run_benchmark(num, &cmd, shell_spawning_time, &options)?;
+        run_benchmark(num, cmd, shell_spawning_time, options)?;
     }
 
     Ok(())
@@ -116,8 +116,7 @@ fn main() {
     let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);
 
-    match res {
-        Err(e) => error(e.description()),
-        Ok(_) => {}
+    if let Err(e) = res {
+        error(e.description());
     }
 }
