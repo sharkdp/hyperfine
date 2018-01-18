@@ -2,7 +2,8 @@
 
 A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabriel439/bench)*).
 
-**Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and [`find`](https://www.gnu.org/software/findutils/):
+**Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and
+[`find`](https://www.gnu.org/software/findutils/):
 
 ![hyperfine](https://i.imgur.com/5OqrGWe.gif)
 
@@ -17,32 +18,40 @@ A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabrie
 
 ### Basic benchmark
 
-To run a benchmark, you can simply call `hyperfine <command>...` where the argument(s) can be any shell command. For example:
+To run a benchmark, you can simply call `hyperfine <command>...`. The argument(s) can be any
+shell command. For example:
 ``` bash
 > hyperfine 'sleep 0.3'
 ```
 
-Hyperfine will automatically determine the number of runs to perform for each command. By default, it will perform *at least* 10 benchmarking runs. To change this, you can use the `-m`/`--min-runs` option:
+Hyperfine will automatically determine the number of runs to perform for each command. By default,
+it will perform *at least* 10 benchmarking runs. To change this, you can use the `-m`/`--min-runs`
+option:
 ``` bash
 > hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
 ```
 
 ### I/O-heavy programs
 
-If the program execution time is limited by disk I/O, the benchmarking results can be heavily influence by disk caches and whether they are cold or warm.
+If the program execution time is limited by disk I/O, the benchmarking results can be heavily
+influence by disk caches and whether they are cold or warm.
 
-If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to perform a certain amount of program executions before the actual benchmark:
+If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to perform
+a certain number of program executions before the actual benchmark:
 ``` bash
 > hyperfine --warmup 3 'grep -R TODO *'
 ```
 
-Conversely, if you want to run the benchmark for a cold cache, you can use the `-S`/`--setup` option to run a special command before *each* benchmarking run. For example, to clear disk caches on Linux, you can run
+Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
+option to run a special command before *each* timing run. For example, to clear harddisk caches
+on Linux, you can run
 ``` bash
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 ```
-To use this with Hyperfine, call `sudo echo` to temporarily gain sudo permissions and then call:
+To use this specific command with Hyperfine, call `sudo echo` to temporarily gain sudo permissions
+and then call:
 ``` bash
-hyperfine -S 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
+hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
 ```
 
 ## Installation

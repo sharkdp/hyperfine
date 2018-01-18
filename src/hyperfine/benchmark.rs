@@ -133,13 +133,13 @@ pub fn run_benchmark(
     // Set up progress bar (and spinner for initial measurement)
     let bar = get_progress_bar(options.min_runs, "Initial time measurement");
 
-    // Run setup / cleanup command
-    let run_setup_command = || {
-        if let Some(ref setup_command) = options.setup_command {
-            let _ = time_shell_command(setup_command, options.ignore_failure, None);
+    // Run init / cleanup command
+    let run_preparation_command = || {
+        if let Some(ref preparation_command) = options.preparation_command {
+            let _ = time_shell_command(preparation_command, options.ignore_failure, None);
         }
     };
-    run_setup_command();
+    run_preparation_command();
 
     // Initial timing run
     let res = time_shell_command(cmd, options.ignore_failure, Some(shell_spawning_time))?;
@@ -165,7 +165,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_setup_command();
+        run_preparation_command();
 
         let msg = {
             let mean = format_duration(mean(&execution_times), Unit::Auto);
