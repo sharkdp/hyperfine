@@ -13,7 +13,7 @@ use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
 
-use hyperfine::internal::{HyperfineOptions, CmdFailureAction};
+use hyperfine::internal::{CmdFailureAction, HyperfineOptions};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 
 /// Print error message to stderr and terminate

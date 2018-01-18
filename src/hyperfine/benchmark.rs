@@ -5,8 +5,8 @@ use std::time::Instant;
 use ansi_term::Colour::{Cyan, Green, Purple, White, Yellow};
 use statistical::{mean, standard_deviation};
 
-use hyperfine::internal::{get_progress_bar, max, min, HyperfineOptions, Second, Warnings,
-                          MIN_EXECUTION_TIME, CmdFailureAction};
+use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, HyperfineOptions, Second,
+                          Warnings, MIN_EXECUTION_TIME};
 use hyperfine::format::{format_duration, format_duration_unit};
 
 /// Results from timing a single shell command
