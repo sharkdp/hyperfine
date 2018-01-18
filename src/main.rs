@@ -44,7 +44,7 @@ fn main() {
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::UnifiedHelpMessage)
         .max_term_width(90)
-        .about("A command-line benchmarking tool")
+        .about("A command-line benchmarking tool.")
         .arg(
             Arg::with_name("command")
                 .help("Command to benchmark")
@@ -60,7 +60,7 @@ fn main() {
                 .value_name("NUM")
                 .help(
                     "Perform NUM warmup runs before the actual benchmark. This can be used \
-                     to fill (disk) caches for I/O-heavy programs",
+                     to fill (disk) caches for I/O-heavy programs.",
                 ),
         )
         .arg(
@@ -70,7 +70,7 @@ fn main() {
                 .takes_value(true)
                 .value_name("NUM")
                 .help(&format!(
-                    "Perform at least NUM runs for each command (default: {})",
+                    "Perform at least NUM runs for each command (default: {}).",
                     options.min_runs
                 )),
         )
@@ -82,15 +82,17 @@ fn main() {
                 .value_name("CMD")
                 .help(
                     "Execute CMD before each timing run. This is useful for \
-                     clearing disk caches, for example",
+                     clearing disk caches, for example.",
                 ),
         )
         .arg(
             Arg::with_name("ignore-failure")
                 .long("ignore-failure")
                 .short("i")
-                .help("Ignore non-zero exit codes"),
+                .help("Ignore non-zero exit codes."),
         )
+        .help_message("Print this help message.")
+        .version_message("Show version information.")
         .get_matches();
 
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
