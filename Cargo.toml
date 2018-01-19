@@ -7,12 +7,13 @@ license = "MIT/Apache-2.0"
 name = "hyperfine"
 readme = "README.md"
 repository = "https://github.com/sharkdp/hyperfine"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 ansi_term = "0.10"
 indicatif = "0.9"
 statistical = "0.1"
+libc = "0.2"
 
 [dependencies.clap]
 version = "2"

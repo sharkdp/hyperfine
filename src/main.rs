@@ -2,6 +2,7 @@ extern crate ansi_term;
 #[macro_use]
 extern crate clap;
 extern crate indicatif;
+extern crate libc;
 extern crate statistical;
 
 use std::cmp;
