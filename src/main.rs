@@ -5,6 +5,10 @@ extern crate indicatif;
 extern crate libc;
 extern crate statistical;
 
+#[cfg(test)]
+#[macro_use]
+extern crate approx;
+
 use std::cmp;
 use std::error::Error;
 use std::io;

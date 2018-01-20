@@ -8,7 +8,7 @@ use statistical::{mean, standard_deviation};
 use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, HyperfineOptions, Second,
                           Warnings, MIN_EXECUTION_TIME};
 use hyperfine::format::{format_duration, format_duration_unit};
-use hyperfine::cputime::{get_cpu_interval, get_cpu_times};
+use hyperfine::cputime::{cpu_time_interval, get_cpu_times};
 
 /// Results from timing a single shell command
 #[derive(Debug, Copy, Clone)]
@@ -64,7 +64,7 @@ pub fn time_shell_command(
     let mut time_real = duration.as_secs() as f64 + (duration.subsec_nanos() as f64) * 1e-9;
 
     // User and system time
-    let cpu_interval = get_cpu_interval(&start_cpu, &end_cpu);
+    let cpu_interval = cpu_time_interval(&start_cpu, &end_cpu);
     let mut time_user = cpu_interval.user;
     let mut time_system = cpu_interval.system;
 
