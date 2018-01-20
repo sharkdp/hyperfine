@@ -11,10 +11,11 @@ A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabrie
 
 ## Features
 
-* Statistical analysis across multiple runs
-* Support for arbitrary shell commands
-* Constant feedback about the benchmark progress and current estimates
-* Warmup runs can be executed before the actual benchmark
+* Statistical analysis across multiple runs.
+* Support for arbitrary shell commands.
+* Constant feedback about the benchmark progress and current estimates.
+* Warmup runs can be executed before the actual benchmark.
+* Cache-clearing commands can be set up before each timing run.
 
 ## Usage
 
@@ -69,6 +70,16 @@ On Arch Linux, hyperfine can be installed [from the AUR](https://aur.archlinux.o
 ```
 yaourt -S hyperfine
 ```
+
+### Ubuntu
+
+Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
+and install it via `dpkg`:
+```
+wget https://github.com/sharkdp/hyperfine/releases/download/v0.3.0/hyperfine_0.3.0_amd64.deb
+sudo dpkg -i hyperfine_0.3.0_amd64.deb
+```
+
 
 ## Origin of the name
 
