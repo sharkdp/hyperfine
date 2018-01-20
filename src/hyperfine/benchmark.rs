@@ -123,6 +123,21 @@ pub fn mean_shell_spawning_time() -> io::Result<TimingResult> {
     })
 }
 
+/// Run the command specified by `--prepare`.
+fn run_preparation_command(command: &Option<String>) -> io::Result<()> {
+    if let &Some(ref preparation_command) = command {
+        let res = time_shell_command(preparation_command, CmdFailureAction::RaiseError, None);
+        if let Err(_) = res {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "The preparation command terminated with a non-zero exit code. \
+                 Append ' || true' to the command if you are sure that this can be ignored.",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Run the benchmark for a single shell command
 pub fn run_benchmark(
     num: usize,
@@ -158,12 +173,7 @@ pub fn run_benchmark(
     let progress_bar = get_progress_bar(options.min_runs, "Initial time measurement");
 
     // Run init / cleanup command
-    let run_preparation_command = || {
-        if let Some(ref preparation_command) = options.preparation_command {
-            let _ = time_shell_command(preparation_command, options.failure_action, None);
-        }
-    };
-    run_preparation_command();
+    run_preparation_command(&options.preparation_command)?;
 
     // Initial timing run
     let (res, success) =
@@ -193,7 +203,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command();
+        run_preparation_command(&options.preparation_command)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
