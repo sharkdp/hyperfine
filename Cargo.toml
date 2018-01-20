@@ -19,3 +19,6 @@ libc = "0.2"
 version = "2"
 default-features = false
 features = ["suggestions", "color", "wrap_help"]
+
+[dev-dependencies]
+approx = "0.1.1"
