@@ -51,7 +51,7 @@ on Linux, you can run
 ``` bash
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 ```
-To use this specific command with Hyperfine, call `sudo echo` to temporarily gain sudo permissions
+To use this specific command with Hyperfine, call `sudo -v` to temporarily gain sudo permissions
 and then call:
 ``` bash
 hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
