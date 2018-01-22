@@ -1,4 +1,6 @@
 extern crate ansi_term;
+extern crate atty;
+
 #[macro_use]
 extern crate clap;
 extern crate indicatif;
@@ -14,11 +16,12 @@ use std::error::Error;
 use std::io;
 
 use ansi_term::Colour::Red;
+use atty::Stream;
 use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
 
-use hyperfine::internal::{CmdFailureAction, HyperfineOptions};
+use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 
 /// Print error message to stderr and terminate
@@ -91,6 +94,19 @@ fn main() {
                 ),
         )
         .arg(
+            Arg::with_name("style")
+                .long("style")
+                .short("s")
+                .takes_value(true)
+                .value_name("OPT")
+                .possible_values(&["auto", "basic", "full"])
+                .help(
+                    "Set output style type. If set to 'basic', all colors and special \
+                     formatting will be disabled. If set to 'auto' when output target is not \
+                     a TTY, 'basic' is used.",
+                ),
+        )
+        .arg(
             Arg::with_name("ignore-failure")
                 .long("ignore-failure")
                 .short("i")
@@ -113,6 +129,16 @@ fn main() {
     }
 
     options.preparation_command = matches.value_of("prepare").map(String::from);
+
+    options.output_style = match matches.value_of("style") {
+        Some("full") => OutputStyleOption::Full,
+        Some("basic") => OutputStyleOption::Basic,
+        _ => if atty::is(Stream::Stdout) {
+            OutputStyleOption::Full
+        } else {
+            OutputStyleOption::Basic
+        },
+    };
 
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;

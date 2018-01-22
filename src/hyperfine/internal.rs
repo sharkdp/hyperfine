@@ -18,6 +18,16 @@ pub enum CmdFailureAction {
     Ignore,
 }
 
+/// Output style type option
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum OutputStyleOption {
+    /// Do not output with colors or any special formatting
+    Basic,
+
+    /// Output with full color and formatting
+    Full,
+}
+
 /// A set of options for hyperfine
 pub struct HyperfineOptions {
     /// Number of warmup runs
@@ -34,6 +44,9 @@ pub struct HyperfineOptions {
 
     /// Command to run before each timing run
     pub preparation_command: Option<String>,
+
+    /// What color mode to use for output
+    pub output_style: OutputStyleOption,
 }
 
 impl Default for HyperfineOptions {
@@ -44,6 +57,7 @@ impl Default for HyperfineOptions {
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
+            output_style: OutputStyleOption::Full,
         }
     }
 }
