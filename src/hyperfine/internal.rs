@@ -66,6 +66,8 @@ pub fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
 pub enum Warnings {
     FastExecutionTime,
     NonZeroExitCode,
+    SlowInitialRun,
+    OutliersDetected,
 }
 
 impl fmt::Display for Warnings {
@@ -77,6 +79,20 @@ impl fmt::Display for Warnings {
                 MIN_EXECUTION_TIME * 1e3
             ),
             Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
+            Warnings::SlowInitialRun => write!(
+                f,
+                "The first benchmarking run for this command was significantly slower than the \
+                 rest. This could be caused by (filesystem) caches that were not filled. You \
+                 should consider using the '--warmup' option to fill those caches before the \
+                 benchmark. Alternatively, use the '--prepare' option to clear the caches before \
+                 each timing run."
+            ),
+            Warnings::OutliersDetected => write!(
+                f,
+                "Statistical outliers were detected. Consider re-running this benchmark without \
+                 any interferences from other programs. It might help to use the '--warmup' or \
+                 '--prepare' options to mitigate outliers."
+            ),
         }
     }
 }

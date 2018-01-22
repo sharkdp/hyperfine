@@ -9,6 +9,7 @@ use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, Hyperfin
                           Warnings, MIN_EXECUTION_TIME};
 use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::cputime::{cpu_time_interval, get_cpu_times};
+use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 
 /// Results from timing a single shell command
 #[derive(Debug, Copy, Clone)]
@@ -272,6 +273,14 @@ pub fn run_benchmark(
     // Check programm exit codes
     if !all_succeeded {
         warnings.push(Warnings::NonZeroExitCode);
+    }
+
+    // Run outlier detection
+    let scores = modified_zscores(&times_real);
+    if scores[0] > OUTLIER_THRESHOLD {
+        warnings.push(Warnings::SlowInitialRun);
+    } else if scores.iter().any(|&s| s > OUTLIER_THRESHOLD) {
+        warnings.push(Warnings::OutliersDetected);
     }
 
     if !warnings.is_empty() {
