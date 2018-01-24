@@ -1,8 +1,8 @@
-extern crate ansi_term;
 extern crate atty;
 
 #[macro_use]
 extern crate clap;
+extern crate colored;
 extern crate indicatif;
 extern crate libc;
 extern crate statistical;
@@ -15,8 +15,8 @@ use std::cmp;
 use std::error::Error;
 use std::io;
 
-use ansi_term::Colour::Red;
 use atty::Stream;
+use colored::*;
 use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
@@ -26,7 +26,7 @@ use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
-    eprintln!("{}: {}", Red.paint("Error"), message);
+    eprintln!("{} {}", "Error:".red(), message);
     std::process::exit(1);
 }
 

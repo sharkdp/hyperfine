@@ -2,13 +2,15 @@ use std::io;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
-use ansi_term::Colour::{Blue, Cyan, Green, Purple, White, Yellow};
+use colored::*;
 use statistical::{mean, standard_deviation};
 
 use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, HyperfineOptions, Second,
-                          Warnings, MIN_EXECUTION_TIME};
+                          MIN_EXECUTION_TIME};
+use hyperfine::warnings::Warnings;
 use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::cputime::{cpu_time_interval, get_cpu_times};
+use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 
 /// Results from timing a single shell command
 #[derive(Debug, Copy, Clone)]
@@ -147,8 +149,8 @@ pub fn run_benchmark(
 ) -> io::Result<()> {
     println!(
         "{}{}: {}",
-        White.bold().paint("Benchmark #"),
-        White.bold().paint((num + 1).to_string()),
+        "Benchmark #".bold(),
+        (num + 1).to_string().bold(),
         cmd
     );
     println!();
@@ -207,7 +209,7 @@ pub fn run_benchmark(
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
-            format!("Current estimate: {}", Green.paint(mean))
+            format!("Current estimate: {}", mean.to_string().green())
         };
         progress_bar.set_message(&msg);
 
@@ -243,22 +245,22 @@ pub fn run_benchmark(
     let system_str = format_duration(system_mean, Some(user_unit));
 
     println!(
-        "  Time ({} ± {}):     {} ± {}    [User: {}, System: {}]",
-        Green.bold().paint("mean"),
-        Green.paint("σ"),
-        Green.bold().paint(mean_str),
-        Green.paint(stddev_str),
-        Blue.paint(user_str),
-        Blue.paint(system_str)
+        "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
+        "mean".green().bold(),
+        "σ".green(),
+        mean_str.green().bold(),
+        stddev_str.green(),
+        user_str.blue(),
+        system_str.blue()
     );
     println!(" ");
 
     println!(
-        "  Range ({} … {}):   {} … {}",
-        Cyan.paint("min"),
-        Purple.paint("max"),
-        Cyan.paint(min_str),
-        Purple.paint(max_str)
+        "  Range ({} … {}):   {:>8} … {:>8}",
+        "min".cyan(),
+        "max".purple(),
+        min_str.cyan(),
+        max_str.purple()
     );
 
     // Warnings
@@ -274,10 +276,18 @@ pub fn run_benchmark(
         warnings.push(Warnings::NonZeroExitCode);
     }
 
+    // Run outlier detection
+    let scores = modified_zscores(&times_real);
+    if scores[0] > OUTLIER_THRESHOLD {
+        warnings.push(Warnings::SlowInitialRun(times_real[0]));
+    } else if scores.iter().any(|&s| s > OUTLIER_THRESHOLD) {
+        warnings.push(Warnings::OutliersDetected);
+    }
+
     if !warnings.is_empty() {
         eprintln!(" ");
         for warning in &warnings {
-            eprintln!("  {}: {}", Yellow.paint("Warning"), warning);
+            eprintln!("  {}: {}", "Warning".yellow(), warning);
         }
     }
 

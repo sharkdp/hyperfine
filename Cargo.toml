@@ -10,7 +10,7 @@ repository = "https://github.com/sharkdp/hyperfine"
 version = "0.3.0"
 
 [dependencies]
-ansi_term = "0.10"
+colored = "1.6"
 indicatif = "0.9"
 statistical = "0.1"
 libc = "0.2"

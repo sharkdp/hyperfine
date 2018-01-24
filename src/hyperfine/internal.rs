@@ -1,5 +1,3 @@
-use std::fmt;
-
 use indicatif::{ProgressBar, ProgressStyle};
 
 /// Type alias for unit of time
@@ -74,25 +72,6 @@ pub fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
     progress_bar.set_message(msg);
 
     progress_bar
-}
-
-/// Possible benchmark warnings
-pub enum Warnings {
-    FastExecutionTime,
-    NonZeroExitCode,
-}
-
-impl fmt::Display for Warnings {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Warnings::FastExecutionTime => write!(
-                f,
-                "Command took less than {:.0} ms to complete. Results might be inaccurate.",
-                MIN_EXECUTION_TIME * 1e3
-            ),
-            Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
-        }
-    }
 }
 
 /// A max function for f64's without NaNs

@@ -24,14 +24,14 @@ A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabrie
 To run a benchmark, you can simply call `hyperfine <command>...`. The argument(s) can be any
 shell command. For example:
 ``` bash
-> hyperfine 'sleep 0.3'
+hyperfine 'sleep 0.3'
 ```
 
 Hyperfine will automatically determine the number of runs to perform for each command. By default,
 it will perform *at least* 10 benchmarking runs. To change this, you can use the `-m`/`--min-runs`
 option:
 ``` bash
-> hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
+hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
 ```
 
 ### I/O-heavy programs
@@ -42,7 +42,7 @@ influence by disk caches and whether they are cold or warm.
 If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to perform
 a certain number of program executions before the actual benchmark:
 ``` bash
-> hyperfine --warmup 3 'grep -R TODO *'
+hyperfine --warmup 3 'grep -R TODO *'
 ```
 
 Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
@@ -51,7 +51,7 @@ on Linux, you can run
 ``` bash
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 ```
-To use this specific command with Hyperfine, call `sudo echo` to temporarily gain sudo permissions
+To use this specific command with Hyperfine, call `sudo -v` to temporarily gain sudo permissions
 and then call:
 ``` bash
 hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
