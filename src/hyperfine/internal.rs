@@ -60,6 +60,60 @@ impl Default for HyperfineOptions {
     }
 }
 
+pub enum OutputCommand<'a> {
+    Increment(u64),
+    Extend(u64),
+    Output(&'a str),
+    Complete,
+}
+
+pub type OutputTarget = Box<FnMut(OutputCommand)>;
+
+pub fn get_output_target(
+    option: &OutputStyleOption,
+    initial_msg: &str,
+    length: u64,
+) -> OutputTarget {
+    let target = match option {
+        &OutputStyleOption::Basic => println_target(length, initial_msg),
+        &OutputStyleOption::Full => progress_bar_target(length, initial_msg),
+    };
+
+    target
+}
+
+fn progress_bar_target(length: u64, msg: &str) -> OutputTarget {
+    let progress_bar = get_progress_bar(length, msg);
+    let target = move |cmd: OutputCommand| {
+        match cmd {
+            OutputCommand::Increment(amount) => progress_bar.inc(amount),
+            OutputCommand::Extend(amount) => progress_bar.set_length(amount),
+            OutputCommand::Output(message) => progress_bar.set_message(message),
+            OutputCommand::Complete => progress_bar.finish_and_clear(),
+        };
+    };
+    Box::from(target)
+}
+
+fn println_target(length: u64, msg: &str) -> OutputTarget {
+    println!("{}", msg);
+    println!("{}%", 0);
+    let mut current_progress: u64 = 0;
+    let mut target = length;
+    let target = move |cmd: OutputCommand| {
+        match cmd {
+            OutputCommand::Increment(amount) => {
+                current_progress += amount;
+                println!("{:.2}%", current_progress as f64 / target as f64 * 100.0);
+            }
+            OutputCommand::Extend(amount) => target = amount,
+            OutputCommand::Output(message) => println!("{}", message),
+            OutputCommand::Complete => println!("Done!"),
+        };
+    };
+    Box::from(target)
+}
+
 /// Return a pre-configured progress bar
 pub fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
     let progressbar_style = ProgressStyle::default_spinner()
