@@ -98,12 +98,12 @@ fn main() {
                 .long("style")
                 .short("s")
                 .takes_value(true)
-                .value_name("OPT")
+                .value_name("TYPE")
                 .possible_values(&["auto", "basic", "full"])
                 .help(
                     "Set output style type. If set to 'basic', all colors and special \
                      formatting will be disabled. If set to 'auto' when output target is not \
-                     a TTY, 'basic' is used.",
+                     a TTY, 'basic' is used (default: auto).",
                 ),
         )
         .arg(
