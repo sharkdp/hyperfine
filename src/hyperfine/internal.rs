@@ -1,5 +1,3 @@
-use std::fmt;
-
 use indicatif::{ProgressBar, ProgressStyle};
 
 /// Type alias for unit of time
@@ -60,41 +58,6 @@ pub fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
     progress_bar.set_message(msg);
 
     progress_bar
-}
-
-/// Possible benchmark warnings
-pub enum Warnings {
-    FastExecutionTime,
-    NonZeroExitCode,
-    SlowInitialRun,
-    OutliersDetected,
-}
-
-impl fmt::Display for Warnings {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Warnings::FastExecutionTime => write!(
-                f,
-                "Command took less than {:.0} ms to complete. Results might be inaccurate.",
-                MIN_EXECUTION_TIME * 1e3
-            ),
-            Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
-            Warnings::SlowInitialRun => write!(
-                f,
-                "The first benchmarking run for this command was significantly slower than the \
-                 rest. This could be caused by (filesystem) caches that were not filled. You \
-                 should consider using the '--warmup' option to fill those caches before the \
-                 benchmark. Alternatively, use the '--prepare' option to clear the caches before \
-                 each timing run."
-            ),
-            Warnings::OutliersDetected => write!(
-                f,
-                "Statistical outliers were detected. Consider re-running this benchmark without \
-                 any interferences from other programs. It might help to use the '--warmup' or \
-                 '--prepare' options to mitigate outliers."
-            ),
-        }
-    }
 }
 
 /// A max function for f64's without NaNs
