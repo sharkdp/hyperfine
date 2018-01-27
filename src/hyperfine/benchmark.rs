@@ -5,8 +5,8 @@ use std::time::Instant;
 use colored::*;
 use statistical::{mean, standard_deviation};
 
-use hyperfine::internal::{get_output_target, get_progress_bar, max, min, CmdFailureAction,
-                          HyperfineOptions, OutputCommand, Second, MIN_EXECUTION_TIME};
+use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, HyperfineOptions,
+                          OutputStyleOption, Second, MIN_EXECUTION_TIME};
 use hyperfine::warnings::Warnings;
 use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::cputime::{cpu_time_interval, get_cpu_times};
@@ -88,9 +88,9 @@ pub fn time_shell_command(
 }
 
 /// Measure the average shell spawning time
-pub fn mean_shell_spawning_time() -> io::Result<TimingResult> {
+pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingResult> {
     const COUNT: u64 = 200;
-    let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time");
+    let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time", style);
 
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
@@ -147,12 +147,12 @@ pub fn run_benchmark(
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<()> {
-    println!(
-        "{}{}: {}",
-        "Benchmark #".bold(),
-        (num + 1).to_string().bold(),
-        cmd
-    );
+    let (benchark_text, current_num) = match options.output_style {
+        OutputStyleOption::Basic => ("Benchmark #".white(), (num + 1).to_string().white()),
+        OutputStyleOption::Full => ("Benchmark #".bold(), (num + 1).to_string().bold()),
+    };
+
+    println!("{}{}: {}", benchark_text, current_num, cmd);
     println!();
 
     let mut times_real: Vec<Second> = vec![];
@@ -162,28 +162,24 @@ pub fn run_benchmark(
 
     // Warmup phase
     if options.warmup_count > 0 {
-        // let progress_bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
-        let mut output_target = get_output_target(
-            &options.output_style,
-            "Performing warmup runs",
+        let progress_bar = get_progress_bar(
             options.warmup_count,
+            "Performing warmup runs",
+            &options.output_style,
         );
 
         for _ in 0..options.warmup_count {
             let _ = time_shell_command(cmd, options.failure_action, None)?;
-            output_target(OutputCommand::Increment(1));
-            // progress_bar.inc(1);
+            progress_bar.inc(1);
         }
-        // progress_bar.finish_and_clear();
-        output_target(OutputCommand::Complete);
+        progress_bar.finish_and_clear();
     }
 
     // Set up progress bar (and spinner for initial measurement)
-    // let progress_bar = get_progress_bar(options.min_runs, "Initial time measurement");
-    let mut output_target = get_output_target(
-        &options.output_style,
-        "Initial time measurement",
+    let progress_bar = get_progress_bar(
         options.min_runs,
+        "Initial time measurement",
+        &options.output_style,
     );
 
     // Run init / cleanup command
@@ -213,8 +209,7 @@ pub fn run_benchmark(
     all_succeeded = all_succeeded && success;
 
     // Re-configure the progress bar
-    // progress_bar.set_length(count_remaining);
-    output_target(OutputCommand::Extend(count_remaining));
+    progress_bar.set_length(count_remaining);
 
     // Gather statistics
     for _ in 0..count_remaining {
@@ -224,8 +219,7 @@ pub fn run_benchmark(
             let mean = format_duration(mean(&times_real), None);
             format!("Current estimate: {}", mean.to_string().green())
         };
-        // progress_bar.set_message(&msg);
-        output_target(OutputCommand::Output(&msg));
+        progress_bar.set_message(&msg);
 
         let (res, success) =
             time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
@@ -236,11 +230,9 @@ pub fn run_benchmark(
 
         all_succeeded = all_succeeded && success;
 
-        // progress_bar.inc(1);
-        output_target(OutputCommand::Increment(1));
+        progress_bar.inc(1);
     }
-    // progress_bar.finish_and_clear();
-    output_target(OutputCommand::Complete);
+    progress_bar.finish_and_clear();
 
     // Compute statistical quantities
     let t_mean = mean(&times_real);
@@ -260,23 +252,49 @@ pub fn run_benchmark(
     let (user_str, user_unit) = format_duration_unit(user_mean, None);
     let system_str = format_duration(system_mean, Some(user_unit));
 
+    let (mean_start, delta, mean_val, stddev_val, user_val, sys_val) = match options.output_style {
+        OutputStyleOption::Basic => (
+            "mean".white(),
+            "σ".white(),
+            mean_str.white(),
+            stddev_str.white(),
+            user_str.white(),
+            system_str.white(),
+        ),
+        OutputStyleOption::Full => (
+            "mean".green().bold(),
+            "σ".green(),
+            mean_str.green().bold(),
+            stddev_str.green(),
+            user_str.blue(),
+            system_str.blue(),
+        ),
+    };
+
     println!(
         "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-        "mean".green().bold(),
-        "σ".green(),
-        mean_str.green().bold(),
-        stddev_str.green(),
-        user_str.blue(),
-        system_str.blue()
+        mean_start, delta, mean_val, stddev_val, user_val, sys_val
     );
     println!(" ");
 
+    let (min_start, max_start, min_val, max_val) = match options.output_style {
+        OutputStyleOption::Basic => (
+            "min".white(),
+            "max".white(),
+            min_str.white(),
+            max_str.white(),
+        ),
+        OutputStyleOption::Full => (
+            "min".cyan(),
+            "max".purple(),
+            min_str.cyan(),
+            max_str.purple(),
+        ),
+    };
+
     println!(
         "  Range ({} … {}):   {:>8} … {:>8}",
-        "min".cyan(),
-        "max".purple(),
-        min_str.cyan(),
-        max_str.purple()
+        min_start, max_start, min_val, max_val
     );
 
     // Warnings
@@ -302,8 +320,13 @@ pub fn run_benchmark(
 
     if !warnings.is_empty() {
         eprintln!(" ");
+        let warning_text = match options.output_style {
+            OutputStyleOption::Basic => "Warning".white(),
+            OutputStyleOption::Full => "Warning".yellow(),
+        };
+
         for warning in &warnings {
-            eprintln!("  {}: {}", "Warning".yellow(), warning);
+            eprintln!("  {}: {}", warning_text, warning);
         }
     }
 

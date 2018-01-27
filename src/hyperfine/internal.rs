@@ -60,67 +60,19 @@ impl Default for HyperfineOptions {
     }
 }
 
-pub enum OutputCommand<'a> {
-    Increment(u64),
-    Extend(u64),
-    Output(&'a str),
-    Complete,
-}
-
-pub type OutputTarget = Box<FnMut(OutputCommand)>;
-
-pub fn get_output_target(
-    option: &OutputStyleOption,
-    initial_msg: &str,
-    length: u64,
-) -> OutputTarget {
-    let target = match option {
-        &OutputStyleOption::Basic => println_target(length, initial_msg),
-        &OutputStyleOption::Full => progress_bar_target(length, initial_msg),
-    };
-
-    target
-}
-
-fn progress_bar_target(length: u64, msg: &str) -> OutputTarget {
-    let progress_bar = get_progress_bar(length, msg);
-    let target = move |cmd: OutputCommand| {
-        match cmd {
-            OutputCommand::Increment(amount) => progress_bar.inc(amount),
-            OutputCommand::Extend(amount) => progress_bar.set_length(amount),
-            OutputCommand::Output(message) => progress_bar.set_message(message),
-            OutputCommand::Complete => progress_bar.finish_and_clear(),
-        };
-    };
-    Box::from(target)
-}
-
-fn println_target(length: u64, msg: &str) -> OutputTarget {
-    println!("{}", msg);
-    println!("{}%", 0);
-    let mut current_progress: u64 = 0;
-    let mut target = length;
-    let target = move |cmd: OutputCommand| {
-        match cmd {
-            OutputCommand::Increment(amount) => {
-                current_progress += amount;
-                println!("{:.2}%", current_progress as f64 / target as f64 * 100.0);
-            }
-            OutputCommand::Extend(amount) => target = amount,
-            OutputCommand::Output(message) => println!("{}", message),
-            OutputCommand::Complete => println!("Done!"),
-        };
-    };
-    Box::from(target)
-}
-
 /// Return a pre-configured progress bar
-pub fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
-    let progressbar_style = ProgressStyle::default_spinner()
-        .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-        .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}");
+pub fn get_progress_bar(length: u64, msg: &str, option: &OutputStyleOption) -> ProgressBar {
+    let progressbar_style = match option {
+        &OutputStyleOption::Basic => ProgressStyle::default_bar(),
+        &OutputStyleOption::Full => ProgressStyle::default_spinner()
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+            .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
+    };
 
-    let progress_bar = ProgressBar::new(length);
+    let progress_bar = match option {
+        &OutputStyleOption::Basic => ProgressBar::hidden(),
+        &OutputStyleOption::Full => ProgressBar::new(length),
+    };
     progress_bar.set_style(progressbar_style.clone());
     progress_bar.enable_steady_tick(80);
     progress_bar.set_message(msg);

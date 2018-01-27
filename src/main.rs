@@ -25,14 +25,19 @@ use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption}
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 
 /// Print error message to stderr and terminate
-pub fn error(message: &str) -> ! {
-    eprintln!("{} {}", "Error:".red(), message);
+pub fn error(message: &str, style: &OutputStyleOption) -> ! {
+    let error_title = match style {
+        &OutputStyleOption::Basic => "Error:".white(),
+        &OutputStyleOption::Full => "Error:".red(),
+    };
+
+    eprintln!("{} {}", error_title, message);
     std::process::exit(1);
 }
 
 /// Runs the benchmark for the given commands
 fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
-    let shell_spawning_time = mean_shell_spawning_time()?;
+    let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
 
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
@@ -46,9 +51,15 @@ fn main() {
     // Process command line options
     let mut options = HyperfineOptions::default();
 
+    let clap_color_setting = if atty::is(Stream::Stdout) {
+        AppSettings::ColorNever
+    } else {
+        AppSettings::ColoredHelp
+    };
+
     let matches = App::new("hyperfine")
         .version(crate_version!())
-        .setting(AppSettings::ColoredHelp)
+        .setting(clap_color_setting)
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::UnifiedHelpMessage)
         .max_term_width(90)
@@ -148,6 +159,6 @@ fn main() {
     let res = run(&commands, &options);
 
     if let Err(e) = res {
-        error(e.description());
+        error(e.description(), &options.output_style);
     }
 }
