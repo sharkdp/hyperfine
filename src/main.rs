@@ -25,13 +25,8 @@ use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption}
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 
 /// Print error message to stderr and terminate
-pub fn error(message: &str, style: &OutputStyleOption) -> ! {
-    let error_title = match style {
-        &OutputStyleOption::Basic => "Error:".white(),
-        &OutputStyleOption::Full => "Error:".red(),
-    };
-
-    eprintln!("{} {}", error_title, message);
+pub fn error(message: &str) -> ! {
+    eprintln!("{} {}", "Error:".red(), message);
     std::process::exit(1);
 }
 
@@ -151,6 +146,9 @@ fn main() {
         },
     };
 
+    if options.output_style == OutputStyleOption::Basic {
+        colored::control::set_override(false);
+    }
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;
     }
@@ -159,6 +157,6 @@ fn main() {
     let res = run(&commands, &options);
 
     if let Err(e) = res {
-        error(e.description(), &options.output_style);
+        error(e.description());
     }
 }

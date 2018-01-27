@@ -147,12 +147,12 @@ pub fn run_benchmark(
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<()> {
-    let (benchark_text, current_num) = match options.output_style {
-        OutputStyleOption::Basic => ("Benchmark #".white(), (num + 1).to_string().white()),
-        OutputStyleOption::Full => ("Benchmark #".bold(), (num + 1).to_string().bold()),
-    };
-
-    println!("{}{}: {}", benchark_text, current_num, cmd);
+    println!(
+        "{}{}: {}",
+        "Benchmark #".bold(),
+        (num + 1).to_string().bold(),
+        cmd
+    );
     println!();
 
     let mut times_real: Vec<Second> = vec![];
@@ -252,49 +252,23 @@ pub fn run_benchmark(
     let (user_str, user_unit) = format_duration_unit(user_mean, None);
     let system_str = format_duration(system_mean, Some(user_unit));
 
-    let (mean_start, delta, mean_val, stddev_val, user_val, sys_val) = match options.output_style {
-        OutputStyleOption::Basic => (
-            "mean".white(),
-            "σ".white(),
-            mean_str.white(),
-            stddev_str.white(),
-            user_str.white(),
-            system_str.white(),
-        ),
-        OutputStyleOption::Full => (
-            "mean".green().bold(),
-            "σ".green(),
-            mean_str.green().bold(),
-            stddev_str.green(),
-            user_str.blue(),
-            system_str.blue(),
-        ),
-    };
-
     println!(
         "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-        mean_start, delta, mean_val, stddev_val, user_val, sys_val
+        "mean".green().bold(),
+        "σ".green(),
+        mean_str.green().bold(),
+        stddev_str.green(),
+        user_str.blue(),
+        system_str.blue()
     );
     println!(" ");
 
-    let (min_start, max_start, min_val, max_val) = match options.output_style {
-        OutputStyleOption::Basic => (
-            "min".white(),
-            "max".white(),
-            min_str.white(),
-            max_str.white(),
-        ),
-        OutputStyleOption::Full => (
-            "min".cyan(),
-            "max".purple(),
-            min_str.cyan(),
-            max_str.purple(),
-        ),
-    };
-
     println!(
         "  Range ({} … {}):   {:>8} … {:>8}",
-        min_start, max_start, min_val, max_val
+        "min".cyan(),
+        "max".purple(),
+        min_str.cyan(),
+        max_str.purple()
     );
 
     // Warnings
@@ -320,13 +294,9 @@ pub fn run_benchmark(
 
     if !warnings.is_empty() {
         eprintln!(" ");
-        let warning_text = match options.output_style {
-            OutputStyleOption::Basic => "Warning".white(),
-            OutputStyleOption::Full => "Warning".yellow(),
-        };
 
         for warning in &warnings {
-            eprintln!("  {}: {}", warning_text, warning);
+            eprintln!("  {}: {}", "Warning".yellow(), warning);
         }
     }
 
