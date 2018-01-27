@@ -52,9 +52,9 @@ fn main() {
     let mut options = HyperfineOptions::default();
 
     let clap_color_setting = if atty::is(Stream::Stdout) {
-        AppSettings::ColorNever
-    } else {
         AppSettings::ColoredHelp
+    } else {
+        AppSettings::ColorNever
     };
 
     let matches = App::new("hyperfine")
