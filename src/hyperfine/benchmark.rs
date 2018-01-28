@@ -129,7 +129,7 @@ pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingR
 fn run_preparation_command(command: &Option<String>) -> io::Result<()> {
     if let &Some(ref preparation_command) = command {
         let res = time_shell_command(preparation_command, CmdFailureAction::RaiseError, None);
-        if let Err(_) = res {
+        if res.is_err() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
                 "The preparation command terminated with a non-zero exit code. \

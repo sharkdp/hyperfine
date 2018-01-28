@@ -107,9 +107,9 @@ fn main() {
                 .value_name("TYPE")
                 .possible_values(&["auto", "basic", "full"])
                 .help(
-                    "Set output style type. If set to 'basic', all colors and special \
-                     formatting will be disabled. If set to 'auto' when output target is not \
-                     a TTY, 'basic' is used (default: auto).",
+                    "Set output style type (default: auto). Set this to 'basic' to disable output \
+                     coloring and interactive elements. Set it to 'full' to enable all effects \
+                     even if no interactive terminal was detected.",
                 ),
         )
         .arg(
