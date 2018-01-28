@@ -62,16 +62,16 @@ impl Default for HyperfineOptions {
 
 /// Return a pre-configured progress bar
 pub fn get_progress_bar(length: u64, msg: &str, option: &OutputStyleOption) -> ProgressBar {
-    let progressbar_style = match option {
-        &OutputStyleOption::Basic => ProgressStyle::default_bar(),
-        &OutputStyleOption::Full => ProgressStyle::default_spinner()
-            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-            .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
+    let progressbar_style = match *option {
+        OutputStyleOption::Basic => ProgressStyle::default_bar(),
+        OutputStyleOption::Full => ProgressStyle::default_spinner()
+           .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+           .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
     };
 
-    let progress_bar = match option {
-        &OutputStyleOption::Basic => ProgressBar::hidden(),
-        &OutputStyleOption::Full => ProgressBar::new(length),
+    let progress_bar = match *option {
+        OutputStyleOption::Basic => ProgressBar::hidden(),
+        OutputStyleOption::Full => ProgressBar::new(length),
     };
     progress_bar.set_style(progressbar_style.clone());
     progress_bar.enable_steady_tick(80);
