@@ -16,6 +16,16 @@ pub enum CmdFailureAction {
     Ignore,
 }
 
+/// Output style type option
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum OutputStyleOption {
+    /// Do not output with colors or any special formatting
+    Basic,
+
+    /// Output with full color and formatting
+    Full,
+}
+
 /// A set of options for hyperfine
 pub struct HyperfineOptions {
     /// Number of warmup runs
@@ -32,6 +42,9 @@ pub struct HyperfineOptions {
 
     /// Command to run before each timing run
     pub preparation_command: Option<String>,
+
+    /// What color mode to use for output
+    pub output_style: OutputStyleOption,
 }
 
 impl Default for HyperfineOptions {
@@ -42,17 +55,24 @@ impl Default for HyperfineOptions {
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
+            output_style: OutputStyleOption::Full,
         }
     }
 }
 
 /// Return a pre-configured progress bar
-pub fn get_progress_bar(length: u64, msg: &str) -> ProgressBar {
-    let progressbar_style = ProgressStyle::default_spinner()
-        .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-        .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}");
+pub fn get_progress_bar(length: u64, msg: &str, option: &OutputStyleOption) -> ProgressBar {
+    let progressbar_style = match option {
+        &OutputStyleOption::Basic => ProgressStyle::default_bar(),
+        &OutputStyleOption::Full => ProgressStyle::default_spinner()
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+            .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
+    };
 
-    let progress_bar = ProgressBar::new(length);
+    let progress_bar = match option {
+        &OutputStyleOption::Basic => ProgressBar::hidden(),
+        &OutputStyleOption::Full => ProgressBar::new(length),
+    };
     progress_bar.set_style(progressbar_style.clone());
     progress_bar.enable_steady_tick(80);
     progress_bar.set_message(msg);

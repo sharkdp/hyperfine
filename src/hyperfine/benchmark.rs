@@ -5,8 +5,8 @@ use std::time::Instant;
 use colored::*;
 use statistical::{mean, standard_deviation};
 
-use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, HyperfineOptions, Second,
-                          MIN_EXECUTION_TIME};
+use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, HyperfineOptions,
+                          OutputStyleOption, Second, MIN_EXECUTION_TIME};
 use hyperfine::warnings::Warnings;
 use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::cputime::{cpu_time_interval, get_cpu_times};
@@ -88,9 +88,9 @@ pub fn time_shell_command(
 }
 
 /// Measure the average shell spawning time
-pub fn mean_shell_spawning_time() -> io::Result<TimingResult> {
+pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingResult> {
     const COUNT: u64 = 200;
-    let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time");
+    let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time", style);
 
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
@@ -162,7 +162,11 @@ pub fn run_benchmark(
 
     // Warmup phase
     if options.warmup_count > 0 {
-        let progress_bar = get_progress_bar(options.warmup_count, "Performing warmup runs");
+        let progress_bar = get_progress_bar(
+            options.warmup_count,
+            "Performing warmup runs",
+            &options.output_style,
+        );
 
         for _ in 0..options.warmup_count {
             let _ = time_shell_command(cmd, options.failure_action, None)?;
@@ -172,7 +176,11 @@ pub fn run_benchmark(
     }
 
     // Set up progress bar (and spinner for initial measurement)
-    let progress_bar = get_progress_bar(options.min_runs, "Initial time measurement");
+    let progress_bar = get_progress_bar(
+        options.min_runs,
+        "Initial time measurement",
+        &options.output_style,
+    );
 
     // Run init / cleanup command
     run_preparation_command(&options.preparation_command)?;
@@ -286,6 +294,7 @@ pub fn run_benchmark(
 
     if !warnings.is_empty() {
         eprintln!(" ");
+
         for warning in &warnings {
             eprintln!("  {}: {}", "Warning".yellow(), warning);
         }

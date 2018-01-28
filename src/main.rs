@@ -1,3 +1,5 @@
+extern crate atty;
+
 #[macro_use]
 extern crate clap;
 extern crate colored;
@@ -13,12 +15,13 @@ use std::cmp;
 use std::error::Error;
 use std::io;
 
+use atty::Stream;
 use colored::*;
 use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
 
-use hyperfine::internal::{CmdFailureAction, HyperfineOptions};
+use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 
 /// Print error message to stderr and terminate
@@ -29,7 +32,7 @@ pub fn error(message: &str) -> ! {
 
 /// Runs the benchmark for the given commands
 fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
-    let shell_spawning_time = mean_shell_spawning_time()?;
+    let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
 
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
@@ -43,9 +46,15 @@ fn main() {
     // Process command line options
     let mut options = HyperfineOptions::default();
 
+    let clap_color_setting = if atty::is(Stream::Stdout) {
+        AppSettings::ColoredHelp
+    } else {
+        AppSettings::ColorNever
+    };
+
     let matches = App::new("hyperfine")
         .version(crate_version!())
-        .setting(AppSettings::ColoredHelp)
+        .setting(clap_color_setting)
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::UnifiedHelpMessage)
         .max_term_width(90)
@@ -91,6 +100,19 @@ fn main() {
                 ),
         )
         .arg(
+            Arg::with_name("style")
+                .long("style")
+                .short("s")
+                .takes_value(true)
+                .value_name("TYPE")
+                .possible_values(&["auto", "basic", "full"])
+                .help(
+                    "Set output style type. If set to 'basic', all colors and special \
+                     formatting will be disabled. If set to 'auto' when output target is not \
+                     a TTY, 'basic' is used (default: auto).",
+                ),
+        )
+        .arg(
             Arg::with_name("ignore-failure")
                 .long("ignore-failure")
                 .short("i")
@@ -114,6 +136,19 @@ fn main() {
 
     options.preparation_command = matches.value_of("prepare").map(String::from);
 
+    options.output_style = match matches.value_of("style") {
+        Some("full") => OutputStyleOption::Full,
+        Some("basic") => OutputStyleOption::Basic,
+        _ => if atty::is(Stream::Stdout) {
+            OutputStyleOption::Full
+        } else {
+            OutputStyleOption::Basic
+        },
+    };
+
+    if options.output_style == OutputStyleOption::Basic {
+        colored::control::set_override(false);
+    }
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;
     }
