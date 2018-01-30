@@ -81,6 +81,13 @@ wget https://github.com/sharkdp/hyperfine/releases/download/v0.4.0/hyperfine_0.4
 sudo dpkg -i hyperfine_0.4.0_amd64.deb
 ```
 
+### Void Linux
+
+Hyperfine can be installed via xbps
+
+```
+xbps-install -S hyperfine
+```
 
 ## Origin of the name
 
