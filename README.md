@@ -38,7 +38,7 @@ hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
 ### I/O-heavy programs
 
 If the program execution time is limited by disk I/O, the benchmarking results can be heavily
-influence by disk caches and whether they are cold or warm.
+influenced by disk caches and whether they are cold or warm.
 
 If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to perform
 a certain number of program executions before the actual benchmark:
