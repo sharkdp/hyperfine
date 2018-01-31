@@ -9,8 +9,10 @@ use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, Hyperfin
                           OutputStyleOption, Second, MIN_EXECUTION_TIME};
 use hyperfine::warnings::Warnings;
 use hyperfine::format::{format_duration, format_duration_unit};
-use hyperfine::cputime::{cpu_time_interval, get_cpu_times};
 use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+
+#[cfg(not(target_os = "windows"))]
+use hyperfine::cputime::{cpu_time_interval, get_cpu_times};
 
 /// Results from timing a single shell command
 #[derive(Debug, Copy, Clone)]
@@ -34,7 +36,9 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
     }
 }
 
+
 /// Run the given shell command and measure the execution time
+#[cfg(not(target_os = "windows"))]
 pub fn time_shell_command(
     shell_cmd: &str,
     failure_action: CmdFailureAction,
@@ -82,6 +86,51 @@ pub fn time_shell_command(
             time_real,
             time_user,
             time_system,
+        },
+        status.success(),
+    ))
+}
+
+/// Run the given shell command and measure the execution time
+#[cfg(target_os = "windows")]
+pub fn time_shell_command(
+    shell_cmd: &str,
+    failure_action: CmdFailureAction,
+    shell_spawning_time: Option<TimingResult>,
+) -> io::Result<(TimingResult, bool)> {
+    let start = Instant::now();
+
+    let status = Command::new("sh")
+        .arg("-c")
+        .arg(shell_cmd)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+
+    let duration = start.elapsed();
+
+    if failure_action == CmdFailureAction::RaiseError && !status.success() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Command terminated with non-zero exit code. \
+             Use the '-i'/'--ignore-failure' option if you want to ignore this.",
+        ));
+    }
+
+    // Real time
+    let mut time_real = duration.as_secs() as f64 + (duration.subsec_nanos() as f64) * 1e-9;
+
+    // Correct for shell spawning time
+    if let Some(spawning_time) = shell_spawning_time {
+        time_real = subtract_shell_spawning_time(time_real, spawning_time.time_real);
+    }
+
+    Ok((
+        TimingResult {
+            time_real,
+            time_user: 0,
+            time_system: 0,
         },
         status.success(),
     ))
@@ -252,15 +301,8 @@ pub fn run_benchmark(
     let (user_str, user_unit) = format_duration_unit(user_mean, None);
     let system_str = format_duration(system_mean, Some(user_unit));
 
-    println!(
-        "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-        "mean".green().bold(),
-        "σ".green(),
-        mean_str.green().bold(),
-        stddev_str.green(),
-        user_str.blue(),
-        system_str.blue()
-    );
+    output_times(mean_str, stddev_str, user_str, system_str);
+
     println!(" ");
 
     println!(
@@ -303,4 +345,28 @@ pub fn run_benchmark(
     println!(" ");
 
     Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn output_times(mean_str: String, stddev_str: String, user_str: String, system_str: String) {
+    println!(
+        "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
+        "mean".green().bold(),
+        "σ".green(),
+        mean_str.green().bold(),
+        stddev_str.green(),
+        user_str.blue(),
+        system_str.blue()
+    );
+}
+
+#[cfg(target_os = "windows")]
+fn output_times(mean_str: String, stddev_str: String, _user_str: String, _system_str: String) {
+    println!(
+        "  Time ({} ± {}):     {:>8} ± {:>8}",
+        "mean".green().bold(),
+        "σ".green(),
+        mean_str.green().bold(),
+        stddev_str.green(),
+    );
 }
