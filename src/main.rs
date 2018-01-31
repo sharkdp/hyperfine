@@ -1,11 +1,12 @@
 extern crate atty;
-
 #[macro_use]
 extern crate clap;
 extern crate colored;
 extern crate indicatif;
-extern crate libc;
 extern crate statistical;
+
+#[cfg(not(target_os = "windows"))]
+extern crate libc;
 
 #[cfg(test)]
 #[macro_use]

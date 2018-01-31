@@ -1,4 +1,5 @@
 use libc::{getrusage, rusage, RUSAGE_CHILDREN};
+
 use std::mem;
 
 use hyperfine::internal::Second;
