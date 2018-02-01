@@ -1,5 +1,5 @@
 use std::io;
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::time::Instant;
 
 use colored::*;
@@ -38,24 +38,17 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 
 
 /// Run the given shell command and measure the execution time
-#[cfg(not(target_os = "windows"))]
 pub fn time_shell_command(
     shell_cmd: &str,
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
     let start = Instant::now();
-    let start_cpu = get_cpu_times();
+    let timer = cpu_interval_timer();
 
-    let status = Command::new("sh")
-        .arg("-c")
-        .arg(shell_cmd)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()?;
+    let status = run_shell_command(shell_cmd)?;
 
-    let end_cpu = get_cpu_times();
+    let (mut time_user, mut time_system) = timer();
     let duration = start.elapsed();
 
     if failure_action == CmdFailureAction::RaiseError && !status.success() {
@@ -69,16 +62,11 @@ pub fn time_shell_command(
     // Real time
     let mut time_real = duration.as_secs() as f64 + (duration.subsec_nanos() as f64) * 1e-9;
 
-    // User and system time
-    let cpu_interval = cpu_time_interval(&start_cpu, &end_cpu);
-    let mut time_user = cpu_interval.user;
-    let mut time_system = cpu_interval.system;
-
     // Correct for shell spawning time
     if let Some(spawning_time) = shell_spawning_time {
         time_real = subtract_shell_spawning_time(time_real, spawning_time.time_real);
-        time_user = subtract_shell_spawning_time(cpu_interval.user, spawning_time.time_user);
-        time_system = subtract_shell_spawning_time(cpu_interval.system, spawning_time.time_system);
+        time_user = subtract_shell_spawning_time(time_user, spawning_time.time_user);
+        time_system = subtract_shell_spawning_time(time_system, spawning_time.time_system);
     }
 
     Ok((
@@ -86,51 +74,6 @@ pub fn time_shell_command(
             time_real,
             time_user,
             time_system,
-        },
-        status.success(),
-    ))
-}
-
-/// Run the given shell command and measure the execution time
-#[cfg(target_os = "windows")]
-pub fn time_shell_command(
-    shell_cmd: &str,
-    failure_action: CmdFailureAction,
-    shell_spawning_time: Option<TimingResult>,
-) -> io::Result<(TimingResult, bool)> {
-    let start = Instant::now();
-
-    let status = Command::new("cmd")
-        // .arg("-c")
-        .arg(shell_cmd)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()?;
-
-    let duration = start.elapsed();
-
-    if failure_action == CmdFailureAction::RaiseError && !status.success() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Command terminated with non-zero exit code. \
-             Use the '-i'/'--ignore-failure' option if you want to ignore this.",
-        ));
-    }
-
-    // Real time
-    let mut time_real = duration.as_secs() as f64 + (duration.subsec_nanos() as f64) * 1e-9;
-
-    // Correct for shell spawning time
-    if let Some(spawning_time) = shell_spawning_time {
-        time_real = subtract_shell_spawning_time(time_real, spawning_time.time_real);
-    }
-
-    Ok((
-        TimingResult {
-            time_real,
-            time_user: 0f64,
-            time_system: 0f64,
         },
         status.success(),
     ))
@@ -172,6 +115,49 @@ pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingR
         time_user: mean(&times_user),
         time_system: mean(&times_system),
     })
+}
+
+/// Retrieve a timer Fn that starts on the initial call and stops when the
+/// returned closure is called.
+#[cfg(not(target_os = "windows"))]
+fn cpu_interval_timer() -> Box<Fn() -> (f64, f64)> {
+    let start_cpu = get_cpu_times();
+    let timer = move || {
+        let end_cpu = get_cpu_times();
+        let cpu_interval = cpu_time_interval(&start_cpu, &end_cpu);
+        (cpu_interval.user, cpu_interval.system)
+    };
+
+    Box::new(timer)
+}
+
+/// Return a timer Fn that will always return (0,0) when called
+#[cfg(target_os = "windows")]
+fn cpu_interval_timer() -> Box<Fn() -> (f64, f64)> {
+    Box::new(|| (0f64, 0f64))
+}
+
+/// Run a standard sh command
+#[cfg(not(target_os = "windows"))]
+fn run_shell_command(command: &str) -> io::Result<ExitStatus> {
+    Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+}
+
+/// Run a Windows command using cmd
+#[cfg(target_os = "windows")]
+fn run_shell_command(command: &str) -> io::Result<ExitStatus> {
+    Command::new("cmd")
+        .arg(command)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
 }
 
 /// Run the command specified by `--prepare`.
