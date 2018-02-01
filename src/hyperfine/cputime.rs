@@ -1,3 +1,5 @@
+#![cfg(not(target_os = "windows"))]
+
 use libc::{getrusage, rusage, RUSAGE_CHILDREN};
 
 use std::mem;
