@@ -100,8 +100,8 @@ pub fn time_shell_command(
 ) -> io::Result<(TimingResult, bool)> {
     let start = Instant::now();
 
-    let status = Command::new("sh")
-        .arg("-c")
+    let status = Command::new("cmd")
+        // .arg("-c")
         .arg(shell_cmd)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -129,8 +129,8 @@ pub fn time_shell_command(
     Ok((
         TimingResult {
             time_real,
-            time_user: 0,
-            time_system: 0,
+            time_user: 0f64,
+            time_system: 0f64,
         },
         status.success(),
     ))
