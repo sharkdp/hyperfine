@@ -1,5 +1,3 @@
-use std::mem;
-
 use hyperfine::internal::Second;
 use hyperfine::timer::Timer;
 
@@ -22,8 +20,10 @@ struct CPUInterval {
 }
 
 /// Read CPU execution times ('user' and 'system')
+#[cfg(not(target_os = "windows"))]
 fn get_cpu_times() -> CPUTimes {
     use libc::{getrusage, rusage, RUSAGE_CHILDREN};
+    use std::mem;
 
     let result: rusage = unsafe {
         let mut buf = mem::zeroed();
@@ -39,6 +39,15 @@ fn get_cpu_times() -> CPUTimes {
             + i64::from(result.ru_utime.tv_usec),
         system_usec: i64::from(result.ru_stime.tv_sec) * MICROSEC_PER_SEC
             + i64::from(result.ru_stime.tv_usec),
+    }
+}
+
+/// Read CPU execution times (dummy for now)
+#[cfg(windows)]
+fn get_cpu_times() -> CPUTimes {
+    CPUTimes {
+        user_usec: 0,
+        system_usec: 0,
     }
 }
 
