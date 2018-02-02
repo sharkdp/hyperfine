@@ -52,13 +52,6 @@ test_script:
   - cargo run
   - cargo test
 
-branches:
-  only:
-    - master
-    # IMPORTANT Regex to match tags. Required, or appveyor may not trigger deploys when a new tag
-    # is pushed. This regex matches semantic versions like v1.2.3-rc4+2016.02.22
-    - /^v\d+\.\d+\.\d+.*$/
-
 # Disable caching, for now
 #cache:
 #  - '%USERPROFILE%\.cargo'
