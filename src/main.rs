@@ -147,12 +147,12 @@ fn main() {
         },
     };
 
-    if options.output_style == OutputStyleOption::Basic {
-        colored::control::set_override(false);
-    }
-
     if cfg!(target_os = "windows") {
         options.output_style = OutputStyleOption::Basic;
+    }
+
+    if options.output_style == OutputStyleOption::Basic {
+        colored::control::set_override(false);
     }
 
     if matches.is_present("ignore-failure") {
