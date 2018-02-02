@@ -13,8 +13,10 @@ version = "0.4.0"
 colored = "1.6"
 indicatif = "0.9"
 statistical = "0.1"
-libc = "0.2"
 atty = "0.2.2"
+
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+libc = "0.2"
 
 [dependencies.clap]
 version = "2"

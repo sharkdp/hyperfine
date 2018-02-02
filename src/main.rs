@@ -1,11 +1,12 @@
 extern crate atty;
-
 #[macro_use]
 extern crate clap;
 extern crate colored;
 extern crate indicatif;
-extern crate libc;
 extern crate statistical;
+
+#[cfg(not(target_os = "windows"))]
+extern crate libc;
 
 #[cfg(test)]
 #[macro_use]
@@ -149,6 +150,11 @@ fn main() {
     if options.output_style == OutputStyleOption::Basic {
         colored::control::set_override(false);
     }
+
+    if cfg!(target_os = "windows") {
+        options.output_style = OutputStyleOption::Basic;
+    }
+
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;
     }
