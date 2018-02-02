@@ -36,7 +36,6 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
     }
 }
 
-
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
     shell_cmd: &str,
