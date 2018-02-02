@@ -17,6 +17,7 @@ pub fn run_shell_command(command: &str) -> io::Result<ExitStatus> {
 #[cfg(target_os = "windows")]
 pub fn run_shell_command(command: &str) -> io::Result<ExitStatus> {
     Command::new("cmd")
+        .arg("/C")
         .arg(command)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
