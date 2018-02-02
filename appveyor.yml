@@ -49,7 +49,7 @@ build: false
 # Equivalent to Travis' `script` phase
 test_script:
   - cargo build --verbose
-  - cargo run
+  - cargo run -- --help
   - cargo test
 
 # Disable caching, for now
