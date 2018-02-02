@@ -1,13 +1,10 @@
-#![cfg(not(target_os = "windows"))]
-
-use libc::{getrusage, rusage, RUSAGE_CHILDREN};
-
 use std::mem;
 
 use hyperfine::internal::Second;
+use hyperfine::timer::Timer;
 
 #[derive(Debug, Copy, Clone)]
-pub struct CPUTimes {
+struct CPUTimes {
     /// Total amount of time spent executing in user mode
     user_usec: i64,
 
@@ -16,7 +13,7 @@ pub struct CPUTimes {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct CPUInterval {
+struct CPUInterval {
     /// Total amount of time spent executing in user mode
     pub user: Second,
 
@@ -25,7 +22,9 @@ pub struct CPUInterval {
 }
 
 /// Read CPU execution times ('user' and 'system')
-pub fn get_cpu_times() -> CPUTimes {
+fn get_cpu_times() -> CPUTimes {
+    use libc::{getrusage, rusage, RUSAGE_CHILDREN};
+
     let result: rusage = unsafe {
         let mut buf = mem::zeroed();
         let success = getrusage(RUSAGE_CHILDREN, &mut buf);
@@ -44,10 +43,31 @@ pub fn get_cpu_times() -> CPUTimes {
 }
 
 /// Compute the time intervals in between two `CPUTimes` snapshots
-pub fn cpu_time_interval(start: &CPUTimes, end: &CPUTimes) -> CPUInterval {
+fn cpu_time_interval(start: &CPUTimes, end: &CPUTimes) -> CPUInterval {
     CPUInterval {
         user: ((end.user_usec - start.user_usec) as f64) * 1e-6,
         system: ((end.system_usec - start.system_usec) as f64) * 1e-6,
+    }
+}
+
+/// A timer that measures system and user time
+pub struct CPUTimer {
+    start_cpu: CPUTimes,
+}
+
+impl Timer for CPUTimer {
+    type Result = (Second, Second);
+
+    fn start() -> Self {
+        CPUTimer {
+            start_cpu: get_cpu_times(),
+        }
+    }
+
+    fn stop(&self) -> Self::Result {
+        let end_cpu = get_cpu_times();
+        let cpu_interval = cpu_time_interval(&self.start_cpu, &end_cpu);
+        (cpu_interval.user, cpu_interval.system)
     }
 }
 
