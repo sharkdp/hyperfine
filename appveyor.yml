@@ -32,5 +32,5 @@ build: false
 test_script:
   - cargo build --verbose
   - cargo run -- --help
-  - cargo run -- 'echo test'
+  - cargo run -- "echo test"
   - cargo test
