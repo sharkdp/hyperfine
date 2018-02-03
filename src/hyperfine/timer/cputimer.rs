@@ -50,6 +50,7 @@ fn get_cpu_times() -> CPUTimes {
 
     // Winapi reports times as per 100 nanosecond
     const HUNDRED_NS_PER_MS: i64 = 10;
+    
     let mut _ctime = FILETIME {
         dwLowDateTime: 0,
         dwHighDateTime: 0,
