@@ -76,8 +76,10 @@ fn get_cpu_times() -> CPUTimes {
             &mut kernel_time,
             &mut user_time,
         );
-        // Extract times as laid out here: https://support.microsoft.com/en-us/help/188768/info-working-with-the-filetime-structure
+
+        // GetProcessTimes will exit with non-zero if success as per: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683223(v=vs.85).aspx
         if res != 0 {
+            // Extract times as laid out here: https://support.microsoft.com/en-us/help/188768/info-working-with-the-filetime-structure
             let user: i64 = (((user_time.dwHighDateTime as i64) << 32) + user_time.dwLowDateTime as i64) / HUNDRED_NS_PER_MS;
             let kernel: i64 = (((kernel_time.dwHighDateTime as i64) << 32) + kernel_time.dwLowDateTime as i64) / HUNDRED_NS_PER_MS;
             (user, kernel)
