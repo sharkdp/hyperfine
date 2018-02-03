@@ -8,6 +8,9 @@ extern crate statistical;
 #[cfg(not(target_os = "windows"))]
 extern crate libc;
 
+#[cfg(target_os = "windows")]
+extern crate winapi;
+
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
