@@ -45,9 +45,50 @@ fn get_cpu_times() -> CPUTimes {
 /// Read CPU execution times (dummy for now)
 #[cfg(windows)]
 fn get_cpu_times() -> CPUTimes {
+    use winapi::um::processthreadsapi::{GetCurrentProcess, GetProcessTimes};
+    use winapi::shared::minwindef::FILETIME;
+
+    // Winapi reports times as per 100 nanosecond
+    const HUNDRED_NS_PER_MS: i64 = 10;
+    let mut _ctime = FILETIME {
+        dwLowDateTime: 0,
+        dwHighDateTime: 0,
+    };
+    let mut _etime = FILETIME {
+        dwLowDateTime: 0,
+        dwHighDateTime: 0,
+    };
+    let mut kernel_time = FILETIME {
+        dwLowDateTime: 0,
+        dwHighDateTime: 0,
+    };
+    let mut user_time = FILETIME {
+        dwLowDateTime: 0,
+        dwHighDateTime: 0,
+    };
+
+    let (user_usec, system_usec) = unsafe {
+        let handle = GetCurrentProcess();
+        let res = GetProcessTimes(
+            handle,
+            &mut _ctime,
+            &mut _etime,
+            &mut kernel_time,
+            &mut user_time,
+        );
+        // Extract times as laid out here: https://support.microsoft.com/en-us/help/188768/info-working-with-the-filetime-structure
+        if res != 0 {
+            let user: i64 = (((user_time.dwHighDateTime as i64) << 32) + user_time.dwLowDateTime as i64) / HUNDRED_NS_PER_MS;
+            let kernel: i64 = (((kernel_time.dwHighDateTime as i64) << 32) + kernel_time.dwLowDateTime as i64) / HUNDRED_NS_PER_MS;
+            (user, kernel)
+        } else {
+            (0, 0)
+        }
+    };
+
     CPUTimes {
-        user_usec: 0,
-        system_usec: 0,
+        user_usec,
+        system_usec,
     }
 }
 
