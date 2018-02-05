@@ -321,7 +321,7 @@ fn execute_and_time(command: &str) -> io::Result<(f64, f64, ExitStatus)> {
 
     let status = run_shell_command(command)?;
 
-    let (mut time_user, mut time_system) = cpu_timer.stop();
+    let (time_user, time_system) = cpu_timer.stop();
 
     Ok((time_user, time_system, status))
 }
