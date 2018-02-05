@@ -4,6 +4,8 @@ use hyperfine::timer::Timer;
 #[cfg(windows)]
 use std::os::windows::io::RawHandle;
 
+use std::mem;
+
 #[derive(Debug, Copy, Clone)]
 struct CPUTimes {
     /// Total amount of time spent executing in user mode
@@ -26,7 +28,6 @@ struct CPUInterval {
 #[cfg(not(windows))]
 fn get_cpu_times() -> CPUTimes {
     use libc::{getrusage, rusage, RUSAGE_CHILDREN};
-    use std::mem;
 
     let result: rusage = unsafe {
         let mut buf = mem::zeroed();
@@ -57,30 +58,16 @@ fn get_cpu_times() -> CPUTimes {
 #[cfg(windows)]
 pub fn get_process_times(handle: RawHandle) -> (i64, i64) {
     use winapi::um::processthreadsapi::GetProcessTimes;
-    use winapi::shared::minwindef::FILETIME;
     use winapi::um::winnt::HANDLE;
 
     // Winapi reports times as per 100 nanosecond
     const HUNDRED_NS_PER_MS: i64 = 10;
-    
-    let mut _ctime = FILETIME {
-        dwLowDateTime: 0,
-        dwHighDateTime: 0,
-    };
-    let mut _etime = FILETIME {
-        dwLowDateTime: 0,
-        dwHighDateTime: 0,
-    };
-    let mut kernel_time = FILETIME {
-        dwLowDateTime: 0,
-        dwHighDateTime: 0,
-    };
-    let mut user_time = FILETIME {
-        dwLowDateTime: 0,
-        dwHighDateTime: 0,
-    };
 
     let (user_usec, system_usec) = unsafe {
+        let mut _ctime = mem::zeroed();
+        let mut _etime = mem::zeroed();
+        let mut kernel_time = mem::zeroed();
+        let mut user_time = mem::zeroed();
         let res = GetProcessTimes(
             handle as HANDLE,
             &mut _ctime,
