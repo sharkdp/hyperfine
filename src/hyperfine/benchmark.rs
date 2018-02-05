@@ -43,15 +43,15 @@ pub fn time_shell_command(
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
     let wallclock_timer = WallClockTimer::start();
-    // let cpu_timer = CPUTimer::start();
 
-    let (mut time_user, mut time_system, status) = execute_and_time(shell_cmd)?;
-    // let status = run_shell_command(shell_cmd)?;
+    let result = execute_and_time(shell_cmd)?;
+
+    let mut time_user = result.user_time;
+    let mut time_system = result.system_time;
 
     let mut time_real = wallclock_timer.stop();
-    // let (mut time_user, mut time_system) = cpu_timer.stop();
 
-    if failure_action == CmdFailureAction::RaiseError && !status.success() {
+    if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
         return Err(io::Error::new(
             io::ErrorKind::Other,
             "Command terminated with non-zero exit code. \
@@ -72,7 +72,7 @@ pub fn time_shell_command(
             time_user,
             time_system,
         },
-        status.success(),
+        result.status.success(),
     ))
 }
 
@@ -294,34 +294,43 @@ pub fn run_benchmark(
     Ok(())
 }
 
+#[derive(Debug, Copy, Clone)]
+struct ExecuteResult {
+    user_time: f64,
+    system_time: f64,
+    status: ExitStatus,
+}
+
 #[cfg(windows)]
-fn execute_and_time(command: &str) -> io::Result<(f64, f64, ExitStatus)> {
-    use hyperfine::timer::cputimer::get_process_times;
+fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
+    use hyperfine::timer::windows_timer::{WindowsCPUTimer, WindowsTimer};
     use std::os::windows::io::AsRawHandle;
 
     let mut child = run_shell_command(command)?;
+    let timer = WindowsCPUTimer::start(child.as_raw_handle());
+    let status = child.wait()?;
 
-    let result = child.wait()?;
-    let handle = child.as_raw_handle();
-
-    let (user_usec, system_usec) = get_process_times(handle);
-
-    // Temp, bypassing timer and the stop method
-    let user = user_usec as f64 * 1e-6;
-    let system = system_usec as f64 * 1e-6;
-
-    Ok((user, system, result))
+    let (user_time, system_time) = timer.stop();
+    Ok(ExecuteResult {
+        user_time,
+        system_time,
+        status,
+    })
 }
 
 #[cfg(not(windows))]
-fn execute_and_time(command: &str) -> io::Result<(f64, f64, ExitStatus)> {
+fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
     use hyperfine::timer::cputimer::CPUTimer;
 
     let cpu_timer = CPUTimer::start();
 
     let status = run_shell_command(command)?;
 
-    let (time_user, time_system) = cpu_timer.stop();
+    let (user_time, system_time) = cpu_timer.stop();
 
-    Ok((time_user, time_system, status))
+    Ok(ExecuteResult {
+        user_time,
+        system_time,
+        status,
+    })
 }
