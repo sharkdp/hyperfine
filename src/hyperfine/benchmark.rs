@@ -11,7 +11,6 @@ use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use hyperfine::timer::Timer;
 use hyperfine::timer::wallclocktimer::WallClockTimer;
-use hyperfine::timer::cputimer::get_process_times;
 use hyperfine::shell::run_shell_command;
 
 
@@ -297,6 +296,7 @@ pub fn run_benchmark(
 
 #[cfg(windows)]
 fn execute_and_time(command: &str) -> io::Result<(f64, f64, ExitStatus)> {
+    use hyperfine::timer::cputimer::get_process_times;
     use std::os::windows::io::AsRawHandle;
 
     let mut child = run_shell_command(command)?;
