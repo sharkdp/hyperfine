@@ -320,9 +320,9 @@ fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
 
 #[cfg(not(windows))]
 fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
-    use hyperfine::timer::cputimer::CPUTimer;
+    use hyperfine::timer::unix_timer::UnixCPUTimer;
 
-    let cpu_timer = CPUTimer::start();
+    let cpu_timer = UnixCPUTimer::start();
 
     let status = run_shell_command(command)?;
 
