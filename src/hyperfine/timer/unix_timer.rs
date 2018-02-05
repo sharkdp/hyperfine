@@ -1,6 +1,6 @@
 #![cfg(not(windows))]
 
-use super::internal::{CPUInterval, CPUTimes}
+use super::internal::{CPUInterval, CPUTimes};
 use hyperfine::timer::Timer;
 
 
