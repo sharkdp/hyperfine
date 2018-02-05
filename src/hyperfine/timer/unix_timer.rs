@@ -2,7 +2,9 @@
 
 use super::internal::{CPUInterval, CPUTimes};
 use hyperfine::timer::Timer;
+use hyperfine::internal::Second;
 
+use std::mem;
 
 pub struct UnixCPUTimer {
     start_cpu: CPUTimes,
@@ -12,7 +14,7 @@ impl Timer for UnixCPUTimer {
     type Result = (Second, Second);
 
     fn start() -> Self {
-        CPUTimer {
+        UnixCPUTimer {
             start_cpu: get_cpu_times(),
         }
     }
