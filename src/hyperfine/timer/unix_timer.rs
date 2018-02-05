@@ -6,15 +6,15 @@ use hyperfine::internal::Second;
 
 use std::mem;
 
-pub struct UnixCPUTimer {
+pub struct CPUTimer {
     start_cpu: CPUTimes,
 }
 
-impl Timer for UnixCPUTimer {
+impl Timer for CPUTimer {
     type Result = (Second, Second);
 
     fn start() -> Self {
-        UnixCPUTimer {
+        CPUTimer {
             start_cpu: get_cpu_times(),
         }
     }
