@@ -15,11 +15,11 @@ indicatif = "0.9"
 statistical = "0.1"
 atty = "0.2.2"
 
-[target.'cfg(not(target_os = "windows"))'.dependencies]
+[target.'cfg(not(windows))'.dependencies]
 libc = "0.2"
 
-[target.'cfg(target_os = "windows")'.dependencies]
-winapi = { version = "0.3.4", features = [ "processthreadsapi", "minwindef"] }
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.4", features = ["processthreadsapi", "minwindef", "winnt"] }
 
 [dependencies.clap]
 version = "2"

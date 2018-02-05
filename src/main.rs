@@ -5,10 +5,10 @@ extern crate colored;
 extern crate indicatif;
 extern crate statistical;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
 extern crate libc;
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 extern crate winapi;
 
 #[cfg(test)]
@@ -149,7 +149,7 @@ fn main() {
             OutputStyleOption::Basic
         },
     };
-    
+
     if options.output_style == OutputStyleOption::Basic {
         colored::control::set_override(false);
     }
