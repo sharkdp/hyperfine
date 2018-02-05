@@ -1,4 +1,5 @@
 use std::io;
+use std::process::ExitStatus;
 
 use colored::*;
 use statistical::{mean, standard_deviation};
@@ -10,8 +11,9 @@ use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use hyperfine::timer::Timer;
 use hyperfine::timer::wallclocktimer::WallClockTimer;
-use hyperfine::timer::cputimer::CPUTimer;
+use hyperfine::timer::cputimer::get_process_times;
 use hyperfine::shell::run_shell_command;
+
 
 /// Results from timing a single shell command
 #[derive(Debug, Copy, Clone)]
@@ -42,12 +44,13 @@ pub fn time_shell_command(
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
     let wallclock_timer = WallClockTimer::start();
-    let cpu_timer = CPUTimer::start();
+    // let cpu_timer = CPUTimer::start();
 
-    let status = run_shell_command(shell_cmd)?;
+    let (mut time_user, mut time_system, status) = execute_and_time(shell_cmd)?;
+    // let status = run_shell_command(shell_cmd)?;
 
     let mut time_real = wallclock_timer.stop();
-    let (mut time_user, mut time_system) = cpu_timer.stop();
+    // let (mut time_user, mut time_system) = cpu_timer.stop();
 
     if failure_action == CmdFailureAction::RaiseError && !status.success() {
         return Err(io::Error::new(
@@ -290,4 +293,35 @@ pub fn run_benchmark(
     println!(" ");
 
     Ok(())
+}
+
+#[cfg(windows)]
+fn execute_and_time(command: &str) -> io::Result<(f64, f64, ExitStatus)> {
+    use std::os::windows::io::AsRawHandle;
+
+    let mut child = run_shell_command(command)?;
+
+    let result = child.wait()?;
+    let handle = child.as_raw_handle();
+
+    let (user_usec, system_usec) = get_process_times(handle);
+
+    // Temp, bypassing timer and the stop method
+    let user = user_usec as f64 * 1e-6;
+    let system = system_usec as f64 * 1e-6;
+
+    Ok((user, system, result))
+}
+
+#[cfg(not(windows))]
+fn execute_and_time(command: &str) -> io::Result<(f64, f64, ExitStatus)> {
+    use hyperfine::timer::cputimer::CPUTimer;
+
+    let cpu_timer = CPUTimer::start();
+
+    let status = run_shell_command(command)?;
+
+    let (mut time_user, mut time_system) = cpu_timer.stop();
+
+    Ok((time_user, time_system, status))
 }

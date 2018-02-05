@@ -1,6 +1,9 @@
 use hyperfine::internal::Second;
 use hyperfine::timer::Timer;
 
+#[cfg(windows)]
+use std::os::windows::io::RawHandle;
+
 #[derive(Debug, Copy, Clone)]
 struct CPUTimes {
     /// Total amount of time spent executing in user mode
@@ -20,7 +23,7 @@ struct CPUInterval {
 }
 
 /// Read CPU execution times ('user' and 'system')
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
 fn get_cpu_times() -> CPUTimes {
     use libc::{getrusage, rusage, RUSAGE_CHILDREN};
     use std::mem;
@@ -45,8 +48,17 @@ fn get_cpu_times() -> CPUTimes {
 /// Read CPU execution times (dummy for now)
 #[cfg(windows)]
 fn get_cpu_times() -> CPUTimes {
-    use winapi::um::processthreadsapi::{GetCurrentProcess, GetProcessTimes};
+    CPUTimes {
+        user_usec : 0, 
+        system_usec: 0,
+    }
+}
+
+#[cfg(windows)]
+pub fn get_process_times(handle: RawHandle) -> (i64, i64) {
+    use winapi::um::processthreadsapi::GetProcessTimes;
     use winapi::shared::minwindef::FILETIME;
+    use winapi::um::winnt::HANDLE;
 
     // Winapi reports times as per 100 nanosecond
     const HUNDRED_NS_PER_MS: i64 = 10;
@@ -69,9 +81,8 @@ fn get_cpu_times() -> CPUTimes {
     };
 
     let (user_usec, system_usec) = unsafe {
-        let handle = GetCurrentProcess();
         let res = GetProcessTimes(
-            handle,
+            handle as HANDLE,
             &mut _ctime,
             &mut _etime,
             &mut kernel_time,
@@ -81,6 +92,7 @@ fn get_cpu_times() -> CPUTimes {
         // GetProcessTimes will exit with non-zero if success as per: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683223(v=vs.85).aspx
         if res != 0 {
             // Extract times as laid out here: https://support.microsoft.com/en-us/help/188768/info-working-with-the-filetime-structure
+            // Both user_time and kernel_time are spans that the proces spent in either. 
             let user: i64 = (((user_time.dwHighDateTime as i64) << 32) + user_time.dwLowDateTime as i64) / HUNDRED_NS_PER_MS;
             let kernel: i64 = (((kernel_time.dwHighDateTime as i64) << 32) + kernel_time.dwLowDateTime as i64) / HUNDRED_NS_PER_MS;
             (user, kernel)
@@ -89,10 +101,7 @@ fn get_cpu_times() -> CPUTimes {
         }
     };
 
-    CPUTimes {
-        user_usec,
-        system_usec,
-    }
+    (user_usec,system_usec)
 }
 
 /// Compute the time intervals in between two `CPUTimes` snapshots

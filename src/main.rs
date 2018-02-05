@@ -5,10 +5,10 @@ extern crate colored;
 extern crate indicatif;
 extern crate statistical;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
 extern crate libc;
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 extern crate winapi;
 
 #[cfg(test)]
@@ -150,7 +150,7 @@ fn main() {
         },
     };
 
-    if cfg!(target_os = "windows") {
+    if cfg!(windows) {
         options.output_style = OutputStyleOption::Basic;
     }
 

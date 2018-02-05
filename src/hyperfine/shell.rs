@@ -1,8 +1,14 @@
 use std::io;
-use std::process::{Command, ExitStatus, Stdio};
+use std::process::{Command, Stdio};
+
+#[cfg(not(windows))]
+use std::process::ExitStatus;
+
+#[cfg(windows)]
+use std::process::Child;
 
 /// Run a standard shell command
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(windows))]
 pub fn run_shell_command(command: &str) -> io::Result<ExitStatus> {
     Command::new("sh")
         .arg("-c")
@@ -14,13 +20,13 @@ pub fn run_shell_command(command: &str) -> io::Result<ExitStatus> {
 }
 
 /// Run a Windows shell command using cmd.exe
-#[cfg(target_os = "windows")]
-pub fn run_shell_command(command: &str) -> io::Result<ExitStatus> {
+#[cfg(windows)]
+pub fn run_shell_command(command: &str) -> io::Result<Child> {
     Command::new("cmd")
         .arg("/C")
         .arg(command)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status()
+        .spawn()
 }
