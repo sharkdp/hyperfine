@@ -303,11 +303,11 @@ struct ExecuteResult {
 
 #[cfg(windows)]
 fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
-    use hyperfine::timer::windows_timer::{WindowsCPUTimer, WindowsTimer};
+    use hyperfine::timer::windows_timer::{CPUTimer, WindowsTimer};
     use std::os::windows::io::AsRawHandle;
 
     let mut child = run_shell_command(command)?;
-    let timer = WindowsCPUTimer::start(child.as_raw_handle());
+    let timer = CPUTimer::start(child.as_raw_handle());
     let status = child.wait()?;
 
     let (user_time, system_time) = timer.stop();
@@ -320,9 +320,9 @@ fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
 
 #[cfg(not(windows))]
 fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
-    use hyperfine::timer::unix_timer::UnixCPUTimer;
+    use hyperfine::timer::unix_timer::CPUTimer;
 
-    let cpu_timer = UnixCPUTimer::start();
+    let cpu_timer = CPUTimer::start();
 
     let status = run_shell_command(command)?;
 

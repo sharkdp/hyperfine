@@ -18,15 +18,15 @@ pub trait WindowsTimer {
     fn stop(&self) -> Self::Result;
 }
 
-pub struct WindowsCPUTimer {
+pub struct CPUTimer {
     handle: RawHandle,
 }
 
-impl WindowsTimer for WindowsCPUTimer {
+impl WindowsTimer for CPUTimer {
     type Result = (Second, Second);
 
     fn start(handle: RawHandle) -> Self {
-        WindowsCPUTimer { handle }
+       CPUTimer { handle }
     }
 
     fn stop(&self) -> Self::Result {
