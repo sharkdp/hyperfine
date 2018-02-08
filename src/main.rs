@@ -1,15 +1,21 @@
 extern crate atty;
+
+#[macro_use]
+extern crate cfg_if;
+
 #[macro_use]
 extern crate clap;
 extern crate colored;
 extern crate indicatif;
 extern crate statistical;
 
-#[cfg(not(windows))]
-extern crate libc;
-
-#[cfg(windows)]
-extern crate winapi;
+cfg_if! {
+    if #[cfg(windows)] {
+        extern crate winapi;
+    } else {
+        extern crate libc;
+    }
+}
 
 #[cfg(test)]
 #[macro_use]

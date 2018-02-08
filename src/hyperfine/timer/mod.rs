@@ -2,25 +2,16 @@ mod internal;
 
 pub mod wallclocktimer;
 
-#[cfg(not(windows))]
-mod unix_timer;
-
-#[cfg(not(windows))]
-pub use self::unix_timer::get_cpu_timer;
-
-#[cfg(windows)]
-mod windows_timer;
-
-#[cfg(windows)]
-pub use self::windows_timer::get_cpu_timer;
-
-use std::process::Child;
-
-pub trait Timer
-where
-    Self: TimerStart + TimerStop,
-{
+cfg_if! {
+    if #[cfg(windows)] {
+        mod windows_timer;
+        pub use self::windows_timer::get_cpu_timer;
+    } else {
+        mod unix_timer;
+        pub use self::unix_timer::get_cpu_timer;
+    }
 }
+use std::process::Child;
 
 /// Defines start functionality of a timer.
 pub trait TimerStart {
