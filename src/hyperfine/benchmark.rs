@@ -1,5 +1,4 @@
 use std::io;
-use std::process::ExitStatus;
 
 use colored::*;
 use statistical::{mean, standard_deviation};
@@ -9,9 +8,9 @@ use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, Hyperfin
 use hyperfine::warnings::Warnings;
 use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
-use hyperfine::timer::Timer;
+use hyperfine::timer::{TimerStart, TimerStop};
 use hyperfine::timer::wallclocktimer::WallClockTimer;
-use hyperfine::shell::run_shell_command;
+use hyperfine::shell::execute_and_time;
 
 
 /// Results from timing a single shell command
@@ -292,45 +291,4 @@ pub fn run_benchmark(
     println!(" ");
 
     Ok(())
-}
-
-#[derive(Debug, Copy, Clone)]
-struct ExecuteResult {
-    user_time: f64,
-    system_time: f64,
-    status: ExitStatus,
-}
-
-#[cfg(windows)]
-fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
-    use hyperfine::timer::windows_timer::{CPUTimer, WindowsTimer};
-    use std::os::windows::io::AsRawHandle;
-
-    let mut child = run_shell_command(command)?;
-    let timer = CPUTimer::start(child.as_raw_handle());
-    let status = child.wait()?;
-
-    let (user_time, system_time) = timer.stop();
-    Ok(ExecuteResult {
-        user_time,
-        system_time,
-        status,
-    })
-}
-
-#[cfg(not(windows))]
-fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
-    use hyperfine::timer::unix_timer::CPUTimer;
-
-    let cpu_timer = CPUTimer::start();
-
-    let status = run_shell_command(command)?;
-
-    let (user_time, system_time) = cpu_timer.stop();
-
-    Ok(ExecuteResult {
-        user_time,
-        system_time,
-        status,
-    })
 }

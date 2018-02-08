@@ -1,20 +1,27 @@
+use std::process::Child;
 use std::time::Instant;
 
 use hyperfine::internal::Second;
-use hyperfine::timer::Timer;
+use hyperfine::timer::{TimerStart, TimerStop};
 
 pub struct WallClockTimer {
     start: Instant,
 }
 
-impl Timer for WallClockTimer {
-    type Result = Second;
-
+impl TimerStart for WallClockTimer {
     fn start() -> WallClockTimer {
         WallClockTimer {
             start: Instant::now(),
         }
     }
+
+    fn start_for_process(_: &Child) -> Self {
+        Self::start()
+    }
+}
+
+impl TimerStop for WallClockTimer {
+    type Result = Second;
 
     fn stop(&self) -> Second {
         let duration = self.start.elapsed();

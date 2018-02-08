@@ -2,32 +2,38 @@
 
 use super::internal::CPUTimes;
 use hyperfine::internal::Second;
+use hyperfine::timer::{TimerStart, TimerStop};
 
 use winapi::um::processthreadsapi::GetProcessTimes;
 use winapi::um::winnt::HANDLE;
 
 use std::mem;
-use std::os::windows::io::RawHandle;
+use std::os::windows::io::{AsRawHandle, RawHandle};
+use std::process::Child;
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 
-pub trait WindowsTimer {
-    type Result;
-
-    fn start(handle: RawHandle) -> Self;
-    fn stop(&self) -> Self::Result;
+pub fn get_cpu_timer(process: &Child) -> Box<TimerStop<Result=(Second,Second)>> {
+    Box::new(CPUTimer::start_for_process(process))
 }
 
-pub struct CPUTimer {
+struct CPUTimer {
     handle: RawHandle,
 }
 
-impl WindowsTimer for CPUTimer {
-    type Result = (Second, Second);
+impl TimerStart for CPUTimer {
 
-    fn start(handle: RawHandle) -> Self {
-       CPUTimer { handle }
+    fn start() -> Self {
+        panic!()
     }
+
+    fn start_for_process(process: &Child) -> Self {
+        CPUTimer { handle: process.as_raw_handle() }
+    }    
+}
+
+impl TimerStop for CPUTimer {
+    type Result = (Second, Second);
 
     fn stop(&self) -> Self::Result {
         let times = get_cpu_times(self.handle);

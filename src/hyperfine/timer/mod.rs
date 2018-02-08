@@ -3,15 +3,33 @@ mod internal;
 pub mod wallclocktimer;
 
 #[cfg(not(windows))]
-pub mod unix_timer;
+mod unix_timer;
+
+#[cfg(not(windows))]
+pub use self::unix_timer::get_cpu_timer;
 
 #[cfg(windows)]
-pub mod windows_timer;
+mod windows_timer;
 
-/// Defines a general timer with start/stop functionality.
-pub trait Timer {
-    type Result;
+#[cfg(windows)]
+pub use self::windows_timer::get_cpu_timer;
 
+use std::process::Child;
+
+pub trait Timer
+where
+    Self: TimerStart + TimerStop,
+{
+}
+
+/// Defines start functionality of a timer.
+pub trait TimerStart {
     fn start() -> Self;
+    fn start_for_process(process: &Child) -> Self;
+}
+
+/// Defines stop functionality of a timer.
+pub trait TimerStop {
+    type Result;
     fn stop(&self) -> Self::Result;
 }

@@ -1,23 +1,34 @@
 #![cfg(not(windows))]
 
 use super::internal::{CPUInterval, CPUTimes};
-use hyperfine::timer::Timer;
+use hyperfine::timer::{TimerStart, TimerStop};
 use hyperfine::internal::Second;
 
 use std::mem;
+use std::process::Child;
 
-pub struct CPUTimer {
+pub fn get_cpu_timer() -> Box<TimerStop<Result = (Second, Second)>> {
+    Box::new(CPUTimer::start())
+}
+
+struct CPUTimer {
     start_cpu: CPUTimes,
 }
 
-impl Timer for CPUTimer {
-    type Result = (Second, Second);
-
+impl TimerStart for CPUTimer {
     fn start() -> Self {
         CPUTimer {
             start_cpu: get_cpu_times(),
         }
     }
+
+    fn start_for_process(_: &Child) -> Self {
+        Self::start()
+    }
+}
+
+impl TimerStop for CPUTimer {
+    type Result = (Second, Second);
 
     fn stop(&self) -> Self::Result {
         let end_cpu = get_cpu_times();
