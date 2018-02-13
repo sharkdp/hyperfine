@@ -14,7 +14,7 @@ use hyperfine::shell::execute_and_time;
 
 
 /// Results from timing a single shell command
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct TimingResult {
     /// Wall clock time
     pub time_real: Second,
@@ -114,7 +114,7 @@ pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingR
 }
 
 /// Run the command specified by `--prepare`.
-fn run_preparation_command(command: &Option<String>) -> io::Result<()> {
+fn run_preparation_command(command: &Option<String>) -> io::Result<TimingResult> {
     if let &Some(ref preparation_command) = command {
         let res = time_shell_command(preparation_command, CmdFailureAction::RaiseError, None);
         if res.is_err() {
@@ -124,8 +124,11 @@ fn run_preparation_command(command: &Option<String>) -> io::Result<()> {
                  Append ' || true' to the command if you are sure that this can be ignored.",
             ));
         }
+        return res.map(|r| r.0);
     }
-    Ok(())
+    Ok(TimingResult {
+        ..Default::default()
+    })
 }
 
 /// Run the benchmark for a single shell command
@@ -171,7 +174,7 @@ pub fn run_benchmark(
     );
 
     // Run init / cleanup command
-    run_preparation_command(&options.preparation_command)?;
+    let prepare_res = run_preparation_command(&options.preparation_command)?;
 
     // Initial timing run
     let (res, success) =
@@ -179,7 +182,7 @@ pub fn run_benchmark(
 
     // Determine number of benchmark runs
     let runs_in_min_time =
-        (options.min_time_sec / (res.time_real + shell_spawning_time.time_real)) as u64;
+        (options.min_time_sec / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real)) as u64;
 
     let count = if runs_in_min_time >= options.min_runs {
         runs_in_min_time
@@ -190,9 +193,9 @@ pub fn run_benchmark(
     let count_remaining = count - 1;
 
     // Save the first result
-    times_real.push(res.time_real);
-    times_user.push(res.time_user);
-    times_system.push(res.time_system);
+    times_real.push(res.time_real + prepare_res.time_real);
+    times_user.push(res.time_user + prepare_res.time_user);
+    times_system.push(res.time_system + prepare_res.time_system);
 
     all_succeeded = all_succeeded && success;
 
@@ -201,7 +204,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command(&options.preparation_command)?;
+        let prepare_res = run_preparation_command(&options.preparation_command)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
@@ -212,9 +215,9 @@ pub fn run_benchmark(
         let (res, success) =
             time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
 
-        times_real.push(res.time_real);
-        times_user.push(res.time_user);
-        times_system.push(res.time_system);
+        times_real.push(res.time_real + prepare_res.time_real);
+        times_user.push(res.time_user + prepare_res.time_user);
+        times_system.push(res.time_system + prepare_res.time_system);
 
         all_succeeded = all_succeeded && success;
 
