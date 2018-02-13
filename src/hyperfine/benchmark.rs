@@ -193,9 +193,9 @@ pub fn run_benchmark(
     let count_remaining = count - 1;
 
     // Save the first result
-    times_real.push(res.time_real + prepare_res.time_real);
-    times_user.push(res.time_user + prepare_res.time_user);
-    times_system.push(res.time_system + prepare_res.time_system);
+    times_real.push(res.time_real);
+    times_user.push(res.time_user);
+    times_system.push(res.time_system);
 
     all_succeeded = all_succeeded && success;
 
@@ -204,7 +204,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        let prepare_res = run_preparation_command(&options.preparation_command)?;
+        run_preparation_command(&options.preparation_command)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
@@ -215,9 +215,9 @@ pub fn run_benchmark(
         let (res, success) =
             time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
 
-        times_real.push(res.time_real + prepare_res.time_real);
-        times_user.push(res.time_user + prepare_res.time_user);
-        times_system.push(res.time_system + prepare_res.time_system);
+        times_real.push(res.time_real);
+        times_user.push(res.time_user);
+        times_system.push(res.time_system);
 
         all_succeeded = all_succeeded && success;
 
