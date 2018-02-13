@@ -1,5 +1,6 @@
 # hyperfine
 [![Build Status](https://travis-ci.org/sharkdp/hyperfine.svg?branch=master)](https://travis-ci.org/sharkdp/hyperfine)
+[![Build status](https://ci.appveyor.com/api/projects/status/pdqq5frgkcj0smrs?svg=true)](https://ci.appveyor.com/project/sharkdp/hyperfine)
 [![Version info](https://img.shields.io/crates/v/hyperfine.svg)](https://crates.io/crates/hyperfine)
 
 A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabriel439/bench)*).
