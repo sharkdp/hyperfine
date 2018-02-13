@@ -156,10 +156,6 @@ fn main() {
         },
     };
 
-    if cfg!(windows) {
-        options.output_style = OutputStyleOption::Basic;
-    }
-
     if options.output_style == OutputStyleOption::Basic {
         colored::control::set_override(false);
     }
