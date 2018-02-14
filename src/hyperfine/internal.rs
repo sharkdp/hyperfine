@@ -24,6 +24,9 @@ pub enum OutputStyleOption {
 
     /// Output with full color and formatting
     Full,
+
+    /// Keep elements such as progress bar, but use no coloring
+    NoColor,
 }
 
 /// A set of options for hyperfine
@@ -64,14 +67,14 @@ impl Default for HyperfineOptions {
 pub fn get_progress_bar(length: u64, msg: &str, option: &OutputStyleOption) -> ProgressBar {
     let progressbar_style = match *option {
         OutputStyleOption::Basic => ProgressStyle::default_bar(),
-        OutputStyleOption::Full => ProgressStyle::default_spinner()
+        OutputStyleOption::Full | OutputStyleOption::NoColor => ProgressStyle::default_spinner()
             .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
             .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
     };
 
     let progress_bar = match *option {
         OutputStyleOption::Basic => ProgressBar::hidden(),
-        OutputStyleOption::Full => ProgressBar::new(length),
+        OutputStyleOption::Full | OutputStyleOption::NoColor => ProgressBar::new(length),
     };
     progress_bar.set_style(progressbar_style.clone());
     progress_bar.enable_steady_tick(80);
