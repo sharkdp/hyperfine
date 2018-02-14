@@ -158,14 +158,12 @@ fn main() {
         },
     };
 
-    // We default Windows to NoColor if full or auto had been specified.
+    // We default Windows to NoColor if full had been specified.
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
         options.output_style = OutputStyleOption::NoColor;
     }
 
-    if options.output_style == OutputStyleOption::Basic
-        || options.output_style == OutputStyleOption::NoColor
-    {
+    if options.output_style != OutputStyleOption::Full {
         colored::control::set_override(false);
     }
 
