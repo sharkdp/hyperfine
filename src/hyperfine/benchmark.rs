@@ -12,7 +12,6 @@ use hyperfine::timer::{TimerStart, TimerStop};
 use hyperfine::timer::wallclocktimer::WallClockTimer;
 use hyperfine::shell::execute_and_time;
 
-
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TimingResult {
@@ -181,8 +180,9 @@ pub fn run_benchmark(
         time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
 
     // Determine number of benchmark runs
-    let runs_in_min_time =
-        (options.min_time_sec / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real)) as u64;
+    let runs_in_min_time = (options.min_time_sec
+        / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real))
+        as u64;
 
     let count = if runs_in_min_time >= options.min_runs {
         runs_in_min_time
