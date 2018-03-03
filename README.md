@@ -79,8 +79,8 @@ yaourt -S hyperfine
 Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
 and install it via `dpkg`:
 ```
-wget https://github.com/sharkdp/hyperfine/releases/download/v0.4.0/hyperfine_0.4.0_amd64.deb
-sudo dpkg -i hyperfine_0.4.0_amd64.deb
+wget https://github.com/sharkdp/hyperfine/releases/download/v0.5.0/hyperfine_0.5.0_amd64.deb
+sudo dpkg -i hyperfine_0.6.0_amd64.deb
 ```
 
 ### Void Linux
