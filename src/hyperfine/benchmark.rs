@@ -11,6 +11,7 @@ use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use hyperfine::timer::{TimerStart, TimerStop};
 use hyperfine::timer::wallclocktimer::WallClockTimer;
 use hyperfine::shell::execute_and_time;
+use hyperfine::export::{ExportEntry, ExportManager};
 
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]
@@ -136,6 +137,7 @@ pub fn run_benchmark(
     cmd: &str,
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
+    exporter: &mut Option<Box<ExportManager>>,
 ) -> io::Result<()> {
     println!(
         "{}{}: {}",
@@ -264,6 +266,11 @@ pub fn run_benchmark(
 
     // Warnings
     let mut warnings = vec![];
+
+    if let &mut Some(ref mut mgr) = exporter {
+        let entry = ExportEntry::new(cmd.to_string(), t_mean, t_stddev, user_mean, system_mean);
+        mgr.add_result(entry);
+    }
 
     // Check execution time
     if times_real.iter().any(|&t| t < MIN_EXECUTION_TIME) {
