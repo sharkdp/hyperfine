@@ -39,7 +39,7 @@ mod hyperfine;
 
 use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::export::{create_export_manager, ExportEntry, ResultExportType};
+use hyperfine::export::{create_export_manager, ExportEntry, ExportManager, ResultExportType};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -149,8 +149,6 @@ fn main() {
             Arg::with_name("export-json")
                 .long("export-json")
                 .takes_value(true)
-                .multiple(true)
-                .number_of_values(1)
                 .value_name("FILE")
                 .help("Export the timing results to the given file in JSON format."),
         )
@@ -184,11 +182,10 @@ fn main() {
     };
 
     let export_targets = ExportTargetList {
-        json_files: matches.values_of("export-json"),
-        csv_files: matches.values_of("export-csv"),
+        json_file: matches.value_of("export-json"),
+        csv_file: matches.value_of("export-csv"),
     };
-
-    let mut export_manager = create_exporter(export_targets);
+    let export_manager = create_exporter(export_targets);
 
     // We default Windows to NoColor if full had been specified.
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
@@ -217,27 +214,23 @@ fn main() {
 }
 
 struct ExportTargetList<'a> {
-    json_files: Option<clap::Values<'a>>,
-    csv_files: Option<clap::Values<'a>>,
+    json_file: Option<&'a str>,
+    csv_file: Option<&'a str>,
 }
 
-fn create_exporter(targets: ExportTargetList) -> Option<Box<ExportManager>> {
-    if targets.json_files.is_none() && targets.csv_files.is_none() {
+fn create_exporter(targets: ExportTargetList) -> Option<ExportManager> {
+    if targets.json_file.is_none() && targets.csv_file.is_none() {
         return None;
     }
 
     let mut export_manager = create_export_manager();
 
-    if let Some(filenames) = targets.json_files {
-        for file in filenames {
-            export_manager.add_exporter(&ResultExportType::Json(file.to_string()));
-        }
+    if let Some(filename) = targets.json_file {
+        export_manager.add_exporter(&ResultExportType::Json(filename.to_string()));
     }
 
-    if let Some(filenames) = targets.csv_files {
-        for file in filenames {
-            export_manager.add_exporter(&ResultExportType::Csv(file.to_string()));
-        }
+    if let Some(filename) = targets.csv_file {
+        export_manager.add_exporter(&ResultExportType::Csv(filename.to_string()));
     }
     Some(export_manager)
 }
