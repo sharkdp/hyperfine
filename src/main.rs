@@ -12,6 +12,7 @@ extern crate serde;
 
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 extern crate statistical;
 
 cfg_if! {
@@ -148,6 +149,15 @@ fn main() {
                 .value_name("FILE")
                 .help("Export the timing results to the given file in csv format."),
         )
+        .arg(
+            Arg::with_name("export-json")
+                .long("export-json")
+                .takes_value(true)
+                .multiple(true)
+                .number_of_values(1)
+                .value_name("FILE")
+                .help("Export the timing results to the given file in JSON format."),
+        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
         .get_matches();
@@ -177,19 +187,12 @@ fn main() {
         },
     };
 
-    // Initial impl since we're only doing csv files, expand once we have multiple
-    // export types. Simplest probably to do the same for each, but check for
-    // None manager on later additions (JSON, Markdown, etc.)
-    let mut export_manager = match matches.values_of("export-csv") {
-        Some(filenames) => {
-            let mut export_manager = create_export_manager();
-            for filename in filenames {
-                export_manager.add_exporter(&ResultExportType::Csv(filename.to_string()));
-            }
-            Some(export_manager)
-        }
-        None => None,
+    let export_targets = ExportTargetList {
+        json_files: matches.values_of("export-json"),
+        csv_files: matches.values_of("export-csv"),
     };
+
+    let mut export_manager = create_exporter(export_targets);
 
     // We default Windows to NoColor if full had been specified.
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
@@ -214,4 +217,30 @@ fn main() {
     if let Some(exporter) = export_manager {
         exporter.write_results().unwrap();
     }
+}
+
+struct ExportTargetList<'a> {
+    json_files: Option<clap::Values<'a>>,
+    csv_files: Option<clap::Values<'a>>,
+}
+
+fn create_exporter(targets: ExportTargetList) -> Option<Box<ExportManager>> {
+    if targets.json_files.is_none() && targets.csv_files.is_none() {
+        return None;
+    }
+
+    let mut export_manager = create_export_manager();
+
+    if let Some(filenames) = targets.json_files {
+        for file in filenames {
+            export_manager.add_exporter(&ResultExportType::Json(file.to_string()));
+        }
+    }
+
+    if let Some(filenames) = targets.csv_files {
+        for file in filenames {
+            export_manager.add_exporter(&ResultExportType::Csv(file.to_string()));
+        }
+    }
+    Some(export_manager)
 }

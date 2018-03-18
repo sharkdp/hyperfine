@@ -1,6 +1,8 @@
 mod csv;
+mod json;
 
 use self::csv::CsvExporter;
+use self::json::JsonExporter;
 
 use std::io::Result;
 
@@ -38,6 +40,8 @@ impl ExportEntry {
 pub enum ResultExportType {
     /// Export to a csv file with the provided name
     Csv(String),
+    /// Export to a JSON file
+    Json(String),
 }
 
 /// A ResultExporter is responsible for writing all results to the
@@ -78,6 +82,8 @@ impl ExportManager for Exporter {
         match for_type {
             &ResultExportType::Csv(ref file_name) => self.exporters
                 .push(Box::from(CsvExporter::new(file_name.clone()))),
+            &ResultExportType::Json(ref file_name) => self.exporters
+                .push(Box::from(JsonExporter::new(file_name.clone()))),
         };
     }
 
