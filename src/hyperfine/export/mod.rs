@@ -20,17 +20,31 @@ pub struct ExportEntry {
     user: Second,
     /// Time spent in system space
     system: Second,
+    /// Min time measured
+    min: Second,
+    /// Max time measured
+    max: Second,
 }
 
 impl ExportEntry {
     /// Create a new ExportEntry with the given values
-    pub fn new(command: String, mean: f64, stddev: f64, user: f64, system: f64) -> Self {
+    pub fn new(
+        command: String,
+        mean: Second,
+        stddev: Second,
+        user: Second,
+        system: Second,
+        min: Second,
+        max: Second,
+    ) -> Self {
         ExportEntry {
             command,
             mean,
             stddev,
             user,
             system,
+            min,
+            max,
         }
     }
 }
