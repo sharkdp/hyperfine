@@ -74,18 +74,13 @@ impl ExportManager {
 
     pub fn write_results(&self, to_write: Vec<ExportEntry>) -> Result<()> {
         for exp in &self.exporters {
-            match exp {
-                &ResultExportType::Csv(ref file) => {
-                    let exp = CsvExporter::new();
-                    let contents = exp.write(&to_write)?;
-                    write_to_file(file, contents)?;
-                }
-                &ResultExportType::Json(ref file) => {
-                    let exp = JsonExporter::new();
-                    let contents = exp.write(&to_write)?;
-                    write_to_file(file, contents)?;
-                }
-            }
+            let (exporter, filename): (Box<ResultExporter>, &str) = match exp {
+                &ResultExportType::Csv(ref file) => (Box::from(CsvExporter::new()), file),
+                &ResultExportType::Json(ref file) => (Box::from(JsonExporter::new()), file),
+            };
+
+            let file_content = exporter.write(&to_write)?;
+            write_to_file(filename, file_content)?;
         }
         Ok(())
     }
