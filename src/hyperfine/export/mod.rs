@@ -56,7 +56,7 @@ trait ResultExporter {
 }
 
 /// Create a new ExportManager
-pub fn create_export_manager<'a>() -> ExportManager {
+pub fn create_export_manager() -> ExportManager {
     ExportManager {
         exporters: Vec::new(),
     }
@@ -68,7 +68,7 @@ pub struct ExportManager {
 }
 
 impl ExportManager {
-    pub fn add_exporter<'a>(&mut self, for_type: ResultExportType) {
+    pub fn add_exporter(&mut self, for_type: ResultExportType) {
         self.exporters.push(for_type);
     }
 
