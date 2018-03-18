@@ -143,6 +143,8 @@ fn main() {
             Arg::with_name("export-csv")
                 .long("export-csv")
                 .takes_value(true)
+                .multiple(true)
+                .number_of_values(1)
                 .value_name("FILE")
                 .help("Export the timing results to the given file in csv format."),
         )
@@ -178,10 +180,12 @@ fn main() {
     // Initial impl since we're only doing csv files, expand once we have multiple
     // export types. Simplest probably to do the same for each, but check for
     // None manager on later additions (JSON, Markdown, etc.)
-    let mut export_manager = match matches.value_of("export-csv") {
-        Some(filename) => {
+    let mut export_manager = match matches.values_of("export-csv") {
+        Some(filenames) => {
             let mut export_manager = create_export_manager();
-            export_manager.add_exporter(&ResultExportType::Csv(filename.to_string()));
+            for filename in filenames {
+                export_manager.add_exporter(&ResultExportType::Csv(filename.to_string()));
+            }
             Some(export_manager)
         }
         None => None,
