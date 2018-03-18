@@ -300,5 +300,7 @@ pub fn run_benchmark(
         t_stddev,
         user_mean,
         system_mean,
+        t_min,
+        t_max,
     ))
 }
