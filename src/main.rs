@@ -39,7 +39,7 @@ mod hyperfine;
 
 use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::export::{create_export_manager, ExportManager, ResultExportType};
+use hyperfine::export::{create_export_manager, ExportEntry, ResultExportType};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -48,19 +48,17 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(
-    commands: &Vec<&str>,
-    options: &HyperfineOptions,
-    exporter: &mut Option<Box<ExportManager>>,
-) -> io::Result<()> {
+fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<ExportEntry>> {
     let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
+
+    let mut timing_results = vec![];
 
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
-        run_benchmark(num, cmd, shell_spawning_time, options, exporter)?;
+        timing_results.push(run_benchmark(num, cmd, shell_spawning_time, options)?);
     }
 
-    Ok(())
+    Ok(timing_results)
 }
 
 fn main() {
@@ -144,8 +142,6 @@ fn main() {
             Arg::with_name("export-csv")
                 .long("export-csv")
                 .takes_value(true)
-                .multiple(true)
-                .number_of_values(1)
                 .value_name("FILE")
                 .help("Export the timing results to the given file in csv format."),
         )
@@ -208,14 +204,15 @@ fn main() {
     }
 
     let commands = matches.values_of("command").unwrap().collect();
-    let res = run(&commands, &options, &mut export_manager);
+    let res = run(&commands, &options);
 
-    if let Err(e) = res {
-        error(e.description());
-    }
-
-    if let Some(exporter) = export_manager {
-        exporter.write_results().unwrap();
+    match res {
+        Ok(timing_results) => {
+            if let Some(mut exporter) = export_manager {
+                exporter.write_results(timing_results).unwrap();
+            }
+        }
+        Err(e) => error(e.description()),
     }
 }
 

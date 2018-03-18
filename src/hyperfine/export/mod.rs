@@ -6,6 +6,8 @@ use self::json::JsonExporter;
 
 use std::io::Result;
 
+use hyperfine::internal::Second;
+
 /// The ExportEntry is the main set of values that will
 /// be exported to files when requested.
 #[derive(Debug, Default, Clone, Serialize)]
@@ -13,13 +15,13 @@ pub struct ExportEntry {
     /// The command that was run
     command: String,
     /// The mean run time
-    mean: f64,
+    mean: Second,
     /// The standard deviation of all run times
-    stddev: f64,
+    stddev: Second,
     /// Time spend in user space
-    user: f64,
+    user: Second,
     /// Time spent in system space
-    system: f64,
+    system: Second,
 }
 
 impl ExportEntry {
@@ -51,34 +53,20 @@ trait ResultExporter {
     fn write(&self, values: &Vec<ExportEntry>) -> Result<()>;
 }
 
-/// The ExportManager handles coordination of multiple ResultExporters
-pub trait ExportManager {
-    /// Add a new exporter to this manager for the given type
-    fn add_exporter(&mut self, for_type: &ResultExportType);
-
-    /// Add a new result to all exporters contained in the manager
-    fn add_result(&mut self, result: ExportEntry);
-
-    /// Trigger writes from all exporters
-    fn write_results(&self) -> Result<()>;
-}
-
 /// Create a new ExportManager
-pub fn create_export_manager() -> Box<ExportManager> {
-    Box::new(Exporter {
+pub fn create_export_manager() -> ExportManager {
+    ExportManager {
         exporters: Vec::new(),
-        results: Vec::new(),
-    })
+    }
 }
 
 /// The Exporter is the internal implementation of the ExportManager
-struct Exporter {
+pub struct ExportManager {
     exporters: Vec<Box<ResultExporter>>,
-    results: Vec<ExportEntry>,
 }
 
-impl ExportManager for Exporter {
-    fn add_exporter(&mut self, for_type: &ResultExportType) {
+impl ExportManager {
+    pub fn add_exporter(&mut self, for_type: &ResultExportType) {
         match for_type {
             &ResultExportType::Csv(ref file_name) => self.exporters
                 .push(Box::from(CsvExporter::new(file_name.clone()))),
@@ -87,13 +75,9 @@ impl ExportManager for Exporter {
         };
     }
 
-    fn add_result(&mut self, result: ExportEntry) {
-        self.results.push(result);
-    }
-
-    fn write_results(&self) -> Result<()> {
+    pub fn write_results(&self, to_write: Vec<ExportEntry>) -> Result<()> {
         for exp in &self.exporters {
-            exp.write(&self.results)?;
+            exp.write(&to_write)?;
         }
         Ok(())
     }
