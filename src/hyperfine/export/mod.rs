@@ -42,11 +42,9 @@ pub enum ResultExportType {
 
 /// A ResultExporter is responsible for writing all results to the
 /// appropriate file
-pub trait ResultExporter {
-    /// Add an additional entry to the exporter for writing
-    fn add_entry(&mut self, entry: ExportEntry);
+trait ResultExporter {
     /// Write all entries to the target destination
-    fn write(&self) -> Result<()>;
+    fn write(&self, values: &Vec<ExportEntry>) -> Result<()>;
 }
 
 /// The ExportManager handles coordination of multiple ResultExporters
@@ -65,12 +63,14 @@ pub trait ExportManager {
 pub fn create_export_manager() -> Box<ExportManager> {
     Box::new(Exporter {
         exporters: Vec::new(),
+        results: Vec::new(),
     })
 }
 
 /// The Exporter is the internal implementation of the ExportManager
 struct Exporter {
     exporters: Vec<Box<ResultExporter>>,
+    results: Vec<ExportEntry>,
 }
 
 impl ExportManager for Exporter {
@@ -82,14 +82,12 @@ impl ExportManager for Exporter {
     }
 
     fn add_result(&mut self, result: ExportEntry) {
-        for exp in self.exporters.iter_mut() {
-            exp.add_entry(result.clone());
-        }
+        self.results.push(result);
     }
 
     fn write_results(&self) -> Result<()> {
         for exp in &self.exporters {
-            exp.write()?;
+            exp.write(&self.results)?;
         }
         Ok(())
     }
