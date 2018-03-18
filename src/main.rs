@@ -6,7 +6,13 @@ extern crate cfg_if;
 #[macro_use]
 extern crate clap;
 extern crate colored;
+extern crate csv;
 extern crate indicatif;
+extern crate serde;
+
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 extern crate statistical;
 
 cfg_if! {
@@ -33,6 +39,7 @@ mod hyperfine;
 
 use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
+use hyperfine::export::{create_export_manager, ExportEntry, ExportManager, ResultExportType};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -41,15 +48,17 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<()> {
+fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<ExportEntry>> {
     let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
+
+    let mut timing_results = vec![];
 
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
-        run_benchmark(num, cmd, shell_spawning_time, options)?;
+        timing_results.push(run_benchmark(num, cmd, shell_spawning_time, options)?);
     }
 
-    Ok(())
+    Ok(timing_results)
 }
 
 fn main() {
@@ -129,6 +138,20 @@ fn main() {
                 .short("i")
                 .help("Ignore non-zero exit codes."),
         )
+        .arg(
+            Arg::with_name("export-csv")
+                .long("export-csv")
+                .takes_value(true)
+                .value_name("FILE")
+                .help("Export the timing results to the given file in csv format."),
+        )
+        .arg(
+            Arg::with_name("export-json")
+                .long("export-json")
+                .takes_value(true)
+                .value_name("FILE")
+                .help("Export the timing results to the given file in JSON format."),
+        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
         .get_matches();
@@ -158,6 +181,12 @@ fn main() {
         },
     };
 
+    let export_targets = ExportTargetList {
+        json_file: matches.value_of("export-json"),
+        csv_file: matches.value_of("export-csv"),
+    };
+    let export_manager = create_exporter(export_targets);
+
     // We default Windows to NoColor if full had been specified.
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
         options.output_style = OutputStyleOption::NoColor;
@@ -174,7 +203,34 @@ fn main() {
     let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);
 
-    if let Err(e) = res {
-        error(e.description());
+    match res {
+        Ok(timing_results) => {
+            if let Some(mut exporter) = export_manager {
+                exporter.write_results(timing_results).unwrap();
+            }
+        }
+        Err(e) => error(e.description()),
     }
+}
+
+struct ExportTargetList<'a> {
+    json_file: Option<&'a str>,
+    csv_file: Option<&'a str>,
+}
+
+fn create_exporter(targets: ExportTargetList) -> Option<ExportManager> {
+    if targets.json_file.is_none() && targets.csv_file.is_none() {
+        return None;
+    }
+
+    let mut export_manager = create_export_manager();
+
+    if let Some(filename) = targets.json_file {
+        export_manager.add_exporter(ResultExportType::Json(filename.to_string()));
+    }
+
+    if let Some(filename) = targets.csv_file {
+        export_manager.add_exporter(ResultExportType::Csv(filename.to_string()));
+    }
+    Some(export_manager)
 }
