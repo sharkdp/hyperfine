@@ -226,11 +226,11 @@ fn create_exporter(targets: ExportTargetList) -> Option<ExportManager> {
     let mut export_manager = create_export_manager();
 
     if let Some(filename) = targets.json_file {
-        export_manager.add_exporter(&ResultExportType::Json(filename.to_string()));
+        export_manager.add_exporter(ResultExportType::Json(filename.to_string()));
     }
 
     if let Some(filename) = targets.csv_file {
-        export_manager.add_exporter(&ResultExportType::Csv(filename.to_string()));
+        export_manager.add_exporter(ResultExportType::Csv(filename.to_string()));
     }
     Some(export_manager)
 }
