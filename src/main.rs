@@ -12,6 +12,7 @@ extern crate serde;
 
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 extern crate statistical;
 
 cfg_if! {
@@ -38,7 +39,7 @@ mod hyperfine;
 
 use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::export::{create_export_manager, ExportEntry, ResultExportType};
+use hyperfine::export::{create_export_manager, ExportEntry, ExportManager, ResultExportType};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -144,6 +145,13 @@ fn main() {
                 .value_name("FILE")
                 .help("Export the timing results to the given file in csv format."),
         )
+        .arg(
+            Arg::with_name("export-json")
+                .long("export-json")
+                .takes_value(true)
+                .value_name("FILE")
+                .help("Export the timing results to the given file in JSON format."),
+        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
         .get_matches();
@@ -173,17 +181,11 @@ fn main() {
         },
     };
 
-    // Initial impl since we're only doing csv files, expand once we have multiple
-    // export types. Simplest probably to do the same for each, but check for
-    // None manager on later additions (JSON, Markdown, etc.)
-    let export_manager = match matches.value_of("export-csv") {
-        Some(filename) => {
-            let mut export_manager = create_export_manager();
-            export_manager.add_exporter(&ResultExportType::Csv(filename.to_string()));
-            Some(export_manager)
-        }
-        None => None,
+    let export_targets = ExportTargetList {
+        json_file: matches.value_of("export-json"),
+        csv_file: matches.value_of("export-csv"),
     };
+    let export_manager = create_exporter(export_targets);
 
     // We default Windows to NoColor if full had been specified.
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
@@ -209,4 +211,26 @@ fn main() {
         }
         Err(e) => error(e.description()),
     }
+}
+
+struct ExportTargetList<'a> {
+    json_file: Option<&'a str>,
+    csv_file: Option<&'a str>,
+}
+
+fn create_exporter(targets: ExportTargetList) -> Option<ExportManager> {
+    if targets.json_file.is_none() && targets.csv_file.is_none() {
+        return None;
+    }
+
+    let mut export_manager = create_export_manager();
+
+    if let Some(filename) = targets.json_file {
+        export_manager.add_exporter(ResultExportType::Json(filename.to_string()));
+    }
+
+    if let Some(filename) = targets.csv_file {
+        export_manager.add_exporter(ResultExportType::Csv(filename.to_string()));
+    }
+    Some(export_manager)
 }
