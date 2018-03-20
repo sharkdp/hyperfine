@@ -36,7 +36,8 @@ pub struct ExportEntry {
     max: Second,
 
     /// All run time measurements
-    times: Vec<Second>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    times: Option<Vec<Second>>,
 }
 
 impl ExportEntry {
@@ -59,7 +60,7 @@ impl ExportEntry {
             system,
             min,
             max,
-            times,
+            times: Some(times),
         }
     }
 }
