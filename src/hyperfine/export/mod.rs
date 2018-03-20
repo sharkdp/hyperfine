@@ -34,6 +34,9 @@ pub struct ExportEntry {
 
     /// Max time measured
     max: Second,
+
+    /// All run time measurements
+    times: Vec<Second>,
 }
 
 impl ExportEntry {
@@ -46,6 +49,7 @@ impl ExportEntry {
         system: Second,
         min: Second,
         max: Second,
+        times: Vec<Second>,
     ) -> Self {
         ExportEntry {
             command,
@@ -55,6 +59,7 @@ impl ExportEntry {
             system,
             min,
             max,
+            times,
         }
     }
 }

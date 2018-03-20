@@ -302,5 +302,6 @@ pub fn run_benchmark(
         system_mean,
         t_min,
         t_max,
+        times_real,
     ))
 }
