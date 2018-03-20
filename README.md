@@ -18,6 +18,7 @@ A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabrie
 * Warmup runs can be executed before the actual benchmark.
 * Cache-clearing commands can be set up before each timing run.
 * Statistical outlier detection.
+* Export results to various formats.
 * Cross-platform
 
 ## Usage
