@@ -207,7 +207,13 @@ fn main() {
 
     match res {
         Ok(timing_results) => {
-            export_manager.write_results(timing_results).unwrap();
+            let ans = export_manager.write_results(timing_results);
+            if let Err(e) = ans {
+                error(&format!(
+                    "The following error occured while exporting: {}",
+                    e.description()
+                ));
+            }
         }
         Err(e) => error(e.description()),
     }
