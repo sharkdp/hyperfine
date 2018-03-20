@@ -143,14 +143,14 @@ fn main() {
                 .long("export-csv")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing results to the given file in csv format."),
+                .help("Export the timing results as CSV to the given FILE."),
         )
         .arg(
             Arg::with_name("export-json")
                 .long("export-json")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing results to the given file in JSON format."),
+                .help("Export the timing results as JSON to the given FILE."),
         )
         .help_message("Print this help message.")
         .version_message("Show version information.")
