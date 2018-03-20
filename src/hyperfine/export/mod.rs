@@ -70,7 +70,7 @@ pub enum ExportType {
 /// Interface for different exporters.
 trait Exporter {
     /// Export the given entries in the serialized form.
-    fn serialize(&self, values: &Vec<ExportEntry>) -> Result<Vec<u8>>;
+    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<String>;
 }
 
 /// Handles the management of multiple file exporters.
@@ -107,8 +107,8 @@ impl ExportManager {
 }
 
 /// Write the given content to a file with the specified name
-fn write_to_file(filename: &str, content: Vec<u8>) -> Result<()> {
+fn write_to_file(filename: &str, content: String) -> Result<()> {
     let mut file = File::create(filename)?;
-    file.write_all(&content)?;
+    file.write_all(content.as_bytes())?;
     Ok(())
 }

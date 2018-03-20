@@ -2,7 +2,7 @@ use super::{ExportEntry, Exporter};
 
 use std::io::{Error, ErrorKind, Result};
 
-use serde_json::to_vec_pretty;
+use serde_json::to_string_pretty;
 
 #[derive(Serialize, Debug)]
 struct HyperfineSummary<'a> {
@@ -12,13 +12,15 @@ struct HyperfineSummary<'a> {
 pub struct JsonExporter {}
 
 impl Exporter for JsonExporter {
-    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>> {
-        let serialized = to_vec_pretty(&HyperfineSummary { results });
+    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<String> {
+        let serialized = to_string_pretty(&HyperfineSummary { results });
 
-        match serialized {
-            Ok(file_content) => Ok(file_content),
-            Err(e) => Err(Error::new(ErrorKind::Other, format!("{:?}", e))),
-        }
+        serialized.map_err(|e| {
+            Error::new(
+                ErrorKind::Other,
+                format!("Error while serializing to JSON: {:}", e),
+            )
+        })
     }
 }
 
