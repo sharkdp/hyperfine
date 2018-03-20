@@ -1,8 +1,10 @@
 mod csv;
 mod json;
+mod markdown;
 
 use self::csv::CsvExporter;
 use self::json::JsonExporter;
+use self::markdown::MarkdownExporter;
 
 use std::io::{Result, Write};
 use std::fs::File;
@@ -65,12 +67,15 @@ pub enum ExportType {
 
     /// JSON format
     Json,
+
+    /// Markdown table
+    Markdown,
 }
 
 /// Interface for different exporters.
 trait Exporter {
     /// Export the given entries in the serialized form.
-    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<String>;
+    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>>;
 }
 
 struct ExporterWithFilename {
@@ -94,8 +99,9 @@ impl ExportManager {
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) {
         let exporter: Box<Exporter> = match export_type {
-            ExportType::Csv => Box::new(CsvExporter::new()),
-            ExportType::Json => Box::new(JsonExporter::new()),
+            ExportType::Csv => Box::new(CsvExporter::default()),
+            ExportType::Json => Box::new(JsonExporter::default()),
+            ExportType::Markdown => Box::new(MarkdownExporter::default()),
         };
         self.exporters.push(ExporterWithFilename {
             exporter,
@@ -107,14 +113,14 @@ impl ExportManager {
     pub fn write_results(&self, results: Vec<ExportEntry>) -> Result<()> {
         for e in &self.exporters {
             let file_content = e.exporter.serialize(&results)?;
-            write_to_file(&e.filename, file_content)?;
+            write_to_file(&e.filename, &file_content)?;
         }
         Ok(())
     }
 }
 
 /// Write the given content to a file with the specified name
-fn write_to_file(filename: &String, content: String) -> Result<()> {
+fn write_to_file(filename: &String, content: &Vec<u8>) -> Result<()> {
     let mut file = File::create(filename)?;
-    file.write_all(content.as_bytes())
+    file.write_all(content)
 }
