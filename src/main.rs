@@ -153,11 +153,11 @@ fn main() {
                 .help("Export the timing results to the given file in JSON format."),
         )
         .arg(
-            Arg::with_name("export-md")
-                .long("export-md")
+            Arg::with_name("export-markdown")
+                .long("export-markdown")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing results to a markdown table in the given file"),
+                .help("Export the timing results as a Markdown table to the given FILE."),
         )
         .help_message("Print this help message.")
         .version_message("Show version information.")
@@ -195,7 +195,7 @@ fn main() {
     if let Some(filename) = matches.value_of("export-csv") {
         export_manager.add_exporter(ExportType::Csv, filename);
     }
-    if let Some(filename) = matches.value_of("export-md") {
+    if let Some(filename) = matches.value_of("export-markdown") {
         export_manager.add_exporter(ExportType::Markdown, filename);
     }
 
