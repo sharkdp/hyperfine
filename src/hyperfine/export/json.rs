@@ -1,4 +1,4 @@
-use super::{ExportEntry, ResultExporter};
+use super::{ExportEntry, Exporter};
 
 use std::io::{Error, ErrorKind, Result};
 
@@ -11,8 +11,8 @@ struct HyperfineSummary<'a> {
 
 pub struct JsonExporter {}
 
-impl ResultExporter for JsonExporter {
-    fn write(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>> {
+impl Exporter for JsonExporter {
+    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>> {
         let serialized = to_vec_pretty(&HyperfineSummary { results });
 
         match serialized {

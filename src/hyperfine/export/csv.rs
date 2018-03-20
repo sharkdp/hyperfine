@@ -1,12 +1,12 @@
-use super::{ExportEntry, ResultExporter};
+use super::{ExportEntry, Exporter};
 
 use csv::WriterBuilder;
 use std::io::{Error, ErrorKind, Result};
 
 pub struct CsvExporter {}
 
-impl ResultExporter for CsvExporter {
-    fn write(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>> {
+impl Exporter for CsvExporter {
+    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>> {
         let mut writer = WriterBuilder::new().from_writer(vec![]);
         for res in results {
             writer.serialize(res)?;
