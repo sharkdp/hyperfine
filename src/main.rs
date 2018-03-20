@@ -181,11 +181,13 @@ fn main() {
         },
     };
 
-    let export_targets = ExportTargetList {
-        json_file: matches.value_of("export-json"),
-        csv_file: matches.value_of("export-csv"),
-    };
-    let export_manager = create_exporter(export_targets);
+    let mut export_manager = ExportManager::new();
+    if let Some(filename) = matches.value_of("export-json") {
+        export_manager.add_exporter(ExportType::Json, filename);
+    }
+    if let Some(filename) = matches.value_of("export-csv") {
+        export_manager.add_exporter(ExportType::Csv, filename);
+    }
 
     // We default Windows to NoColor if full had been specified.
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
@@ -205,32 +207,8 @@ fn main() {
 
     match res {
         Ok(timing_results) => {
-            if let Some(mut exporter) = export_manager {
-                exporter.write_results(timing_results).unwrap();
-            }
+            export_manager.write_results(timing_results).unwrap();
         }
         Err(e) => error(e.description()),
     }
-}
-
-struct ExportTargetList<'a> {
-    json_file: Option<&'a str>,
-    csv_file: Option<&'a str>,
-}
-
-fn create_exporter(targets: ExportTargetList) -> Option<ExportManager> {
-    if targets.json_file.is_none() && targets.csv_file.is_none() {
-        return None;
-    }
-
-    let mut export_manager = ExportManager::new();
-
-    if let Some(filename) = targets.json_file {
-        export_manager.add_exporter(ExportType::Json(filename.to_string()));
-    }
-
-    if let Some(filename) = targets.csv_file {
-        export_manager.add_exporter(ExportType::Csv(filename.to_string()));
-    }
-    Some(export_manager)
 }
