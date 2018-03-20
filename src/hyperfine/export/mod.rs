@@ -61,10 +61,10 @@ impl ExportEntry {
 #[derive(Clone)]
 pub enum ExportType {
     /// CSV (comma separated values) format
-    Csv(String),
+    Csv,
 
     /// JSON format
-    Json(String),
+    Json,
 }
 
 /// Interface for different exporters.
@@ -73,9 +73,14 @@ trait Exporter {
     fn serialize(&self, results: &Vec<ExportEntry>) -> Result<String>;
 }
 
+struct ExporterWithFilename {
+    exporter: Box<Exporter>,
+    filename: String,
+}
+
 /// Handles the management of multiple file exporters.
 pub struct ExportManager {
-    exporters: Vec<ExportType>,
+    exporters: Vec<ExporterWithFilename>,
 }
 
 impl ExportManager {
@@ -87,28 +92,29 @@ impl ExportManager {
     }
 
     /// Add an additional exporter to the ExportManager
-    pub fn add_exporter(&mut self, for_type: ExportType) {
-        self.exporters.push(for_type);
+    pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) {
+        let exporter: Box<Exporter> = match export_type {
+            ExportType::Csv => Box::new(CsvExporter::new()),
+            ExportType::Json => Box::new(JsonExporter::new()),
+        };
+        self.exporters.push(ExporterWithFilename {
+            exporter,
+            filename: filename.to_string(),
+        });
     }
 
     /// Write the given results to all Exporters contained within this manager
-    pub fn write_results(&self, to_write: Vec<ExportEntry>) -> Result<()> {
-        for exp in &self.exporters {
-            let (exporter, filename): (Box<Exporter>, &str) = match exp {
-                &ExportType::Csv(ref file) => (Box::from(CsvExporter::new()), file),
-                &ExportType::Json(ref file) => (Box::from(JsonExporter::new()), file),
-            };
-
-            let file_content = exporter.serialize(&to_write)?;
-            write_to_file(filename, file_content)?;
+    pub fn write_results(&self, results: Vec<ExportEntry>) -> Result<()> {
+        for e in &self.exporters {
+            let file_content = e.exporter.serialize(&results)?;
+            write_to_file(&e.filename, file_content)?;
         }
         Ok(())
     }
 }
 
 /// Write the given content to a file with the specified name
-fn write_to_file(filename: &str, content: String) -> Result<()> {
+fn write_to_file(filename: &String, content: String) -> Result<()> {
     let mut file = File::create(filename)?;
-    file.write_all(content.as_bytes())?;
-    Ok(())
+    file.write_all(content.as_bytes())
 }
