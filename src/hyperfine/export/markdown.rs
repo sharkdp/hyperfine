@@ -27,7 +27,7 @@ fn start_table() -> Vec<u8> {
 fn add_table_row(dest: &mut Vec<u8>, entry: &ExportEntry) {
     dest.extend(
         format!(
-            "| {} | {:.1} ± {:.1} | {:.1} | {:.1} |\n",
+            "| `{}` | {:.1} ± {:.1} | {:.1} | {:.1} |\n",
             entry.command.replace("|", "\\|"),
             entry.mean * MULTIPLIER,
             entry.stddev * MULTIPLIER,
