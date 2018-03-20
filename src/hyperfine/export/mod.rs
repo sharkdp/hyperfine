@@ -73,20 +73,19 @@ trait Exporter {
     fn serialize(&self, values: &Vec<ExportEntry>) -> Result<Vec<u8>>;
 }
 
-/// Create a new ExportManager
-pub fn create_export_manager() -> ExportManager {
-    ExportManager {
-        exporters: Vec::new(),
-    }
-}
-
-/// The ExportManager handles the management of multiple file
-/// exporters.
+/// Handles the management of multiple file exporters.
 pub struct ExportManager {
     exporters: Vec<ExportType>,
 }
 
 impl ExportManager {
+    /// Create a new ExportManager
+    pub fn new() -> ExportManager {
+        ExportManager {
+            exporters: Vec::new(),
+        }
+    }
+
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, for_type: ExportType) {
         self.exporters.push(for_type);

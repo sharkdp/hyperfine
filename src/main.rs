@@ -39,7 +39,7 @@ mod hyperfine;
 
 use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::export::{create_export_manager, ExportEntry, ExportManager, ExportType};
+use hyperfine::export::{ExportEntry, ExportManager, ExportType};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -223,7 +223,7 @@ fn create_exporter(targets: ExportTargetList) -> Option<ExportManager> {
         return None;
     }
 
-    let mut export_manager = create_export_manager();
+    let mut export_manager = ExportManager::new();
 
     if let Some(filename) = targets.json_file {
         export_manager.add_exporter(ExportType::Json(filename.to_string()));
