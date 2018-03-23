@@ -1,4 +1,4 @@
-use hyperfine::internal::Second;
+use hyperfine::types::Second;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Unit {

@@ -37,9 +37,10 @@ use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
 
-use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use hyperfine::internal::write_benchmark_comparison;
+use hyperfine::types::{BenchmarkResult, CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::export::{ExportEntry, ExportManager, ExportType};
+use hyperfine::export::{ExportManager, ExportType};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -48,7 +49,7 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<ExportEntry>> {
+fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
 
     let mut timing_results = vec![];
@@ -217,6 +218,7 @@ fn main() {
 
     match res {
         Ok(timing_results) => {
+            write_benchmark_comparison(&timing_results);
             let ans = export_manager.write_results(timing_results);
             if let Err(e) = ans {
                 error(&format!(
