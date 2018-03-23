@@ -37,7 +37,8 @@ use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
 
-use hyperfine::internal::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use hyperfine::internal::{write_benchmark_comparison, CmdFailureAction, HyperfineOptions,
+                          OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 use hyperfine::export::{ExportEntry, ExportManager, ExportType};
 
@@ -231,48 +232,7 @@ fn main() {
     match res {
         Ok(timing_results) => {
             if compare_runs {
-                // Show which was faster, maybe expand to table later?
-                let mut fastest_item: Option<&ExportEntry> = None;
-                let mut longer_items: Vec<&ExportEntry> = Vec::new();
-                let mut equal_items: Vec<&ExportEntry> = Vec::new();
-
-                for run in &timing_results {
-                    if fastest_item.is_none() {
-                        fastest_item = Some(run);
-                        continue;
-                    }
-
-                    match fastest_item.unwrap().mean.partial_cmp(&run.mean).unwrap() {
-                        cmp::Ordering::Less => longer_items.push(run),
-                        cmp::Ordering::Greater => {
-                            longer_items.push(fastest_item.unwrap());
-                            fastest_item = Some(run);
-                            longer_items.append(&mut equal_items);
-                        }
-                        cmp::Ordering::Equal => equal_items.push(run),
-                    }
-                }
-
-                let fastest = fastest_item.unwrap();
-                let command_text = &fastest.command;
-                let command_time = fastest.mean;
-
-                for item in longer_items {
-                    println!(
-                        "'{}' is {:.2}x faster than '{}'",
-                        command_text.green(),
-                        item.mean / command_time,
-                        &item.command.red()
-                    );
-                }
-
-                for item in equal_items {
-                    println!(
-                        "'{}' had the same run time as '{}'",
-                        command_text.green(),
-                        &item.command.blue()
-                    );
-                }
+                write_benchmark_comparison(&timing_results);
             }
             let ans = export_manager.write_results(timing_results);
             if let Err(e) = ans {

@@ -1,4 +1,10 @@
+use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
+
+use hyperfine::export::ExportEntry;
+
+use std::cmp::Ordering;
+use std::iter::Iterator;
 
 /// Type alias for unit of time
 pub type Second = f64;
@@ -95,6 +101,34 @@ pub fn min(vals: &[f64]) -> f64 {
     *vals.iter()
         .min_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap()
+}
+
+pub fn write_benchmark_comparison(results: &Vec<ExportEntry>) {
+    if results.len() < 2 {
+        return;
+    }
+
+    // Show which was faster, maybe expand to table later?
+    let mut fastest_item: &ExportEntry = &results[0];
+    let mut longer_items: Vec<&ExportEntry> = Vec::new();
+
+    for run in &results[1..] {
+        if let Some(Ordering::Less) = fastest_item.mean.partial_cmp(&run.mean) {
+            longer_items.push(run);
+        } else {
+            longer_items.push(fastest_item);
+            fastest_item = run;
+        }
+    }
+
+    for item in longer_items {
+        println!(
+            "'{}' is {:.2}x faster than '{}'",
+            fastest_item.command.green(),
+            item.mean / fastest_item.mean,
+            &item.command.red()
+        );
+    }
 }
 
 #[test]
