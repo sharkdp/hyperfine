@@ -127,8 +127,8 @@ pub fn write_benchmark_comparison(results: &Vec<ExportEntry>) {
 
     for item in longer_items {
         println!(
-            "  {} faster than '{}'",
-            format!("{:.2}x", item.mean / fastest_item.mean)
+            "{} faster than '{}'",
+            format!("{:8.2}x", item.mean / fastest_item.mean)
                 .bold()
                 .blue(),
             &item.command.red()
