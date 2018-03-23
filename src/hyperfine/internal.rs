@@ -121,11 +121,16 @@ pub fn write_benchmark_comparison(results: &Vec<ExportEntry>) {
         }
     }
 
+    println!("{}\n", "Result Comparison".bold());
+    println!("'{}' ran", fastest_item.command.green());
+    longer_items.sort_by(|l, r| l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal));
+
     for item in longer_items {
         println!(
-            "'{}' is {:.2}x faster than '{}'",
-            fastest_item.command.green(),
-            item.mean / fastest_item.mean,
+            "  {} faster than '{}'",
+            format!("{:.2}x", item.mean / fastest_item.mean)
+                .bold()
+                .blue(),
             &item.command.red()
         );
     }
