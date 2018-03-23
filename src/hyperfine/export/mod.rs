@@ -15,10 +15,10 @@ use hyperfine::internal::Second;
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct ExportEntry {
     /// The command that was run
-    command: String,
+    pub command: String,
 
     /// The mean run time
-    mean: Second,
+    pub mean: Second,
 
     /// The standard deviation of all run times
     stddev: Second,

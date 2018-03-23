@@ -159,9 +159,23 @@ fn main() {
                 .value_name("FILE")
                 .help("Export the timing results as a Markdown table to the given FILE."),
         )
+        .arg(
+            Arg::with_name("compare")
+                .long("compare")
+                .short("c")
+                .takes_value(false)
+                .help("Display a comparison between two or more commands"),
+        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
         .get_matches();
+
+    let compare_runs = matches.is_present("compare");
+    let commands = matches.values_of("command").unwrap().collect::<Vec<&str>>();
+
+    if compare_runs && commands.len() < 2 {
+        error("Compare not applicable with fewer than two commands");
+    }
 
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
@@ -212,11 +226,54 @@ fn main() {
         options.failure_action = CmdFailureAction::Ignore;
     }
 
-    let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);
 
     match res {
         Ok(timing_results) => {
+            if compare_runs {
+                // Show which was faster, maybe expand to table later?
+                let mut fastest_item: Option<&ExportEntry> = None;
+                let mut longer_items: Vec<&ExportEntry> = Vec::new();
+                let mut equal_items: Vec<&ExportEntry> = Vec::new();
+
+                for run in &timing_results {
+                    if fastest_item.is_none() {
+                        fastest_item = Some(run);
+                        continue;
+                    }
+
+                    match fastest_item.unwrap().mean.partial_cmp(&run.mean).unwrap() {
+                        cmp::Ordering::Less => longer_items.push(run),
+                        cmp::Ordering::Greater => {
+                            longer_items.push(fastest_item.unwrap());
+                            fastest_item = Some(run);
+                            longer_items.append(&mut equal_items);
+                        }
+                        cmp::Ordering::Equal => equal_items.push(run),
+                    }
+                }
+
+                let fastest = fastest_item.unwrap();
+                let command_text = &fastest.command;
+                let command_time = fastest.mean;
+
+                for item in longer_items {
+                    println!(
+                        "'{}' is {:.2}x faster than '{}'",
+                        command_text.green(),
+                        item.mean / command_time,
+                        &item.command.red()
+                    );
+                }
+
+                for item in equal_items {
+                    println!(
+                        "'{}' had the same run time as '{}'",
+                        command_text.green(),
+                        &item.command.blue()
+                    );
+                }
+            }
             let ans = export_manager.write_results(timing_results);
             if let Err(e) = ans {
                 error(&format!(
