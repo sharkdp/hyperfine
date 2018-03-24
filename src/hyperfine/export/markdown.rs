@@ -1,4 +1,5 @@
-use super::{ExportEntry, Exporter};
+use super::Exporter;
+use hyperfine::types::BenchmarkResult;
 
 use std::io::Result;
 
@@ -8,7 +9,7 @@ const MULTIPLIER: f64 = 1e3;
 pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
-    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>> {
+    fn serialize(&self, results: &Vec<BenchmarkResult>) -> Result<Vec<u8>> {
         let mut destination = start_table();
 
         for result in results {
@@ -24,7 +25,7 @@ fn start_table() -> Vec<u8> {
         .bytes()
         .collect()
 }
-fn add_table_row(dest: &mut Vec<u8>, entry: &ExportEntry) {
+fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResult) {
     dest.extend(
         format!(
             "| `{}` | {:.1} ± {:.1} | {:.1} | {:.1} |\n",

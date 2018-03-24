@@ -37,10 +37,10 @@ use clap::{App, AppSettings, Arg};
 
 mod hyperfine;
 
-use hyperfine::internal::{write_benchmark_comparison, CmdFailureAction, HyperfineOptions,
-                          OutputStyleOption};
+use hyperfine::internal::write_benchmark_comparison;
+use hyperfine::types::{BenchmarkResult, CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::export::{ExportEntry, ExportManager, ExportType};
+use hyperfine::export::{ExportManager, ExportType};
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -49,7 +49,7 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<ExportEntry>> {
+fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
 
     let mut timing_results = vec![];
@@ -160,23 +160,9 @@ fn main() {
                 .value_name("FILE")
                 .help("Export the timing results as a Markdown table to the given FILE."),
         )
-        .arg(
-            Arg::with_name("compare")
-                .long("compare")
-                .short("c")
-                .takes_value(false)
-                .help("Display a comparison between two or more commands"),
-        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
         .get_matches();
-
-    let compare_runs = matches.is_present("compare");
-    let commands = matches.values_of("command").unwrap().collect::<Vec<&str>>();
-
-    if compare_runs && commands.len() < 2 {
-        error("Compare not applicable with fewer than two commands");
-    }
 
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
@@ -227,13 +213,12 @@ fn main() {
         options.failure_action = CmdFailureAction::Ignore;
     }
 
+    let commands = matches.values_of("command").unwrap().collect();
     let res = run(&commands, &options);
 
     match res {
         Ok(timing_results) => {
-            if compare_runs {
-                write_benchmark_comparison(&timing_results);
-            }
+            write_benchmark_comparison(&timing_results);
             let ans = export_manager.write_results(timing_results);
             if let Err(e) = ans {
                 error(&format!(

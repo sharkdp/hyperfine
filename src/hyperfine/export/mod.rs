@@ -9,61 +9,7 @@ use self::markdown::MarkdownExporter;
 use std::io::{Result, Write};
 use std::fs::File;
 
-use hyperfine::internal::Second;
-
-/// Set of values that will be exported.
-#[derive(Debug, Default, Clone, Serialize)]
-pub struct ExportEntry {
-    /// The command that was run
-    pub command: String,
-
-    /// The mean run time
-    pub mean: Second,
-
-    /// The standard deviation of all run times
-    stddev: Second,
-
-    /// Time spend in user space
-    user: Second,
-
-    /// Time spent in system space
-    system: Second,
-
-    /// Min time measured
-    min: Second,
-
-    /// Max time measured
-    max: Second,
-
-    /// All run time measurements
-    #[serde(skip_serializing_if = "Option::is_none")]
-    times: Option<Vec<Second>>,
-}
-
-impl ExportEntry {
-    /// Create a new entry with the given values.
-    pub fn new(
-        command: String,
-        mean: Second,
-        stddev: Second,
-        user: Second,
-        system: Second,
-        min: Second,
-        max: Second,
-        times: Vec<Second>,
-    ) -> Self {
-        ExportEntry {
-            command,
-            mean,
-            stddev,
-            user,
-            system,
-            min,
-            max,
-            times: Some(times),
-        }
-    }
-}
+use hyperfine::types::BenchmarkResult;
 
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]
@@ -81,7 +27,7 @@ pub enum ExportType {
 /// Interface for different exporters.
 trait Exporter {
     /// Export the given entries in the serialized form.
-    fn serialize(&self, results: &Vec<ExportEntry>) -> Result<Vec<u8>>;
+    fn serialize(&self, results: &Vec<BenchmarkResult>) -> Result<Vec<u8>>;
 }
 
 struct ExporterWithFilename {
@@ -116,7 +62,7 @@ impl ExportManager {
     }
 
     /// Write the given results to all Exporters contained within this manager
-    pub fn write_results(&self, results: Vec<ExportEntry>) -> Result<()> {
+    pub fn write_results(&self, results: Vec<BenchmarkResult>) -> Result<()> {
         for e in &self.exporters {
             let file_content = e.exporter.serialize(&results)?;
             write_to_file(&e.filename, &file_content)?;

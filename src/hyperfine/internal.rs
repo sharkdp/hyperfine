@@ -1,73 +1,13 @@
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use hyperfine::export::ExportEntry;
+use hyperfine::types::{BenchmarkResult, OutputStyleOption, Second};
 
 use std::cmp::Ordering;
 use std::iter::Iterator;
 
-/// Type alias for unit of time
-pub type Second = f64;
-
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;
-
-/// Action to take when an executed command fails.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum CmdFailureAction {
-    /// Exit with an error message
-    RaiseError,
-
-    /// Simply ignore the non-zero exit code
-    Ignore,
-}
-
-/// Output style type option
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum OutputStyleOption {
-    /// Do not output with colors or any special formatting
-    Basic,
-
-    /// Output with full color and formatting
-    Full,
-
-    /// Keep elements such as progress bar, but use no coloring
-    NoColor,
-}
-
-/// A set of options for hyperfine
-pub struct HyperfineOptions {
-    /// Number of warmup runs
-    pub warmup_count: u64,
-
-    /// Minimum number of benchmark runs
-    pub min_runs: u64,
-
-    /// Minimum benchmarking time
-    pub min_time_sec: Second,
-
-    /// Whether or not to ignore non-zero exit codes
-    pub failure_action: CmdFailureAction,
-
-    /// Command to run before each timing run
-    pub preparation_command: Option<String>,
-
-    /// What color mode to use for output
-    pub output_style: OutputStyleOption,
-}
-
-impl Default for HyperfineOptions {
-    fn default() -> HyperfineOptions {
-        HyperfineOptions {
-            warmup_count: 0,
-            min_runs: 10,
-            min_time_sec: 3.0,
-            failure_action: CmdFailureAction::RaiseError,
-            preparation_command: None,
-            output_style: OutputStyleOption::Full,
-        }
-    }
-}
 
 /// Return a pre-configured progress bar
 pub fn get_progress_bar(length: u64, msg: &str, option: &OutputStyleOption) -> ProgressBar {
@@ -103,14 +43,14 @@ pub fn min(vals: &[f64]) -> f64 {
         .unwrap()
 }
 
-pub fn write_benchmark_comparison(results: &Vec<ExportEntry>) {
+pub fn write_benchmark_comparison(results: &Vec<BenchmarkResult>) {
     if results.len() < 2 {
         return;
     }
 
     // Show which was faster, maybe expand to table later?
-    let mut fastest_item: &ExportEntry = &results[0];
-    let mut longer_items: Vec<&ExportEntry> = Vec::new();
+    let mut fastest_item: &BenchmarkResult = &results[0];
+    let mut longer_items: Vec<&BenchmarkResult> = Vec::new();
 
     for run in &results[1..] {
         if let Some(Ordering::Less) = fastest_item.mean.partial_cmp(&run.mean) {
@@ -122,7 +62,7 @@ pub fn write_benchmark_comparison(results: &Vec<ExportEntry>) {
     }
 
     println!("{}\n", "Result Comparison".bold());
-    println!("'{}' ran", fastest_item.command.green());
+    println!("'{}' ran", fastest_item.command.cyan());
     longer_items.sort_by(|l, r| l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal));
 
     for item in longer_items {
@@ -130,8 +70,8 @@ pub fn write_benchmark_comparison(results: &Vec<ExportEntry>) {
             "{} faster than '{}'",
             format!("{:8.2}x", item.mean / fastest_item.mean)
                 .bold()
-                .blue(),
-            &item.command.red()
+                .green(),
+            &item.command.magenta()
         );
     }
 }
