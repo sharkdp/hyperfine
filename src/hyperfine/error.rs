@@ -3,35 +3,35 @@ use std::error::Error;
 use std::fmt;
 
 #[derive(Debug)]
-pub enum ParameterRangeError {
+pub enum ParameterScanError {
     ParseIntError(num::ParseIntError),
     EmptyRange,
     TooLarge,
 }
 
-impl ParameterRangeError {
+impl ParameterScanError {
     fn __description(&self) -> &str {
         match *self {
-            ParameterRangeError::ParseIntError(ref e) => e.description(),
-            ParameterRangeError::EmptyRange => "Empty parameter range",
-            ParameterRangeError::TooLarge => "Parameter range is too large",
+            ParameterScanError::ParseIntError(ref e) => e.description(),
+            ParameterScanError::EmptyRange => "Empty parameter range",
+            ParameterScanError::TooLarge => "Parameter range is too large",
         }
     }
 }
 
-impl From<num::ParseIntError> for ParameterRangeError {
-    fn from(e: num::ParseIntError) -> ParameterRangeError {
-        ParameterRangeError::ParseIntError(e)
+impl From<num::ParseIntError> for ParameterScanError {
+    fn from(e: num::ParseIntError) -> ParameterScanError {
+        ParameterScanError::ParseIntError(e)
     }
 }
 
-impl fmt::Display for ParameterRangeError {
+impl fmt::Display for ParameterScanError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.__description())
     }
 }
 
-impl Error for ParameterRangeError {
+impl Error for ParameterScanError {
     fn description(&self) -> &str {
         self.__description()
     }
