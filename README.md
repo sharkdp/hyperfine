@@ -18,7 +18,8 @@ A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabrie
 * Warmup runs can be executed before the actual benchmark.
 * Cache-clearing commands can be set up before each timing run.
 * Statistical outlier detection.
-* Export results to various formats (CSV, JSON, Markdown).
+* Export results to various formats: CSV, JSON, Markdown.
+* Parameterized benchmarks.
 * Cross-platform
 
 ## Usage
@@ -60,6 +61,27 @@ and then call:
 ``` bash
 hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
 ```
+
+### Parameterized benchmarks
+
+If you want to run a benchmark where only a single parameter is varied (say, the number of
+threads), you can use the `-P`/`--parameter-scan` option and call:
+``` bash
+hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num_threads}'
+```
+
+### Export results
+
+Hyperfine has multiple options for exporting benchmark results: CSV, JSON, Markdown (see `--help`
+text for details). To export results to Markdown, for example, you can use the `--export-markdown`
+option that will create tables like this:
+
+| Benchmark | Mean [ms] | Min. [ms] | Max. [ms] |
+|----|----|----|----|
+| `find ~ -iregex '.*[0-9]\.jpg$'` | 6911.0 ± 44.2 | 6837.5 | 6968.2 |
+| `find ~ -iname '*[0-9].jpg'` | 3747.7 ± 29.1 | 3711.5 | 3801.5 |
+| `fd -HI '[0-9]\.jpg$' ~` | 803.7 ± 33.4 | 784.7 | 882.9 |
+| `fd '.*[0-9]\.jpg$' ~` | 122.0 ± 2.1 | 120.0 | 129.5 |
 
 ## Installation
 
