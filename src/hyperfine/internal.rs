@@ -61,7 +61,7 @@ pub fn write_benchmark_comparison(results: &Vec<BenchmarkResult>) {
         }
     }
 
-    println!("{}\n", "Result Comparison".bold());
+    println!("{}\n", "Summary".bold());
     println!("'{}' ran", fastest_item.command.cyan());
     longer_items.sort_by(|l, r| l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal));
 
