@@ -1,6 +1,7 @@
 use std::fmt;
 
-use hyperfine::internal::{Second, MIN_EXECUTION_TIME};
+use hyperfine::internal::MIN_EXECUTION_TIME;
+use hyperfine::types::Second;
 use hyperfine::format::format_duration;
 
 /// A list of all possible warnings

@@ -3,15 +3,15 @@ use std::io;
 use colored::*;
 use statistical::{mean, standard_deviation};
 
-use hyperfine::internal::{get_progress_bar, max, min, CmdFailureAction, HyperfineOptions,
-                          OutputStyleOption, Second, MIN_EXECUTION_TIME};
+use hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
+use hyperfine::types::{CmdFailureAction, HyperfineOptions, OutputStyleOption, Second};
 use hyperfine::warnings::Warnings;
 use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use hyperfine::timer::{TimerStart, TimerStop};
 use hyperfine::timer::wallclocktimer::WallClockTimer;
 use hyperfine::shell::execute_and_time;
-use hyperfine::export::ExportEntry;
+use hyperfine::types::BenchmarkResult;
 
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]
@@ -137,7 +137,7 @@ pub fn run_benchmark(
     cmd: &str,
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
-) -> io::Result<ExportEntry> {
+) -> io::Result<BenchmarkResult> {
     println!(
         "{}{}: {}",
         "Benchmark #".bold(),
@@ -294,7 +294,7 @@ pub fn run_benchmark(
 
     println!(" ");
 
-    Ok(ExportEntry::new(
+    Ok(BenchmarkResult::new(
         cmd.to_string(),
         t_mean,
         t_stddev,

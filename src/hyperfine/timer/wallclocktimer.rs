@@ -1,7 +1,7 @@
 use std::process::Child;
 use std::time::Instant;
 
-use hyperfine::internal::Second;
+use hyperfine::types::Second;
 use hyperfine::timer::{TimerStart, TimerStop};
 
 pub struct WallClockTimer {
