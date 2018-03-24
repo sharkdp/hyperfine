@@ -7,3 +7,4 @@ pub mod shell;
 pub mod timer;
 pub mod types;
 pub mod warnings;
+pub mod error;
