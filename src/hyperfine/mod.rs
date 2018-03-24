@@ -8,3 +8,4 @@ pub mod timer;
 pub mod types;
 pub mod warnings;
 pub mod error;
+pub mod app;

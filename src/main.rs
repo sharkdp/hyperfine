@@ -15,6 +15,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate statistical;
 
+// Os-specific dependencies
 cfg_if! {
     if #[cfg(windows)] {
         extern crate winapi;
@@ -29,12 +30,13 @@ extern crate approx;
 
 use std::cmp;
 use std::error::Error;
+use std::env;
 use std::io;
 use std::ops::Range;
 
 use atty::Stream;
 use colored::*;
-use clap::{App, AppSettings, Arg};
+use clap::ArgMatches;
 
 mod hyperfine;
 
@@ -44,6 +46,7 @@ use hyperfine::types::{BenchmarkResult, CmdFailureAction, Command, HyperfineOpti
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 use hyperfine::export::{ExportManager, ExportType};
 use hyperfine::error::ParameterScanError;
+use hyperfine::app::get_arg_matches;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -86,121 +89,31 @@ fn parse_parameter_scan_args<'a>(
 }
 
 fn main() {
-    // Process command line options
+    let matches = get_arg_matches(env::args_os());
+    let options = build_hyperfine_options(&matches);
+    let export_manager = build_export_manager(&matches);
+    let commands = build_commands(&matches);
+
+    let res = run(&commands, &options);
+
+    match res {
+        Ok(timing_results) => {
+            write_benchmark_comparison(&timing_results);
+            let ans = export_manager.write_results(timing_results);
+            if let Err(e) = ans {
+                error(&format!(
+                    "The following error occured while exporting: {}",
+                    e.description()
+                ));
+            }
+        }
+        Err(e) => error(e.description()),
+    }
+}
+
+/// Build the HyperfineOptions that correspond to the given ArgMatches
+fn build_hyperfine_options(matches: &ArgMatches) -> HyperfineOptions {
     let mut options = HyperfineOptions::default();
-
-    let clap_color_setting = if atty::is(Stream::Stdout) {
-        AppSettings::ColoredHelp
-    } else {
-        AppSettings::ColorNever
-    };
-
-    let matches = App::new("hyperfine")
-        .version(crate_version!())
-        .setting(clap_color_setting)
-        .setting(AppSettings::DeriveDisplayOrder)
-        .setting(AppSettings::UnifiedHelpMessage)
-        .setting(AppSettings::NextLineHelp)
-        .setting(AppSettings::HidePossibleValuesInHelp)
-        .max_term_width(90)
-        .about("A command-line benchmarking tool.")
-        .arg(
-            Arg::with_name("command")
-                .help("Command to benchmark")
-                .required(true)
-                .multiple(true)
-                .empty_values(false),
-        )
-        .arg(
-            Arg::with_name("warmup")
-                .long("warmup")
-                .short("w")
-                .takes_value(true)
-                .value_name("NUM")
-                .help(
-                    "Perform NUM warmup runs before the actual benchmark. This can be used \
-                     to fill (disk) caches for I/O-heavy programs.",
-                ),
-        )
-        .arg(
-            Arg::with_name("min-runs")
-                .long("min-runs")
-                .short("m")
-                .takes_value(true)
-                .value_name("NUM")
-                .help(&format!(
-                    "Perform at least NUM runs for each command (default: {}).",
-                    options.min_runs
-                )),
-        )
-        .arg(
-            Arg::with_name("prepare")
-                .long("prepare")
-                .short("p")
-                .takes_value(true)
-                .value_name("CMD")
-                .help(
-                    "Execute CMD before each timing run. This is useful for \
-                     clearing disk caches, for example.",
-                ),
-        )
-        .arg(
-            Arg::with_name("parameter-scan")
-                .long("parameter-scan")
-                .short("P")
-                .help(
-                    "Perform benchmark runs for each value in the range MIN..MAX. Replaces the \
-                     string '{VAR}' in each command by the current parameter value.",
-                )
-                .takes_value(true)
-                .allow_hyphen_values(true)
-                .value_names(&["VAR", "MIN", "MAX"]),
-        )
-        .arg(
-            Arg::with_name("style")
-                .long("style")
-                .short("s")
-                .takes_value(true)
-                .value_name("TYPE")
-                .possible_values(&["auto", "basic", "full", "nocolor"])
-                .help(
-                    "Set output style type (default: auto). Set this to 'basic' to disable output \
-                     coloring and interactive elements. Set it to 'full' to enable all effects \
-                     even if no interactive terminal was detected. Set this to 'nocolor' to \
-                     keep the interactive output without any colors.",
-                ),
-        )
-        .arg(
-            Arg::with_name("ignore-failure")
-                .long("ignore-failure")
-                .short("i")
-                .help("Ignore non-zero exit codes."),
-        )
-        .arg(
-            Arg::with_name("export-csv")
-                .long("export-csv")
-                .takes_value(true)
-                .value_name("FILE")
-                .help("Export the timing results as CSV to the given FILE."),
-        )
-        .arg(
-            Arg::with_name("export-json")
-                .long("export-json")
-                .takes_value(true)
-                .value_name("FILE")
-                .help("Export the timing results as JSON to the given FILE."),
-        )
-        .arg(
-            Arg::with_name("export-markdown")
-                .long("export-markdown")
-                .takes_value(true)
-                .value_name("FILE")
-                .help("Export the timing results as a Markdown table to the given FILE."),
-        )
-        .help_message("Print this help message.")
-        .version_message("Show version information.")
-        .get_matches();
-
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
     options.warmup_count = matches
@@ -226,17 +139,6 @@ fn main() {
         },
     };
 
-    let mut export_manager = ExportManager::new();
-    if let Some(filename) = matches.value_of("export-json") {
-        export_manager.add_exporter(ExportType::Json, filename);
-    }
-    if let Some(filename) = matches.value_of("export-csv") {
-        export_manager.add_exporter(ExportType::Csv, filename);
-    }
-    if let Some(filename) = matches.value_of("export-markdown") {
-        export_manager.add_exporter(ExportType::Markdown, filename);
-    }
-
     // We default Windows to NoColor if full had been specified.
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
         options.output_style = OutputStyleOption::NoColor;
@@ -250,6 +152,27 @@ fn main() {
         options.failure_action = CmdFailureAction::Ignore;
     }
 
+    options
+}
+
+/// Build the ExportManager that will export the results specified
+/// in the given ArgMatches
+fn build_export_manager(matches: &ArgMatches) -> ExportManager {
+    let mut export_manager = ExportManager::new();
+    if let Some(filename) = matches.value_of("export-json") {
+        export_manager.add_exporter(ExportType::Json, filename);
+    }
+    if let Some(filename) = matches.value_of("export-csv") {
+        export_manager.add_exporter(ExportType::Csv, filename);
+    }
+    if let Some(filename) = matches.value_of("export-markdown") {
+        export_manager.add_exporter(ExportType::Markdown, filename);
+    }
+    export_manager
+}
+
+/// Build the commands to benchmark
+fn build_commands<'a>(matches: &'a ArgMatches) -> Vec<Command<'a>> {
     let command_strings = matches.values_of("command").unwrap();
 
     let commands = if let Some(args) = matches.values_of("parameter-scan") {
@@ -269,20 +192,5 @@ fn main() {
     } else {
         command_strings.map(|c| Command::new(c)).collect()
     };
-
-    let res = run(&commands, &options);
-
-    match res {
-        Ok(timing_results) => {
-            write_benchmark_comparison(&timing_results);
-            let ans = export_manager.write_results(timing_results);
-            if let Err(e) = ans {
-                error(&format!(
-                    "The following error occured while exporting: {}",
-                    e.description()
-                ));
-            }
-        }
-        Err(e) => error(e.description()),
-    }
+    commands
 }
