@@ -171,6 +171,7 @@ fn main() {
                      string '{VAR}' in each command by the current parameter value.",
                 )
                 .takes_value(true)
+                .allow_hyphen_values(true)
                 .value_names(&["VAR", "MIN", "MAX"]),
         )
         .arg(
