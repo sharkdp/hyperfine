@@ -43,7 +43,7 @@ use hyperfine::types::{BenchmarkResult, CmdFailureAction, Command, HyperfineOpti
                        OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 use hyperfine::export::{ExportManager, ExportType};
-use hyperfine::error::ParameterRangeError;
+use hyperfine::error::ParameterScanError;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -65,21 +65,21 @@ fn run(commands: &Vec<Command>, options: &HyperfineOptions) -> io::Result<Vec<Be
     Ok(timing_results)
 }
 
-/// A function to read the `--parameter-range` arguments
-fn parse_parameter_range_args<'a>(
+/// A function to read the `--parameter-scan` arguments
+fn parse_parameter_scan_args<'a>(
     mut vals: clap::Values<'a>,
-) -> Result<(&'a str, Range<i32>), ParameterRangeError> {
+) -> Result<(&'a str, Range<i32>), ParameterScanError> {
     let param_name = vals.next().unwrap();
     let param_min: i32 = vals.next().unwrap().parse()?;
     let param_max: i32 = vals.next().unwrap().parse()?;
 
     const MAX_PARAMETERS: i32 = 100000;
     if param_max - param_min > MAX_PARAMETERS {
-        return Err(ParameterRangeError::TooLarge);
+        return Err(ParameterScanError::TooLarge);
     }
 
     if param_max < param_min {
-        return Err(ParameterRangeError::EmptyRange);
+        return Err(ParameterScanError::EmptyRange);
     }
 
     return Ok((param_name, param_min..(param_max + 1)));
@@ -163,9 +163,9 @@ fn main() {
                 .help("Ignore non-zero exit codes."),
         )
         .arg(
-            Arg::with_name("parameter-range")
-                .long("parameter-range")
-                .short("r")
+            Arg::with_name("parameter-scan")
+                .long("parameter-scan")
+                .short("P")
                 .help(
                     "Perform benchmark runs for each value in the range MIN..MAX. Replaces the \
                      string '{VAR}' in each command by the current parameter value.",
@@ -249,8 +249,8 @@ fn main() {
 
     let command_strings = matches.values_of("command").unwrap();
 
-    let commands = if let Some(args) = matches.values_of("parameter-range") {
-        match parse_parameter_range_args(args) {
+    let commands = if let Some(args) = matches.values_of("parameter-scan") {
+        match parse_parameter_scan_args(args) {
             Ok((param_name, param_range)) => {
                 let mut commands = vec![];
                 let command_strings = command_strings.collect::<Vec<&str>>();
