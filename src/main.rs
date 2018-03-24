@@ -100,6 +100,8 @@ fn main() {
         .setting(clap_color_setting)
         .setting(AppSettings::DeriveDisplayOrder)
         .setting(AppSettings::UnifiedHelpMessage)
+        .setting(AppSettings::NextLineHelp)
+        .setting(AppSettings::HidePossibleValuesInHelp)
         .max_term_width(90)
         .about("A command-line benchmarking tool.")
         .arg(
@@ -143,26 +145,6 @@ fn main() {
                 ),
         )
         .arg(
-            Arg::with_name("style")
-                .long("style")
-                .short("s")
-                .takes_value(true)
-                .value_name("TYPE")
-                .possible_values(&["auto", "basic", "full", "nocolor"])
-                .help(
-                    "Set output style type (default: auto). Set this to 'basic' to disable output \
-                     coloring and interactive elements. Set it to 'full' to enable all effects \
-                     even if no interactive terminal was detected. Setting to 'nocolor' maintains \
-                     all advanced output, but uses no colorization.",
-                ),
-        )
-        .arg(
-            Arg::with_name("ignore-failure")
-                .long("ignore-failure")
-                .short("i")
-                .help("Ignore non-zero exit codes."),
-        )
-        .arg(
             Arg::with_name("parameter-scan")
                 .long("parameter-scan")
                 .short("P")
@@ -173,6 +155,26 @@ fn main() {
                 .takes_value(true)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "MIN", "MAX"]),
+        )
+        .arg(
+            Arg::with_name("style")
+                .long("style")
+                .short("s")
+                .takes_value(true)
+                .value_name("TYPE")
+                .possible_values(&["auto", "basic", "full", "nocolor"])
+                .help(
+                    "Set output style type (default: auto). Set this to 'basic' to disable output \
+                     coloring and interactive elements. Set it to 'full' to enable all effects \
+                     even if no interactive terminal was detected. Set this to 'nocolor' to \
+                     keep the interactive output without any colors.",
+                ),
+        )
+        .arg(
+            Arg::with_name("ignore-failure")
+                .long("ignore-failure")
+                .short("i")
+                .help("Ignore non-zero exit codes."),
         )
         .arg(
             Arg::with_name("export-csv")
