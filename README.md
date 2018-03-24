@@ -76,12 +76,11 @@ Hyperfine has multiple options for exporting benchmark results: CSV, JSON, Markd
 text for details). To export results to Markdown, for example, you can use the `--export-markdown`
 option that will create tables like this:
 
-| Benchmark | Mean [ms] | Min. [ms] | Max. [ms] |
-|----|----|----|----|
-| `find ~ -iregex '.*[0-9]\.jpg$'` | 6911.0 ± 44.2 | 6837.5 | 6968.2 |
-| `find ~ -iname '*[0-9].jpg'` | 3747.7 ± 29.1 | 3711.5 | 3801.5 |
-| `fd -HI '[0-9]\.jpg$' ~` | 803.7 ± 33.4 | 784.7 | 882.9 |
-| `fd '.*[0-9]\.jpg$' ~` | 122.0 ± 2.1 | 120.0 | 129.5 |
+| Command | Mean [ms] | Min…Max [ms] |
+|:---|---:|---:|
+| `find . -iregex '.*[0-9]\.jpg$'` | 506.0 ± 8.1 | 495.4…518.6 |
+| `find . -iname '*[0-9].jpg'` | 304.9 ± 3.1 | 299.8…309.3 |
+| `fd -HI '.*[0-9]\.jpg$'` | 66.2 ± 5.8 | 62.5…86.3 |
 
 ## Installation
 

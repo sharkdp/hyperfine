@@ -21,14 +21,14 @@ impl Exporter for MarkdownExporter {
 }
 
 fn start_table() -> Vec<u8> {
-    "| Benchmark | Mean [ms] | Min. [ms] | Max. [ms] |\n|----|----|----|----|\n"
+    "| Command | Mean [ms] | Min…Max [ms] |\n|:---|---:|---:|\n"
         .bytes()
         .collect()
 }
 fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResult) {
     dest.extend(
         format!(
-            "| `{}` | {:.1} ± {:.1} | {:.1} | {:.1} |\n",
+            "| `{}` | {:.1} ± {:.1} | {:.1}…{:.1} |\n",
             entry.command.replace("|", "\\|"),
             entry.mean * MULTIPLIER,
             entry.stddev * MULTIPLIER,
