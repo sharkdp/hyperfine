@@ -84,19 +84,7 @@ option that will create tables like this:
 
 ## Installation
 
-Hyperfine can be installed via [cargo](https://doc.rust-lang.org/cargo/):
-```
-cargo install hyperfine
-```
-
-### Arch Linux
-
-On Arch Linux, hyperfine can be installed [from the AUR](https://aur.archlinux.org/packages/hyperfine):
-```
-yaourt -S hyperfine
-```
-
-### Ubuntu
+### On Ubuntu
 
 Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
 and install it via `dpkg`:
@@ -105,13 +93,31 @@ wget https://github.com/sharkdp/hyperfine/releases/download/v1.0.0/hyperfine_1.0
 sudo dpkg -i hyperfine_1.0.0_amd64.deb
 ```
 
-### Void Linux
+### On Arch Linux
+
+On Arch Linux, hyperfine can be installed [from the AUR](https://aur.archlinux.org/packages/hyperfine):
+```
+yaourt -S hyperfine
+```
+
+### On Void Linux
 
 Hyperfine can be installed via xbps
 
 ```
 xbps-install -S hyperfine
 ```
+
+### With cargo (Linux, macOS, Windows)
+
+Hyperfine can be installed via [cargo](https://doc.rust-lang.org/cargo/):
+```
+cargo install hyperfine
+```
+
+### From binaries (Linux, macOS)
+
+Download the corresponding archive from the [Release page](https://github.com/sharkdp/hyperfine/releases).
 
 ## Origin of the name
 
