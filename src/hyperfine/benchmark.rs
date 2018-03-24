@@ -11,7 +11,7 @@ use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use hyperfine::timer::{TimerStart, TimerStop};
 use hyperfine::timer::wallclocktimer::WallClockTimer;
 use hyperfine::shell::execute_and_time;
-use hyperfine::types::BenchmarkResult;
+use hyperfine::types::{BenchmarkResult, Command};
 
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]
@@ -37,13 +37,13 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
-    shell_cmd: &str,
+    command: &Command,
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
     let wallclock_timer = WallClockTimer::start();
 
-    let result = execute_and_time(shell_cmd)?;
+    let result = execute_and_time(&command.get_shell_command())?;
 
     let mut time_user = result.user_time;
     let mut time_system = result.system_time;
@@ -86,7 +86,7 @@ pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingR
 
     for _ in 0..COUNT {
         // Just run the shell without any command
-        let res = time_shell_command("", CmdFailureAction::RaiseError, None);
+        let res = time_shell_command(&Command::new(""), CmdFailureAction::RaiseError, None);
 
         match res {
             Err(_) => {
@@ -116,7 +116,11 @@ pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingR
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(command: &Option<String>) -> io::Result<TimingResult> {
     if let &Some(ref preparation_command) = command {
-        let res = time_shell_command(preparation_command, CmdFailureAction::RaiseError, None);
+        let res = time_shell_command(
+            &Command::new(preparation_command),
+            CmdFailureAction::RaiseError,
+            None,
+        );
         if res.is_err() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -134,7 +138,7 @@ fn run_preparation_command(command: &Option<String>) -> io::Result<TimingResult>
 /// Run the benchmark for a single shell command
 pub fn run_benchmark(
     num: usize,
-    cmd: &str,
+    cmd: &Command,
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<BenchmarkResult> {
@@ -295,7 +299,7 @@ pub fn run_benchmark(
     println!(" ");
 
     Ok(BenchmarkResult::new(
-        cmd.to_string(),
+        cmd.get_shell_command(),
         t_mean,
         t_stddev,
         user_mean,

@@ -1,8 +1,51 @@
-/// The types module contains common internal types for the application.
-///
+/// This module contains common internal types.
+
+use std::fmt;
 
 /// Type alias for unit of time
 pub type Second = f64;
+
+/// A command that should be benchmarked.
+#[derive(Debug, Clone)]
+pub struct Command<'a> {
+    /// The command that should be executed (without parameter substitution)
+    expression: &'a str,
+
+    /// A possible parameter value.
+    parameter: Option<(&'a str, i32)>,
+}
+
+impl<'a> Command<'a> {
+    pub fn new(expression: &'a str) -> Command<'a> {
+        Command {
+            expression: expression,
+            parameter: None,
+        }
+    }
+
+    pub fn new_parametrized(expression: &'a str, parameter: &'a str, value: i32) -> Command<'a> {
+        Command {
+            expression: expression,
+            parameter: Some((parameter, value)),
+        }
+    }
+
+    pub fn get_shell_command(&self) -> String {
+        match self.parameter {
+            Some((param_name, param_value)) => self.expression.replace(
+                &format!("{{{param_name}}}", param_name = param_name),
+                &param_value.to_string(),
+            ),
+            None => self.expression.into(),
+        }
+    }
+}
+
+impl<'a> fmt::Display for Command<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.get_shell_command())
+    }
+}
 
 /// Action to take when an executed command fails.
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -30,6 +30,7 @@ extern crate approx;
 use std::cmp;
 use std::error::Error;
 use std::io;
+use std::ops::Range;
 
 use atty::Stream;
 use colored::*;
@@ -38,9 +39,11 @@ use clap::{App, AppSettings, Arg};
 mod hyperfine;
 
 use hyperfine::internal::write_benchmark_comparison;
-use hyperfine::types::{BenchmarkResult, CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use hyperfine::types::{BenchmarkResult, CmdFailureAction, Command, HyperfineOptions,
+                       OutputStyleOption};
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 use hyperfine::export::{ExportManager, ExportType};
+use hyperfine::error::ParameterRangeError;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -49,7 +52,7 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
+fn run(commands: &Vec<Command>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
 
     let mut timing_results = vec![];
@@ -60,6 +63,26 @@ fn run(commands: &Vec<&str>, options: &HyperfineOptions) -> io::Result<Vec<Bench
     }
 
     Ok(timing_results)
+}
+
+/// A function to read the `--parameter-range` arguments
+fn parse_parameter_range_args<'a>(
+    mut vals: clap::Values<'a>,
+) -> Result<(&'a str, Range<i32>), ParameterRangeError> {
+    let param_name = vals.next().unwrap();
+    let param_min: i32 = vals.next().unwrap().parse()?;
+    let param_max: i32 = vals.next().unwrap().parse()?;
+
+    const MAX_PARAMETERS: i32 = 100000;
+    if param_max - param_min > MAX_PARAMETERS {
+        return Err(ParameterRangeError::TooLarge);
+    }
+
+    if param_max < param_min {
+        return Err(ParameterRangeError::EmptyRange);
+    }
+
+    return Ok((param_name, param_min..(param_max + 1)));
 }
 
 fn main() {
@@ -140,6 +163,17 @@ fn main() {
                 .help("Ignore non-zero exit codes."),
         )
         .arg(
+            Arg::with_name("parameter-range")
+                .long("parameter-range")
+                .short("r")
+                .help(
+                    "Perform benchmark runs for each value in the range MIN..MAX. Replaces the \
+                     string '{VAR}' in each command by the current parameter value.",
+                )
+                .takes_value(true)
+                .value_names(&["VAR", "MIN", "MAX"]),
+        )
+        .arg(
             Arg::with_name("export-csv")
                 .long("export-csv")
                 .takes_value(true)
@@ -213,7 +247,26 @@ fn main() {
         options.failure_action = CmdFailureAction::Ignore;
     }
 
-    let commands = matches.values_of("command").unwrap().collect();
+    let command_strings = matches.values_of("command").unwrap();
+
+    let commands = if let Some(args) = matches.values_of("parameter-range") {
+        match parse_parameter_range_args(args) {
+            Ok((param_name, param_range)) => {
+                let mut commands = vec![];
+                let command_strings = command_strings.collect::<Vec<&str>>();
+                for value in param_range.start..param_range.end {
+                    for ref cmd in &command_strings {
+                        commands.push(Command::new_parametrized(cmd, param_name, value));
+                    }
+                }
+                commands
+            }
+            Err(e) => error(e.description()),
+        }
+    } else {
+        command_strings.map(|c| Command::new(c)).collect()
+    };
+
     let res = run(&commands, &options);
 
     match res {
