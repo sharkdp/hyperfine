@@ -177,6 +177,12 @@ fn main() {
                 .help("Ignore non-zero exit codes."),
         )
         .arg(
+            Arg::with_name("capture-out")
+                .long("capture-out")
+                .short("c")
+                .help("Capture and display stdout and stderr."),
+        )
+        .arg(
             Arg::with_name("export-csv")
                 .long("export-csv")
                 .takes_value(true)
@@ -248,6 +254,10 @@ fn main() {
 
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;
+    }
+
+    if matches.is_present("capture-out") {
+        options.capture_out = true;
     }
 
     let command_strings = matches.values_of("command").unwrap();

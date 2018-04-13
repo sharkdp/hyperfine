@@ -84,6 +84,9 @@ pub struct HyperfineOptions {
     /// Whether or not to ignore non-zero exit codes
     pub failure_action: CmdFailureAction,
 
+    /// Whether or not to capture stdout/stderr
+    pub capture_out: bool,
+
     /// Command to run before each timing run
     pub preparation_command: Option<String>,
 
@@ -98,6 +101,7 @@ impl Default for HyperfineOptions {
             min_runs: 10,
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
+            capture_out: false,
             preparation_command: None,
             output_style: OutputStyleOption::Full,
         }
