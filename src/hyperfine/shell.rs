@@ -15,11 +15,11 @@ pub struct ExecuteResult {
     /// The exit status of the process
     pub status: ExitStatus,
 
-    /// Stdout
-    pub stdout: String,
+    /// Captured standard output
+    pub stdout: Option<String>,
 
-    /// Stderr
-    pub stderr: String,
+    /// Captured standard error
+    pub stderr: Option<String>,
 }
 
 /// Execute the given command and return a timing summary
@@ -29,7 +29,7 @@ pub fn execute_and_time(command: &str, capture: bool) -> io::Result<ExecuteResul
     let cpu_timer = get_cpu_timer(&child);
     let status = child.wait()?;
 
-    let (stdout, stderr) = (String::new(), String::new());
+    let (stdout, stderr) = (None, None);
 
     let (user_time, system_time) = cpu_timer.stop();
     Ok(ExecuteResult {
@@ -51,12 +51,9 @@ pub fn execute_and_time(command: &str, capture: bool) -> io::Result<ExecuteResul
     let status = out.status;
 
     let (stdout, stderr) = if capture {
-        (
-            String::from_utf8(out.stdout).expect("Expected utf8 output"),
-            String::from_utf8(out.stderr).expect("Expected utf8 output"),
-        )
+        (String::from_utf8(out.stdout).ok(), String::from_utf8(out.stderr).ok())
     } else {
-        (String::new(), String::new())
+        (None, None)
     };
 
     let (user_time, system_time) = cpu_timer.stop();
@@ -73,19 +70,11 @@ pub fn execute_and_time(command: &str, capture: bool) -> io::Result<ExecuteResul
 /// Run a standard shell command
 #[cfg(not(windows))]
 fn run_shell_command(command: &str, capture: bool) -> io::Result<std::process::Output> {
-    let stdout: Stdio;
-    let stderr: Stdio;
-
-    match capture {
-        true => {
-            stdout = Stdio::piped();
-            stderr = Stdio::piped();
-        }
-        false => {
-            stdout = Stdio::null();
-            stderr = Stdio::null();
-        }
-    }
+    let (stdout, stderr) = if capture {
+        (Stdio::piped(), Stdio::piped())
+    } else {
+        (Stdio::null(), Stdio::null())
+    };
 
     Command::new("sh")
         .arg("-c")
@@ -98,12 +87,18 @@ fn run_shell_command(command: &str, capture: bool) -> io::Result<std::process::O
 
 /// Run a Windows shell command using cmd.exe
 #[cfg(windows)]
-fn run_shell_command(command: &str, _: bool) -> io::Result<std::process::Child> {
+fn run_shell_command(command: &str, capture: bool) -> io::Result<std::process::Child> {
+    let (stdout, stderr) = if capture {
+        (Stdio::piped(), Stdio::piped())
+    } else {
+        (Stdio::null(), Stdio::null())
+    };
+
     Command::new("cmd")
         .arg("/C")
         .arg(command)
         .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stdout(stdout)
+        .stderr(stderr)
         .spawn()
 }

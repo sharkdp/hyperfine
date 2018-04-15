@@ -39,12 +39,12 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 pub fn time_shell_command(
     command: &Command,
     failure_action: CmdFailureAction,
-    capture_out: bool,
+    capture_output: bool,
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
     let wallclock_timer = WallClockTimer::start();
 
-    let result = execute_and_time(&command.get_shell_command(), capture_out)?;
+    let result = execute_and_time(&command.get_shell_command(), capture_output)?;
 
     let mut time_user = result.user_time;
     let mut time_system = result.system_time;
@@ -52,13 +52,14 @@ pub fn time_shell_command(
     let mut time_real = wallclock_timer.stop();
 
     if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
-        let errstring = if capture_out {
+        let errstring = if capture_output {
             format!("Command terminated with non-zero exit code. \
-                 Use the '-i'/'--ignore-failure' option if you want to ignore this.\nStdout: {}\nStderr: {}", result.stdout, result.stderr)
+                 Use the '-i'/'--ignore-failure' option if you want to ignore this.\n\nSTDOUT:\n{}\nSTDERR:\n{}", result.stdout.unwrap_or_default(), result.stderr.unwrap_or_default())
         } else {
             String::from(
                 "Command terminated with non-zero exit code. \
-                 Use the '-i'/'--ignore-failure' option if you want to ignore this.",
+                 Use the '-i'/'--ignore-failure' option if you want to ignore this.\n\
+                 Use the '--capture-output' option to display the command output.",
             )
         };
         return Err(io::Error::new(io::ErrorKind::Other, errstring.as_str()));
@@ -171,7 +172,7 @@ pub fn run_benchmark(
         );
 
         for _ in 0..options.warmup_count {
-            let _ = time_shell_command(cmd, options.failure_action, false, None)?;
+            let _ = time_shell_command(cmd, options.failure_action, options.capture_output, None)?;
             progress_bar.inc(1);
         }
         progress_bar.finish_and_clear();
@@ -191,7 +192,7 @@ pub fn run_benchmark(
     let (res, success) = time_shell_command(
         cmd,
         options.failure_action,
-        options.capture_out,
+        options.capture_output,
         Some(shell_spawning_time),
     )?;
 
@@ -231,7 +232,7 @@ pub fn run_benchmark(
         let (res, success) = time_shell_command(
             cmd,
             options.failure_action,
-            options.capture_out,
+            options.capture_output,
             Some(shell_spawning_time),
         )?;
 
