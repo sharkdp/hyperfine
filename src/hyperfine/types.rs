@@ -87,6 +87,9 @@ pub struct HyperfineOptions {
     /// Command to run before each timing run
     pub preparation_command: Option<String>,
 
+    /// Shell under which commands should be run
+    pub shell: String,
+
     /// What color mode to use for output
     pub output_style: OutputStyleOption,
 }
@@ -100,6 +103,7 @@ impl Default for HyperfineOptions {
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
             output_style: OutputStyleOption::Full,
+            shell: "sh".to_string(),
         }
     }
 }

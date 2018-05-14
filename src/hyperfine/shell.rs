@@ -34,10 +34,10 @@ pub fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
 
 /// Execute the given command and return a timing summary
 #[cfg(not(windows))]
-pub fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
+pub fn execute_and_time(shell: &str, command: &str) -> io::Result<ExecuteResult> {
     let cpu_timer = get_cpu_timer();
 
-    let status = run_shell_command(command)?;
+    let status = run_shell_command(shell, command)?;
 
     let (user_time, system_time) = cpu_timer.stop();
 
@@ -50,8 +50,8 @@ pub fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
 
 /// Run a standard shell command
 #[cfg(not(windows))]
-fn run_shell_command(command: &str) -> io::Result<std::process::ExitStatus> {
-    Command::new("sh")
+fn run_shell_command(shell: &str, command: &str) -> io::Result<std::process::ExitStatus> {
+    Command::new(shell)
         .arg("-c")
         .arg(command)
         .stdin(Stdio::null())
@@ -62,7 +62,7 @@ fn run_shell_command(command: &str) -> io::Result<std::process::ExitStatus> {
 
 /// Run a Windows shell command using cmd.exe
 #[cfg(windows)]
-fn run_shell_command(command: &str) -> io::Result<std::process::Child> {
+fn run_shell_command(_: &str, command: &str) -> io::Result<std::process::Child> {
     Command::new("cmd")
         .arg("/C")
         .arg(command)

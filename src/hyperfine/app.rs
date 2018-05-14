@@ -78,6 +78,17 @@ fn build_app() -> App<'static, 'static> {
                 .value_names(&["VAR", "MIN", "MAX"]),
         )
         .arg(
+            Arg::with_name("shell")
+                .long("shell")
+                .short("S")
+                .takes_value(true)
+                .value_name("SHELL")
+                .help(
+                    "Specifies the shell environment to set up under which the benchmarked \
+                     commands will bexe executed.",
+                )
+        )
+        .arg(
             Arg::with_name("style")
                 .long("style")
                 .short("s")

@@ -56,7 +56,7 @@ pub fn error(message: &str) -> ! {
 
 /// Runs the benchmark for the given commands
 fn run(commands: &Vec<Command>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
-    let shell_spawning_time = mean_shell_spawning_time(&options.output_style)?;
+    let shell_spawning_time = mean_shell_spawning_time(&options.shell, &options.output_style)?;
 
     let mut timing_results = vec![];
 
@@ -120,6 +120,7 @@ fn build_hyperfine_options(matches: &ArgMatches) -> HyperfineOptions {
         .value_of("warmup")
         .and_then(&str_to_u64)
         .unwrap_or(0);
+    options.shell = get_shell(matches).to_string();
 
     if let Some(min_runs) = matches.value_of("min-runs").and_then(&str_to_u64) {
         // we need at least two runs to compute a variance
@@ -169,6 +170,12 @@ fn build_export_manager(matches: &ArgMatches) -> ExportManager {
         export_manager.add_exporter(ExportType::Markdown, filename);
     }
     export_manager
+}
+
+/// Retrieve shell parameter or set default
+fn get_shell<'a>(matches: &'a ArgMatches) -> &'a str {
+    matches.value_of("shell")
+        .unwrap_or("sh")
 }
 
 /// Build the commands to benchmark
