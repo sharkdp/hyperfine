@@ -62,7 +62,7 @@ fn run_shell_command(stdout: Stdio, command: &str) -> io::Result<std::process::E
 
 /// Run a Windows shell command using cmd.exe
 #[cfg(windows)]
-fn run_shell_command(print_stdout: bool, command: &str) -> io::Result<std::process::Child> {
+fn run_shell_command(stdout: Stdio, command: &str) -> io::Result<std::process::Child> {
     Command::new("cmd")
         .arg("/C")
         .arg(command)
