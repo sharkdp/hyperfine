@@ -118,6 +118,14 @@ fn build_app() -> App<'static, 'static> {
                 .value_name("FILE")
                 .help("Export the timing results as a Markdown table to the given FILE."),
         )
+        .arg(
+            Arg::with_name("print-stdout")
+                .long("print-stdout")
+                .conflicts_with("style")
+                .help("Print the stdout of the benchmark instead of suppressing it. \
+                       This will increase the time it takes for benchmarks to run, \
+                       so it should only be used when trying to benchmark output speed."),
+        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
 }

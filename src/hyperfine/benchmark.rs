@@ -1,4 +1,5 @@
 use std::io;
+use std::process::Stdio;
 
 use colored::*;
 use statistical::{mean, standard_deviation};
@@ -38,12 +39,18 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
     command: &Command,
+    print_stdout: bool,
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
     let wallclock_timer = WallClockTimer::start();
 
-    let result = execute_and_time(&command.get_shell_command())?;
+    let stdout = if print_stdout {
+        Stdio::inherit()
+    } else {
+        Stdio::null()
+    };
+    let result = execute_and_time(stdout, &command.get_shell_command())?;
 
     let mut time_user = result.user_time;
     let mut time_system = result.system_time;
@@ -76,7 +83,10 @@ pub fn time_shell_command(
 }
 
 /// Measure the average shell spawning time
-pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingResult> {
+pub fn mean_shell_spawning_time(
+    style: &OutputStyleOption,
+    print_stdout: bool,
+) -> io::Result<TimingResult> {
     const COUNT: u64 = 200;
     let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time", style);
 
@@ -86,7 +96,12 @@ pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingR
 
     for _ in 0..COUNT {
         // Just run the shell without any command
-        let res = time_shell_command(&Command::new(""), CmdFailureAction::RaiseError, None);
+        let res = time_shell_command(
+            &Command::new(""),
+            print_stdout,
+            CmdFailureAction::RaiseError,
+            None,
+        );
 
         match res {
             Err(_) => {
@@ -114,10 +129,14 @@ pub fn mean_shell_spawning_time(style: &OutputStyleOption) -> io::Result<TimingR
 }
 
 /// Run the command specified by `--prepare`.
-fn run_preparation_command(command: &Option<String>) -> io::Result<TimingResult> {
+fn run_preparation_command(
+    command: &Option<String>,
+    print_stdout: bool,
+) -> io::Result<TimingResult> {
     if let &Some(ref preparation_command) = command {
         let res = time_shell_command(
             &Command::new(preparation_command),
+            print_stdout,
             CmdFailureAction::RaiseError,
             None,
         );
@@ -164,7 +183,7 @@ pub fn run_benchmark(
         );
 
         for _ in 0..options.warmup_count {
-            let _ = time_shell_command(cmd, options.failure_action, None)?;
+            let _ = time_shell_command(cmd, options.print_stdout, options.failure_action, None)?;
             progress_bar.inc(1);
         }
         progress_bar.finish_and_clear();
@@ -178,11 +197,15 @@ pub fn run_benchmark(
     );
 
     // Run init / cleanup command
-    let prepare_res = run_preparation_command(&options.preparation_command)?;
+    let prepare_res = run_preparation_command(&options.preparation_command, options.print_stdout)?;
 
     // Initial timing run
-    let (res, success) =
-        time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
+    let (res, success) = time_shell_command(
+        cmd,
+        options.print_stdout,
+        options.failure_action,
+        Some(shell_spawning_time),
+    )?;
 
     // Determine number of benchmark runs
     let runs_in_min_time = (options.min_time_sec
@@ -209,7 +232,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command(&options.preparation_command)?;
+        run_preparation_command(&options.preparation_command, options.print_stdout)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
@@ -217,8 +240,12 @@ pub fn run_benchmark(
         };
         progress_bar.set_message(&msg);
 
-        let (res, success) =
-            time_shell_command(cmd, options.failure_action, Some(shell_spawning_time))?;
+        let (res, success) = time_shell_command(
+            cmd,
+            options.print_stdout,
+            options.failure_action,
+            Some(shell_spawning_time),
+        )?;
 
         times_real.push(res.time_real);
         times_user.push(res.time_user);
