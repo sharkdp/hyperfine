@@ -19,8 +19,8 @@ pub struct ExecuteResult {
 
 /// Execute the given command and return a timing summary
 #[cfg(windows)]
-pub fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
-    let mut child = run_shell_command(command)?;
+pub fn execute_and_time(stdout: Stdio, command: &str) -> io::Result<ExecuteResult> {
+    let mut child = run_shell_command(stdout, command)?;
     let cpu_timer = get_cpu_timer(&child);
     let status = child.wait()?;
 
@@ -34,10 +34,10 @@ pub fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
 
 /// Execute the given command and return a timing summary
 #[cfg(not(windows))]
-pub fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
+pub fn execute_and_time(stdout: Stdio, command: &str) -> io::Result<ExecuteResult> {
     let cpu_timer = get_cpu_timer();
 
-    let status = run_shell_command(command)?;
+    let status = run_shell_command(stdout, command)?;
 
     let (user_time, system_time) = cpu_timer.stop();
 
@@ -50,24 +50,24 @@ pub fn execute_and_time(command: &str) -> io::Result<ExecuteResult> {
 
 /// Run a standard shell command
 #[cfg(not(windows))]
-fn run_shell_command(command: &str) -> io::Result<std::process::ExitStatus> {
+fn run_shell_command(stdout: Stdio, command: &str) -> io::Result<std::process::ExitStatus> {
     Command::new("sh")
         .arg("-c")
         .arg(command)
         .stdin(Stdio::null())
-        .stdout(Stdio::null())
+        .stdout(stdout)
         .stderr(Stdio::null())
         .status()
 }
 
 /// Run a Windows shell command using cmd.exe
 #[cfg(windows)]
-fn run_shell_command(command: &str) -> io::Result<std::process::Child> {
+fn run_shell_command(print_stdout: bool, command: &str) -> io::Result<std::process::Child> {
     Command::new("cmd")
         .arg("/C")
         .arg(command)
         .stdin(Stdio::null())
-        .stdout(Stdio::null())
+        .stdout(stdout)
         .stderr(Stdio::null())
         .spawn()
 }

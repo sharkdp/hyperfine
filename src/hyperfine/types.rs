@@ -89,6 +89,9 @@ pub struct HyperfineOptions {
 
     /// What color mode to use for output
     pub output_style: OutputStyleOption,
+
+    /// Forward benchmark's stdout to hyperfine's stdout
+    pub print_stdout: bool,
 }
 
 impl Default for HyperfineOptions {
@@ -100,6 +103,7 @@ impl Default for HyperfineOptions {
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
             output_style: OutputStyleOption::Full,
+            print_stdout: false,
         }
     }
 }
