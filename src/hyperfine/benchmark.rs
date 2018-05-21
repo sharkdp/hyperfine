@@ -39,18 +39,18 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
     command: &Command,
-    print_stdout: bool,
+    show_output: bool,
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
     let wallclock_timer = WallClockTimer::start();
 
-    let stdout = if print_stdout {
-        Stdio::inherit()
+    let (stdout, stderr) = if show_output {
+        (Stdio::inherit(), Stdio::inherit())
     } else {
-        Stdio::null()
+        (Stdio::null(), Stdio::null())
     };
-    let result = execute_and_time(stdout, &command.get_shell_command())?;
+    let result = execute_and_time(stdout, stderr, &command.get_shell_command())?;
 
     let mut time_user = result.user_time;
     let mut time_system = result.system_time;
@@ -85,7 +85,7 @@ pub fn time_shell_command(
 /// Measure the average shell spawning time
 pub fn mean_shell_spawning_time(
     style: &OutputStyleOption,
-    print_stdout: bool,
+    show_output: bool,
 ) -> io::Result<TimingResult> {
     const COUNT: u64 = 200;
     let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time", style);
@@ -98,7 +98,7 @@ pub fn mean_shell_spawning_time(
         // Just run the shell without any command
         let res = time_shell_command(
             &Command::new(""),
-            print_stdout,
+            show_output,
             CmdFailureAction::RaiseError,
             None,
         );
@@ -131,12 +131,12 @@ pub fn mean_shell_spawning_time(
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(
     command: &Option<String>,
-    print_stdout: bool,
+    show_output: bool,
 ) -> io::Result<TimingResult> {
     if let &Some(ref preparation_command) = command {
         let res = time_shell_command(
             &Command::new(preparation_command),
-            print_stdout,
+            show_output,
             CmdFailureAction::RaiseError,
             None,
         );
@@ -183,7 +183,7 @@ pub fn run_benchmark(
         );
 
         for _ in 0..options.warmup_count {
-            let _ = time_shell_command(cmd, options.print_stdout, options.failure_action, None)?;
+            let _ = time_shell_command(cmd, options.show_output, options.failure_action, None)?;
             progress_bar.inc(1);
         }
         progress_bar.finish_and_clear();
@@ -197,12 +197,12 @@ pub fn run_benchmark(
     );
 
     // Run init / cleanup command
-    let prepare_res = run_preparation_command(&options.preparation_command, options.print_stdout)?;
+    let prepare_res = run_preparation_command(&options.preparation_command, options.show_output)?;
 
     // Initial timing run
     let (res, success) = time_shell_command(
         cmd,
-        options.print_stdout,
+        options.show_output,
         options.failure_action,
         Some(shell_spawning_time),
     )?;
@@ -232,7 +232,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command(&options.preparation_command, options.print_stdout)?;
+        run_preparation_command(&options.preparation_command, options.show_output)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
@@ -242,7 +242,7 @@ pub fn run_benchmark(
 
         let (res, success) = time_shell_command(
             cmd,
-            options.print_stdout,
+            options.show_output,
             options.failure_action,
             Some(shell_spawning_time),
         )?;

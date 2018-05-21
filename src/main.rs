@@ -57,7 +57,7 @@ pub fn error(message: &str) -> ! {
 /// Runs the benchmark for the given commands
 fn run(commands: &Vec<Command>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time =
-        mean_shell_spawning_time(&options.output_style, options.print_stdout)?;
+        mean_shell_spawning_time(&options.output_style, options.show_output)?;
 
     let mut timing_results = vec![];
 
@@ -129,13 +129,13 @@ fn build_hyperfine_options(matches: &ArgMatches) -> HyperfineOptions {
 
     options.preparation_command = matches.value_of("prepare").map(String::from);
 
-    options.print_stdout = matches.is_present("print-stdout");
+    options.show_output = matches.is_present("show-output");
 
     options.output_style = match matches.value_of("style") {
         Some("full") => OutputStyleOption::Full,
         Some("basic") => OutputStyleOption::Basic,
         Some("nocolor") => OutputStyleOption::NoColor,
-        _ => if !options.print_stdout && atty::is(Stream::Stdout) {
+        _ => if !options.show_output && atty::is(Stream::Stdout) {
             OutputStyleOption::Full
         } else {
             OutputStyleOption::Basic
