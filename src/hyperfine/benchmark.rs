@@ -61,7 +61,8 @@ pub fn time_shell_command(
         return Err(io::Error::new(
             io::ErrorKind::Other,
             "Command terminated with non-zero exit code. \
-             Use the '-i'/'--ignore-failure' option if you want to ignore this.",
+             Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+             Alternatively, use the '--show-output' option to debug what went wrong.",
         ));
     }
 
