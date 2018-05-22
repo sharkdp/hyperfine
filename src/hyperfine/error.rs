@@ -1,6 +1,6 @@
-use std::num;
 use std::error::Error;
 use std::fmt;
+use std::num;
 
 #[derive(Debug)]
 pub enum ParameterScanError {

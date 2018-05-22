@@ -1,5 +1,4 @@
 /// This module contains common internal types.
-
 use std::fmt;
 
 /// Type alias for unit of time

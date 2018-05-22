@@ -1,4 +1,6 @@
+pub mod app;
 pub mod benchmark;
+pub mod error;
 pub mod export;
 pub mod format;
 pub mod internal;
@@ -7,5 +9,3 @@ pub mod shell;
 pub mod timer;
 pub mod types;
 pub mod warnings;
-pub mod error;
-pub mod app;

@@ -50,7 +50,11 @@ pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str) -> io::Resu
 
 /// Run a standard shell command
 #[cfg(not(windows))]
-fn run_shell_command(stdout: Stdio, stderr: Stdio, command: &str) -> io::Result<std::process::ExitStatus> {
+fn run_shell_command(
+    stdout: Stdio,
+    stderr: Stdio,
+    command: &str,
+) -> io::Result<std::process::ExitStatus> {
     Command::new("sh")
         .arg("-c")
         .arg(command)
@@ -62,7 +66,11 @@ fn run_shell_command(stdout: Stdio, stderr: Stdio, command: &str) -> io::Result<
 
 /// Run a Windows shell command using cmd.exe
 #[cfg(windows)]
-fn run_shell_command(stdout: Stdio, stderr: Stdio, command: &str) -> io::Result<std::process::Child> {
+fn run_shell_command(
+    stdout: Stdio,
+    stderr: Stdio,
+    command: &str,
+) -> io::Result<std::process::Child> {
     Command::new("cmd")
         .arg("/C")
         .arg(command)

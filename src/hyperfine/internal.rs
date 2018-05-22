@@ -31,14 +31,16 @@ pub fn get_progress_bar(length: u64, msg: &str, option: &OutputStyleOption) -> P
 
 /// A max function for f64's without NaNs
 pub fn max(vals: &[f64]) -> f64 {
-    *vals.iter()
+    *vals
+        .iter()
         .max_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap()
 }
 
 /// A min function for f64's without NaNs
 pub fn min(vals: &[f64]) -> f64 {
-    *vals.iter()
+    *vals
+        .iter()
         .min_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap()
 }

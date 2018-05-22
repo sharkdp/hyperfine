@@ -1,7 +1,7 @@
-use clap::{App, AppSettings, Arg, ArgMatches};
-use std::ffi::OsString;
 use atty;
 use atty::Stream;
+use clap::{App, AppSettings, Arg, ArgMatches};
+use std::ffi::OsString;
 
 pub fn get_arg_matches<T>(args: T) -> ArgMatches<'static>
 where
@@ -122,10 +122,12 @@ fn build_app() -> App<'static, 'static> {
             Arg::with_name("show-output")
                 .long("show-output")
                 .conflicts_with("style")
-                .help("Print the stdout and stderr of the benchmark instead of suppressing it. \
-                       This will increase the time it takes for benchmarks to run, \
-                       so it should only be used for debugging purposes or \
-                       when trying to benchmark output speed."),
+                .help(
+                    "Print the stdout and stderr of the benchmark instead of suppressing it. \
+                     This will increase the time it takes for benchmarks to run, \
+                     so it should only be used for debugging purposes or \
+                     when trying to benchmark output speed.",
+                ),
         )
         .help_message("Print this help message.")
         .version_message("Show version information.")

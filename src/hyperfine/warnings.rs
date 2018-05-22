@@ -1,8 +1,8 @@
 use std::fmt;
 
+use hyperfine::format::format_duration;
 use hyperfine::internal::MIN_EXECUTION_TIME;
 use hyperfine::types::Second;
-use hyperfine::format::format_duration;
 
 /// A list of all possible warnings
 pub enum Warnings {

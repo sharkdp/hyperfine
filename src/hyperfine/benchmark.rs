@@ -4,15 +4,15 @@ use std::process::Stdio;
 use colored::*;
 use statistical::{mean, standard_deviation};
 
+use hyperfine::format::{format_duration, format_duration_unit};
 use hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
+use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use hyperfine::shell::execute_and_time;
+use hyperfine::timer::wallclocktimer::WallClockTimer;
+use hyperfine::timer::{TimerStart, TimerStop};
+use hyperfine::types::{BenchmarkResult, Command};
 use hyperfine::types::{CmdFailureAction, HyperfineOptions, OutputStyleOption, Second};
 use hyperfine::warnings::Warnings;
-use hyperfine::format::{format_duration, format_duration_unit};
-use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
-use hyperfine::timer::{TimerStart, TimerStop};
-use hyperfine::timer::wallclocktimer::WallClockTimer;
-use hyperfine::shell::execute_and_time;
-use hyperfine::types::{BenchmarkResult, Command};
 
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]

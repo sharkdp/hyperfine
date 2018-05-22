@@ -6,8 +6,8 @@ use self::csv::CsvExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 
-use std::io::{Result, Write};
 use std::fs::File;
+use std::io::{Result, Write};
 
 use hyperfine::types::BenchmarkResult;
 
