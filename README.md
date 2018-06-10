@@ -84,6 +84,13 @@ option that will create tables like this:
 
 ## Installation
 
+### On macOS
+
+Hyperfine can be installed via [Homebrew](https://brew.sh):
+```
+brew install hyperfine
+```
+
 ### On Ubuntu
 
 Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
