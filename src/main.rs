@@ -103,7 +103,7 @@ fn main() {
             let ans = export_manager.write_results(timing_results);
             if let Err(e) = ans {
                 error(&format!(
-                    "The following error occured while exporting: {}",
+                    "The following error occurred while exporting: {}",
                     e.description()
                 ));
             }
