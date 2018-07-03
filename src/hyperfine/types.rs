@@ -38,6 +38,10 @@ impl<'a> Command<'a> {
             None => self.expression.into(),
         }
     }
+
+    pub fn get_parameter(&self) -> Option<(&'a str, i32)> {
+        self.parameter
+    }
 }
 
 impl<'a> fmt::Display for Command<'a> {
