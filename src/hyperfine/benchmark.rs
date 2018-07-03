@@ -131,16 +131,11 @@ pub fn mean_shell_spawning_time(
 
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(
-    command: &Option<String>,
+    command: &Option<Command>,
     show_output: bool,
 ) -> io::Result<TimingResult> {
-    if let &Some(ref preparation_command) = command {
-        let res = time_shell_command(
-            &Command::new(preparation_command),
-            show_output,
-            CmdFailureAction::RaiseError,
-            None,
-        );
+    if let Some(ref cmd) = command {
+        let res = time_shell_command(cmd, show_output, CmdFailureAction::RaiseError, None);
         if res.is_err() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -198,7 +193,14 @@ pub fn run_benchmark(
     );
 
     // Run init / cleanup command
-    let prepare_res = run_preparation_command(&options.preparation_command, options.show_output)?;
+    let prepare_cmd = options
+        .preparation_command
+        .as_ref()
+        .map(|preparation_command| match cmd.get_parameter() {
+            Some((param, value)) => Command::new_parametrized(preparation_command, param, value),
+            None => Command::new(preparation_command),
+        });
+    let prepare_res = run_preparation_command(&prepare_cmd, options.show_output)?;
 
     // Initial timing run
     let (res, success) = time_shell_command(
@@ -233,7 +235,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command(&options.preparation_command, options.show_output)?;
+        run_preparation_command(&prepare_cmd, options.show_output)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
