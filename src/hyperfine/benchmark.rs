@@ -134,7 +134,7 @@ fn run_preparation_command(
     command: &Option<Command>,
     show_output: bool,
 ) -> io::Result<TimingResult> {
-    if let Some(ref cmd) = command {
+    if let &Some(ref cmd) = command {
         let res = time_shell_command(cmd, show_output, CmdFailureAction::RaiseError, None);
         if res.is_err() {
             return Err(io::Error::new(
