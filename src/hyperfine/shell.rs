@@ -71,7 +71,7 @@ fn run_shell_command(
     stderr: Stdio,
     command: &str,
 ) -> io::Result<std::process::Child> {
-    Command::new("cmd")
+    Command::new("cmd.exe")
         .arg("/C")
         .arg(command)
         .stdin(Stdio::null())
