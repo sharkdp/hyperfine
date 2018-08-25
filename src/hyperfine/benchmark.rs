@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, BufWriter, Write};
 use std::process::Stdio;
 
 use colored::*;
@@ -157,13 +157,17 @@ pub fn run_benchmark(
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<BenchmarkResult> {
-    println!(
+    let stdout = io::stdout();
+    let stdout = stdout.lock();
+    let mut stdout = BufWriter::new(stdout);
+
+    writeln!(stdout,
         "{}{}: {}",
         "Benchmark #".bold(),
         (num + 1).to_string().bold(),
         cmd
-    );
-    println!();
+    ).unwrap();
+    writeln!(stdout).unwrap();
 
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
@@ -278,7 +282,7 @@ pub fn run_benchmark(
     let (user_str, user_unit) = format_duration_unit(user_mean, None);
     let system_str = format_duration(system_mean, Some(user_unit));
 
-    println!(
+    writeln!(stdout,
         "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
         "mean".green().bold(),
         "σ".green(),
@@ -286,16 +290,16 @@ pub fn run_benchmark(
         stddev_str.green(),
         user_str.blue(),
         system_str.blue()
-    );
-    println!(" ");
+    ).unwrap();
+    writeln!(stdout, " ").unwrap();
 
-    println!(
+    writeln!(stdout,
         "  Range ({} … {}):   {:>8} … {:>8}",
         "min".cyan(),
         "max".purple(),
         min_str.cyan(),
         max_str.purple()
-    );
+    ).unwrap();
 
     // Warnings
     let mut warnings = vec![];
@@ -326,7 +330,7 @@ pub fn run_benchmark(
         }
     }
 
-    println!(" ");
+    writeln!(stdout, " ").unwrap();
 
     Ok(BenchmarkResult::new(
         cmd.get_shell_command(),
