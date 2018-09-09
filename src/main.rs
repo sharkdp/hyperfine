@@ -148,14 +148,14 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
         (None, Some(max)) => {
             // Since the minimum was not explicit we lower it if max is below the default min.
             options.runs.min = cmp::min(options.runs.min, max);
-            options.runs.max = max;
+            options.runs.max = Some(max);
         }
         (Some(min), Some(max)) if min > max => {
             return Err(OptionsError::EmptyRunsRange);
         }
         (Some(min), Some(max)) => {
             options.runs.min = min;
-            options.runs.max = max;
+            options.runs.max = Some(max);
         }
         (None, None) => {}
     };

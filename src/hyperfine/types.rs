@@ -79,14 +79,14 @@ pub struct Runs {
     pub min: u64,
 
     /// Maximum number of benchmark runs
-    pub max: u64,
+    pub max: Option<u64>,
 }
 
 impl Default for Runs {
     fn default() -> Runs {
         Runs {
             min: 10,
-            max: ::std::u64::MAX,
+            max: None,
         }
     }
 }
