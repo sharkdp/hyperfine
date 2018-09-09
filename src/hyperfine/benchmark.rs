@@ -216,10 +216,13 @@ pub fn run_benchmark(
         / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real))
         as u64;
 
-    let count = cmp::min(
-        cmp::max(runs_in_min_time, options.runs.min),
-        options.runs.max
-    );
+    let count = {
+        let min = cmp::max(runs_in_min_time, options.runs.min);
+
+        options.runs.max.as_ref()
+            .map(|max| cmp::min(min, *max))
+            .unwrap_or(min)
+    };
 
     let count_remaining = count - 1;
 

@@ -65,6 +65,7 @@ fn build_app() -> App<'static, 'static> {
         .arg(
             Arg::with_name("runs")
                 .long("runs")
+                .conflicts_with_all(&["max-runs", "min-runs"])
                 .short("r")
                 .takes_value(true)
                 .value_name("NUM")
