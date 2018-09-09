@@ -73,13 +73,31 @@ pub enum OutputStyleOption {
     NoColor,
 }
 
+/// Number of runs for a benchmark
+pub struct Runs {
+    /// Minimum number of benchmark runs
+    pub min: u64,
+
+    /// Maximum number of benchmark runs
+    pub max: u64,
+}
+
+impl Default for Runs {
+    fn default() -> Runs {
+        Runs {
+            min: 10,
+            max: ::std::u64::MAX,
+        }
+    }
+}
+
 /// A set of options for hyperfine
 pub struct HyperfineOptions {
     /// Number of warmup runs
     pub warmup_count: u64,
 
-    /// Minimum number of benchmark runs
-    pub min_runs: u64,
+    /// Number of benchmark runs
+    pub runs: Runs,
 
     /// Minimum benchmarking time
     pub min_time_sec: Second,
@@ -101,7 +119,7 @@ impl Default for HyperfineOptions {
     fn default() -> HyperfineOptions {
         HyperfineOptions {
             warmup_count: 0,
-            min_runs: 10,
+            runs: Runs::default(),
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
