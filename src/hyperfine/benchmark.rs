@@ -1,3 +1,4 @@
+use std::cmp;
 use std::io;
 use std::process::Stdio;
 
@@ -187,7 +188,7 @@ pub fn run_benchmark(
 
     // Set up progress bar (and spinner for initial measurement)
     let progress_bar = get_progress_bar(
-        options.min_runs,
+        options.runs.min,
         "Initial time measurement",
         &options.output_style,
     );
@@ -215,11 +216,10 @@ pub fn run_benchmark(
         / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real))
         as u64;
 
-    let count = if runs_in_min_time >= options.min_runs {
-        runs_in_min_time
-    } else {
-        options.min_runs
-    };
+    let count = cmp::min(
+        cmp::max(runs_in_min_time, options.runs.min),
+        options.runs.max
+    );
 
     let count_remaining = count - 1;
 

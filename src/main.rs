@@ -42,7 +42,7 @@ mod hyperfine;
 
 use hyperfine::app::get_arg_matches;
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::error::ParameterScanError;
+use hyperfine::error::{ParameterScanError, OptionsError};
 use hyperfine::export::{ExportManager, ExportType};
 use hyperfine::internal::write_benchmark_comparison;
 use hyperfine::types::{
@@ -95,7 +95,10 @@ fn main() {
     let export_manager = build_export_manager(&matches);
     let commands = build_commands(&matches);
 
-    let res = run(&commands, &options);
+    let res = match options {
+        Ok(opts) => run(&commands, &opts),
+        Err(e) => error(e.description()),
+    };
 
     match res {
         Ok(timing_results) => {
@@ -113,7 +116,7 @@ fn main() {
 }
 
 /// Build the HyperfineOptions that correspond to the given ArgMatches
-fn build_hyperfine_options(matches: &ArgMatches) -> HyperfineOptions {
+fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, OptionsError> {
     let mut options = HyperfineOptions::default();
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
@@ -122,10 +125,40 @@ fn build_hyperfine_options(matches: &ArgMatches) -> HyperfineOptions {
         .and_then(&str_to_u64)
         .unwrap_or(0);
 
-    if let Some(min_runs) = matches.value_of("min-runs").and_then(&str_to_u64) {
-        // we need at least two runs to compute a variance
-        options.min_runs = cmp::max(2, min_runs);
+    let mut min_runs = matches.value_of("min-runs").and_then(&str_to_u64);
+    let mut max_runs = matches.value_of("max-runs").and_then(&str_to_u64);
+
+    if let Some(runs) = matches.value_of("runs").and_then(&str_to_u64) {
+        min_runs = Some(runs);
+        max_runs = Some(runs);
     }
+
+    match (min_runs, max_runs) {
+        (Some(min), _) if min < 2 => {
+            // We need at least two runs to compute a variance.
+            return Err(OptionsError::RunsBelowTwo);
+        }
+        (Some(min), None) => {
+            options.runs.min = min;
+        }
+        (_, Some(max)) if max < 2 => {
+            // We need at least two runs to compute a variance.
+            return Err(OptionsError::RunsBelowTwo);
+        }
+        (None, Some(max)) => {
+            // Since the minimum was not explicit we lower it if max is below the default min.
+            options.runs.min = cmp::min(options.runs.min, max);
+            options.runs.max = max;
+        }
+        (Some(min), Some(max)) if min > max => {
+            return Err(OptionsError::EmptyRunsRange);
+        }
+        (Some(min), Some(max)) => {
+            options.runs.min = min;
+            options.runs.max = max;
+        }
+        (None, None) => {}
+    };
 
     options.preparation_command = matches.value_of("prepare").map(String::from);
 
@@ -155,7 +188,7 @@ fn build_hyperfine_options(matches: &ArgMatches) -> HyperfineOptions {
         options.failure_action = CmdFailureAction::Ignore;
     }
 
-    options
+    Ok(options)
 }
 
 /// Build the ExportManager that will export the results specified

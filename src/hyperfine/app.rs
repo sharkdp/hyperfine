@@ -55,6 +55,22 @@ fn build_app() -> App<'static, 'static> {
                 .help("Perform at least NUM runs for each command (default: 10)."),
         )
         .arg(
+            Arg::with_name("max-runs")
+                .long("max-runs")
+                .short("M")
+                .takes_value(true)
+                .value_name("NUM")
+                .help("Perform at most NUM runs for each command."),
+        )
+        .arg(
+            Arg::with_name("runs")
+                .long("runs")
+                .short("r")
+                .takes_value(true)
+                .value_name("NUM")
+                .help("Perform exactly NUM runs for each command."),
+        )
+        .arg(
             Arg::with_name("prepare")
                 .long("prepare")
                 .short("p")
