@@ -68,11 +68,16 @@ pub fn write_benchmark_comparison(results: &Vec<BenchmarkResult>) {
     longer_items.sort_by(|l, r| l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal));
 
     for item in longer_items {
+        let ratio = item.mean / fastest_item.mean;
+        // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
+        // Covariance asssumed to be 0, i.e. variables are assumed to be independent
+        let ratio_stddev = ratio * ( (item.stddev/item.mean).powi(2) + (fastest_item.stddev/fastest_item.mean).powi(2) ).sqrt();
         println!(
-            "{} faster than '{}'",
-            format!("{:8.2}x", item.mean / fastest_item.mean)
+            "{} ± {} faster than '{}'",
+            format!("{:8.2}x", ratio)
                 .bold()
                 .green(),
+            format!("{:.2}", ratio_stddev).green(),
             &item.command.magenta()
         );
     }
