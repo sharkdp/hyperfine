@@ -71,6 +71,9 @@ pub enum OutputStyleOption {
 
     /// Keep elements such as progress bar, but use no coloring
     NoColor,
+
+    /// Keep coloring, but use no progress bar
+    Color,
 }
 
 /// Number of runs for a benchmark

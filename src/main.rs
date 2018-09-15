@@ -168,6 +168,7 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
         Some("full") => OutputStyleOption::Full,
         Some("basic") => OutputStyleOption::Basic,
         Some("nocolor") => OutputStyleOption::NoColor,
+        Some("color") => OutputStyleOption::Color,
         _ => {
             if !options.show_output && atty::is(Stream::Stdout) {
                 OutputStyleOption::Full
@@ -182,8 +183,9 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
         options.output_style = OutputStyleOption::NoColor;
     }
 
-    if options.output_style != OutputStyleOption::Full {
-        colored::control::set_override(false);
+    match options.output_style {
+        OutputStyleOption::Full | OutputStyleOption::Color => colored::control::unset_override(),
+        _ => colored::control::set_override(false),
     }
 
     if matches.is_present("ignore-failure") {
