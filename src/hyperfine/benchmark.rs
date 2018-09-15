@@ -164,7 +164,6 @@ pub fn run_benchmark(
         (num + 1).to_string().bold(),
         cmd
     );
-    println!();
 
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
@@ -293,7 +292,6 @@ pub fn run_benchmark(
         user_str.blue(),
         system_str.blue()
     );
-    println!(" ");
 
     println!(
         "  Range ({} … {}):   {:>8} … {:>8}",
