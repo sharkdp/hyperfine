@@ -73,8 +73,8 @@ pub fn write_benchmark_comparison(results: &Vec<BenchmarkResult>) {
         // Covariance asssumed to be 0, i.e. variables are assumed to be independent
         let ratio_stddev = ratio * ( (item.stddev/item.mean).powi(2) + (fastest_item.stddev/fastest_item.mean).powi(2) ).sqrt();
         println!(
-            "{} ± {} faster than '{}'",
-            format!("{:8.2}x", ratio)
+            "{} ± {} times faster than '{}'",
+            format!("{:8.2}", ratio)
                 .bold()
                 .green(),
             format!("{:.2}", ratio_stddev).green(),
