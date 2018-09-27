@@ -32,4 +32,4 @@ default-features = false
 features = ["suggestions", "color", "wrap_help"]
 
 [dev-dependencies]
-approx = "0.1.1"
+approx = "0.3"
