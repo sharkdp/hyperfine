@@ -71,12 +71,13 @@ pub fn write_benchmark_comparison(results: &Vec<BenchmarkResult>) {
         let ratio = item.mean / fastest_item.mean;
         // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
         // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-        let ratio_stddev = ratio * ( (item.stddev/item.mean).powi(2) + (fastest_item.stddev/fastest_item.mean).powi(2) ).sqrt();
+        let ratio_stddev = ratio
+            * ((item.stddev / item.mean).powi(2)
+                + (fastest_item.stddev / fastest_item.mean).powi(2))
+            .sqrt();
         println!(
             "{} ± {} times faster than '{}'",
-            format!("{:8.2}", ratio)
-                .bold()
-                .green(),
+            format!("{:8.2}", ratio).bold().green(),
             format!("{:.2}", ratio_stddev).green(),
             &item.command.magenta()
         );

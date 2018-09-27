@@ -84,10 +84,7 @@ pub struct Runs {
 
 impl Default for Runs {
     fn default() -> Runs {
-        Runs {
-            min: 10,
-            max: None,
-        }
+        Runs { min: 10, max: None }
     }
 }
 

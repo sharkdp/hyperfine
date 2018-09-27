@@ -219,7 +219,10 @@ pub fn run_benchmark(
     let count = {
         let min = cmp::max(runs_in_min_time, options.runs.min);
 
-        options.runs.max.as_ref()
+        options
+            .runs
+            .max
+            .as_ref()
             .map(|max| cmp::min(min, *max))
             .unwrap_or(min)
     };

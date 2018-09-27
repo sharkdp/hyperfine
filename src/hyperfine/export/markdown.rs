@@ -34,6 +34,7 @@ fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResult) {
             entry.stddev * MULTIPLIER,
             entry.min * MULTIPLIER,
             entry.max * MULTIPLIER
-        ).as_bytes(),
+        )
+        .as_bytes(),
     );
 }

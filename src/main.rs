@@ -42,7 +42,7 @@ mod hyperfine;
 
 use hyperfine::app::get_arg_matches;
 use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::error::{ParameterScanError, OptionsError};
+use hyperfine::error::{OptionsError, ParameterScanError};
 use hyperfine::export::{ExportManager, ExportType};
 use hyperfine::internal::write_benchmark_comparison;
 use hyperfine::types::{
@@ -168,11 +168,13 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
         Some("full") => OutputStyleOption::Full,
         Some("basic") => OutputStyleOption::Basic,
         Some("nocolor") => OutputStyleOption::NoColor,
-        _ => if !options.show_output && atty::is(Stream::Stdout) {
-            OutputStyleOption::Full
-        } else {
-            OutputStyleOption::Basic
-        },
+        _ => {
+            if !options.show_output && atty::is(Stream::Stdout) {
+                OutputStyleOption::Full
+            } else {
+                OutputStyleOption::Basic
+            }
+        }
     };
 
     // We default Windows to NoColor if full had been specified.
