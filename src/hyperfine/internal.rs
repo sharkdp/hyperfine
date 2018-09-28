@@ -15,7 +15,7 @@ pub fn get_progress_bar(length: u64, msg: &str, option: &OutputStyleOption) -> P
         OutputStyleOption::Basic | OutputStyleOption::Color => ProgressStyle::default_bar(),
         _ => ProgressStyle::default_spinner()
             .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
-            .template("\n {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
+            .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
     };
 
     let progress_bar = match *option {
