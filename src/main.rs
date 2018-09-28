@@ -184,8 +184,10 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
     }
 
     match options.output_style {
-        OutputStyleOption::Full | OutputStyleOption::Color => colored::control::unset_override(),
-        _ => colored::control::set_override(false),
+        OutputStyleOption::Basic | OutputStyleOption::NoColor => {
+            colored::control::set_override(false)
+        }
+        _ => {}
     }
 
     if matches.is_present("ignore-failure") {
