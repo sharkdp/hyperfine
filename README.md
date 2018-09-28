@@ -124,7 +124,7 @@ cargo install hyperfine
 
 Make sure that you use Rust 1.24 or higher.
 
-### From binaries (Linux, macOS)
+### From binaries (Linux, macOS, Windows)
 
 Download the corresponding archive from the [Release page](https://github.com/sharkdp/hyperfine/releases).
 
