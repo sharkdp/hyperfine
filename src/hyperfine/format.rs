@@ -15,21 +15,11 @@ impl Unit {
         }
     }
 
-    /// The multiplier value to convert from `from_unit` to the Unit.
-    pub fn multiplier_from(&self, from_unit: Unit) -> f64 {
-        match (*self, from_unit) {
-            (Unit::Second, Unit::Second) => 1.0,
-            (Unit::MilliSecond, Unit::MilliSecond) => 1.0,
-            (Unit::Second, Unit::MilliSecond) => 1e-3,
-            (Unit::MilliSecond, Unit::Second) => 1e3,
-        }
-    }
-
     /// Returns the Second value formatted for the Unit.
     pub fn format(&self, value: Second) -> String {
         match *self {
-            Unit::Second => format!("{:.3}", value * self.multiplier_from(Unit::Second)),
-            Unit::MilliSecond => format!("{:.1}", value * self.multiplier_from(Unit::Second)),
+            Unit::Second => format!("{:.3}", value),
+            Unit::MilliSecond => format!("{:.1}", value * 1e3),
         }
     }
 }
@@ -51,39 +41,17 @@ pub fn format_duration_unit(duration: Second, unit: Option<Unit>) -> (String, Un
 
 /// Like `format_duration`, but returns the target unit as well.
 pub fn format_duration_value(duration: Second, unit: Option<Unit>) -> (String, Unit) {
-
-    // Default to `Second` until proven otherwise.
-    let mut duration_unit = Unit::Second;
-
-    match unit {
-        Some(unit_option) => {
-            // Use user-supplied unit.
-            duration_unit = unit_option;
-        },
-        None => {
-            if duration < 1.0 {
-                // It's a small value, use `Millisecond` instead.
-                duration_unit = Unit::MilliSecond;
-            }
-        },
+    if (duration < 1.0 && unit.is_none()) || unit == Some(Unit::MilliSecond) {
+        (Unit::MilliSecond.format(duration), Unit::MilliSecond)
+    } else {
+        (Unit::Second.format(duration), Unit::Second)
     }
-
-    (duration_unit.format(duration), duration_unit)
 }
 
 #[test]
 fn test_unit_short_name() {
     assert_eq!("s", Unit::Second.short_name());
     assert_eq!("ms", Unit::MilliSecond.short_name());
-}
-
-#[test]
-fn test_unit_multiplier_from() {
-    assert_eq!(1.0, Unit::Second.multiplier_from(Unit::Second));
-    assert_eq!(1.0, Unit::MilliSecond.multiplier_from(Unit::MilliSecond));
-
-    assert_eq!(0.001, Unit::Second.multiplier_from(Unit::MilliSecond));
-    assert_eq!(1000.0, Unit::MilliSecond.multiplier_from(Unit::Second));
 }
 
 // Note - the values are rounded when formatted.
