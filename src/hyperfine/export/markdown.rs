@@ -5,23 +5,18 @@ use hyperfine::types::BenchmarkResult;
 
 use std::io::Result;
 
-macro_rules! TABLE_HEADER {
-    ($unit:expr) => {
-        format!("| Command | Mean [{unit}] | Min…Max [{unit}] |\n|:---|---:|---:|\n", unit=$unit) };
-}
-
 #[derive(Default)]
 pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
     fn serialize(&self, results: &Vec<BenchmarkResult>) -> Result<Vec<u8>> {
-        // Default to `Second`.
-        let mut unit = Unit::Second;
-
-        if !results.is_empty() {
+        let unit = if let Some(first_result) = results.first() {
             // Use the first BenchmarkResult entry to determine the unit for all entries.
-            unit = format_duration_value(results[0].mean, None).1;
-        }
+            format_duration_value(first_result.mean, None).1
+        } else {
+            // Default to `Second`.
+            Unit::Second
+        };
 
         let mut destination = start_table(unit);
 
@@ -33,8 +28,12 @@ impl Exporter for MarkdownExporter {
     }
 }
 
+fn table_header(unit_short_name: String) -> String {
+    format!("| Command | Mean [{unit}] | Min…Max [{unit}] |\n|:---|---:|---:|\n", unit=unit_short_name)
+}
+
 fn start_table(unit: Unit) -> Vec<u8> {
-    TABLE_HEADER!(unit.short_name()).bytes().collect()
+    table_header(unit.short_name()).bytes().collect()
 }
 
 fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResult, unit: Unit) {
@@ -95,7 +94,7 @@ fn test_markdown_format_ms() {
 "{}\
 | `sleep 0.1` | 105.7 ± 1.6 | 102.3…108.0 |
 | `sleep 2` | 2005.0 ± 2.0 | 2002.0…2008.0 |
-", TABLE_HEADER!("ms"));
+", table_header("ms".to_string()));
 
     assert_eq!(formatted_expected, formatted);
 }
@@ -136,22 +135,7 @@ fn test_markdown_format_s() {
 "{}\
 | `sleep 2` | 2.005 ± 0.002 | 2.002…2.008 |
 | `sleep 0.1` | 0.106 ± 0.002 | 0.102…0.108 |
-", TABLE_HEADER!("s"));
-
-    assert_eq!(formatted_expected, formatted);
-}
-
-/// An empty list of benchmark results will only include the table header
-/// in the markdown output, using the default `Seconds` unit.
-#[test]
-fn test_markdown_format_empty_results() {
-    let exporter = MarkdownExporter::default();
-
-    let timing_results = vec![];
-
-    let formatted = String::from_utf8(exporter.serialize(&timing_results).unwrap()).unwrap();
-
-    let formatted_expected = TABLE_HEADER!("s");
+", table_header("s".to_string()));
 
     assert_eq!(formatted_expected, formatted);
 }
