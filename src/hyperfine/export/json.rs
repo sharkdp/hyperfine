@@ -1,5 +1,5 @@
 use super::Exporter;
-use hyperfine::types::BenchmarkResult;
+use hyperfine::types::{BenchmarkResult, Unit};
 
 use std::io::{Error, ErrorKind, Result};
 
@@ -14,7 +14,7 @@ struct HyperfineSummary<'a> {
 pub struct JsonExporter {}
 
 impl Exporter for JsonExporter {
-    fn serialize(&self, results: &Vec<BenchmarkResult>) -> Result<Vec<u8>> {
+    fn serialize(&self, results: &Vec<BenchmarkResult>, _unit: Option<Unit>) -> Result<Vec<u8>> {
         let mut output = to_vec_pretty(&HyperfineSummary { results });
         for content in output.iter_mut() {
             content.push(b'\n');

@@ -10,6 +10,31 @@ pub const DEFAULT_SHELL: &str = "cmd.exe";
 /// Type alias for unit of time
 pub type Second = f64;
 
+/// Supported time units
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Unit {
+    Second,
+    MilliSecond,
+}
+
+impl Unit {
+    /// The abbreviation of the Unit.
+    pub fn short_name(&self) -> String {
+        match *self {
+            Unit::Second => String::from("s"),
+            Unit::MilliSecond => String::from("ms"),
+        }
+    }
+
+    /// Returns the Second value formatted for the Unit.
+    pub fn format(&self, value: Second) -> String {
+        match *self {
+            Unit::Second => format!("{:.3}", value),
+            Unit::MilliSecond => format!("{:.1}", value * 1e3),
+        }
+    }
+}
+
 /// A command that should be benchmarked.
 #[derive(Debug, Clone)]
 pub struct Command<'a> {
@@ -122,6 +147,9 @@ pub struct HyperfineOptions {
 
     /// Forward benchmark's stdout to hyperfine's stdout
     pub show_output: bool,
+
+    /// Which time unit to use for CLI & Markdown output
+    pub time_unit: Option<Unit>,
 }
 
 impl Default for HyperfineOptions {
@@ -135,6 +163,7 @@ impl Default for HyperfineOptions {
             output_style: OutputStyleOption::Full,
             shell: DEFAULT_SHELL.to_string(),
             show_output: false,
+            time_unit: None,
         }
     }
 }
@@ -191,4 +220,18 @@ impl BenchmarkResult {
             times: Some(times),
         }
     }
+}
+
+#[test]
+fn test_unit_short_name() {
+    assert_eq!("s", Unit::Second.short_name());
+    assert_eq!("ms", Unit::MilliSecond.short_name());
+}
+
+// Note - the values are rounded when formatted.
+#[test]
+fn test_unit_format() {
+    let value: Second = 123.456789;
+    assert_eq!("123.457", Unit::Second.format(value));
+    assert_eq!("123456.8", Unit::MilliSecond.format(value));
 }

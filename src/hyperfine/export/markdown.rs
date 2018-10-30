@@ -1,7 +1,7 @@
 use super::Exporter;
 
-use hyperfine::format::{Unit, format_duration_value};
-use hyperfine::types::BenchmarkResult;
+use hyperfine::format::format_duration_value;
+use hyperfine::types::{BenchmarkResult, Unit};
 
 use std::io::Result;
 
@@ -9,8 +9,11 @@ use std::io::Result;
 pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
-    fn serialize(&self, results: &Vec<BenchmarkResult>) -> Result<Vec<u8>> {
-        let unit = if let Some(first_result) = results.first() {
+    fn serialize(&self, results: &Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<Vec<u8>> {
+        let unit = if unit.is_some() {
+            // Use the given unit for all entries.
+            unit.unwrap()
+        } else if let Some(first_result) = results.first() {
             // Use the first BenchmarkResult entry to determine the unit for all entries.
             format_duration_value(first_result.mean, None).1
         } else {
@@ -59,7 +62,7 @@ fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResult, unit: Unit) {
 /// in the output.
 ///
 /// This also demonstrates that the first entry's units (ms) are used to set
-/// the units for all entries.
+/// the units for all entries when the time unit is not given.
 #[test]
 fn test_markdown_format_ms() {
     let exporter = MarkdownExporter::default();
@@ -88,7 +91,7 @@ fn test_markdown_format_ms() {
             vec![2.0, 2.0, 2.0], // times
             ));
 
-    let formatted = String::from_utf8(exporter.serialize(&timing_results).unwrap()).unwrap();
+    let formatted = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
 
     let formatted_expected = format!(
 "{}\
@@ -100,7 +103,7 @@ fn test_markdown_format_ms() {
 }
 
 /// This (again) demonstrates that the first entry's units (s) are used to set
-/// the units for all entries.
+/// the units for all entries when the time unit is not given.
 #[test]
 fn test_markdown_format_s() {
     let exporter = MarkdownExporter::default();
@@ -129,13 +132,94 @@ fn test_markdown_format_s() {
             vec![0.1, 0.1, 0.1], // times
             ));
 
-    let formatted = String::from_utf8(exporter.serialize(&timing_results).unwrap()).unwrap();
+    let formatted = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
 
     let formatted_expected = format!(
 "{}\
 | `sleep 2` | 2.005 ± 0.002 | 2.002…2.008 |
 | `sleep 0.1` | 0.106 ± 0.002 | 0.102…0.108 |
 ", table_header("s".to_string()));
+
+    assert_eq!(formatted_expected, formatted);
+}
+
+/// The given time unit (s) is used to set the units for all entries.
+#[test]
+fn test_markdown_format_time_unit_s() {
+    let exporter = MarkdownExporter::default();
+
+    let mut timing_results = vec![];
+
+    timing_results.push(BenchmarkResult::new(
+            String::from("sleep 0.1"),
+            0.1057, // mean
+            0.0016, // std dev
+            0.0009, // user_mean
+            0.0011, // system_mean
+            0.1023, // min
+            0.1080, // max
+            vec![0.1, 0.1, 0.1], // times
+            ));
+
+    timing_results.push(BenchmarkResult::new(
+            String::from("sleep 2"),
+            2.0050, // mean
+            0.0020, // std dev
+            0.0009, // user_mean
+            0.0012, // system_mean
+            2.0020, // min
+            2.0080, // max
+            vec![2.0, 2.0, 2.0], // times
+            ));
+
+    let formatted = String::from_utf8(exporter.serialize(&timing_results, Some(Unit::Second)).unwrap()).unwrap();
+
+    let formatted_expected = format!(
+"{}\
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102…0.108 |
+| `sleep 2` | 2.005 ± 0.002 | 2.002…2.008 |
+", table_header("s".to_string()));
+
+    assert_eq!(formatted_expected, formatted);
+}
+
+/// This (again) demonstrates that the given time unit (ms) is used to set
+/// the units for all entries.
+#[test]
+fn test_markdown_format_time_unit_ms() {
+    let exporter = MarkdownExporter::default();
+
+    let mut timing_results = vec![];
+
+    timing_results.push(BenchmarkResult::new(
+            String::from("sleep 2"),
+            2.0050, // mean
+            0.0020, // std dev
+            0.0009, // user_mean
+            0.0012, // system_mean
+            2.0020, // min
+            2.0080, // max
+            vec![2.0, 2.0, 2.0], // times
+            ));
+
+    timing_results.push(BenchmarkResult::new(
+            String::from("sleep 0.1"),
+            0.1057, // mean
+            0.0016, // std dev
+            0.0009, // user_mean
+            0.0011, // system_mean
+            0.1023, // min
+            0.1080, // max
+            vec![0.1, 0.1, 0.1], // times
+            ));
+
+    let formatted = String::from_utf8(exporter.serialize(&timing_results, Some(Unit::MilliSecond)).unwrap()).unwrap();
+
+    let formatted_expected = format!(
+"{}\
+| `sleep 2` | 2005.0 ± 2.0 | 2002.0…2008.0 |
+| `sleep 0.1` | 105.7 ± 1.6 | 102.3…108.0 |
+", table_header("ms".to_string()));
 
     assert_eq!(formatted_expected, formatted);
 }

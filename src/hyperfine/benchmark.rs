@@ -254,7 +254,7 @@ pub fn run_benchmark(
         run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
 
         let msg = {
-            let mean = format_duration(mean(&times_real), None);
+            let mean = format_duration(mean(&times_real), options.time_unit);
             format!("Current estimate: {}", mean.to_string().green())
         };
         progress_bar.set_message(&msg);
@@ -287,7 +287,7 @@ pub fn run_benchmark(
     let system_mean = mean(&times_system);
 
     // Formatting and console output
-    let (mean_str, unit_mean) = format_duration_unit(t_mean, None);
+    let (mean_str, unit_mean) = format_duration_unit(t_mean, options.time_unit);
     let stddev_str = format_duration(t_stddev, Some(unit_mean));
     let min_str = format_duration(t_min, Some(unit_mean));
     let max_str = format_duration(t_max, Some(unit_mean));

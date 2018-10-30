@@ -9,7 +9,7 @@ use self::markdown::MarkdownExporter;
 use std::fs::File;
 use std::io::{Result, Write};
 
-use hyperfine::types::BenchmarkResult;
+use hyperfine::types::{BenchmarkResult, Unit};
 
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]
@@ -27,7 +27,7 @@ pub enum ExportType {
 /// Interface for different exporters.
 trait Exporter {
     /// Export the given entries in the serialized form.
-    fn serialize(&self, results: &Vec<BenchmarkResult>) -> Result<Vec<u8>>;
+    fn serialize(&self, results: &Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<Vec<u8>>;
 }
 
 struct ExporterWithFilename {
@@ -62,9 +62,9 @@ impl ExportManager {
     }
 
     /// Write the given results to all Exporters contained within this manager
-    pub fn write_results(&self, results: Vec<BenchmarkResult>) -> Result<()> {
+    pub fn write_results(&self, results: Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<()> {
         for e in &self.exporters {
-            let file_content = e.exporter.serialize(&results)?;
+            let file_content = e.exporter.serialize(&results, unit)?;
             write_to_file(&e.filename, &file_content)?;
         }
         Ok(())
