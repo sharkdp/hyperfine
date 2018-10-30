@@ -86,13 +86,13 @@ fn build_app() -> App<'static, 'static> {
             Arg::with_name("parameter-scan")
                 .long("parameter-scan")
                 .short("P")
+                .takes_value(true)
+                .allow_hyphen_values(true)
+                .value_names(&["VAR", "MIN", "MAX"])
                 .help(
                     "Perform benchmark runs for each value in the range MIN..MAX. Replaces the \
                      string '{VAR}' in each command by the current parameter value.",
-                )
-                .takes_value(true)
-                .allow_hyphen_values(true)
-                .value_names(&["VAR", "MIN", "MAX"]),
+                ),
         )
         .arg(
             Arg::with_name("style")
@@ -123,6 +123,16 @@ fn build_app() -> App<'static, 'static> {
                 .long("ignore-failure")
                 .short("i")
                 .help("Ignore non-zero exit codes."),
+        )
+        .arg(
+            Arg::with_name("time-unit")
+                .long("time-unit")
+                .short("u")
+                .takes_value(true)
+                .value_name("millisecond|second")
+                .possible_values(&["millisecond", "second"])
+                .help( "Set the time unit used for CLI output and Markdown export.",
+                ),
         )
         .arg(
             Arg::with_name("export-csv")

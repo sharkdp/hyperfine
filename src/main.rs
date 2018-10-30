@@ -46,7 +46,7 @@ use hyperfine::error::{OptionsError, ParameterScanError};
 use hyperfine::export::{ExportManager, ExportType};
 use hyperfine::internal::write_benchmark_comparison;
 use hyperfine::types::{
-    BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
+    BenchmarkResult, Unit, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
 };
 
 /// Print error message to stderr and terminate
@@ -95,15 +95,15 @@ fn main() {
     let export_manager = build_export_manager(&matches);
     let commands = build_commands(&matches);
 
-    let res = match options {
-        Ok(opts) => run(&commands, &opts),
-        Err(e) => error(e.description()),
+    let res = match &options {
+        &Ok(ref opts) => run(&commands, &opts),
+        &Err(ref e) => error(e.description()),
     };
 
     match res {
         Ok(timing_results) => {
             write_benchmark_comparison(&timing_results);
-            let ans = export_manager.write_results(timing_results);
+            let ans = export_manager.write_results(timing_results, options.unwrap().time_unit);
             if let Err(e) = ans {
                 error(&format!(
                     "The following error occurred while exporting: {}",
@@ -195,6 +195,12 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;
     }
+
+    options.time_unit = match matches.value_of("time-unit") {
+        Some("millisecond") => Some(Unit::MilliSecond),
+        Some("second") => Some(Unit::Second),
+        _ => None,
+    };
 
     Ok(options)
 }
