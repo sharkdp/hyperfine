@@ -1,6 +1,12 @@
 /// This module contains common internal types.
 use std::fmt;
 
+#[cfg(not(windows))]
+pub const DEFAULT_SHELL: &str = "sh";
+
+#[cfg(windows)]
+pub const DEFAULT_SHELL: &str = "cmd.exe";
+
 /// Type alias for unit of time
 pub type Second = f64;
 
@@ -111,6 +117,9 @@ pub struct HyperfineOptions {
     /// What color mode to use for output
     pub output_style: OutputStyleOption,
 
+    /// The shell to use for executing commands.
+    pub shell: String,
+
     /// Forward benchmark's stdout to hyperfine's stdout
     pub show_output: bool,
 }
@@ -124,6 +133,7 @@ impl Default for HyperfineOptions {
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
             output_style: OutputStyleOption::Full,
+            shell: DEFAULT_SHELL.to_string(),
             show_output: false,
         }
     }

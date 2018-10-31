@@ -57,7 +57,7 @@ pub fn error(message: &str) -> ! {
 
 /// Runs the benchmark for the given commands
 fn run(commands: &Vec<Command>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
-    let shell_spawning_time = mean_shell_spawning_time(&options.output_style, options.show_output)?;
+    let shell_spawning_time = mean_shell_spawning_time(&options.shell, &options.output_style, options.show_output)?;
 
     let mut timing_results = vec![];
 
@@ -123,7 +123,7 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
     options.warmup_count = matches
         .value_of("warmup")
         .and_then(&str_to_u64)
-        .unwrap_or(0);
+        .unwrap_or(options.warmup_count);
 
     let mut min_runs = matches.value_of("min-runs").and_then(&str_to_u64);
     let mut max_runs = matches.value_of("max-runs").and_then(&str_to_u64);
@@ -188,7 +188,9 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
             colored::control::set_override(false)
         }
         _ => {}
-    }
+    };
+
+    options.shell = matches.value_of("shell").unwrap_or(&options.shell).to_string();
 
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;

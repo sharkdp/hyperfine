@@ -19,8 +19,8 @@ pub struct ExecuteResult {
 
 /// Execute the given command and return a timing summary
 #[cfg(windows)]
-pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str) -> io::Result<ExecuteResult> {
-    let mut child = run_shell_command(stdout, stderr, command)?;
+pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str, shell: &str) -> io::Result<ExecuteResult> {
+    let mut child = run_shell_command(stdout, stderr, command, shell)?;
     let cpu_timer = get_cpu_timer(&child);
     let status = child.wait()?;
 
@@ -34,10 +34,10 @@ pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str) -> io::Resu
 
 /// Execute the given command and return a timing summary
 #[cfg(not(windows))]
-pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str) -> io::Result<ExecuteResult> {
+pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str, shell: &str) -> io::Result<ExecuteResult> {
     let cpu_timer = get_cpu_timer();
 
-    let status = run_shell_command(stdout, stderr, command)?;
+    let status = run_shell_command(stdout, stderr, command, shell)?;
 
     let (user_time, system_time) = cpu_timer.stop();
 
@@ -48,14 +48,15 @@ pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str) -> io::Resu
     })
 }
 
-/// Run a standard shell command
+/// Run a standard shell command using `sh -c`
 #[cfg(not(windows))]
 fn run_shell_command(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
+    shell: &str,
 ) -> io::Result<std::process::ExitStatus> {
-    Command::new("sh")
+    Command::new(shell)
         .arg("-c")
         .arg(command)
         .stdin(Stdio::null())
@@ -64,14 +65,15 @@ fn run_shell_command(
         .status()
 }
 
-/// Run a Windows shell command using cmd.exe
+/// Run a Windows shell command using `cmd.exe /C`
 #[cfg(windows)]
 fn run_shell_command(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
+    shell: &str,
 ) -> io::Result<std::process::Child> {
-    Command::new("cmd.exe")
+    Command::new(shell)
         .arg("/C")
         .arg(command)
         .stdin(Stdio::null())

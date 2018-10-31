@@ -110,6 +110,15 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("shell")
+                .long("shell")
+                .short("S")
+                .takes_value(true)
+                .value_name("SHELL")
+                .overrides_with("shell")
+                .help("Set the shell to use (default: sh) for executing benchmarked commands."),
+        )
+        .arg(
             Arg::with_name("ignore-failure")
                 .long("ignore-failure")
                 .short("i")
