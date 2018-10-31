@@ -39,6 +39,7 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
+    shell: &str,
     command: &Command,
     show_output: bool,
     failure_action: CmdFailureAction,
@@ -51,7 +52,7 @@ pub fn time_shell_command(
     } else {
         (Stdio::null(), Stdio::null())
     };
-    let result = execute_and_time(stdout, stderr, &command.get_shell_command())?;
+    let result = execute_and_time(stdout, stderr, &command.get_shell_command(), shell)?;
 
     let mut time_user = result.user_time;
     let mut time_system = result.system_time;
@@ -86,6 +87,7 @@ pub fn time_shell_command(
 
 /// Measure the average shell spawning time
 pub fn mean_shell_spawning_time(
+    shell: &str,
     style: &OutputStyleOption,
     show_output: bool,
 ) -> io::Result<TimingResult> {
@@ -99,6 +101,7 @@ pub fn mean_shell_spawning_time(
     for _ in 0..COUNT {
         // Just run the shell without any command
         let res = time_shell_command(
+            shell,
             &Command::new(""),
             show_output,
             CmdFailureAction::RaiseError,
@@ -107,11 +110,17 @@ pub fn mean_shell_spawning_time(
 
         match res {
             Err(_) => {
+                let shell_cmd = if cfg!(windows) {
+                    format!("{} /C \"\"", shell)
+                } else {
+                    format!("{} -c \"\"", shell)
+                };
+
                 return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Could not measure shell execution time. \
-                     Make sure you can run 'sh -c \"\"'.",
-                ))
+                        io::ErrorKind::Other,
+                        format!("Could not measure shell execution time. \
+                        Make sure you can run '{}'.", shell_cmd),
+                        ))
             }
             Ok((r, _)) => {
                 times_real.push(r.time_real);
@@ -132,11 +141,12 @@ pub fn mean_shell_spawning_time(
 
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(
+    shell: &str,
     command: &Option<Command>,
     show_output: bool,
 ) -> io::Result<TimingResult> {
     if let &Some(ref cmd) = command {
-        let res = time_shell_command(cmd, show_output, CmdFailureAction::RaiseError, None);
+        let res = time_shell_command(shell, cmd, show_output, CmdFailureAction::RaiseError, None);
         if res.is_err() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -179,7 +189,7 @@ pub fn run_benchmark(
         );
 
         for _ in 0..options.warmup_count {
-            let _ = time_shell_command(cmd, options.show_output, options.failure_action, None)?;
+            let _ = time_shell_command(&options.shell, cmd, options.show_output, options.failure_action, None)?;
             progress_bar.inc(1);
         }
         progress_bar.finish_and_clear();
@@ -200,10 +210,11 @@ pub fn run_benchmark(
             Some((param, value)) => Command::new_parametrized(preparation_command, param, value),
             None => Command::new(preparation_command),
         });
-    let prepare_res = run_preparation_command(&prepare_cmd, options.show_output)?;
+    let prepare_res = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
 
     // Initial timing run
     let (res, success) = time_shell_command(
+        &options.shell,
         cmd,
         options.show_output,
         options.failure_action,
@@ -240,7 +251,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command(&prepare_cmd, options.show_output)?;
+        run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), None);
@@ -249,6 +260,7 @@ pub fn run_benchmark(
         progress_bar.set_message(&msg);
 
         let (res, success) = time_shell_command(
+            &options.shell,
             cmd,
             options.show_output,
             options.failure_action,
