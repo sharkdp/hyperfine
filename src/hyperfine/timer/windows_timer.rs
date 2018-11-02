@@ -1,8 +1,8 @@
 #![cfg(windows)]
 
 use super::internal::CPUTimes;
-use hyperfine::types::Second;
 use hyperfine::timer::{TimerStart, TimerStop};
+use hyperfine::units::Second;
 
 use winapi::um::processthreadsapi::GetProcessTimes;
 use winapi::um::winnt::HANDLE;

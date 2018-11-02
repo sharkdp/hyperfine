@@ -1,7 +1,8 @@
 use super::Exporter;
 
 use hyperfine::format::format_duration_value;
-use hyperfine::types::{BenchmarkResult, Unit};
+use hyperfine::types::BenchmarkResult;
+use hyperfine::units::Unit;
 
 use std::io::Result;
 
@@ -10,9 +11,9 @@ pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
     fn serialize(&self, results: &Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<Vec<u8>> {
-        let unit = if unit.is_some() {
+        let unit = if let Some(unit) = unit {
             // Use the given unit for all entries.
-            unit.unwrap()
+            unit
         } else if let Some(first_result) = results.first() {
             // Use the first BenchmarkResult entry to determine the unit for all entries.
             format_duration_value(first_result.mean, None).1

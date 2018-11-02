@@ -1,4 +1,4 @@
-use hyperfine::types::Second;
+use hyperfine::units::Second;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CPUTimes {

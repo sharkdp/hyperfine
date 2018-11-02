@@ -46,8 +46,9 @@ use hyperfine::error::{OptionsError, ParameterScanError};
 use hyperfine::export::{ExportManager, ExportType};
 use hyperfine::internal::write_benchmark_comparison;
 use hyperfine::types::{
-    BenchmarkResult, Unit, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
+    BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
 };
+use hyperfine::units::Unit;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -95,9 +96,9 @@ fn main() {
     let export_manager = build_export_manager(&matches);
     let commands = build_commands(&matches);
 
-    let res = match &options {
-        &Ok(ref opts) => run(&commands, &opts),
-        &Err(ref e) => error(e.description()),
+    let res = match options {
+        Ok(ref opts) => run(&commands, &opts),
+        Err(ref e) => error(e.description()),
     };
 
     match res {

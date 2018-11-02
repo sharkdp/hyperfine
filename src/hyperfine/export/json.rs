@@ -1,5 +1,6 @@
 use super::Exporter;
-use hyperfine::types::{BenchmarkResult, Unit};
+use hyperfine::types::BenchmarkResult;
+use hyperfine::units::Unit;
 
 use std::io::{Error, ErrorKind, Result};
 

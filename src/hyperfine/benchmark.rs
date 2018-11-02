@@ -11,8 +11,8 @@ use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use hyperfine::shell::execute_and_time;
 use hyperfine::timer::wallclocktimer::WallClockTimer;
 use hyperfine::timer::{TimerStart, TimerStop};
-use hyperfine::types::{BenchmarkResult, Command};
-use hyperfine::types::{CmdFailureAction, HyperfineOptions, OutputStyleOption, Second};
+use hyperfine::types::{BenchmarkResult, Command, CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use hyperfine::units::Second;
 use hyperfine::warnings::Warnings;
 
 /// Results from timing a single shell command
