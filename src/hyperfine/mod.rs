@@ -8,4 +8,5 @@ pub mod outlier_detection;
 pub mod shell;
 pub mod timer;
 pub mod types;
+pub mod units;
 pub mod warnings;

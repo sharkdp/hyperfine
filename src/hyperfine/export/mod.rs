@@ -9,7 +9,8 @@ use self::markdown::MarkdownExporter;
 use std::fs::File;
 use std::io::{Result, Write};
 
-use hyperfine::types::{BenchmarkResult, Unit};
+use hyperfine::types::BenchmarkResult;
+use hyperfine::units::Unit;
 
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]

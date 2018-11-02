@@ -2,7 +2,7 @@
 
 use super::internal::{CPUInterval, CPUTimes};
 use hyperfine::timer::{TimerStart, TimerStop};
-use hyperfine::types::Second;
+use hyperfine::units::Second;
 
 use std::mem;
 use std::process::Child;

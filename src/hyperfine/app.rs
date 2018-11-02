@@ -129,10 +129,9 @@ fn build_app() -> App<'static, 'static> {
                 .long("time-unit")
                 .short("u")
                 .takes_value(true)
-                .value_name("millisecond|second")
+                .value_name("UNIT")
                 .possible_values(&["millisecond", "second"])
-                .help( "Set the time unit used for CLI output and Markdown export.",
-                ),
+                .help("Set the time unit used. Possible values: millisecond, second."),
         )
         .arg(
             Arg::with_name("export-csv")
