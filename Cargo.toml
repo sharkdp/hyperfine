@@ -18,7 +18,7 @@ cfg-if = "0.1.6"
 csv = "1.0.0"
 serde = "1.0.80"
 serde_derive = "1.0.80"
-serde_json = "1.0.32"
+serde_json = "1.0.33"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"
