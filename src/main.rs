@@ -58,7 +58,8 @@ pub fn error(message: &str) -> ! {
 
 /// Runs the benchmark for the given commands
 fn run(commands: &Vec<Command>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
-    let shell_spawning_time = mean_shell_spawning_time(&options.shell, &options.output_style, options.show_output)?;
+    let shell_spawning_time =
+        mean_shell_spawning_time(&options.shell, &options.output_style, options.show_output)?;
 
     let mut timing_results = vec![];
 
@@ -191,7 +192,10 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
         _ => {}
     };
 
-    options.shell = matches.value_of("shell").unwrap_or(&options.shell).to_string();
+    options.shell = matches
+        .value_of("shell")
+        .unwrap_or(&options.shell)
+        .to_string();
 
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;

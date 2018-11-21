@@ -11,7 +11,9 @@ use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use hyperfine::shell::execute_and_time;
 use hyperfine::timer::wallclocktimer::WallClockTimer;
 use hyperfine::timer::{TimerStart, TimerStop};
-use hyperfine::types::{BenchmarkResult, Command, CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use hyperfine::types::{
+    BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
+};
 use hyperfine::units::Second;
 use hyperfine::warnings::Warnings;
 
@@ -117,10 +119,13 @@ pub fn mean_shell_spawning_time(
                 };
 
                 return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        format!("Could not measure shell execution time. \
-                        Make sure you can run '{}'.", shell_cmd),
-                        ))
+                    io::ErrorKind::Other,
+                    format!(
+                        "Could not measure shell execution time. \
+                         Make sure you can run '{}'.",
+                        shell_cmd
+                    ),
+                ));
             }
             Ok((r, _)) => {
                 times_real.push(r.time_real);
@@ -189,7 +194,13 @@ pub fn run_benchmark(
         );
 
         for _ in 0..options.warmup_count {
-            let _ = time_shell_command(&options.shell, cmd, options.show_output, options.failure_action, None)?;
+            let _ = time_shell_command(
+                &options.shell,
+                cmd,
+                options.show_output,
+                options.failure_action,
+                None,
+            )?;
             progress_bar.inc(1);
         }
         progress_bar.finish_and_clear();

@@ -19,7 +19,12 @@ pub struct ExecuteResult {
 
 /// Execute the given command and return a timing summary
 #[cfg(windows)]
-pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str, shell: &str) -> io::Result<ExecuteResult> {
+pub fn execute_and_time(
+    stdout: Stdio,
+    stderr: Stdio,
+    command: &str,
+    shell: &str,
+) -> io::Result<ExecuteResult> {
     let mut child = run_shell_command(stdout, stderr, command, shell)?;
     let cpu_timer = get_cpu_timer(&child);
     let status = child.wait()?;
@@ -34,7 +39,12 @@ pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str, shell: &str
 
 /// Execute the given command and return a timing summary
 #[cfg(not(windows))]
-pub fn execute_and_time(stdout: Stdio, stderr: Stdio, command: &str, shell: &str) -> io::Result<ExecuteResult> {
+pub fn execute_and_time(
+    stdout: Stdio,
+    stderr: Stdio,
+    command: &str,
+    shell: &str,
+) -> io::Result<ExecuteResult> {
     let cpu_timer = get_cpu_timer();
 
     let status = run_shell_command(stdout, stderr, command, shell)?;
