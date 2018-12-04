@@ -289,6 +289,7 @@ pub fn run_benchmark(
     progress_bar.finish_and_clear();
 
     // Compute statistical quantities
+    let t_num = times_real.len();
     let t_mean = mean(&times_real);
     let t_stddev = standard_deviation(&times_real, Some(t_mean));
     let t_min = min(&times_real);
@@ -302,6 +303,7 @@ pub fn run_benchmark(
     let stddev_str = format_duration(t_stddev, Some(unit_mean));
     let min_str = format_duration(t_min, Some(unit_mean));
     let max_str = format_duration(t_max, Some(unit_mean));
+    let num_str = format!("{} runs", t_num);
 
     let (user_str, user_unit) = format_duration_unit(user_mean, None);
     let system_str = format_duration(system_mean, Some(user_unit));
@@ -317,11 +319,12 @@ pub fn run_benchmark(
     );
 
     println!(
-        "  Range ({} … {}):   {:>8} … {:>8}",
+        "  Range ({} … {}):   {:>8} … {:>8}    {}",
         "min".cyan(),
         "max".purple(),
         min_str.cyan(),
-        max_str.purple()
+        max_str.purple(),
+        num_str.dimmed()
     );
 
     // Warnings
