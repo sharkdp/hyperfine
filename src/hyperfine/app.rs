@@ -138,21 +138,21 @@ fn build_app() -> App<'static, 'static> {
                 .long("export-csv")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing results as CSV to the given FILE."),
+                .help("Export the timing summary statistics as CSV to the given FILE."),
         )
         .arg(
             Arg::with_name("export-json")
                 .long("export-json")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing results as JSON to the given FILE."),
+                .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE."),
         )
         .arg(
             Arg::with_name("export-markdown")
                 .long("export-markdown")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing results as a Markdown table to the given FILE."),
+                .help("Export the timing summary statistics as a Markdown table to the given FILE."),
         )
         .arg(
             Arg::with_name("show-output")
