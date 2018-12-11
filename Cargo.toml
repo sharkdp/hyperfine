@@ -11,7 +11,7 @@ version = "1.4.0"
 
 [dependencies]
 colored = "1.6"
-indicatif = "0.9"
+indicatif = "0.10"
 statistical = "0.1"
 atty = "0.2.2"
 cfg-if = "0.1.6"
