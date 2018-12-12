@@ -83,6 +83,9 @@ option that will create tables like this:
 | `find . -iname '*[0-9].jpg'` | 304.9 ± 3.1 | 299.8…309.3 |
 | `fd -HI '.*[0-9]\.jpg$'` | 66.2 ± 5.8 | 62.5…86.3 |
 
+The JSON output is useful if you want to analyze the benchmark results in more detail. See the
+[`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder for some examples.
+
 ## Installation
 
 ### On macOS
