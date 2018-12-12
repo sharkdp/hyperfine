@@ -258,7 +258,8 @@ pub fn run_benchmark(
     all_succeeded = all_succeeded && success;
 
     // Re-configure the progress bar
-    progress_bar.set_length(count_remaining);
+    progress_bar.set_length(count);
+    progress_bar.inc(1);
 
     // Gather statistics
     for _ in 0..count_remaining {
