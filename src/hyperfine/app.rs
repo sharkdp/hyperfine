@@ -105,7 +105,7 @@ fn build_app() -> App<'static, 'static> {
                     "Set output style type (default: auto). Set this to 'basic' to disable output \
                      coloring and interactive elements. Set it to 'full' to enable all effects \
                      even if no interactive terminal was detected. Set this to 'nocolor' to \
-                     keep the interactive output without any colors. Set this to 'color to' keep \
+                     keep the interactive output without any colors. Set this to 'color' to keep \
                      the colors without any interactive output.",
                 ),
         )
