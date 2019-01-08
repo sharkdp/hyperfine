@@ -144,19 +144,18 @@ pub fn mean_shell_spawning_time(
     })
 }
 
-/// Run the command specified by `--prepare`.
-fn run_preparation_command(
+fn run_intermediate_command(
     shell: &str,
     command: &Option<Command>,
     show_output: bool,
+    error_output: &'static str,
 ) -> io::Result<TimingResult> {
     if let &Some(ref cmd) = command {
         let res = time_shell_command(shell, cmd, show_output, CmdFailureAction::RaiseError, None);
         if res.is_err() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "The preparation command terminated with a non-zero exit code. \
-                 Append ' || true' to the command if you are sure that this can be ignored.",
+                error_output
             ));
         }
         return res.map(|r| r.0);
@@ -164,6 +163,41 @@ fn run_preparation_command(
     Ok(TimingResult {
         ..Default::default()
     })
+
+}
+
+/// Run the command specified by `--prepare`.
+fn run_preparation_command(
+    shell: &str,
+    command: &Option<Command>,
+    show_output: bool,
+) -> io::Result<TimingResult> {
+    let error_output = "The preparation command terminated with a non-zero exit code. \
+                       Append ' || true' to the command if you are sure that this can be ignored.";
+
+    run_intermediate_command(
+        shell,
+        command,
+        show_output,
+        error_output
+    )
+}
+
+/// Run the command specified by `--cleanup`.
+fn run_cleanup_command(
+    shell: &str,
+    command: &Option<Command>,
+    show_output: bool,
+) -> io::Result<TimingResult> {
+    let error_output = "The cleanup command terminated with a non-zero exit code. \
+                       Append ' || true' to the command if you are sure that this can be ignored.";
+
+    run_intermediate_command(
+        shell,
+        command,
+        show_output,
+        error_output
+    )
 }
 
 /// Run the benchmark for a single shell command
@@ -213,7 +247,7 @@ pub fn run_benchmark(
         &options.output_style,
     );
 
-    // Run init / cleanup command
+    // Run init command
     let prepare_cmd = options
         .preparation_command
         .as_ref()
@@ -358,6 +392,16 @@ pub fn run_benchmark(
     }
 
     println!(" ");
+
+    // Run cleanup command
+    let cleanup_cmd = options
+        .cleanup_command
+        .as_ref()
+        .map(|cleanup_command| match cmd.get_parameter() {
+            Some((param, value)) => Command::new_parametrized(cleanup_command, param, value),
+            None => Command::new(cleanup_command),
+        });
+    run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
 
     Ok(BenchmarkResult::new(
         cmd.get_shell_command(),

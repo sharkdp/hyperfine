@@ -113,6 +113,9 @@ pub struct HyperfineOptions {
     /// Command to run before each timing run
     pub preparation_command: Option<String>,
 
+    /// Command to run after each benchmark
+    pub cleanup_command: Option<String>,
+
     /// What color mode to use for output
     pub output_style: OutputStyleOption,
 
@@ -134,6 +137,7 @@ impl Default for HyperfineOptions {
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
+            cleanup_command: None,
             output_style: OutputStyleOption::Full,
             shell: DEFAULT_SHELL.to_string(),
             show_output: false,
