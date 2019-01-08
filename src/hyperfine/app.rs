@@ -83,6 +83,17 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("cleanup")
+                .long("cleanup")
+                .short("c")
+                .takes_value(true)
+                .value_name("CMD")
+                .help(
+                    "Execute CMD after each benchmark run. This is useful for \
+                     cleaning up resources allocated during prepare.",
+                ),
+        )
+        .arg(
             Arg::with_name("parameter-scan")
                 .long("parameter-scan")
                 .short("P")

@@ -164,6 +164,8 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
 
     options.preparation_command = matches.value_of("prepare").map(String::from);
 
+    options.cleanup_command = matches.value_of("cleanup").map(String::from);
+
     options.show_output = matches.is_present("show-output");
 
     options.output_style = match matches.value_of("style") {
