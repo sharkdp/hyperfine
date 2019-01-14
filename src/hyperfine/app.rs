@@ -89,8 +89,10 @@ fn build_app() -> App<'static, 'static> {
                 .takes_value(true)
                 .value_name("CMD")
                 .help(
-                    "Execute CMD after each benchmark run. This is useful for \
-                     cleaning up resources allocated during prepare.",
+                    "Execute CMD after the completion of all benchmarking \
+                     runs for each individual command to be benchmarked. \
+                     This is useful if the commands to be benchmarked produce \
+                     artifacts that need to be cleaned up."
                 ),
         )
         .arg(
