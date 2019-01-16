@@ -173,6 +173,10 @@ pub struct BenchmarkResult {
     /// All run time measurements
     #[serde(skip_serializing_if = "Option::is_none")]
     pub times: Option<Vec<Second>>,
+
+    /// Any parameter used
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameter: Option<i32>,
 }
 
 impl BenchmarkResult {
@@ -186,6 +190,7 @@ impl BenchmarkResult {
         min: Second,
         max: Second,
         times: Vec<Second>,
+        parameter: Option<i32>,
     ) -> Self {
         BenchmarkResult {
             command,
@@ -196,6 +201,7 @@ impl BenchmarkResult {
             min,
             max,
             times: Some(times),
+            parameter,
         }
     }
 }
