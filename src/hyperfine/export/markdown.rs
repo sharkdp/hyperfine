@@ -83,6 +83,7 @@ fn test_markdown_format_ms() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        None,                // parameter
     ));
 
     timing_results.push(BenchmarkResult::new(
@@ -94,6 +95,7 @@ fn test_markdown_format_ms() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        None,                // parameter
     ));
 
     let formatted = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
@@ -126,6 +128,7 @@ fn test_markdown_format_s() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        None,                // parameter
     ));
 
     timing_results.push(BenchmarkResult::new(
@@ -137,6 +140,7 @@ fn test_markdown_format_s() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        None,                // parameter
     ));
 
     let formatted = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
@@ -168,6 +172,7 @@ fn test_markdown_format_time_unit_s() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        None,                // parameter
     ));
 
     timing_results.push(BenchmarkResult::new(
@@ -179,6 +184,7 @@ fn test_markdown_format_time_unit_s() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        None,                // parameter
     ));
 
     let formatted = String::from_utf8(
@@ -216,6 +222,7 @@ fn test_markdown_format_time_unit_ms() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        None,                // parameter
     ));
 
     timing_results.push(BenchmarkResult::new(
@@ -227,6 +234,7 @@ fn test_markdown_format_time_unit_ms() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        None,                // parameter
     ));
 
     let formatted = String::from_utf8(

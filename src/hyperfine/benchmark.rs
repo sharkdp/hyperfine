@@ -412,5 +412,6 @@ pub fn run_benchmark(
         t_min,
         t_max,
         times_real,
+        cmd.get_parameter().map(|p| p.1),
     ))
 }
