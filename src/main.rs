@@ -216,6 +216,9 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
 /// in the given ArgMatches
 fn build_export_manager(matches: &ArgMatches) -> ExportManager {
     let mut export_manager = ExportManager::new();
+    if let Some(filename) = matches.value_of("export-asciidoc") {
+        export_manager.add_exporter(ExportType::Asciidoc, filename);
+    }
     if let Some(filename) = matches.value_of("export-json") {
         export_manager.add_exporter(ExportType::Json, filename);
     }

@@ -147,6 +147,13 @@ fn build_app() -> App<'static, 'static> {
                 .help("Set the time unit used. Possible values: millisecond, second."),
         )
         .arg(
+            Arg::with_name("export-asciidoc")
+                .long("export-asciidoc")
+                .takes_value(true)
+                .value_name("FILE")
+                .help("Export the timing summary statistics as an Asciidoc table to the given FILE."),
+        )
+        .arg(
             Arg::with_name("export-csv")
                 .long("export-csv")
                 .takes_value(true)
