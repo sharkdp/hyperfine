@@ -1,7 +1,9 @@
+mod asciidoc;
 mod csv;
 mod json;
 mod markdown;
 
+use self::asciidoc::AsciidocExporter;
 use self::csv::CsvExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
@@ -15,6 +17,9 @@ use hyperfine::units::Unit;
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]
 pub enum ExportType {
+    /// Asciidoc Table
+    Asciidoc,
+
     /// CSV (comma separated values) format
     Csv,
 
@@ -52,6 +57,7 @@ impl ExportManager {
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) {
         let exporter: Box<Exporter> = match export_type {
+            ExportType::Asciidoc => Box::new(AsciidocExporter::default()),
             ExportType::Csv => Box::new(CsvExporter::default()),
             ExportType::Json => Box::new(JsonExporter::default()),
             ExportType::Markdown => Box::new(MarkdownExporter::default()),
