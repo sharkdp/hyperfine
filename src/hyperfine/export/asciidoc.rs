@@ -49,7 +49,8 @@ fn table_header(unittype: Unit) -> Vec<u8> {
     format!(
         "| Command | Mean [{unit}] | Min…Max [{unit}]\n",
         unit = unit_short_name
-    ).into_bytes()
+    )
+    .into_bytes()
 }
 
 fn table_row(entry: &BenchmarkResult, unit: Unit) -> Vec<u8> {
@@ -58,19 +59,22 @@ fn table_row(entry: &BenchmarkResult, unit: Unit) -> Vec<u8> {
         "| `{}`\n\
          | {} ± {}\n\
          | {}…{}\n",
-         entry.command.replace("|", "\\|"),
-         form(entry.mean).0, form(entry.stddev).0,
-         form(entry.min).0, form(entry.max).0
-    ).into_bytes()
+        entry.command.replace("|", "\\|"),
+        form(entry.mean).0,
+        form(entry.stddev).0,
+        form(entry.min).0,
+        form(entry.max).0
+    )
+    .into_bytes()
 }
 
 /// Ensure various options for the header generate correct results
 #[test]
 fn test_asciidoc_header() {
     let conms: Vec<u8> = "| Command | Mean [ms] | Min…Max [ms]\n".bytes().collect();
-    let cons: Vec<u8>  = "| Command | Mean [s] | Min…Max [s]\n".bytes().collect();
+    let cons: Vec<u8> = "| Command | Mean [s] | Min…Max [s]\n".bytes().collect();
     let genms = table_header(Unit::MilliSecond);
-    let gens  = table_header(Unit::Second);
+    let gens = table_header(Unit::Second);
 
     assert_eq!(conms, genms);
     assert_eq!(cons, gens);
@@ -87,12 +91,13 @@ fn test_asciidoc_table_row() {
         0.0,                     // system
         0.1003342584,            // min
         0.10745223440000001,     // max
-        vec![                    // times
+        vec![
+            // times
             0.1003342584,
             0.10745223440000001,
-            0.10697327940000001
+            0.10697327940000001,
         ],
-        None                     // param
+        None, // param
     );
 
     let expms = format!(
@@ -100,20 +105,26 @@ fn test_asciidoc_table_row() {
          | {} ± {}\n\
          | {}…{}\n",
         result.command,
-        Unit::MilliSecond.format(result.mean), Unit::MilliSecond.format(result.stddev),
-        Unit::MilliSecond.format(result.min), Unit::MilliSecond.format(result.max)
-    ).into_bytes();
+        Unit::MilliSecond.format(result.mean),
+        Unit::MilliSecond.format(result.stddev),
+        Unit::MilliSecond.format(result.min),
+        Unit::MilliSecond.format(result.max)
+    )
+    .into_bytes();
     let exps = format!(
         "| `{}`\n\
          | {} ± {}\n\
          | {}…{}\n",
         result.command,
-        Unit::Second.format(result.mean), Unit::Second.format(result.stddev),
-        Unit::Second.format(result.min), Unit::Second.format(result.max)
-    ).into_bytes();
+        Unit::Second.format(result.mean),
+        Unit::Second.format(result.stddev),
+        Unit::Second.format(result.min),
+        Unit::Second.format(result.max)
+    )
+    .into_bytes();
 
     let genms = table_row(&result, Unit::MilliSecond);
-    let gens  = table_row(&result, Unit::Second);
+    let gens = table_row(&result, Unit::Second);
 
     assert_eq!(expms, genms);
     assert_eq!(exps, gens);
@@ -130,21 +141,25 @@ fn test_asciidoc_table_row_command_escape() {
         0.0,                      // system
         0.1003342584,             // min
         0.10745223440000001,      // max
-        vec![                     // times
+        vec![
+            // times
             0.1003342584,
             0.10745223440000001,
-            0.10697327940000001
+            0.10697327940000001,
         ],
-        None                      // param
+        None, // param
     );
     let exps = format!(
         "| `sleep 1\\|`\n\
          | {} ± {}\n\
          | {}…{}\n",
-        Unit::Second.format(result.mean), Unit::Second.format(result.stddev),
-        Unit::Second.format(result.min), Unit::Second.format(result.max)
-    ).into_bytes();
-    let gens  = table_row(&result, Unit::Second);
+        Unit::Second.format(result.mean),
+        Unit::Second.format(result.stddev),
+        Unit::Second.format(result.min),
+        Unit::Second.format(result.max)
+    )
+    .into_bytes();
+    let gens = table_row(&result, Unit::Second);
 
     assert_eq!(exps, gens);
 }
@@ -163,12 +178,8 @@ fn test_asciidoc() {
             4.0,
             5.0,
             6.0,
-            vec![
-                7.0,
-                8.0,
-                9.0
-            ],
-            None
+            vec![7.0, 8.0, 9.0],
+            None,
         ),
         BenchmarkResult::new(
             String::from("command | 2"),
@@ -178,13 +189,9 @@ fn test_asciidoc() {
             14.0,
             15.0,
             16.0,
-            vec![
-                17.0,
-                18.0,
-                19.0
-            ],
-            None
-        )
+            vec![17.0, 18.0, 19.0],
+            None,
+        ),
     ];
     // NOTE: only testing with s, s/ms is tested elsewhere
     let exps: String = String::from(
@@ -200,8 +207,10 @@ fn test_asciidoc() {
          | 11.000 ± 12.000\n\
          | 15.000…16.000\n\
          |===\n\
-        ");
-    let gens = String::from_utf8(exporter.serialize(&results, Some(Unit::Second)).unwrap()).unwrap();
+         ",
+    );
+    let gens =
+        String::from_utf8(exporter.serialize(&results, Some(Unit::Second)).unwrap()).unwrap();
 
     assert_eq!(exps, gens);
 }

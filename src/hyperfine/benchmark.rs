@@ -153,17 +153,13 @@ fn run_intermediate_command(
     if let &Some(ref cmd) = command {
         let res = time_shell_command(shell, cmd, show_output, CmdFailureAction::RaiseError, None);
         if res.is_err() {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                error_output
-            ));
+            return Err(io::Error::new(io::ErrorKind::Other, error_output));
         }
         return res.map(|r| r.0);
     }
     Ok(TimingResult {
         ..Default::default()
     })
-
 }
 
 /// Run the command specified by `--prepare`.
@@ -173,14 +169,9 @@ fn run_preparation_command(
     show_output: bool,
 ) -> io::Result<TimingResult> {
     let error_output = "The preparation command terminated with a non-zero exit code. \
-                       Append ' || true' to the command if you are sure that this can be ignored.";
+                        Append ' || true' to the command if you are sure that this can be ignored.";
 
-    run_intermediate_command(
-        shell,
-        command,
-        show_output,
-        error_output
-    )
+    run_intermediate_command(shell, command, show_output, error_output)
 }
 
 /// Run the command specified by `--cleanup`.
@@ -190,14 +181,9 @@ fn run_cleanup_command(
     show_output: bool,
 ) -> io::Result<TimingResult> {
     let error_output = "The cleanup command terminated with a non-zero exit code. \
-                       Append ' || true' to the command if you are sure that this can be ignored.";
+                        Append ' || true' to the command if you are sure that this can be ignored.";
 
-    run_intermediate_command(
-        shell,
-        command,
-        show_output,
-        error_output
-    )
+    run_intermediate_command(shell, command, show_output, error_output)
 }
 
 /// Run the benchmark for a single shell command
@@ -394,13 +380,14 @@ pub fn run_benchmark(
     println!(" ");
 
     // Run cleanup command
-    let cleanup_cmd = options
-        .cleanup_command
-        .as_ref()
-        .map(|cleanup_command| match cmd.get_parameter() {
-            Some((param, value)) => Command::new_parametrized(cleanup_command, param, value),
-            None => Command::new(cleanup_command),
-        });
+    let cleanup_cmd =
+        options
+            .cleanup_command
+            .as_ref()
+            .map(|cleanup_command| match cmd.get_parameter() {
+                Some((param, value)) => Command::new_parametrized(cleanup_command, param, value),
+                None => Command::new(cleanup_command),
+            });
     run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
 
     Ok(BenchmarkResult::new(
