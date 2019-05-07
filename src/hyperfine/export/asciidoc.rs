@@ -1,8 +1,8 @@
 use super::Exporter;
 
-use hyperfine::format::format_duration_value;
-use hyperfine::types::BenchmarkResult;
-use hyperfine::units::Unit;
+use crate::hyperfine::format::format_duration_value;
+use crate::hyperfine::types::BenchmarkResult;
+use crate::hyperfine::units::Unit;
 
 use std::io::Result;
 

@@ -1,6 +1,6 @@
 use atty;
 use atty::Stream;
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{crate_version, App, AppSettings, Arg, ArgMatches};
 use std::ffi::OsString;
 
 pub fn get_arg_matches<T>(args: T) -> ArgMatches<'static>

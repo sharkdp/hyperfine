@@ -1,13 +1,13 @@
 #![cfg(not(windows))]
 
 use super::internal::{CPUInterval, CPUTimes};
-use hyperfine::timer::{TimerStart, TimerStop};
-use hyperfine::units::Second;
+use crate::hyperfine::timer::{TimerStart, TimerStop};
+use crate::hyperfine::units::Second;
 
 use std::mem;
 use std::process::Child;
 
-pub fn get_cpu_timer() -> Box<TimerStop<Result = (Second, Second)>> {
+pub fn get_cpu_timer() -> Box<dyn TimerStop<Result = (Second, Second)>> {
     Box::new(CPUTimer::start())
 }
 
@@ -65,6 +65,9 @@ fn cpu_time_interval(start: &CPUTimes, end: &CPUTimes) -> CPUInterval {
         system: ((end.system_usec - start.system_usec) as f64) * 1e-6,
     }
 }
+
+#[cfg(test)]
+use approx::assert_relative_eq;
 
 #[test]
 fn test_cpu_time_interval() {

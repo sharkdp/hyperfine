@@ -1,8 +1,8 @@
 use std::fmt;
 
-use hyperfine::format::format_duration;
-use hyperfine::internal::MIN_EXECUTION_TIME;
-use hyperfine::units::Second;
+use crate::hyperfine::format::format_duration;
+use crate::hyperfine::internal::MIN_EXECUTION_TIME;
+use crate::hyperfine::units::Second;
 
 /// A list of all possible warnings
 pub enum Warnings {
@@ -13,7 +13,7 @@ pub enum Warnings {
 }
 
 impl fmt::Display for Warnings {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Warnings::FastExecutionTime => write!(
                 f,

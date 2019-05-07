@@ -2,7 +2,7 @@ use std;
 use std::io;
 use std::process::{Command, ExitStatus, Stdio};
 
-use hyperfine::timer::get_cpu_timer;
+use crate::hyperfine::timer::get_cpu_timer;
 
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]

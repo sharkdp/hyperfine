@@ -1,7 +1,7 @@
 use super::Exporter;
 
-use hyperfine::types::BenchmarkResult;
-use hyperfine::units::Unit;
+use crate::hyperfine::types::BenchmarkResult;
+use crate::hyperfine::units::Unit;
 
 use std::io::{Error, ErrorKind, Result};
 

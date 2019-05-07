@@ -1,7 +1,8 @@
 /// This module contains common internal types.
+use serde::*;
 use std::fmt;
 
-use hyperfine::units::{Second, Unit};
+use crate::hyperfine::units::{Second, Unit};
 
 #[cfg(not(windows))]
 pub const DEFAULT_SHELL: &str = "sh";
@@ -50,7 +51,7 @@ impl<'a> Command<'a> {
 }
 
 impl<'a> fmt::Display for Command<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.get_shell_command())
     }
 }
