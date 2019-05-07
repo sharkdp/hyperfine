@@ -11,8 +11,8 @@ use self::markdown::MarkdownExporter;
 use std::fs::File;
 use std::io::{Result, Write};
 
-use hyperfine::types::BenchmarkResult;
-use hyperfine::units::Unit;
+use crate::hyperfine::types::BenchmarkResult;
+use crate::hyperfine::units::Unit;
 
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]
@@ -37,7 +37,7 @@ trait Exporter {
 }
 
 struct ExporterWithFilename {
-    exporter: Box<Exporter>,
+    exporter: Box<dyn Exporter>,
     filename: String,
 }
 
@@ -56,7 +56,7 @@ impl ExportManager {
 
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) {
-        let exporter: Box<Exporter> = match export_type {
+        let exporter: Box<dyn Exporter> = match export_type {
             ExportType::Asciidoc => Box::new(AsciidocExporter::default()),
             ExportType::Csv => Box::new(CsvExporter::default()),
             ExportType::Json => Box::new(JsonExporter::default()),

@@ -2,6 +2,8 @@ mod internal;
 
 pub mod wallclocktimer;
 
+use cfg_if::cfg_if;
+
 cfg_if! {
     if #[cfg(windows)] {
         mod windows_timer;

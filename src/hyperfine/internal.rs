@@ -1,8 +1,8 @@
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use hyperfine::types::{BenchmarkResult, OutputStyleOption};
-use hyperfine::units::Second;
+use crate::hyperfine::types::{BenchmarkResult, OutputStyleOption};
+use crate::hyperfine::units::Second;
 
 use std::cmp::Ordering;
 use std::iter::Iterator;

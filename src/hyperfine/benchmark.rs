@@ -5,17 +5,17 @@ use std::process::Stdio;
 use colored::*;
 use statistical::{mean, standard_deviation};
 
-use hyperfine::format::{format_duration, format_duration_unit};
-use hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
-use hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
-use hyperfine::shell::execute_and_time;
-use hyperfine::timer::wallclocktimer::WallClockTimer;
-use hyperfine::timer::{TimerStart, TimerStop};
-use hyperfine::types::{
+use crate::hyperfine::format::{format_duration, format_duration_unit};
+use crate::hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
+use crate::hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use crate::hyperfine::shell::execute_and_time;
+use crate::hyperfine::timer::wallclocktimer::WallClockTimer;
+use crate::hyperfine::timer::{TimerStart, TimerStop};
+use crate::hyperfine::types::{
     BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
 };
-use hyperfine::units::Second;
-use hyperfine::warnings::Warnings;
+use crate::hyperfine::units::Second;
+use crate::hyperfine::warnings::Warnings;
 
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]
@@ -42,7 +42,7 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
     shell: &str,
-    command: &Command,
+    command: &Command<'_>,
     show_output: bool,
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
@@ -146,7 +146,7 @@ pub fn mean_shell_spawning_time(
 
 fn run_intermediate_command(
     shell: &str,
-    command: &Option<Command>,
+    command: &Option<Command<'_>>,
     show_output: bool,
     error_output: &'static str,
 ) -> io::Result<TimingResult> {
@@ -165,7 +165,7 @@ fn run_intermediate_command(
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(
     shell: &str,
-    command: &Option<Command>,
+    command: &Option<Command<'_>>,
     show_output: bool,
 ) -> io::Result<TimingResult> {
     let error_output = "The preparation command terminated with a non-zero exit code. \
@@ -177,7 +177,7 @@ fn run_preparation_command(
 /// Run the command specified by `--cleanup`.
 fn run_cleanup_command(
     shell: &str,
-    command: &Option<Command>,
+    command: &Option<Command<'_>>,
     show_output: bool,
 ) -> io::Result<TimingResult> {
     let error_output = "The cleanup command terminated with a non-zero exit code. \
@@ -189,7 +189,7 @@ fn run_cleanup_command(
 /// Run the benchmark for a single shell command
 pub fn run_benchmark(
     num: usize,
-    cmd: &Command,
+    cmd: &Command<'_>,
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<BenchmarkResult> {

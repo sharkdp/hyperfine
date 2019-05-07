@@ -1,33 +1,3 @@
-extern crate atty;
-
-#[macro_use]
-extern crate cfg_if;
-
-#[macro_use]
-extern crate clap;
-extern crate colored;
-extern crate csv;
-extern crate indicatif;
-extern crate serde;
-
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate statistical;
-
-// Os-specific dependencies
-cfg_if! {
-    if #[cfg(windows)] {
-        extern crate winapi;
-    } else {
-        extern crate libc;
-    }
-}
-
-#[cfg(test)]
-#[macro_use]
-extern crate approx;
-
 use std::cmp;
 use std::env;
 use std::error::Error;
@@ -40,15 +10,15 @@ use colored::*;
 
 mod hyperfine;
 
-use hyperfine::app::get_arg_matches;
-use hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use hyperfine::error::{OptionsError, ParameterScanError};
-use hyperfine::export::{ExportManager, ExportType};
-use hyperfine::internal::write_benchmark_comparison;
-use hyperfine::types::{
+use crate::hyperfine::app::get_arg_matches;
+use crate::hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
+use crate::hyperfine::error::{OptionsError, ParameterScanError};
+use crate::hyperfine::export::{ExportManager, ExportType};
+use crate::hyperfine::internal::write_benchmark_comparison;
+use crate::hyperfine::types::{
     BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
 };
-use hyperfine::units::Unit;
+use crate::hyperfine::units::Unit;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {
@@ -57,7 +27,7 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &Vec<Command>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
+fn run(commands: &Vec<Command<'_>>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time =
         mean_shell_spawning_time(&options.shell, &options.output_style, options.show_output)?;
 
@@ -118,7 +88,7 @@ fn main() {
 }
 
 /// Build the HyperfineOptions that correspond to the given ArgMatches
-fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, OptionsError> {
+fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions, OptionsError> {
     let mut options = HyperfineOptions::default();
     let str_to_u64 = |n| u64::from_str_radix(n, 10).ok();
 
@@ -214,7 +184,7 @@ fn build_hyperfine_options(matches: &ArgMatches) -> Result<HyperfineOptions, Opt
 
 /// Build the ExportManager that will export the results specified
 /// in the given ArgMatches
-fn build_export_manager(matches: &ArgMatches) -> ExportManager {
+fn build_export_manager(matches: &ArgMatches<'_>) -> ExportManager {
     let mut export_manager = ExportManager::new();
     {
         let mut add_exporter = |flag, exporttype| {
@@ -231,7 +201,7 @@ fn build_export_manager(matches: &ArgMatches) -> ExportManager {
 }
 
 /// Build the commands to benchmark
-fn build_commands<'a>(matches: &'a ArgMatches) -> Vec<Command<'a>> {
+fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
     let command_strings = matches.values_of("command").unwrap();
 
     let commands = if let Some(args) = matches.values_of("parameter-scan") {

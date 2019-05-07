@@ -16,7 +16,7 @@ impl From<num::ParseIntError> for ParameterScanError {
 }
 
 impl fmt::Display for ParameterScanError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.description())
     }
 }
@@ -38,7 +38,7 @@ pub enum OptionsError {
 }
 
 impl fmt::Display for OptionsError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.description())
     }
 }
