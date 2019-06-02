@@ -1,4 +1,12 @@
 #!/usr/bin/python
+#
+# This script `hyperfine` benchmark results as a box and whisker plot.
+#
+# Quoting from the matplotlib documentation:
+#     The box extends from the lower to upper quartile values of the data, with
+#     a line at the median. The whiskers extend from the box to show the range
+#     of the data. Flier points are those past the end of the whiskers.
+#
 
 import argparse
 import json
