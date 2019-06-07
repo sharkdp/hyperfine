@@ -119,6 +119,12 @@ Hyperfine can be installed via xbps
 xbps-install -S hyperfine
 ```
 
+### With conda on [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/hyperfine.svg)](https://anaconda.org/conda-forge/hyperfine)
+
+```
+conda install -c conda-forge hyperfine
+```
+
 ### With cargo (Linux, macOS, Windows)
 
 Hyperfine can be installed via [cargo](https://doc.rust-lang.org/cargo/):
