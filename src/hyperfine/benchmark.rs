@@ -3,7 +3,7 @@ use std::io;
 use std::process::Stdio;
 
 use colored::*;
-use statistical::{mean, standard_deviation};
+use statistical::{mean, median, standard_deviation};
 
 use crate::hyperfine::format::{format_duration, format_duration_unit};
 use crate::hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
@@ -313,6 +313,7 @@ pub fn run_benchmark(
     let t_num = times_real.len();
     let t_mean = mean(&times_real);
     let t_stddev = standard_deviation(&times_real, Some(t_mean));
+    let t_median = median(&times_real);
     let t_min = min(&times_real);
     let t_max = max(&times_real);
 
@@ -394,6 +395,7 @@ pub fn run_benchmark(
         cmd.get_shell_command(),
         t_mean,
         t_stddev,
+        t_median,
         user_mean,
         system_mean,
         t_min,

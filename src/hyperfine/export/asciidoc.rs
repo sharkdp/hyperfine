@@ -87,6 +87,7 @@ fn test_asciidoc_table_row() {
         String::from("sleep 1"), // command
         0.10491992406666667,     // mean
         0.00397851689425097,     // stddev
+        0.10491992406666667,     // median
         0.005182013333333333,    // user
         0.0,                     // system
         0.1003342584,            // min
@@ -137,6 +138,7 @@ fn test_asciidoc_table_row_command_escape() {
         String::from("sleep 1|"), // command
         0.10491992406666667,      // mean
         0.00397851689425097,      // stddev
+        0.10491992406666667,      // median
         0.005182013333333333,     // user
         0.0,                      // system
         0.1003342584,             // min
@@ -174,6 +176,7 @@ fn test_asciidoc() {
             String::from("command | 1"),
             1.0,
             2.0,
+            1.0,
             3.0,
             4.0,
             5.0,
@@ -185,6 +188,7 @@ fn test_asciidoc() {
             String::from("command | 2"),
             11.0,
             12.0,
+            11.0,
             13.0,
             14.0,
             15.0,
