@@ -27,7 +27,10 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &Vec<Command<'_>>, options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
+fn run(
+    commands: &Vec<Command<'_>>,
+    options: &HyperfineOptions,
+) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time =
         mean_shell_spawning_time(&options.shell, &options.output_style, options.show_output)?;
 
