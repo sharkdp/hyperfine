@@ -47,9 +47,9 @@ pub fn min(vals: &[f64]) -> f64 {
 }
 
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
-    result: &'a BenchmarkResult,
-    relative_speed: Scalar,
-    relative_speed_stddev: Scalar,
+    pub result: &'a BenchmarkResult,
+    pub relative_speed: Scalar,
+    pub relative_speed_stddev: Scalar,
 }
 
 fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
@@ -72,9 +72,8 @@ pub fn compute_relative_speed<'a>(
             // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
             // Covariance asssumed to be 0, i.e. variables are assumed to be independent
             let ratio_stddev = ratio
-                * ((result.stddev / result.mean).powi(2)
-                    + (fastest.stddev / fastest.mean).powi(2))
-                .sqrt();
+                * ((result.stddev / result.mean).powi(2) + (fastest.stddev / fastest.mean).powi(2))
+                    .sqrt();
 
             BenchmarkResultWithRelativeSpeed {
                 result,
@@ -122,18 +121,16 @@ fn test_max() {
 fn test_compute_relative_speed() {
     use approx::assert_relative_eq;
 
-    let create_result = |name: &str, mean| {
-        BenchmarkResult {
-            command: name.into(),
-            mean: mean,
-            stddev: 1.0,
-            user: mean,
-            system: 0.0,
-            min: mean,
-            max: mean,
-            times: None,
-            parameter: None,
-        }
+    let create_result = |name: &str, mean| BenchmarkResult {
+        command: name.into(),
+        mean: mean,
+        stddev: 1.0,
+        user: mean,
+        system: 0.0,
+        min: mean,
+        max: mean,
+        times: None,
+        parameter: None,
     };
 
     let results = vec![
