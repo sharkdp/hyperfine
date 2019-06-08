@@ -2,7 +2,7 @@ use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::hyperfine::types::{BenchmarkResult, OutputStyleOption};
-use crate::hyperfine::units::Second;
+use crate::hyperfine::units::{Scalar, Second};
 
 use std::cmp::Ordering;
 use std::iter::Iterator;
@@ -46,41 +46,65 @@ pub fn min(vals: &[f64]) -> f64 {
         .unwrap()
 }
 
+pub struct BenchmarkResultWithRelativeSpeed<'a> {
+    result: &'a BenchmarkResult,
+    relative_speed: Scalar,
+    relative_speed_stddev: Scalar,
+}
+
+fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
+    l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal)
+}
+
+pub fn compute_relative_speed<'a>(
+    results: &'a Vec<BenchmarkResult>,
+) -> Vec<BenchmarkResultWithRelativeSpeed<'a>> {
+    let fastest: &BenchmarkResult = results
+        .iter()
+        .min_by(|&l, &r| compare_mean_time(l, r))
+        .expect("at least one benchmark result");
+
+    results
+        .iter()
+        .map(|result| {
+            let ratio = result.mean / fastest.mean;
+
+            // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
+            // Covariance asssumed to be 0, i.e. variables are assumed to be independent
+            let ratio_stddev = ratio
+                * ((result.stddev / result.mean).powi(2)
+                    + (fastest.stddev / fastest.mean).powi(2))
+                .sqrt();
+
+            BenchmarkResultWithRelativeSpeed {
+                result,
+                relative_speed: ratio,
+                relative_speed_stddev: ratio_stddev,
+            }
+        })
+        .collect()
+}
+
 pub fn write_benchmark_comparison(results: &Vec<BenchmarkResult>) {
     if results.len() < 2 {
         return;
     }
 
-    // Show which was faster, maybe expand to table later?
-    let mut fastest_item: &BenchmarkResult = &results[0];
-    let mut longer_items: Vec<&BenchmarkResult> = Vec::new();
+    let mut annotated_results = compute_relative_speed(&results);
+    annotated_results.sort_by(|l, r| compare_mean_time(l.result, r.result));
 
-    for run in &results[1..] {
-        if let Some(Ordering::Less) = fastest_item.mean.partial_cmp(&run.mean) {
-            longer_items.push(run);
-        } else {
-            longer_items.push(fastest_item);
-            fastest_item = run;
-        }
-    }
+    let fastest = &annotated_results[0];
+    let others = &annotated_results[1..];
 
     println!("{}", "Summary".bold());
-    println!("  '{}' ran", fastest_item.command.cyan());
-    longer_items.sort_by(|l, r| l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal));
+    println!("  '{}' ran", fastest.result.command.cyan());
 
-    for item in longer_items {
-        let ratio = item.mean / fastest_item.mean;
-        // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
-        // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-        let ratio_stddev = ratio
-            * ((item.stddev / item.mean).powi(2)
-                + (fastest_item.stddev / fastest_item.mean).powi(2))
-            .sqrt();
+    for item in others {
         println!(
             "{} ± {} times faster than '{}'",
-            format!("{:8.2}", ratio).bold().green(),
-            format!("{:.2}", ratio_stddev).green(),
-            &item.command.magenta()
+            format!("{:8.2}", item.relative_speed).bold().green(),
+            format!("{:.2}", item.relative_speed_stddev).green(),
+            &item.result.command.magenta()
         );
     }
 }
@@ -92,4 +116,35 @@ fn test_max() {
     assert_eq!(-1.0, max(&[-2.0, -1.0]));
     assert_eq!(1.0, max(&[-1.0, 1.0]));
     assert_eq!(1.0, max(&[-1.0, 1.0, 0.0]));
+}
+
+#[test]
+fn test_compute_relative_speed() {
+    use approx::assert_relative_eq;
+
+    let create_result = |name: &str, mean| {
+        BenchmarkResult {
+            command: name.into(),
+            mean: mean,
+            stddev: 1.0,
+            user: mean,
+            system: 0.0,
+            min: mean,
+            max: mean,
+            times: None,
+            parameter: None,
+        }
+    };
+
+    let results = vec![
+        create_result("cmd1", 3.0),
+        create_result("cmd2", 2.0),
+        create_result("cmd3", 5.0),
+    ];
+
+    let annotated_results = compute_relative_speed(&results);
+
+    assert_relative_eq!(1.5, annotated_results[0].relative_speed);
+    assert_relative_eq!(1.0, annotated_results[1].relative_speed);
+    assert_relative_eq!(2.5, annotated_results[2].relative_speed);
 }

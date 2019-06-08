@@ -1,7 +1,9 @@
 /// This module contains common units.
 
+pub type Scalar = f64;
+
 /// Type alias for unit of time
-pub type Second = f64;
+pub type Second = Scalar;
 
 /// Supported time units
 #[derive(Debug, Clone, Copy, PartialEq)]
