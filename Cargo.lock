@@ -154,7 +154,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "hyperfine"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "approx 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "atty 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
