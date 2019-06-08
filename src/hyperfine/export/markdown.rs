@@ -37,7 +37,7 @@ impl Exporter for MarkdownExporter {
 
 fn table_header(unit_short_name: String) -> String {
     format!(
-        "| Command | Mean [{unit}] | Min…Max [{unit}] | Relative |\n|:---|---:|---:|---:|\n",
+        "| Command | Mean [{unit}] | Min [{unit}] | Max [{unit}] | Relative |\n|:---|---:|---:|---:|---:|\n",
         unit = unit_short_name
     )
 }
@@ -56,7 +56,7 @@ fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResultWithRelativeSpeed, u
 
     dest.extend(
         format!(
-            "| `{command}` | {mean} ± {stddev} | {min}…{max} | {rel} |\n",
+            "| `{command}` | {mean} ± {stddev} | {min} | {max} | {rel} |\n",
             command = result.command.replace("|", "\\|"),
             mean = mean_str,
             stddev = stddev_str,
@@ -108,8 +108,8 @@ fn test_markdown_format_ms() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 0.1` | 105.7 ± 1.6 | 102.3…108.0 | 1.0 |
-| `sleep 2` | 2005.0 ± 2.0 | 2002.0…2008.0 | 19.0 |
+| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.0 |
+| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 19.0 |
 ",
         table_header("ms".to_string())
     );
@@ -153,8 +153,8 @@ fn test_markdown_format_s() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 2` | 2.005 ± 0.002 | 2.002…2.008 | 19.0 |
-| `sleep 0.1` | 0.106 ± 0.002 | 0.102…0.108 | 1.0 |
+| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 19.0 |
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.0 |
 ",
         table_header("s".to_string())
     );
@@ -202,8 +202,8 @@ fn test_markdown_format_time_unit_s() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 0.1` | 0.106 ± 0.002 | 0.102…0.108 | 1.0 |
-| `sleep 2` | 2.005 ± 0.002 | 2.002…2.008 | 19.0 |
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.0 |
+| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 19.0 |
 ",
         table_header("s".to_string())
     );
@@ -252,8 +252,8 @@ fn test_markdown_format_time_unit_ms() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 2` | 2005.0 ± 2.0 | 2002.0…2008.0 | 19.0 |
-| `sleep 0.1` | 105.7 ± 1.6 | 102.3…108.0 | 1.0 |
+| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 19.0 |
+| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.0 |
 ",
         table_header("ms".to_string())
     );
