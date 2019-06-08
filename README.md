@@ -4,7 +4,7 @@
 [![Version info](https://img.shields.io/crates/v/hyperfine.svg)](https://crates.io/crates/hyperfine)
 [中文](https://github.com/chinanf-boy/hyperfine-zh)
 
-A command-line benchmarking tool (*inspired by [bench](https://github.com/Gabriel439/bench)*).
+A command-line benchmarking tool.
 
 **Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and
 [`find`](https://www.gnu.org/software/findutils/):
@@ -140,6 +140,10 @@ Make sure that you use Rust 1.30 or higher.
 ### From binaries (Linux, macOS, Windows)
 
 Download the corresponding archive from the [Release page](https://github.com/sharkdp/hyperfine/releases).
+
+## Alternative tools
+
+ Hyperfine is inspired by [bench](https://github.com/Gabriel439/bench).
 
 ## Origin of the name
 
