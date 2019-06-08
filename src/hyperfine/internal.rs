@@ -125,6 +125,7 @@ fn test_compute_relative_speed() {
         command: name.into(),
         mean: mean,
         stddev: 1.0,
+        median: mean,
         user: mean,
         system: 0.0,
         min: mean,

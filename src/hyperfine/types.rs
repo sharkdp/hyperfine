@@ -159,6 +159,9 @@ pub struct BenchmarkResult {
     /// The standard deviation of all run times
     pub stddev: Second,
 
+    /// The median run time
+    pub median: Second,
+
     /// Time spend in user space
     pub user: Second,
 
@@ -186,6 +189,7 @@ impl BenchmarkResult {
         command: String,
         mean: Second,
         stddev: Second,
+        median: Second,
         user: Second,
         system: Second,
         min: Second,
@@ -197,6 +201,7 @@ impl BenchmarkResult {
             command,
             mean,
             stddev,
+            median,
             user,
             system,
             min,
