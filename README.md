@@ -18,9 +18,9 @@ A command-line benchmarking tool.
 * Constant feedback about the benchmark progress and current estimates.
 * Warmup runs can be executed before the actual benchmark.
 * Cache-clearing commands can be set up before each timing run.
-* Statistical outlier detection.
-* Export results to various formats: CSV, JSON, Markdown.
-* Parameterized benchmarks.
+* Statistical outlier detection to detect interference from other programs and caching effects.
+* Export results to various formats: CSV, JSON, Markdown, AsciiDoc.
+* Parameterized benchmarks (e.g. vary the number of threads).
 * Cross-platform
 
 ## Usage
@@ -77,23 +77,16 @@ Hyperfine has multiple options for exporting benchmark results: CSV, JSON, Markd
 text for details). To export results to Markdown, for example, you can use the `--export-markdown`
 option that will create tables like this:
 
-| Command | Mean [ms] | Min…Max [ms] |
-|:---|---:|---:|
-| `find . -iregex '.*[0-9]\.jpg$'` | 506.0 ± 8.1 | 495.4…518.6 |
-| `find . -iname '*[0-9].jpg'` | 304.9 ± 3.1 | 299.8…309.3 |
-| `fd -HI '.*[0-9]\.jpg$'` | 66.2 ± 5.8 | 62.5…86.3 |
+| Command | Mean [s] | Min [s] | Max [s] | Relative |
+|:---|---:|---:|---:|---:|
+| `find . -iregex '.*[0-9]\.jpg$'` | 2.395 ± 0.033 | 2.355 | 2.470 | 7.7 |
+| `find . -iname '*[0-9].jpg'` | 1.416 ± 0.029 | 1.389 | 1.494 | 4.6 |
+| `fd -HI '.*[0-9]\.jpg$'` | 0.309 ± 0.005 | 0.305 | 0.320 | 1.0 |
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. See the
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder for some examples.
 
 ## Installation
-
-### On macOS
-
-Hyperfine can be installed via [Homebrew](https://brew.sh):
-```
-brew install hyperfine
-```
 
 ### On Ubuntu
 
@@ -117,6 +110,13 @@ Hyperfine can be installed via xbps
 
 ```
 xbps-install -S hyperfine
+```
+
+### On macOS
+
+Hyperfine can be installed via [Homebrew](https://brew.sh):
+```
+brew install hyperfine
 ```
 
 ### With conda
