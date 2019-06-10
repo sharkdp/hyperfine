@@ -97,6 +97,13 @@ wget https://github.com/sharkdp/hyperfine/releases/download/v1.6.0/hyperfine_1.6
 sudo dpkg -i hyperfine_1.6.0_amd64.deb
 ```
 
+### On Alpine Linux
+
+On Alpine Linux, hyperfine can be installed [from the official repositories](https://pkgs.alpinelinux.org/packages?name=hyperfine):
+```
+apk add hyperfine
+```
+
 ### On Arch Linux
 
 On Arch Linux, hyperfine can be installed [from the AUR](https://aur.archlinux.org/packages/hyperfine):
