@@ -33,3 +33,6 @@ features = ["suggestions", "color", "wrap_help"]
 
 [dev-dependencies]
 approx = "0.3"
+
+[profile.release]
+lto = true
