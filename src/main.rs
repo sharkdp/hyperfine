@@ -207,7 +207,7 @@ fn build_export_manager(matches: &ArgMatches<'_>) -> ExportManager {
 fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
     let command_strings = matches.values_of("command").unwrap();
 
-    let commands = if let Some(args) = matches.values_of("parameter-scan") {
+    if let Some(args) = matches.values_of("parameter-scan") {
         match parse_parameter_scan_args(args) {
             Ok((param_name, param_range)) => {
                 let mut commands = vec![];
@@ -223,6 +223,5 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
         }
     } else {
         command_strings.map(|c| Command::new(c)).collect()
-    };
-    commands
+    }
 }
