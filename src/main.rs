@@ -222,6 +222,6 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
             Err(e) => error(e.description()),
         }
     } else {
-        command_strings.map(|c| Command::new(c)).collect()
+        command_strings.map(Command::new).collect()
     }
 }
