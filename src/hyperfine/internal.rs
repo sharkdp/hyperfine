@@ -123,7 +123,7 @@ fn test_compute_relative_speed() {
 
     let create_result = |name: &str, mean| BenchmarkResult {
         command: name.into(),
-        mean: mean,
+        mean,
         stddev: 1.0,
         median: mean,
         user: mean,
