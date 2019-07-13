@@ -27,7 +27,7 @@ impl Exporter for AsciidocExporter {
         res.append(&mut table_startend());
         res.append(&mut table_header(unit));
         for result in results {
-            res.push('\n' as u8);
+            res.push(b'\n');
             res.append(&mut table_row(result, unit));
         }
         res.append(&mut table_startend());
