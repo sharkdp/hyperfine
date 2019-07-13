@@ -23,14 +23,14 @@ pub struct Command<'a> {
 impl<'a> Command<'a> {
     pub fn new(expression: &'a str) -> Command<'a> {
         Command {
-            expression: expression,
+            expression,
             parameter: None,
         }
     }
 
     pub fn new_parametrized(expression: &'a str, parameter: &'a str, value: i32) -> Command<'a> {
         Command {
-            expression: expression,
+            expression,
             parameter: Some((parameter, value)),
         }
     }
