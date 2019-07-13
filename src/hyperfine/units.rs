@@ -14,16 +14,16 @@ pub enum Unit {
 
 impl Unit {
     /// The abbreviation of the Unit.
-    pub fn short_name(&self) -> String {
-        match *self {
+    pub fn short_name(self) -> String {
+        match self {
             Unit::Second => String::from("s"),
             Unit::MilliSecond => String::from("ms"),
         }
     }
 
     /// Returns the Second value formatted for the Unit.
-    pub fn format(&self, value: Second) -> String {
-        match *self {
+    pub fn format(self, value: Second) -> String {
+        match self {
             Unit::Second => format!("{:.3}", value),
             Unit::MilliSecond => format!("{:.1}", value * 1e3),
         }
