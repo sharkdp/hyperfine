@@ -52,7 +52,7 @@ fn parse_parameter_scan_args<'a>(
     let param_min: i32 = vals.next().unwrap().parse()?;
     let param_max: i32 = vals.next().unwrap().parse()?;
 
-    const MAX_PARAMETERS: i32 = 100000;
+    const MAX_PARAMETERS: i32 = 100_000;
     if param_max - param_min > MAX_PARAMETERS {
         return Err(ParameterScanError::TooLarge);
     }
