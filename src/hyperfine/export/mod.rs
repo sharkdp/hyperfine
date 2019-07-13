@@ -79,7 +79,7 @@ impl ExportManager {
 }
 
 /// Write the given content to a file with the specified name
-fn write_to_file(filename: &String, content: &[u8]) -> Result<()> {
+fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
     let mut file = File::create(filename)?;
     file.write_all(content)
 }
