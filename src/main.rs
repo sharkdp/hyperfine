@@ -61,7 +61,7 @@ fn parse_parameter_scan_args<'a>(
         return Err(ParameterScanError::EmptyRange);
     }
 
-    return Ok((param_name, param_min..(param_max + 1)));
+    Ok((param_name, param_min..(param_max + 1)))
 }
 
 fn main() {
