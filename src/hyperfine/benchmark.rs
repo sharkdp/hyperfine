@@ -150,7 +150,7 @@ fn run_intermediate_command(
     show_output: bool,
     error_output: &'static str,
 ) -> io::Result<TimingResult> {
-    if let &Some(ref cmd) = command {
+    if let Some(ref cmd) = command {
         let res = time_shell_command(shell, cmd, show_output, CmdFailureAction::RaiseError, None);
         if res.is_err() {
             return Err(io::Error::new(io::ErrorKind::Other, error_output));
