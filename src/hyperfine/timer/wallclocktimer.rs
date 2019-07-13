@@ -25,6 +25,6 @@ impl TimerStop for WallClockTimer {
 
     fn stop(&self) -> Second {
         let duration = self.start.elapsed();
-        duration.as_secs() as f64 + (duration.subsec_nanos() as f64) * 1e-9
+        duration.as_secs() as f64 + f64::from(duration.subsec_nanos()) * 1e-9
     }
 }
