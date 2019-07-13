@@ -211,7 +211,7 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
                 let mut commands = vec![];
                 let command_strings = command_strings.collect::<Vec<&str>>();
                 for value in param_range.start..param_range.end {
-                    for ref cmd in &command_strings {
+                    for cmd in &command_strings {
                         commands.push(Command::new_parametrized(cmd, param_name, value));
                     }
                 }
