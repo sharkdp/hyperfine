@@ -32,7 +32,7 @@ fn run(
     options: &HyperfineOptions,
 ) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time =
-        mean_shell_spawning_time(&options.shell, &options.output_style, options.show_output)?;
+        mean_shell_spawning_time(&options.shell, options.output_style, options.show_output)?;
 
     let mut timing_results = vec![];
 

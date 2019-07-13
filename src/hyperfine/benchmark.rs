@@ -90,7 +90,7 @@ pub fn time_shell_command(
 /// Measure the average shell spawning time
 pub fn mean_shell_spawning_time(
     shell: &str,
-    style: &OutputStyleOption,
+    style: OutputStyleOption,
     show_output: bool,
 ) -> io::Result<TimingResult> {
     const COUNT: u64 = 200;
@@ -210,7 +210,7 @@ pub fn run_benchmark(
         let progress_bar = get_progress_bar(
             options.warmup_count,
             "Performing warmup runs",
-            &options.output_style,
+            options.output_style,
         );
 
         for _ in 0..options.warmup_count {
@@ -230,7 +230,7 @@ pub fn run_benchmark(
     let progress_bar = get_progress_bar(
         options.runs.min,
         "Initial time measurement",
-        &options.output_style,
+        options.output_style,
     );
 
     // Run init command
