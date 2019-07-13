@@ -11,7 +11,7 @@ use csv::WriterBuilder;
 pub struct CsvExporter {}
 
 impl Exporter for CsvExporter {
-    fn serialize(&self, results: &Vec<BenchmarkResult>, _unit: Option<Unit>) -> Result<Vec<u8>> {
+    fn serialize(&self, results: &[BenchmarkResult], _unit: Option<Unit>) -> Result<Vec<u8>> {
         let mut writer = WriterBuilder::new().from_writer(vec![]);
         for res in results {
             // The list of times cannot be exported to the CSV file - remove it:

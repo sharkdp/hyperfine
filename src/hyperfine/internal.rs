@@ -57,7 +57,7 @@ fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
 }
 
 pub fn compute_relative_speed<'a>(
-    results: &'a Vec<BenchmarkResult>,
+    results: &'a [BenchmarkResult],
 ) -> Vec<BenchmarkResultWithRelativeSpeed<'a>> {
     let fastest: &BenchmarkResult = results
         .iter()
@@ -84,7 +84,7 @@ pub fn compute_relative_speed<'a>(
         .collect()
 }
 
-pub fn write_benchmark_comparison(results: &Vec<BenchmarkResult>) {
+pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
     if results.len() < 2 {
         return;
     }

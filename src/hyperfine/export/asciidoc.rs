@@ -10,7 +10,7 @@ use std::io::Result;
 pub struct AsciidocExporter {}
 
 impl Exporter for AsciidocExporter {
-    fn serialize(&self, results: &Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<Vec<u8>> {
+    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
         let unit = if let Some(unit) = unit {
             // Use the given unit for all entries.
             unit

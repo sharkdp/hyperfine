@@ -11,7 +11,7 @@ use std::io::Result;
 pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
-    fn serialize(&self, results: &Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<Vec<u8>> {
+    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
         let unit = if let Some(unit) = unit {
             // Use the given unit for all entries.
             unit
@@ -23,7 +23,7 @@ impl Exporter for MarkdownExporter {
             Unit::Second
         };
 
-        let annotated_results = compute_relative_speed(&results);
+        let annotated_results = compute_relative_speed(results);
 
         let mut destination = start_table(unit);
 

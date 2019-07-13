@@ -33,7 +33,7 @@ pub enum ExportType {
 /// Interface for different exporters.
 trait Exporter {
     /// Export the given entries in the serialized form.
-    fn serialize(&self, results: &Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<Vec<u8>>;
+    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>>;
 }
 
 struct ExporterWithFilename {
@@ -79,7 +79,7 @@ impl ExportManager {
 }
 
 /// Write the given content to a file with the specified name
-fn write_to_file(filename: &String, content: &Vec<u8>) -> Result<()> {
+fn write_to_file(filename: &String, content: &[u8]) -> Result<()> {
     let mut file = File::create(filename)?;
     file.write_all(content)
 }
