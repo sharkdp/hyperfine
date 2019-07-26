@@ -116,7 +116,7 @@ apk add hyperfine
 
 On Arch Linux, hyperfine can be installed [from the AUR](https://aur.archlinux.org/packages/hyperfine):
 ```
-yaourt -S hyperfine
+yay -S hyperfine
 ```
 
 ### On Void Linux
