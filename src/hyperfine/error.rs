@@ -7,6 +7,7 @@ pub enum ParameterScanError {
     ParseIntError(num::ParseIntError),
     EmptyRange,
     TooLarge,
+    ZeroStep,
 }
 
 impl From<num::ParseIntError> for ParameterScanError {
@@ -27,6 +28,7 @@ impl Error for ParameterScanError {
             ParameterScanError::ParseIntError(ref e) => e.description(),
             ParameterScanError::EmptyRange => "Empty parameter range",
             ParameterScanError::TooLarge => "Parameter range is too large",
+            ParameterScanError::ZeroStep => "Zero is not a valid parameter step",
         }
     }
 }
