@@ -108,6 +108,17 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("parameter-step-size")
+                .long("parameter-step-size")
+                .takes_value(true)
+                .value_names(&["STEP_SIZE"])
+                .requires("parameter-scan")
+                .help(
+                    "This argument requires --parameter-scan to be sepcified as well.\
+                     Traverse the range MIN..MAX in steps of STEP_SIZE.",
+                ),
+        )
+        .arg(
             Arg::with_name("style")
                 .long("style")
                 .short("s")

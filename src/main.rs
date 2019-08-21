@@ -2,6 +2,7 @@ use std::cmp;
 use std::env;
 use std::error::Error;
 use std::io;
+use std::iter::StepBy;
 use std::ops::Range;
 
 use atty::Stream;
@@ -46,11 +47,12 @@ fn run(
 
 /// A function to read the `--parameter-scan` arguments
 fn parse_parameter_scan_args<'a>(
-    mut vals: clap::Values<'a>,
-) -> Result<(&'a str, Range<i32>), ParameterScanError> {
+    mut vals: clap::Values<'a>, step_size: &str
+) -> Result<(&'a str, StepBy<Range<i32>>), ParameterScanError> {
     let param_name = vals.next().unwrap();
     let param_min: i32 = vals.next().unwrap().parse()?;
     let param_max: i32 = vals.next().unwrap().parse()?;
+    let step_size = step_size.parse()?;
 
     const MAX_PARAMETERS: i32 = 100_000;
     if param_max - param_min > MAX_PARAMETERS {
@@ -61,7 +63,14 @@ fn parse_parameter_scan_args<'a>(
         return Err(ParameterScanError::EmptyRange);
     }
 
-    Ok((param_name, param_min..(param_max + 1)))
+    if step_size == 0 {
+        // Iterator::step_by panics for zero step
+        return Err(ParameterScanError::ZeroStep);
+    }
+
+    let param_range = (param_min..(param_max + 1)).step_by(step_size);
+
+    Ok((param_name, param_range))
 }
 
 fn main() {
@@ -206,11 +215,12 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
     let command_strings = matches.values_of("command").unwrap();
 
     if let Some(args) = matches.values_of("parameter-scan") {
-        match parse_parameter_scan_args(args) {
+        let step_size = matches.value_of("parameter-step-size").unwrap_or("1");
+        match parse_parameter_scan_args(args, step_size) {
             Ok((param_name, param_range)) => {
                 let mut commands = vec![];
                 let command_strings = command_strings.collect::<Vec<&str>>();
-                for value in param_range.start..param_range.end {
+                for value in param_range {
                     for cmd in &command_strings {
                         commands.push(Command::new_parametrized(cmd, param_name, value));
                     }
