@@ -111,11 +111,11 @@ fn build_app() -> App<'static, 'static> {
             Arg::with_name("parameter-step-size")
                 .long("parameter-step-size")
                 .takes_value(true)
-                .value_names(&["STEP_SIZE"])
+                .value_names(&["STEP"])
                 .requires("parameter-scan")
                 .help(
-                    "This argument requires --parameter-scan to be sepcified as well.\
-                     Traverse the range MIN..MAX in steps of STEP_SIZE.",
+                    "This argument requires --parameter-scan to be sepcified as well. \
+                     Traverse the range MIN..MAX in steps of STEP.",
                 ),
         )
         .arg(
