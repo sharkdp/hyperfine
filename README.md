@@ -134,6 +134,13 @@ Hyperfine can be installed via [Homebrew](https://brew.sh):
 brew install hyperfine
 ```
 
+### On FreeBSD
+
+Hyperfine can be installed via pkg:
+```
+pkg install hyperfine
+```
+
 ### With conda
 
 [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/hyperfine.svg)](https://anaconda.org/conda-forge/hyperfine)
