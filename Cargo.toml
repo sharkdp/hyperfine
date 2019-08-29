@@ -25,7 +25,7 @@ rust_decimal = "1.0"
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3.7", features = ["processthreadsapi", "minwindef", "winnt"] }
+winapi = { version = "0.3.8", features = ["processthreadsapi", "minwindef", "winnt"] }
 
 [dependencies.clap]
 version = "2"
