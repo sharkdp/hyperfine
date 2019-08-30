@@ -28,10 +28,7 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(
-    commands: &[Command<'_>],
-    options: &HyperfineOptions,
-) -> io::Result<Vec<BenchmarkResult>> {
+fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time =
         mean_shell_spawning_time(&options.shell, options.output_style, options.show_output)?;
 
@@ -47,7 +44,8 @@ fn run(
 
 /// A function to read the `--parameter-scan` arguments
 fn parse_parameter_scan_args<'a>(
-    mut vals: clap::Values<'a>, step_size: &str
+    mut vals: clap::Values<'a>,
+    step_size: &str,
 ) -> Result<(&'a str, StepBy<Range<i32>>), ParameterScanError> {
     let param_name = vals.next().unwrap();
     let param_min: i32 = vals.next().unwrap().parse()?;
@@ -102,10 +100,13 @@ fn main() {
 /// Build the HyperfineOptions that correspond to the given ArgMatches
 fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions, OptionsError> {
     let mut options = HyperfineOptions::default();
-    let param_to_u64 = |param| matches.value_of(param).and_then(|n| u64::from_str_radix(n, 10).ok());
+    let param_to_u64 = |param| {
+        matches
+            .value_of(param)
+            .and_then(|n| u64::from_str_radix(n, 10).ok())
+    };
 
-    options.warmup_count = param_to_u64("warmup")
-        .unwrap_or(options.warmup_count);
+    options.warmup_count = param_to_u64("warmup").unwrap_or(options.warmup_count);
 
     let mut min_runs = param_to_u64("min-runs");
     let mut max_runs = param_to_u64("max-runs");
