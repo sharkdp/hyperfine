@@ -2,8 +2,6 @@ use std::cmp;
 use std::env;
 use std::error::Error;
 use std::io;
-use std::iter::StepBy;
-use std::ops::Range;
 
 use atty::Stream;
 use clap::ArgMatches;
@@ -13,9 +11,10 @@ mod hyperfine;
 
 use crate::hyperfine::app::get_arg_matches;
 use crate::hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use crate::hyperfine::error::{OptionsError, ParameterScanError};
+use crate::hyperfine::error::OptionsError;
 use crate::hyperfine::export::{ExportManager, ExportType};
 use crate::hyperfine::internal::write_benchmark_comparison;
+use crate::hyperfine::parameter_range::get_parameterized_commands;
 use crate::hyperfine::types::{
     BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
 };
@@ -40,35 +39,6 @@ fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<B
     }
 
     Ok(timing_results)
-}
-
-/// A function to read the `--parameter-scan` arguments
-fn parse_parameter_scan_args<'a>(
-    mut vals: clap::Values<'a>,
-    step_size: &str,
-) -> Result<(&'a str, StepBy<Range<i32>>), ParameterScanError> {
-    let param_name = vals.next().unwrap();
-    let param_min: i32 = vals.next().unwrap().parse()?;
-    let param_max: i32 = vals.next().unwrap().parse()?;
-    let step_size = step_size.parse()?;
-
-    const MAX_PARAMETERS: i32 = 100_000;
-    if param_max - param_min > MAX_PARAMETERS {
-        return Err(ParameterScanError::TooLarge);
-    }
-
-    if param_max < param_min {
-        return Err(ParameterScanError::EmptyRange);
-    }
-
-    if step_size == 0 {
-        // Iterator::step_by panics for zero step
-        return Err(ParameterScanError::ZeroStep);
-    }
-
-    let param_range = (param_min..(param_max + 1)).step_by(step_size);
-
-    Ok((param_name, param_range))
 }
 
 fn main() {
@@ -216,18 +186,9 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
     let command_strings = matches.values_of("command").unwrap();
 
     if let Some(args) = matches.values_of("parameter-scan") {
-        let step_size = matches.value_of("parameter-step-size").unwrap_or("1");
-        match parse_parameter_scan_args(args, step_size) {
-            Ok((param_name, param_range)) => {
-                let mut commands = vec![];
-                let command_strings = command_strings.collect::<Vec<&str>>();
-                for value in param_range {
-                    for cmd in &command_strings {
-                        commands.push(Command::new_parametrized(cmd, param_name, value));
-                    }
-                }
-                commands
-            }
+        let step_size = matches.value_of("parameter-step-size");
+        match get_parameterized_commands(command_strings, args, step_size) {
+            Ok(commands) => commands,
             Err(e) => error(e.description()),
         }
     } else {

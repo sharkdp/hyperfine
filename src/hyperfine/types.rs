@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 /// This module contains common internal types.
 use serde::*;
 use std::fmt;
@@ -10,6 +11,34 @@ pub const DEFAULT_SHELL: &str = "sh";
 #[cfg(windows)]
 pub const DEFAULT_SHELL: &str = "cmd.exe";
 
+#[derive(Debug, Clone, Serialize, Copy)]
+#[serde(untagged)]
+pub enum NumericType {
+    Int(i32),
+    Decimal(Decimal),
+}
+
+impl fmt::Display for NumericType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            NumericType::Int(i) => fmt::Display::fmt(&i, f),
+            NumericType::Decimal(i) => fmt::Display::fmt(&i, f),
+        }
+    }
+}
+
+impl Into<NumericType> for i32 {
+    fn into(self) -> NumericType {
+        NumericType::Int(self)
+    }
+}
+
+impl Into<NumericType> for Decimal {
+    fn into(self) -> NumericType {
+        NumericType::Decimal(self)
+    }
+}
+
 /// A command that should be benchmarked.
 #[derive(Debug, Clone)]
 pub struct Command<'a> {
@@ -17,7 +46,7 @@ pub struct Command<'a> {
     expression: &'a str,
 
     /// A possible parameter value.
-    parameter: Option<(&'a str, i32)>,
+    parameter: Option<(&'a str, NumericType)>,
 }
 
 impl<'a> Command<'a> {
@@ -28,7 +57,11 @@ impl<'a> Command<'a> {
         }
     }
 
-    pub fn new_parametrized(expression: &'a str, parameter: &'a str, value: i32) -> Command<'a> {
+    pub fn new_parametrized(
+        expression: &'a str,
+        parameter: &'a str,
+        value: NumericType,
+    ) -> Command<'a> {
         Command {
             expression,
             parameter: Some((parameter, value)),
@@ -45,7 +78,7 @@ impl<'a> Command<'a> {
         }
     }
 
-    pub fn get_parameter(&self) -> Option<(&'a str, i32)> {
+    pub fn get_parameter(&self) -> Option<(&'a str, NumericType)> {
         self.parameter
     }
 }
@@ -180,7 +213,7 @@ pub struct BenchmarkResult {
 
     /// Any parameter used
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter: Option<i32>,
+    pub parameter: Option<NumericType>,
 }
 
 impl BenchmarkResult {
@@ -195,7 +228,7 @@ impl BenchmarkResult {
         min: Second,
         max: Second,
         times: Vec<Second>,
-        parameter: Option<i32>,
+        parameter: Option<NumericType>,
     ) -> Self {
         BenchmarkResult {
             command,
