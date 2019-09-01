@@ -73,8 +73,9 @@ hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num
 This also works with decimal numbers. The `-D`/`--parameter-step-size` option can be used
 to control the step size:
 ``` bash
-hyperfine -P time 0.2 0.8 -D 0.2 'sleep {time}'
+hyperfine --parameter-scan delay 0.3 0.7 -D 0.2 'sleep {delay}'
 ```
+This runs `sleep 0.3`, `sleep 0.5` and `sleep 0.7`.
 
 ### Export results
 
