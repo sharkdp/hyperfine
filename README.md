@@ -70,6 +70,11 @@ threads), you can use the `-P`/`--parameter-scan` option and call:
 ``` bash
 hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num_threads}'
 ```
+This also works with decimal numbers. The `-D`/`--parameter-step-size` option can be used
+to control the step size:
+``` bash
+hyperfine -P time 0.2 0.8 -D 0.2 'sleep {time}'
+```
 
 ### Export results
 
