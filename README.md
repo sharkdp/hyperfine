@@ -148,8 +148,6 @@ pkg install hyperfine
 
 ### With conda
 
-[![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/hyperfine.svg)](https://anaconda.org/conda-forge/hyperfine)
-
 Hyperfine can be installed via [`conda`](https://conda.io/en/latest/) from the [`conda-forge`](https://anaconda.org/conda-forge/hyperfine) channel:
 ```
 conda install -c conda-forge hyperfine
