@@ -109,8 +109,11 @@ pub fn get_parameterized_commands<'a>(
     let param_max = vals.next().unwrap();
 
     // attempt to parse as integers
-    if let (Ok(param_min), Ok(param_max)) = (param_min.parse::<i32>(), param_max.parse::<i32>()) {
-        let step = step.unwrap_or("1").parse::<i32>()?;
+    if let (Ok(param_min), Ok(param_max), Ok(step)) = (
+        param_min.parse::<i32>(),
+        param_max.parse::<i32>(),
+        step.unwrap_or("1").parse::<i32>(),
+    ) {
         return build_parameterized_commands(
             param_min,
             param_max,
