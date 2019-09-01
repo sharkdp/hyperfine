@@ -39,7 +39,11 @@ impl Error for ParameterScanError {
             ParameterScanError::EmptyRange => "Empty parameter range",
             ParameterScanError::TooLarge => "Parameter range is too large",
             ParameterScanError::ZeroStep => "Zero is not a valid parameter step",
-            ParameterScanError::StepRequired => "Step is required when range bounds are floats",
+            ParameterScanError::StepRequired => {
+                "A step size is required when the range bounds are \
+                 floating point numbers. The step size can be specified \
+                 with the '--parameter-step-size' parameter"
+            }
         }
     }
 }
