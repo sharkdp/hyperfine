@@ -9,7 +9,7 @@ A command-line benchmarking tool.
 **Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and
 [`find`](https://www.gnu.org/software/findutils/):
 
-![hyperfine](https://i.imgur.com/5OqrGWe.gif)
+![hyperfine](https://i.imgur.com/EGMzTps.gif)
 
 ## Features
 
