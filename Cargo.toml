@@ -14,18 +14,18 @@ edition = "2018"
 colored = "1.8"
 indicatif = "0.11"
 statistical = "1.0"
-atty = "0.2.13"
-cfg-if = "0.1.9"
+atty = "0.2"
+cfg-if = "0.1"
 csv = "1.1.1"
-serde = { version = "1.0.99", features = ["derive"] }
-serde_json = "1.0.40"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 rust_decimal = "1.0"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3.8", features = ["processthreadsapi", "minwindef", "winnt"] }
+winapi = { version = "0.3", features = ["processthreadsapi", "minwindef", "winnt"] }
 
 [dependencies.clap]
 version = "2"
