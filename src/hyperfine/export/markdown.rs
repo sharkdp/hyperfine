@@ -110,8 +110,8 @@ fn test_markdown_format_ms() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.0 |
-| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 19.0 |
+| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
+| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 |
 ",
         table_header("ms".to_string())
     );
@@ -157,8 +157,8 @@ fn test_markdown_format_s() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 19.0 |
-| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.0 |
+| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 |
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
 ",
         table_header("s".to_string())
     );
@@ -208,8 +208,8 @@ fn test_markdown_format_time_unit_s() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.0 |
-| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 19.0 |
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
+| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 |
 ",
         table_header("s".to_string())
     );
@@ -260,8 +260,8 @@ fn test_markdown_format_time_unit_ms() {
 
     let formatted_expected = format!(
         "{}\
-| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 19.0 |
-| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.0 |
+| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 |
+| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
 ",
         table_header("ms".to_string())
     );
