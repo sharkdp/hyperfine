@@ -52,7 +52,7 @@ fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResultWithRelativeSpeed, u
     let stddev_str = format_duration_value(result.stddev, Some(unit)).0;
     let min_str = format_duration_value(result.min, Some(unit)).0;
     let max_str = format_duration_value(result.max, Some(unit)).0;
-    let rel_str = format!("{:.1}", entry.relative_speed);
+    let rel_str = format!("{:.2}", entry.relative_speed);
 
     dest.extend(
         format!(
