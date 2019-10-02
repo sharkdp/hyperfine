@@ -83,6 +83,16 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("prepare-once")
+                .long("prepare-once")
+                .short("o")
+                .requires("prepare")
+                .help(
+                    "Execute prepare command only once initially for benchmarking. \
+                    Required to have --prepare option specified as well"
+                ),
+        )
+        .arg(
             Arg::with_name("cleanup")
                 .long("cleanup")
                 .short("c")

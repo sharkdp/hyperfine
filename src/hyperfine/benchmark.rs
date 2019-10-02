@@ -253,9 +253,16 @@ pub fn run_benchmark(
     )?;
 
     // Determine number of benchmark runs
-    let runs_in_min_time = (options.min_time_sec
-        / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real))
-        as u64;
+    let runs_in_min_time = if options.preparation_once {
+        // remove prepare time from min time and calculate out runs_in_min_time
+        ((options.min_time_sec - prepare_res.time_real)
+            / (res.time_real + shell_spawning_time.time_real)) as u64
+    } else {
+        // calculate runs_in_min_time along with preparation time
+        (options.min_time_sec
+            / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real))
+            as u64
+    };
 
     let count = {
         let min = cmp::max(runs_in_min_time, options.runs.min);
@@ -283,8 +290,9 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
-
+        if !options.preparation_once {
+            run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
+        }
         let msg = {
             let mean = format_duration(mean(&times_real), options.time_unit);
             format!("Current estimate: {}", mean.to_string().green())

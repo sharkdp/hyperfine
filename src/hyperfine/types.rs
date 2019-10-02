@@ -147,6 +147,9 @@ pub struct HyperfineOptions {
     /// Command to run before each timing run
     pub preparation_command: Option<String>,
 
+    /// Run preparation command only one time
+    pub preparation_once: bool,
+
     /// Command to run after each benchmark
     pub cleanup_command: Option<String>,
 
@@ -171,6 +174,7 @@ impl Default for HyperfineOptions {
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
+            preparation_once: false,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
             shell: DEFAULT_SHELL.to_string(),
