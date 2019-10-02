@@ -113,7 +113,11 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
         (None, None) => {}
     };
 
-    options.preparation_command = matches.value_of("prepare").map(String::from);
+    if let Some(values) = matches.values_of("prepare") {
+        options.preparation_command = Some(values.map(String::from).collect::<Vec<String>>());
+    } else {
+        options.preparation_command = None;
+    }
 
     options.cleanup_command = matches.value_of("cleanup").map(String::from);
 
