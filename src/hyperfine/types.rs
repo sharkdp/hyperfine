@@ -145,7 +145,7 @@ pub struct HyperfineOptions {
     pub failure_action: CmdFailureAction,
 
     /// Command to run before each timing run
-    pub preparation_command: Option<String>,
+    pub preparation_command: Option<Vec<String>>,
 
     /// Command to run after each benchmark
     pub cleanup_command: Option<String>,

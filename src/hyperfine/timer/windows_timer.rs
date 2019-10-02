@@ -65,7 +65,8 @@ fn get_cpu_times(handle: RawHandle) -> CPUTimes {
             // Extract times as laid out here: https://support.microsoft.com/en-us/help/188768/info-working-with-the-filetime-structure
             // Both user_time and kernel_time are spans that the proces spent in either.
             let user: i64 = (((user_time.dwHighDateTime as i64) << 32)
-                + user_time.dwLowDateTime as i64) / HUNDRED_NS_PER_MS;
+                + user_time.dwLowDateTime as i64)
+                / HUNDRED_NS_PER_MS;
             let kernel: i64 = (((kernel_time.dwHighDateTime as i64) << 32)
                 + kernel_time.dwLowDateTime as i64)
                 / HUNDRED_NS_PER_MS;
