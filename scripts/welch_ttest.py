@@ -1,11 +1,15 @@
 #!/usr/bin/python
 
+"""This script performs Welch's t-test on a JSON export file with two
+benchmark results to test whether or not the two distributions are
+the same."""
+
 import argparse
 import json
 import sys
 from scipy import stats
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with two benchmark results")
 args = parser.parse_args()
 
