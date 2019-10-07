@@ -29,9 +29,11 @@ print("Command 2: {}\n".format(b))
 t, p = stats.ttest_ind(X, Y, equal_var=False)
 th = 0.05
 dispose = p < th
-print("t = {}, p = {}".format(t, p))
-print("p < {} = {}\n".format(th, dispose))
+print("t = {:.3}, p = {:.3}".format(t, p))
+print()
+
 if dispose:
-    print("There is a difference between the two benchmarks.")
+    print("There is a difference between the "
+          "two benchmarks (p < {}).".format(th))
 else:
-    print("The two benchmarks are almost the same.")
+    print("The two benchmarks are almost the same (p >= {}).".format(th))
