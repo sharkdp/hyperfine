@@ -33,6 +33,16 @@ fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<B
 
     let mut timing_results = vec![];
 
+    // Check if preparation command is equal to command length or should be mentioned only once
+    if let Some(preparation_command) = &options.preparation_command {
+        if commands.len() != preparation_command.len() && preparation_command.len() > 1 {
+            error(
+                "--prepare option should be provided only 1 time or N times equal to number of \
+                 commands to benchmark",
+            );
+        }
+    }
+
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
         timing_results.push(run_benchmark(num, cmd, shell_spawning_time, options)?);
