@@ -236,11 +236,8 @@ pub fn run_benchmark(
     // Run init command
     let mut prepare_cmd = None;
     if let Some(values) = &options.preparation_command {
-        if num >= values.len() {
-            prepare_cmd = Some(new_command_from_get_parameter(
-                cmd,
-                &values[values.len() - 1],
-            ));
+        if values.len() == 1 {
+            prepare_cmd = Some(new_command_from_get_parameter(cmd, &values[0]));
         } else {
             prepare_cmd = Some(new_command_from_get_parameter(cmd, &values[num]));
         }
