@@ -2,14 +2,19 @@
 
 import argparse
 import json
+import sys
 from scipy import stats
 
 parser = argparse.ArgumentParser()
-parser.add_argument("file", help="JSON file with benchmark results")
+parser.add_argument("file", help="JSON file with two benchmark results")
 args = parser.parse_args()
 
 with open(args.file) as f:
     results = json.load(f)["results"]
+
+if len(results) != 2:
+    print("The input file has to contain exactly two benchmarks")
+    sys.exit(1)
 
 a, b = [x["command"] for x in results[:2]]
 X, Y = [x["times"] for x in results[:2]]
