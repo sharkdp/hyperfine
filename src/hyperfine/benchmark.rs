@@ -5,6 +5,8 @@ use std::process::Stdio;
 use colored::*;
 use statistical::{mean, median, standard_deviation};
 
+use indicatif::{ProgressBar};
+
 use crate::hyperfine::format::{format_duration, format_duration_unit};
 use crate::hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
 use crate::hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
@@ -94,7 +96,10 @@ pub fn mean_shell_spawning_time(
     show_output: bool,
 ) -> io::Result<TimingResult> {
     const COUNT: u64 = 200;
-    let progress_bar = get_progress_bar(COUNT, "Measuring shell spawning time", style);
+    let mut progress_bar: Option<ProgressBar> = None;
+    if style != OutputStyleOption::None { 
+        progress_bar = Some(get_progress_bar(COUNT, "Measuring shell spawning time", style)); 
+    }
 
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
@@ -132,10 +137,10 @@ pub fn mean_shell_spawning_time(
                 times_user.push(r.time_user);
                 times_system.push(r.time_system);
             }
-        }
-        progress_bar.inc(1);
+        }  
+        // if let Some(bar) = progress_bar { bar.inc(1); }
     }
-    progress_bar.finish_and_clear();
+    if let Some(bar) = progress_bar { bar.finish_and_clear(); }
 
     Ok(TimingResult {
         time_real: mean(&times_real),
@@ -193,12 +198,14 @@ pub fn run_benchmark(
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<BenchmarkResult> {
-    println!(
-        "{}{}: {}",
-        "Benchmark #".bold(),
-        (num + 1).to_string().bold(),
-        cmd
-    );
+    if options.output_style != OutputStyleOption::None { 
+        println!(
+            "{}{}: {}",
+            "Benchmark #".bold(),
+            (num + 1).to_string().bold(),
+            cmd
+        );
+    }
 
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
@@ -207,11 +214,14 @@ pub fn run_benchmark(
 
     // Warmup phase
     if options.warmup_count > 0 {
-        let progress_bar = get_progress_bar(
-            options.warmup_count,
-            "Performing warmup runs",
-            options.output_style,
-        );
+        let mut progress_bar: Option<ProgressBar> = None;
+        if options.output_style != OutputStyleOption::None { 
+                progress_bar = Some(get_progress_bar(
+                options.warmup_count,
+                "Performing warmup runs",
+                options.output_style,
+            ));
+        }
 
         for _ in 0..options.warmup_count {
             let _ = time_shell_command(
@@ -221,17 +231,21 @@ pub fn run_benchmark(
                 options.failure_action,
                 None,
             )?;
-            progress_bar.inc(1);
+            if let Some(pbar) = progress_bar.clone() { pbar.inc(1); }
         }
-        progress_bar.finish_and_clear();
+        if let Some(bar) = progress_bar { bar.finish_and_clear(); }
     }
 
     // Set up progress bar (and spinner for initial measurement)
-    let progress_bar = get_progress_bar(
-        options.runs.min,
-        "Initial time measurement",
-        options.output_style,
-    );
+    let mut progress_bar:Option<ProgressBar> = None;
+
+    if options.output_style != OutputStyleOption::None { 
+            progress_bar = Some(get_progress_bar(
+            options.runs.min,
+            "Initial time measurement",
+            options.output_style,
+        ))
+    }
 
     // Run init command
     let prepare_cmd = options
@@ -278,8 +292,8 @@ pub fn run_benchmark(
     all_succeeded = all_succeeded && success;
 
     // Re-configure the progress bar
-    progress_bar.set_length(count);
-    progress_bar.inc(1);
+    if let Some(bar) = progress_bar.clone() { bar.set_length(count); }
+    if let Some(bar) = progress_bar.clone() { bar.inc(1); }
 
     // Gather statistics
     for _ in 0..count_remaining {
@@ -289,7 +303,8 @@ pub fn run_benchmark(
             let mean = format_duration(mean(&times_real), options.time_unit);
             format!("Current estimate: {}", mean.to_string().green())
         };
-        progress_bar.set_message(&msg);
+
+        if let Some(bar) = progress_bar.clone() { bar.set_message(&msg); }
 
         let (res, success) = time_shell_command(
             &options.shell,
@@ -305,9 +320,9 @@ pub fn run_benchmark(
 
         all_succeeded = all_succeeded && success;
 
-        progress_bar.inc(1);
+        if let Some(bar) = progress_bar.clone() { bar.inc(1); }
     }
-    progress_bar.finish_and_clear();
+    if let Some(bar) = progress_bar { bar.finish_and_clear(); }
 
     // Compute statistical quantities
     let t_num = times_real.len();
@@ -330,24 +345,26 @@ pub fn run_benchmark(
     let (user_str, user_unit) = format_duration_unit(user_mean, None);
     let system_str = format_duration(system_mean, Some(user_unit));
 
-    println!(
-        "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-        "mean".green().bold(),
-        "σ".green(),
-        mean_str.green().bold(),
-        stddev_str.green(),
-        user_str.blue(),
-        system_str.blue()
-    );
+    if options.output_style != OutputStyleOption::None {
+        println!(
+            "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
+            "mean".green().bold(),
+            "σ".green(),
+            mean_str.green().bold(),
+            stddev_str.green(),
+            user_str.blue(),
+            system_str.blue()
+        );
 
-    println!(
-        "  Range ({} … {}):   {:>8} … {:>8}    {}",
-        "min".cyan(),
-        "max".purple(),
-        min_str.cyan(),
-        max_str.purple(),
-        num_str.dimmed()
-    );
+        println!(
+            "  Range ({} … {}):   {:>8} … {:>8}    {}",
+            "min".cyan(),
+            "max".purple(),
+            min_str.cyan(),
+            max_str.purple(),
+            num_str.dimmed()
+        );
+    }
 
     // Warnings
     let mut warnings = vec![];
@@ -378,7 +395,7 @@ pub fn run_benchmark(
         }
     }
 
-    println!(" ");
+    if options.output_style != OutputStyleOption::None { println!(" "); }
 
     // Run cleanup command
     let cleanup_cmd =
