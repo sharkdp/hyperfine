@@ -387,7 +387,7 @@ pub fn run_benchmark(
         warnings.push(Warnings::OutliersDetected);
     }
 
-    if !warnings.is_empty() {
+    if !warnings.is_empty() && options.output_style != OutputStyleOption::None {
         eprintln!(" ");
 
         for warning in &warnings {
