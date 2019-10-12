@@ -135,13 +135,14 @@ fn build_app() -> App<'static, 'static> {
                 .short("s")
                 .takes_value(true)
                 .value_name("TYPE")
-                .possible_values(&["auto", "basic", "full", "nocolor", "color"])
+                .possible_values(&["auto", "basic", "full", "nocolor", "color", "none"])
                 .help(
                     "Set output style type (default: auto). Set this to 'basic' to disable output \
                      coloring and interactive elements. Set it to 'full' to enable all effects \
                      even if no interactive terminal was detected. Set this to 'nocolor' to \
                      keep the interactive output without any colors. Set this to 'color' to keep \
-                     the colors without any interactive output.",
+                     the colors without any interactive output. Set this to 'none' to disable all \
+                     the output of the tool.",
                 ),
         )
         .arg(

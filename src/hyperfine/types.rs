@@ -113,6 +113,9 @@ pub enum OutputStyleOption {
 
     /// Keep coloring, but use no progress bar
     Color,
+
+    /// Disable all the output
+    None,
 }
 
 /// Number of runs for a benchmark
