@@ -55,7 +55,6 @@ fn main() {
     let options = build_hyperfine_options(&matches);
     let export_manager = build_export_manager(&matches);
     let commands = build_commands(&matches);
-    let unwrapped_opts = options.unwrap();
 
     let res = match options {
         Ok(ref opts) => run(&commands, &opts),
@@ -64,8 +63,9 @@ fn main() {
 
     match res {
         Ok(timing_results) => {
-            if unwrapped_opts.output_style != OutputStyleOption::None { write_benchmark_comparison(&timing_results); }
-            let ans = export_manager.write_results(timing_results, unwrapped_opts.time_unit);
+            let unwrapped = options.unwrap();
+            if unwrapped.output_style != OutputStyleOption::None { write_benchmark_comparison(&timing_results); }
+            let ans = export_manager.write_results(timing_results, unwrapped.time_unit);
             if let Err(e) = ans {
                 error(&format!(
                     "The following error occurred while exporting: {}",
