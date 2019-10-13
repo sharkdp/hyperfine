@@ -60,7 +60,7 @@ fn build_app() -> App<'static, 'static> {
                 .short("M")
                 .takes_value(true)
                 .value_name("NUM")
-                .help("Perform at most NUM runs for each command."),
+                .help("Perform at most NUM runs for each command. By default, there is no limit."),
         )
         .arg(
             Arg::with_name("runs")
@@ -69,7 +69,8 @@ fn build_app() -> App<'static, 'static> {
                 .short("r")
                 .takes_value(true)
                 .value_name("NUM")
-                .help("Perform exactly NUM runs for each command."),
+                .help("Perform exactly NUM runs for each command. If this option is not specified, \
+                       hyperfine automatically determines the number of runs."),
         )
         .arg(
             Arg::with_name("prepare")
@@ -109,7 +110,9 @@ fn build_app() -> App<'static, 'static> {
                 .value_names(&["VAR", "MIN", "MAX"])
                 .help(
                     "Perform benchmark runs for each value in the range MIN..MAX. Replaces the \
-                     string '{VAR}' in each command by the current parameter value.",
+                     string '{VAR}' in each command by the current parameter value.\n\n  \
+                     Example:  hyperfine -P threads 1 8 'make -j {threads}'\n\n\
+                     This performs benchmarks for 'make -j 1', 'make -j 2', …, 'make -j 8'.",
                 ),
         )
         .arg(
@@ -121,7 +124,9 @@ fn build_app() -> App<'static, 'static> {
                 .requires("parameter-scan")
                 .help(
                     "This argument requires --parameter-scan to be specified as well. \
-                     Traverse the range MIN..MAX in steps of DELTA.",
+                     Traverse the range MIN..MAX in steps of DELTA.\n\n  \
+                     Example:  hyperfine -P delay 0.3 0.7 -D 0.2 'sleep {delay}'\n\n\
+                     This performs benchmarks for 'sleep 0.3', 'sleep 0.5' and 'sleep 0.7'.",
                 ),
         )
         .arg(
@@ -146,13 +151,13 @@ fn build_app() -> App<'static, 'static> {
                 .takes_value(true)
                 .value_name("SHELL")
                 .overrides_with("shell")
-                .help("Set the shell to use (default: sh) for executing benchmarked commands."),
+                .help("Set the shell to use for executing benchmarked commands."),
         )
         .arg(
             Arg::with_name("ignore-failure")
                 .long("ignore-failure")
                 .short("i")
-                .help("Ignore non-zero exit codes."),
+                .help("Ignore non-zero exit codes of the benchmarked programs."),
         )
         .arg(
             Arg::with_name("time-unit")
@@ -161,7 +166,7 @@ fn build_app() -> App<'static, 'static> {
                 .takes_value(true)
                 .value_name("UNIT")
                 .possible_values(&["millisecond", "second"])
-                .help("Set the time unit used. Possible values: millisecond, second."),
+                .help("Set the time unit to be used. Possible values: millisecond, second."),
         )
         .arg(
             Arg::with_name("export-asciidoc")
@@ -175,7 +180,8 @@ fn build_app() -> App<'static, 'static> {
                 .long("export-csv")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing summary statistics as CSV to the given FILE."),
+                .help("Export the timing summary statistics as CSV to the given FILE. If you need \
+                       the timing results for each individual run, use the JSON export format."),
         )
         .arg(
             Arg::with_name("export-json")
