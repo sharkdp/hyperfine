@@ -50,6 +50,7 @@ pub struct BenchmarkResultWithRelativeSpeed<'a> {
     pub result: &'a BenchmarkResult,
     pub relative_speed: Scalar,
     pub relative_speed_stddev: Scalar,
+    pub is_fastest: bool,
 }
 
 fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
@@ -79,6 +80,7 @@ pub fn compute_relative_speed<'a>(
                 result,
                 relative_speed: ratio,
                 relative_speed_stddev: ratio_stddev,
+                is_fastest: result == fastest,
             }
         })
         .collect()
