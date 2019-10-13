@@ -80,10 +80,11 @@ fn build_app() -> App<'static, 'static> {
                 .number_of_values(1)
                 .value_name("CMD")
                 .help(
-                    "Execute CMD before each timing run. For example, this is \
-                     useful for clearing disk caches. This can be mentioned \
-                     out multiple time for each command or only one time for \
-                     all command.",
+                    "Execute CMD before each timing run. This is useful for \
+                     clearing disk caches, for example. \nThe --prepare option can \
+                     be specified once for all commands or multiple times, once for \
+                     each command. In the latter case, each preparation command will \
+                     be run prior to the corresponding benchmark command.",
                 ),
         )
         .arg(
