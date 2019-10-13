@@ -234,14 +234,19 @@ pub fn run_benchmark(
     );
 
     // Run init command
-    let mut prepare_cmd = None;
-    if let Some(values) = &options.preparation_command {
-        if values.len() == 1 {
-            prepare_cmd = Some(new_command_from_get_parameter(cmd, &values[0]));
-        } else {
-            prepare_cmd = Some(new_command_from_get_parameter(cmd, &values[num]));
+    let prepare_cmd = options.preparation_command.as_ref().map(|values| {
+        let corresponding_prepare_cmd = match values.len() {
+            1 => &values[0],
+            _ => &values[num],
+        };
+        match cmd.get_parameter() {
+            Some((param, value)) => {
+                Command::new_parametrized(corresponding_prepare_cmd, param, value)
+            }
+            None => Command::new(corresponding_prepare_cmd),
         }
-    };
+    });
+
     let prepare_res = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
 
     // Initial timing run
@@ -404,15 +409,4 @@ pub fn run_benchmark(
         times_real,
         cmd.get_parameter().map(|p| p.1),
     ))
-}
-
-// Get out new Command from a Command and preparation command
-fn new_command_from_get_parameter<'a>(
-    cmd: &Command<'a>,
-    preparation_command: &'a str,
-) -> Command<'a> {
-    match cmd.get_parameter() {
-        Some((param, value)) => Command::new_parametrized(preparation_command, param, value),
-        None => Command::new(preparation_command),
-    }
 }
