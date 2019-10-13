@@ -85,9 +85,9 @@ option that will create tables like this:
 
 | Command | Mean [s] | Min [s] | Max [s] | Relative |
 |:---|---:|---:|---:|---:|
-| `find . -iregex '.*[0-9]\.jpg$'` | 2.395 ± 0.033 | 2.355 | 2.470 | 7.7 |
-| `find . -iname '*[0-9].jpg'` | 1.416 ± 0.029 | 1.389 | 1.494 | 4.6 |
-| `fd -HI '.*[0-9]\.jpg$'` | 0.309 ± 0.005 | 0.305 | 0.320 | 1.0 |
+| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 | 2.243 | 2.397 | 9.79 ± 0.22 |
+| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | 1.405 | 1.468 | 6.14 ± 0.13 |
+| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | 0.230 | 0.236 | 1.00 |
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. See the
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder for some examples.
