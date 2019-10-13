@@ -235,15 +235,14 @@ pub fn run_benchmark(
 
     // Run init command
     let prepare_cmd = options.preparation_command.as_ref().map(|values| {
-        let corresponding_prepare_cmd = match values.len() {
-            1 => &values[0],
-            _ => &values[num],
+        let preparation_command = if values.len() == 1 {
+            &values[0]
+        } else {
+            &values[num]
         };
         match cmd.get_parameter() {
-            Some((param, value)) => {
-                Command::new_parametrized(corresponding_prepare_cmd, param, value)
-            }
-            None => Command::new(corresponding_prepare_cmd),
+            Some((param, value)) => Command::new_parametrized(preparation_command, param, value),
+            None => Command::new(preparation_command),
         }
     });
 
