@@ -40,7 +40,7 @@ option:
 hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
 ```
 
-### I/O-heavy programs
+### Warmup runs and preparation commands
 
 If the program execution time is limited by disk I/O, the benchmarking results can be heavily
 influenced by disk caches and whether they are cold or warm.
