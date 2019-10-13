@@ -54,9 +54,13 @@ fn main() {
 
     match res {
         Ok(timing_results) => {
-            let unwrapped = options.unwrap();
-            if unwrapped.output_style != OutputStyleOption::None { write_benchmark_comparison(&timing_results); }
-            let ans = export_manager.write_results(timing_results, unwrapped.time_unit);
+            let options = options.unwrap();
+
+            if options.output_style != OutputStyleOption::Disabled {
+                write_benchmark_comparison(&timing_results);
+            }
+
+            let ans = export_manager.write_results(timing_results, options.time_unit);
             if let Err(e) = ans {
                 error(&format!(
                     "The following error occurred while exporting: {}",
@@ -125,7 +129,7 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
         Some("basic") => OutputStyleOption::Basic,
         Some("nocolor") => OutputStyleOption::NoColor,
         Some("color") => OutputStyleOption::Color,
-        Some("none") => OutputStyleOption::None,
+        Some("none") => OutputStyleOption::Disabled,
         _ => {
             if !options.show_output && atty::is(Stream::Stdout) {
                 OutputStyleOption::Full

@@ -115,7 +115,7 @@ pub enum OutputStyleOption {
     Color,
 
     /// Disable all the output
-    None,
+    Disabled,
 }
 
 /// Number of runs for a benchmark
