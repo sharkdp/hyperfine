@@ -11,7 +11,7 @@ pub const DEFAULT_SHELL: &str = "sh";
 #[cfg(windows)]
 pub const DEFAULT_SHELL: &str = "cmd.exe";
 
-#[derive(Debug, Clone, Serialize, Copy)]
+#[derive(Debug, Clone, Serialize, Copy, PartialEq)]
 #[serde(untagged)]
 pub enum NumericType {
     Int(i32),
@@ -181,7 +181,7 @@ impl Default for HyperfineOptions {
 }
 
 /// Set of values that will be exported.
-#[derive(Debug, Default, Clone, Serialize)]
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkResult {
     /// The command that was run
     pub command: String,
