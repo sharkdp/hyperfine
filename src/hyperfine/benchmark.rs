@@ -205,6 +205,19 @@ pub fn run_benchmark(
     let mut times_system: Vec<Second> = vec![];
     let mut all_succeeded = true;
 
+    // Run init command
+    let prepare_cmd = options.preparation_command.as_ref().map(|values| {
+        let preparation_command = if values.len() == 1 {
+            &values[0]
+        } else {
+            &values[num]
+        };
+        match cmd.get_parameter() {
+            Some((param, value)) => Command::new_parametrized(preparation_command, param, value),
+            None => Command::new(preparation_command),
+        }
+    });
+
     // Warmup phase
     if options.warmup_count > 0 {
         let progress_bar = get_progress_bar(
@@ -214,6 +227,7 @@ pub fn run_benchmark(
         );
 
         for _ in 0..options.warmup_count {
+            let _ = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
             let _ = time_shell_command(
                 &options.shell,
                 cmd,
@@ -232,19 +246,6 @@ pub fn run_benchmark(
         "Initial time measurement",
         options.output_style,
     );
-
-    // Run init command
-    let prepare_cmd = options.preparation_command.as_ref().map(|values| {
-        let preparation_command = if values.len() == 1 {
-            &values[0]
-        } else {
-            &values[num]
-        };
-        match cmd.get_parameter() {
-            Some((param, value)) => Command::new_parametrized(preparation_command, param, value),
-            None => Command::new(preparation_command),
-        }
-    });
 
     let prepare_res = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
 
