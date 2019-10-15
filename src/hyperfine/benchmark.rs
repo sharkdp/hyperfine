@@ -141,14 +141,12 @@ pub fn mean_shell_spawning_time(
                 times_system.push(r.time_system);
             }
         }
-        if let Some(ref bar) = progress_bar {
-            bar.inc(1);
-        }
-    }
-    if let Some(ref bar) = progress_bar {
-        bar.finish_and_clear();
+
+        progress_bar.as_ref().map(|bar| bar.inc(1));
     }
 
+    progress_bar.as_ref().map(|bar| bar.finish_and_clear());
+    
     Ok(TimingResult {
         time_real: mean(&times_real),
         time_user: mean(&times_user),
@@ -239,13 +237,11 @@ pub fn run_benchmark(
                 options.failure_action,
                 None,
             )?;
-            if let Some(ref pbar) = progress_bar {
-                pbar.inc(1);
-            }
+            progress_bar.as_ref().map(|bar| bar.inc(1));
+    
         }
-        if let Some(ref bar) = progress_bar {
-            bar.finish_and_clear();
-        }
+        progress_bar.as_ref().map(|bar| bar.finish_and_clear());
+        
     }
 
     // Set up progress bar (and spinner for initial measurement)
@@ -304,11 +300,9 @@ pub fn run_benchmark(
     all_succeeded = all_succeeded && success;
 
     // Re-configure the progress bar
-    if let Some(ref bar) = progress_bar {
-        bar.set_length(count);
-        bar.inc(1);
-    }
-
+    progress_bar.as_ref().map(|bar| bar.set_length(count));
+    progress_bar.as_ref().map(|bar| bar.inc(1));
+    
     // Gather statistics
     for _ in 0..count_remaining {
         run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
@@ -318,9 +312,7 @@ pub fn run_benchmark(
             format!("Current estimate: {}", mean.to_string().green())
         };
 
-        if let Some(ref bar) = progress_bar {
-            bar.set_message(&msg);
-        }
+        progress_bar.as_ref().map(|bar| bar.set_message(&msg));
 
         let (res, success) = time_shell_command(
             &options.shell,
@@ -336,13 +328,11 @@ pub fn run_benchmark(
 
         all_succeeded = all_succeeded && success;
 
-        if let Some(ref bar) = progress_bar {
-            bar.inc(1);
-        }
+        progress_bar.as_ref().map(|bar| bar.inc(1));
     }
-    if let Some(ref bar) = progress_bar {
-        bar.finish_and_clear();
-    }
+
+    progress_bar.as_ref().map(|bar| bar.finish_and_clear());
+
 
     // Compute statistical quantities
     let t_num = times_real.len();
