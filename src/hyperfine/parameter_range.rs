@@ -92,7 +92,7 @@ fn build_parameterized_commands<'a, T: Numeric>(
 
     for value in param_range {
         for cmd in &command_strings {
-            commands.push(Command::new_parametrized(cmd, param_name, value.into()));
+            commands.push(Command::new_parametrized(cmd, param_name, value.into().to_string()));
         }
     }
     Ok(commands)
