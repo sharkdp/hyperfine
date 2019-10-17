@@ -46,7 +46,7 @@ pub struct Command<'a> {
     expression: &'a str,
 
     /// A possible parameter value.
-    parameter: Option<(&'a str, NumericType)>,
+    parameter: Option<(&'a str, String)>,
 }
 
 impl<'a> Command<'a> {
@@ -60,7 +60,7 @@ impl<'a> Command<'a> {
     pub fn new_parametrized(
         expression: &'a str,
         parameter: &'a str,
-        value: NumericType,
+        value: String,
     ) -> Command<'a> {
         Command {
             expression,
@@ -69,7 +69,7 @@ impl<'a> Command<'a> {
     }
 
     pub fn get_shell_command(&self) -> String {
-        match self.parameter {
+        match &self.parameter {
             Some((param_name, param_value)) => self.expression.replace(
                 &format!("{{{param_name}}}", param_name = param_name),
                 &param_value.to_string(),
@@ -78,8 +78,8 @@ impl<'a> Command<'a> {
         }
     }
 
-    pub fn get_parameter(&self) -> Option<(&'a str, NumericType)> {
-        self.parameter
+    pub fn get_parameter(&self) -> &Option<(&'a str, String)> {
+        &self.parameter
     }
 }
 
@@ -216,7 +216,7 @@ pub struct BenchmarkResult {
 
     /// Any parameter used
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter: Option<NumericType>,
+    pub parameter: Option<String>,
 }
 
 impl BenchmarkResult {
@@ -231,7 +231,7 @@ impl BenchmarkResult {
         min: Second,
         max: Second,
         times: Vec<Second>,
-        parameter: Option<NumericType>,
+        parameter: Option<String>,
     ) -> Self {
         BenchmarkResult {
             command,
