@@ -208,6 +208,22 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
             Ok(commands) => commands,
             Err(e) => error(e.description()),
         }
+    } else if let Some(mut args) = matches.values_of("parameter-list") {
+        let param_name = args.next().unwrap();
+        let param_list_str = args.next().unwrap();
+
+        let param_list = param_list_str.split(',').collect::<Vec<&str>>();
+        let command_list = command_strings.collect::<Vec<&str>>();
+
+        let mut commands = Vec::with_capacity(param_list.len() * command_list.len());
+
+        for value in param_list {
+            for cmd in &command_list {
+                commands.push(Command::new_parametrized(cmd, param_name, value.to_string()));
+            }
+        }
+
+        commands
     } else {
         command_strings.map(Command::new).collect()
     }

@@ -130,6 +130,21 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("parameter-list")
+                .long("parameter-list")
+                .short("L")
+                .takes_value(true)
+                .allow_hyphen_values(true)
+                .value_names(&["VAR", "VALUES"])
+                .conflicts_with("parameter-scan")
+                .help(
+                    "Perform benchmark runs for each value in the comma-seperated list VALUES. \
+                     Replaces the string '{VAR}' in each command by the current parameter value\
+                     .\n\nExample:  hyperfine -L threads 1,2,4 'make -j {threads}'\n\n\
+                     This performs benchmarks for 'make -j 1', 'make -j 2', and 'make -j 4'.",
+                ),
+        )
+        .arg(
             Arg::with_name("style")
                 .long("style")
                 .short("s")
