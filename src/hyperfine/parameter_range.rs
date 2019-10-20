@@ -1,5 +1,5 @@
 use crate::hyperfine::error::ParameterScanError;
-use crate::hyperfine::types::{Command, NumericType};
+use crate::hyperfine::types::{Command, NumericType, ParameterValue};
 use clap::Values;
 use rust_decimal::Decimal;
 use std::ops::{Add, AddAssign, Div, Sub};
@@ -92,7 +92,11 @@ fn build_parameterized_commands<'a, T: Numeric>(
 
     for value in param_range {
         for cmd in &command_strings {
-            commands.push(Command::new_parametrized(cmd, param_name, value.into().to_string()));
+            commands.push(Command::new_parametrized(
+                cmd,
+                param_name,
+                ParameterValue::Numeric(value.into()),
+            ));
         }
     }
     Ok(commands)
