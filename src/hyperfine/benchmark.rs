@@ -146,7 +146,7 @@ pub fn mean_shell_spawning_time(
     }
 
     progress_bar.as_ref().map(|bar| bar.finish_and_clear());
-    
+
     Ok(TimingResult {
         time_real: mean(&times_real),
         time_user: mean(&times_user),
@@ -225,7 +225,7 @@ pub fn run_benchmark(
             &values[num]
         };
         match cmd.get_parameter() {
-            Some((param, value)) => Command::new_parametrized(preparation_command, param, value.clone()),
+            Some((param, value)) => Command::new_parametrized(preparation_command, param, *value),
             None => Command::new(preparation_command),
         }
     });
@@ -252,10 +252,8 @@ pub fn run_benchmark(
                 None,
             )?;
             progress_bar.as_ref().map(|bar| bar.inc(1));
-    
         }
         progress_bar.as_ref().map(|bar| bar.finish_and_clear());
-        
     }
 
     // Set up progress bar (and spinner for initial measurement)
@@ -308,7 +306,7 @@ pub fn run_benchmark(
     // Re-configure the progress bar
     progress_bar.as_ref().map(|bar| bar.set_length(count));
     progress_bar.as_ref().map(|bar| bar.inc(1));
-    
+
     // Gather statistics
     for _ in 0..count_remaining {
         run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
@@ -338,7 +336,6 @@ pub fn run_benchmark(
     }
 
     progress_bar.as_ref().map(|bar| bar.finish_and_clear());
-
 
     // Compute statistical quantities
     let t_num = times_real.len();
@@ -421,7 +418,7 @@ pub fn run_benchmark(
             .cleanup_command
             .as_ref()
             .map(|cleanup_command| match cmd.get_parameter() {
-                Some((param, value)) => Command::new_parametrized(cleanup_command, param, value.clone()),
+                Some((param, value)) => Command::new_parametrized(cleanup_command, param, *value),
                 None => Command::new(cleanup_command),
             });
     run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
@@ -436,6 +433,6 @@ pub fn run_benchmark(
         t_min,
         t_max,
         times_real,
-        cmd.get_parameter().as_ref().map(|p| p.1.clone()),
+        cmd.get_parameter().map(|p| p.1.to_string()),
     ))
 }

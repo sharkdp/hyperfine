@@ -16,7 +16,7 @@ use crate::hyperfine::export::{ExportManager, ExportType};
 use crate::hyperfine::internal::write_benchmark_comparison;
 use crate::hyperfine::parameter_range::get_parameterized_commands;
 use crate::hyperfine::types::{
-    BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
+    BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption, ParameterValue,
 };
 use crate::hyperfine::units::Unit;
 
@@ -219,7 +219,11 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
 
         for value in param_list {
             for cmd in &command_list {
-                commands.push(Command::new_parametrized(cmd, param_name, value.to_string()));
+                commands.push(Command::new_parametrized(
+                    cmd,
+                    param_name,
+                    ParameterValue::Text(value),
+                ));
             }
         }
 
