@@ -136,7 +136,7 @@ fn build_app() -> App<'static, 'static> {
                 .takes_value(true)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "VALUES"])
-                .conflicts_with("parameter-scan")
+                .conflicts_with_all(&["parameter-scan", "parameter-step-size"])
                 .help(
                     "Perform benchmark runs for each value in the comma-seperated list VALUES. \
                      Replaces the string '{VAR}' in each command by the current parameter value\
