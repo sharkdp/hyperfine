@@ -39,16 +39,16 @@ impl Into<NumericType> for Decimal {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum ParameterValue<'a> {
-    Text(&'a str),
+#[derive(Debug, Clone)]
+pub enum ParameterValue {
+    Text(String),
     Numeric(NumericType),
 }
 
-impl<'a> ToString for ParameterValue<'a> {
+impl<'a> ToString for ParameterValue {
     fn to_string(&self) -> String {
         match self {
-            ParameterValue::Text(value) => value.to_string(),
+            ParameterValue::Text(ref value) => value.clone(),
             ParameterValue::Numeric(value) => value.to_string(),
         }
     }
@@ -61,7 +61,7 @@ pub struct Command<'a> {
     expression: &'a str,
 
     /// A possible parameter value.
-    parameter: Option<(&'a str, ParameterValue<'a>)>,
+    parameter: Option<(&'a str, ParameterValue)>,
 }
 
 impl<'a> Command<'a> {
@@ -75,7 +75,7 @@ impl<'a> Command<'a> {
     pub fn new_parametrized(
         expression: &'a str,
         parameter: &'a str,
-        value: ParameterValue<'a>,
+        value: ParameterValue,
     ) -> Command<'a> {
         Command {
             expression,
@@ -93,7 +93,7 @@ impl<'a> Command<'a> {
         }
     }
 
-    pub fn get_parameter(&self) -> &Option<(&'a str, ParameterValue<'a>)> {
+    pub fn get_parameter(&self) -> &Option<(&'a str, ParameterValue)> {
         &self.parameter
     }
 }

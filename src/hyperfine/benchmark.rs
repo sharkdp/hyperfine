@@ -225,7 +225,9 @@ pub fn run_benchmark(
             &values[num]
         };
         match cmd.get_parameter() {
-            Some((param, value)) => Command::new_parametrized(preparation_command, param, *value),
+            Some((param, value)) => {
+                Command::new_parametrized(preparation_command, param, value.clone())
+            }
             None => Command::new(preparation_command),
         }
     });
@@ -418,7 +420,9 @@ pub fn run_benchmark(
             .cleanup_command
             .as_ref()
             .map(|cleanup_command| match cmd.get_parameter() {
-                Some((param, value)) => Command::new_parametrized(cleanup_command, param, *value),
+                Some((param, value)) => {
+                    Command::new_parametrized(cleanup_command, param, value.clone())
+                }
                 None => Command::new(cleanup_command),
             });
     run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
@@ -433,6 +437,6 @@ pub fn run_benchmark(
         t_min,
         t_max,
         times_real,
-        cmd.get_parameter().map(|p| p.1.to_string()),
+        cmd.get_parameter().as_ref().map(|p| p.1.to_string()),
     ))
 }

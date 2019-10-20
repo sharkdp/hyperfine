@@ -13,7 +13,7 @@ use crate::hyperfine::app::get_arg_matches;
 use crate::hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
 use crate::hyperfine::error::OptionsError;
 use crate::hyperfine::export::{ExportManager, ExportType};
-use crate::hyperfine::internal::write_benchmark_comparison;
+use crate::hyperfine::internal::{tokenize, write_benchmark_comparison};
 use crate::hyperfine::parameter_range::get_parameterized_commands;
 use crate::hyperfine::types::{
     BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption, ParameterValue,
@@ -212,7 +212,7 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
         let param_name = args.next().unwrap();
         let param_list_str = args.next().unwrap();
 
-        let param_list = param_list_str.split(',').collect::<Vec<&str>>();
+        let param_list = tokenize(param_list_str);
         let command_list = command_strings.collect::<Vec<&str>>();
 
         let mut commands = Vec::with_capacity(param_list.len() * command_list.len());
@@ -222,7 +222,7 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
                 commands.push(Command::new_parametrized(
                     cmd,
                     param_name,
-                    ParameterValue::Text(value),
+                    ParameterValue::Text(value.clone()),
                 ));
             }
         }
