@@ -140,8 +140,8 @@ fn build_app() -> App<'static, 'static> {
                 .help(
                     "Perform benchmark runs for each value in the comma-seperated list VALUES. \
                      Replaces the string '{VAR}' in each command by the current parameter value\
-                     .\n\nExample:  hyperfine -L threads 1,2,4 'make -j {threads}'\n\n\
-                     This performs benchmarks for 'make -j 1', 'make -j 2', and 'make -j 4'.",
+                     .\n\nExample:  hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'\n\n\
+                     This performs benchmarks for 'gcc -O2 main.cpp' and 'clang -O2 main.cpp'.",
                 ),
         )
         .arg(
