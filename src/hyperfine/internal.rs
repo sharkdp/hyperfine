@@ -150,10 +150,6 @@ fn test_compute_relative_speed() {
 }
 
 pub fn tokenize<'a>(values: &'a str) -> Vec<String> {
-    if values == "" {
-        return vec![];
-    }
-
     let mut tokens = vec![];
     let mut buf = String::new();
 
@@ -186,12 +182,8 @@ pub fn tokenize<'a>(values: &'a str) -> Vec<String> {
 }
 
 #[test]
-fn test_tokenize_empty() {
-    assert!(tokenize("").is_empty());
-}
-
-#[test]
 fn test_tokenize_single_value() {
+    assert_eq!(tokenize(r""), vec![""]);
     assert_eq!(tokenize(r"foo"), vec!["foo"]);
     assert_eq!(tokenize(r" "), vec![" "]);
     assert_eq!(tokenize(r"hello\, world!"), vec!["hello, world!"]);
