@@ -125,6 +125,13 @@ On Arch Linux, hyperfine can be installed [from the official repositories](https
 pacman -S hyperfine
 ```
 
+### On NixOS
+
+On NixOS, hyperfine can be installed [from the official repositories](https://nixos.org/nixos/packages.html?query=hyperfine):
+```
+nix-env -i hyperfine
+```
+
 ### On Void Linux
 
 Hyperfine can be installed via xbps
