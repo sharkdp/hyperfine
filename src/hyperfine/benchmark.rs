@@ -47,19 +47,18 @@ pub fn time_shell_command(
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
 ) -> io::Result<(TimingResult, bool)> {
-    let wallclock_timer = WallClockTimer::start();
-
     let (stdout, stderr) = if show_output {
         (Stdio::inherit(), Stdio::inherit())
     } else {
         (Stdio::null(), Stdio::null())
     };
+
+    let wallclock_timer = WallClockTimer::start();
     let result = execute_and_time(stdout, stderr, &command.get_shell_command(), shell)?;
+    let mut time_real = wallclock_timer.stop();
 
     let mut time_user = result.user_time;
     let mut time_system = result.system_time;
-
-    let mut time_real = wallclock_timer.stop();
 
     if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
         return Err(io::Error::new(

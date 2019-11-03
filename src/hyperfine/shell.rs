@@ -69,6 +69,10 @@ fn run_shell_command(
     Command::new(shell)
         .arg("-c")
         .arg(command)
+        .env(
+            "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
+            "X".repeat(rand::random::<usize>() % 4096usize),
+        )
         .stdin(Stdio::null())
         .stdout(stdout)
         .stderr(stderr)
