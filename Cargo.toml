@@ -11,7 +11,7 @@ version = "1.8.0"
 edition = "2018"
 
 [dependencies]
-colored = "1.8"
+colored = "1.9"
 indicatif = "0.13"
 statistical = "1.0"
 atty = "0.2"
