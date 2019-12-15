@@ -1,6 +1,5 @@
 use std::cmp;
 use std::env;
-use std::error::Error;
 use std::io;
 
 use atty::Stream;
@@ -58,7 +57,7 @@ fn main() {
 
     let res = match options {
         Ok(ref opts) => run(&commands, &opts),
-        Err(ref e) => error(e.description()),
+        Err(ref e) => error(&e.to_string()),
     };
 
     match res {
@@ -73,11 +72,11 @@ fn main() {
             if let Err(e) = ans {
                 error(&format!(
                     "The following error occurred while exporting: {}",
-                    e.description()
+                    e
                 ));
             }
         }
-        Err(e) => error(e.description()),
+        Err(e) => error(&e.to_string()),
     }
 }
 
@@ -206,7 +205,7 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
         let step_size = matches.value_of("parameter-step-size");
         match get_parameterized_commands(command_strings, args, step_size) {
             Ok(commands) => commands,
-            Err(e) => error(e.description()),
+            Err(e) => error(&e.to_string()),
         }
     } else if let Some(mut args) = matches.values_of("parameter-list") {
         let param_name = args.next().unwrap();

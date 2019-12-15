@@ -27,26 +27,23 @@ impl From<DecimalError> for ParameterScanError {
 
 impl fmt::Display for ParameterScanError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.description())
-    }
-}
-
-impl Error for ParameterScanError {
-    fn description(&self) -> &str {
         match *self {
-            ParameterScanError::ParseIntError(ref e) => e.description(),
-            ParameterScanError::ParseDecimalError(ref e) => e.description(),
-            ParameterScanError::EmptyRange => "Empty parameter range",
-            ParameterScanError::TooLarge => "Parameter range is too large",
-            ParameterScanError::ZeroStep => "Zero is not a valid parameter step",
-            ParameterScanError::StepRequired => {
+            ParameterScanError::ParseIntError(ref e) => write!(f, "{}", e),
+            ParameterScanError::ParseDecimalError(ref e) => write!(f, "{}", e),
+            ParameterScanError::EmptyRange => write!(f, "Empty parameter range"),
+            ParameterScanError::TooLarge => write!(f, "Parameter range is too large"),
+            ParameterScanError::ZeroStep => write!(f, "Zero is not a valid parameter step"),
+            ParameterScanError::StepRequired => write!(
+                f,
                 "A step size is required when the range bounds are \
                  floating point numbers. The step size can be specified \
                  with the '--parameter-step-size' parameter"
-            }
+            ),
         }
     }
 }
+
+impl Error for ParameterScanError {}
 
 #[derive(Debug)]
 pub enum OptionsError {
@@ -56,15 +53,11 @@ pub enum OptionsError {
 
 impl fmt::Display for OptionsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.description())
-    }
-}
-
-impl Error for OptionsError {
-    fn description(&self) -> &str {
         match *self {
-            OptionsError::EmptyRunsRange => "Empty runs range",
-            OptionsError::RunsBelowTwo => "Number of runs below two",
+            OptionsError::EmptyRunsRange => write!(f, "Empty runs range"),
+            OptionsError::RunsBelowTwo => write!(f, "Number of runs below two"),
         }
     }
 }
+
+impl Error for OptionsError {}
