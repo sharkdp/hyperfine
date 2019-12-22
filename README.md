@@ -96,11 +96,10 @@ The JSON output is useful if you want to analyze the benchmark results in more d
 
 ### On Ubuntu
 
-Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
-and install it via `dpkg`:
+On Ubuntu, hyperfine can be installed from the the Universe repository:
+
 ```
-wget https://github.com/sharkdp/hyperfine/releases/download/v1.9.0/hyperfine_1.9.0_amd64.deb
-sudo dpkg -i hyperfine_1.9.0_amd64.deb
+apt install hyperfine
 ```
 
 ### On Fedora
