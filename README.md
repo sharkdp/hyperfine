@@ -176,7 +176,15 @@ Download the corresponding archive from the [Release page](https://github.com/sh
 
 ## Alternative tools
 
- Hyperfine is inspired by [bench](https://github.com/Gabriel439/bench).
+Hyperfine is inspired by [bench](https://github.com/Gabriel439/bench).
+ 
+## Integration with other tools
+
+[Chronologer](https://github.com/dandavison/chronologer) is a tool that uses `hyperfine` to
+visualize changes in benchmark timings across your Git history.
+
+Make sure to check out the [`scripts` folder](https://github.com/sharkdp/hyperfine/tree/master/scripts)
+in this repository for a set of tools to work with `hyperfine` benchmark results.
 
 ## Origin of the name
 
