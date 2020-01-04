@@ -10,12 +10,18 @@ use std::iter::Iterator;
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;
 
+#[cfg(not(windows))]
+const TICK_SETTINGS: (&str, u64) = ("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ ", 80);
+
+#[cfg(windows)]
+const TICK_SETTINGS: (&str, u64) = (r"+-x| ", 200);
+
 /// Return a pre-configured progress bar
 pub fn get_progress_bar(length: u64, msg: &str, option: OutputStyleOption) -> ProgressBar {
     let progressbar_style = match option {
         OutputStyleOption::Basic | OutputStyleOption::Color => ProgressStyle::default_bar(),
         _ => ProgressStyle::default_spinner()
-            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+            .tick_chars(TICK_SETTINGS.0)
             .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise}"),
     };
 
@@ -24,7 +30,7 @@ pub fn get_progress_bar(length: u64, msg: &str, option: OutputStyleOption) -> Pr
         _ => ProgressBar::new(length),
     };
     progress_bar.set_style(progressbar_style.clone());
-    progress_bar.enable_steady_tick(80);
+    progress_bar.enable_steady_tick(TICK_SETTINGS.1);
     progress_bar.set_message(msg);
 
     progress_bar
