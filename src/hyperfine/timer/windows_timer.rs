@@ -13,7 +13,7 @@ use std::process::Child;
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 
-pub fn get_cpu_timer(process: &Child) -> Box<TimerStop<Result = (Second, Second)>> {
+pub fn get_cpu_timer(process: &Child) -> Box<dyn TimerStop<Result = (Second, Second)>> {
     Box::new(CPUTimer::start_for_process(process))
 }
 
