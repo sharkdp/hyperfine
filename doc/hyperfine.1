@@ -1,0 +1,212 @@
+.TH HYPERFINE 1
+.SH NAME
+hyperfine \- command\-line benchmarking tool
+.SH SYNOPSIS
+.B hyperfine
+.RB [ \-ihV ]
+.RB [ \-w
+.IR warmupruns ]
+.RB [ \-r
+.IR runs ]
+.RB [ \-p
+.IR cmd... ]
+.RB [ \-c
+.IR cmd ]
+.RB [ \-s
+.IR style ]
+.RI [ cmd... ]
+.SH DESCRIPTION
+A command\-line benchmarking tool which includes:
+.LP
+.RS
+* Statistical analysis across multiple runs
+.RE
+.RS
+* Support for arbitrary shell commands
+.RE
+.RS
+* Constant feedback about the benchmark progress and current estimates
+.RE
+.RS
+* Warmup runs can be executed before the actual benchmark
+.RE
+.RS
+* Cache-clearing commands can be set up before each timing run
+.RE
+.RS
+* Statistical outlier detection to detect interference from other programs and caching effects
+.RE
+.RS
+* Export results to various formats: CSV, JSON, Markdown, AsciiDoc
+.RE
+.RS
+* Parameterized benchmarks (e.g. vary the number of threads)
+.RE
+.SH OPTIONS
+.HP
+\fB\-w\fR, \fB\-\-warmup\fR \fIwarmupruns\fP
+.IP
+Perform \fIwarmupruns\fP (number) before the actual benchmark. This can be used to fill
+(disk) caches for I/O\-heavy programs.
+.HP
+\fB\-m\fR, \fB\-\-min\-runs\fR \fIminruns\fP
+.IP
+Perform at least \fIminruns\fP (number) runs for each command. Default: 10.
+.HP
+\fB\-M\fR, \fB\-\-max\-runs\fR \fImaxruns\fP
+.IP
+Perform at most \fImaxruns\fP (number) runs for each command. Default: no limit.
+.HP
+\fB\-r\fR, \fB\-\-runs\fR \fIruns\fP
+.IP
+Perform exactly \fIruns\fP (number) runs for each command. If this option is not specified,
+\fBhyperfine\fR automatically determines the number of runs.
+.HP
+\fB\-p\fR, \fB\-\-prepare\fR \fIcmd...\fP
+.IP
+Execute \fIcmd\fP before each timing run. This is useful for clearing disk caches,
+for example.
+The \fB\-\-prepare\fR option can be specified once for all commands or multiple times,
+once for each command. In the latter case, each preparation command will be
+run prior to the corresponding benchmark command.
+.HP
+\fB\-c\fR, \fB\-\-cleanup\fR \fIcmd\fP
+.IP
+Execute \fIcmd\fP after the completion of all benchmarking runs for each individual
+command to be benchmarked. This is useful if the commands to be benchmarked
+produce artifacts that need to be cleaned up.
+.HP
+\fB\-P\fR, \fB\-\-parameter\-scan\fR \fIvar\fP \fImin\fP \fImax\fP
+.IP
+Perform benchmark runs for each value in the range \fImin..max\fP. Replaces the
+string '{\fIvar\fP}' in each command by the current parameter value.
+.IP
+.RS
+Example:
+.RS
+\fBhyperfine\fR \fB\-P\fR threads 1 8 'make \-j {threads}'
+.RE
+.RE
+.IP
+This performs benchmarks for 'make \-j 1', 'make \-j 2', ..., 'make \-j 8'.
+.RE
+.HP
+\fB\-D\fR, \fB\-\-parameter\-step\-size\fR \fIdelta\fP
+.IP
+This argument requires \fB\-\-parameter\-scan\fR to be specified as well. Traverse the
+range \fImin..max\fP in steps of \fIdelta\fP.
+.IP
+.RS
+Example:
+.RS
+\fBhyperfine\fR \fB\-P\fR delay 0.3 0.7 \fB\-D\fR 0.2 'sleep {delay}'
+.RE
+.RE
+.IP
+This performs benchmarks for 'sleep 0.3', 'sleep 0.5' and 'sleep 0.7'.
+.HP
+\fB\-L\fR, \fB\-\-parameter\-list\fR \fIvar\fP \fIvalues\fP
+.IP
+Perform benchmark runs for each value in the comma\-seperated list of \fIvalues\fP.
+Replaces the string '{\fIvar\fP}' in each command by the current parameter value.
+.IP
+.RS
+Example:
+.RS
+\fBhyperfine\fR \fB\-L\fR compiler gcc,clang '{compiler} \-O2 main.cpp'
+.RE
+.RE
+.IP
+This performs benchmarks for 'gcc \-O2 main.cpp' and 'clang \-O2 main.cpp'.
+.HP
+\fB\-s\fR, \fB\-\-style\fR \fItype\fP
+.IP
+Set output style \fItype\fP (default: auto). Set this to 'basic' to disable output
+coloring and interactive elements. Set it to 'full' to enable all effects even
+if no interactive terminal was detected. Set this to 'nocolor' to keep the
+interactive output without any colors. Set this to 'color' to keep the colors
+without any interactive output. Set this to 'none' to disable all the output
+of the tool.
+.HP
+\fB\-S\fR, \fB\-\-shell\fR \fIshell\fP
+.IP
+Set the \fIshell\fP to use for executing benchmarked commands.
+.HP
+\fB\-i\fR, \fB\-\-ignore\-failure\fR
+.IP
+Ignore non\-zero exit codes of the benchmarked programs.
+.HP
+\fB\-u\fR, \fB\-\-time\-unit\fR \fIunit\fP
+.IP
+Set the time \fIunit\fP to be used. Default: second. Possible values: millisecond, second.
+.HP
+\fB\-\-export\-asciidoc\fR \fIfile\fP 
+.IP
+Export the timing summary statistics as an Asciidoc table to the given \fIfile\fP.
+.HP
+\fB\-\-export\-csv\fR \fIfile\fP
+.IP
+Export the timing summary statistics as CSV to the given \fIfile\fP. If you need the
+timing results for each individual run, use the JSON export format.
+.HP
+\fB\-\-export\-json\fR \fIfile\fP
+.IP
+Export the timing summary statistics and timings of individual runs as JSON to
+the given \fIfile\fP.
+.HP
+\fB\-\-export\-markdown\fR \fIfile\fP
+.IP
+Export the timing summary statistics as a Markdown table to the given \fIfile\fP.
+.HP
+\fB\-\-show\-output\fR
+.IP
+Print the stdout and stderr of the benchmark instead of suppressing it. This
+will increase the time it takes for benchmarks to run, so it should only be
+used for debugging purposes or when trying to benchmark output speed.
+.HP
+\fB\-h\fR, \fB\-\-help\fR
+.IP
+Print help message.
+.HP
+\fB\-V\fR, \fB\-\-version\fR
+.IP
+Show version information.
+.SH EXAMPLES
+.LP
+Basic benchmark of 'find . -iname '*[0-9].jpg'':
+.RS
+.nf
+\fBhyperfine\fR 'find . -iname '*[0-9].jpg''
+.fi
+.RE
+.LP
+Perform benchmarks for 'sleep 0.2' and 'sleep 3.2' with a minimum 5 runs each:
+.RS
+.nf
+\fBhyperfine\fR \fB\-\-min\-runs\fR 5 'sleep 0.2' 'sleep 3.2'
+.fi
+.RE
+.LP
+Perform a benchmark of 'grep' with a warm disk cache by first running the command
+3 times: 
+.RS
+.nf
+\fBhyperfine\fR \fB\-\-warmup\fR 3 'grep -R TODO *'
+.fi
+.RE
+.LP
+Export the results of a parameter scan benchmark to a markdown table: 
+.RS
+.nf
+\fBhyperfine\fR \fB\-\-export\-markdown\fR output.md \fB\-\-parameter-scan\fR time 1 5 'sleep {time}'
+.fi
+.RE
+.SH AUTHOR
+.LP
+David Peter (sharkdp)
+.LP
+Source, bug tracker, and additional information can be found on Github at:
+.\ We should use the URL macro here but it isn't supported on all platforms
+.\ .UR https://github.com/sharkdp/hyperfine
+.\ .UE
+.I https://github.com/sharkdp/hyperfine
