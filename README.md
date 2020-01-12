@@ -1,6 +1,6 @@
 # hyperfine
 [![Build Status](https://travis-ci.org/sharkdp/hyperfine.svg?branch=master)](https://travis-ci.org/sharkdp/hyperfine)
-[![Build status](https://ci.appveyor.com/api/projects/status/pdqq5frgkcj0smrs?svg=true)](https://ci.appveyor.com/project/sharkdp/hyperfine)
+[![Build status](https://ci.appveyor.com/api/projects/status/pdqq5frgkcj0smrs/branch/master?svg=true)](https://ci.appveyor.com/project/sharkdp/hyperfine/branch/master)
 [![Version info](https://img.shields.io/crates/v/hyperfine.svg)](https://crates.io/crates/hyperfine)
 [中文](https://github.com/chinanf-boy/hyperfine-zh)
 
