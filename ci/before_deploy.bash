@@ -23,7 +23,8 @@ pack() {
     cp "target/$TARGET/release/$PROJECT_NAME" "$tempdir/$package_name/"
     strip "$tempdir/$package_name/$PROJECT_NAME"
 
-    # readme and license
+    # manpage, readme and license
+    cp "doc/$PROJECT_NAME.1" "$tempdir/$package_name"
     cp README.md "$tempdir/$package_name"
     cp LICENSE-MIT "$tempdir/$package_name"
     cp LICENSE-APACHE "$tempdir/$package_name"
@@ -68,6 +69,10 @@ make_deb() {
     # copy the main binary
     install -Dm755 "target/$TARGET/release/$PROJECT_NAME" "$tempdir/usr/bin/$PROJECT_NAME"
     strip "$tempdir/usr/bin/$PROJECT_NAME"
+
+    # manpage
+    install -Dm644 "doc/$PROJECT_NAME.1" "$tempdir/usr/share/man/man1/$PROJECT_NAME.1"
+    gzip --best "$tempdir/usr/share/man/man1/$PROJECT_NAME.1"
 
     # readme and license
     install -Dm644 README.md "$tempdir/usr/share/doc/$PROJECT_NAME/README.md"

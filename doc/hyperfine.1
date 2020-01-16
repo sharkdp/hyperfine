@@ -173,10 +173,10 @@ Print help message.
 Show version information.
 .SH EXAMPLES
 .LP
-Basic benchmark of 'find . -iname '*[0-9].jpg'':
+Basic benchmark of 'find . -name todo.txt':
 .RS
 .nf
-\fBhyperfine\fR 'find . -iname '*[0-9].jpg''
+\fBhyperfine\fR 'find . -name todo.txt'
 .fi
 .RE
 .LP
@@ -187,8 +187,8 @@ Perform benchmarks for 'sleep 0.2' and 'sleep 3.2' with a minimum 5 runs each:
 .fi
 .RE
 .LP
-Perform a benchmark of 'grep' with a warm disk cache by first running the command
-3 times: 
+Perform a benchmark of 'grep' with a warm disk cache by executing 3 runs up front that are not part
+of the measurement: 
 .RS
 .nf
 \fBhyperfine\fR \fB\-\-warmup\fR 3 'grep -R TODO *'
