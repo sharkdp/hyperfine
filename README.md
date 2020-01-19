@@ -191,3 +191,10 @@ in this repository for a set of tools to work with `hyperfine` benchmark results
 The name *hyperfine* was chosen in reference to the hyperfine levels of caesium 133 which play a crucial role in the
 [definition of our base unit of time](https://en.wikipedia.org/wiki/Second#History_of_definition)
 — the second.
+
+## License
+Copyright (c) 2018-2020 The hyperfine developers
+
+`hyperfine` is distributed under the terms of both the MIT License and the Apache License 2.0.
+
+See the [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) files for license details.
