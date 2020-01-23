@@ -26,6 +26,8 @@ for command, ts in zip(commands, times):
     print("  mean:   {:8.3f} s".format(np.mean(ts)))
     print("  stddev: {:8.3f} s".format(np.std(ts, ddof=1)))
     print("  median: {:8.3f} s".format(np.median(ts)))
+    print("  min:    {:8.3f} s".format(np.min(ts)))
+    print("  max:    {:8.3f} s".format(np.max(ts)))
     print()
     print("  percentiles:")
     print("     P_05 .. P_95:    {:.3f} s .. {:.3f} s".format(p05, p95))
