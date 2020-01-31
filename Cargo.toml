@@ -12,7 +12,7 @@ edition = "2018"
 
 [dependencies]
 colored = "1.9"
-indicatif = "0.13"
+indicatif = "0.14"
 statistical = "1.0"
 atty = "0.2"
 cfg-if = "0.1"
