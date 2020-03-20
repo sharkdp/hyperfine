@@ -22,11 +22,17 @@ plt.hist(all_times,
          label=commands,
          bins="auto",
          histtype="bar",
-         range=(np.min(all_times), np.max(all_times)))
-plt.legend(prop={'family': ['Source Code Pro', 'Fira Mono', 'Courier New']})
+         range=(np.min(all_times), np.max(all_times)),
+         orientation="horizontal")
 
-plt.xlabel("Time [s]")
-if args.title:
+plt.legend(loc="best",
+           fontsize="medium",
+           prop={'family': ['Source Code Pro', 'Fira Mono', 'Courier New']})
+
+plt.xlabel("Run [times]")
+plt.ylabel("Time [s]")
+
+if args.title:		
     plt.title(args.title)
 
 plt.show()
