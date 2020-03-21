@@ -10,9 +10,7 @@ Quoting from the matplotlib documentation:
 
 import argparse
 import json
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with benchmark results")
