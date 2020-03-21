@@ -35,4 +35,5 @@ for patch, color in zip(boxplot["boxes"], colors):
 plt.title(args.title)
 plt.legend(handles=boxplot["boxes"], labels=commands, loc="best", fontsize="medium")
 plt.ylabel("Time [s]")
+plt.ylim(0, None)
 plt.show()
