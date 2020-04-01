@@ -147,6 +147,12 @@ Hyperfine can be installed via [Homebrew](https://brew.sh):
 brew install hyperfine
 ```
 
+Or you can install using [MacPorts](https://www.macports.org):
+```
+sudo port selfupdate
+sudo port install hyperfine
+```
+
 ### On FreeBSD
 
 Hyperfine can be installed via pkg:
