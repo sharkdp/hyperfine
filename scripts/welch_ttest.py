@@ -33,7 +33,6 @@ print("t = {:.3}, p = {:.3}".format(t, p))
 print()
 
 if dispose:
-    print("There is a difference between the "
-          "two benchmarks (p < {}).".format(th))
+    print("There is a difference between the two benchmarks (p < {}).".format(th))
 else:
     print("The two benchmarks are almost the same (p >= {}).".format(th))

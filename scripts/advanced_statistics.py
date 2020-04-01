@@ -31,6 +31,8 @@ for command, ts in zip(commands, times):
     print()
     print("  percentiles:")
     print("     P_05 .. P_95:    {:.3f} s .. {:.3f} s".format(p05, p95))
-    print("     P_25 .. P_75:    {:.3f} s .. {:.3f} s  "
-          "(IQR = {:.3f} s)".format(p25, p75, iqr))
+    print(
+        "     P_25 .. P_75:    {:.3f} s .. {:.3f} s  "
+        "(IQR = {:.3f} s)".format(p25, p75, iqr)
+    )
     print()

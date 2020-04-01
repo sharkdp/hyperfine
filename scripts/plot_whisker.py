@@ -15,7 +15,9 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with benchmark results")
 parser.add_argument("--title", help="Plot Title")
-parser.add_argument("--labels", help="Comma-separated list of entries for the plot legend")
+parser.add_argument(
+    "--labels", help="Comma-separated list of entries for the plot legend"
+)
 args = parser.parse_args()
 
 with open(args.file) as f:
