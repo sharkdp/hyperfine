@@ -15,12 +15,16 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with benchmark results")
 parser.add_argument("--title", help="Plot Title")
+parser.add_argument("--labels", help="Comma-separated list of entries for the plot legend")
 args = parser.parse_args()
 
 with open(args.file) as f:
     results = json.load(f)["results"]
 
-commands = [b["command"] for b in results]
+if args.labels:
+    labels = args.labels.split(",")
+else:
+    labels = [b["command"] for b in results]
 times = [b["times"] for b in results]
 
 boxplot = plt.boxplot(times, vert=True, patch_artist=True)
@@ -31,7 +35,7 @@ for patch, color in zip(boxplot["boxes"], colors):
     patch.set_facecolor(color)
 
 plt.title(args.title)
-plt.legend(handles=boxplot["boxes"], labels=commands, loc="best", fontsize="medium")
+plt.legend(handles=boxplot["boxes"], labels=labels, loc="best", fontsize="medium")
 plt.ylabel("Time [s]")
 plt.ylim(0, None)
 plt.show()
