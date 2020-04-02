@@ -18,12 +18,15 @@ with open(args.file) as f:
 commands = [b["command"] for b in results]
 all_times = [b["times"] for b in results]
 
+t_min = np.min(list(map(np.min, all_times)))
+t_max = np.max(list(map(np.max, all_times)))
+
 plt.hist(
     all_times,
     label=commands,
     bins="auto",
     histtype="bar",
-    range=(np.min(all_times), np.max(all_times)),
+    range=(t_min, t_max),
 )
 plt.legend(prop={"family": ["Source Code Pro", "Fira Mono", "Courier New"]})
 
