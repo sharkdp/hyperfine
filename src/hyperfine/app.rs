@@ -216,7 +216,6 @@ fn build_app() -> App<'static, 'static> {
         .arg(
             Arg::with_name("show-output")
                 .long("show-output")
-                .conflicts_with("style")
                 .help(
                     "Print the stdout and stderr of the benchmark instead of suppressing it. \
                      This will increase the time it takes for benchmarks to run, \
