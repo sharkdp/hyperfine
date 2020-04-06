@@ -342,7 +342,11 @@ pub fn run_benchmark(
     // Compute statistical quantities
     let t_num = times_real.len();
     let t_mean = mean(&times_real);
-    let t_stddev = standard_deviation(&times_real, Some(t_mean));
+    let t_stddev = if times_real.len() > 1 {
+        standard_deviation(&times_real, Some(t_mean))
+    } else {
+        0.0
+    };
     let t_median = median(&times_real);
     let t_min = min(&times_real);
     let t_max = max(&times_real);

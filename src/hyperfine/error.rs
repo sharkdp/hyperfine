@@ -47,7 +47,6 @@ impl Error for ParameterScanError {}
 
 #[derive(Debug)]
 pub enum OptionsError {
-    RunsBelowTwo,
     EmptyRunsRange,
 }
 
@@ -55,7 +54,6 @@ impl fmt::Display for OptionsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             OptionsError::EmptyRunsRange => write!(f, "Empty runs range"),
-            OptionsError::RunsBelowTwo => write!(f, "Number of runs below two"),
         }
     }
 }

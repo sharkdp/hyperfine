@@ -100,16 +100,8 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
     }
 
     match (min_runs, max_runs) {
-        (Some(min), _) if min < 2 => {
-            // We need at least two runs to compute a variance.
-            return Err(OptionsError::RunsBelowTwo);
-        }
         (Some(min), None) => {
             options.runs.min = min;
-        }
-        (_, Some(max)) if max < 2 => {
-            // We need at least two runs to compute a variance.
-            return Err(OptionsError::RunsBelowTwo);
         }
         (None, Some(max)) => {
             // Since the minimum was not explicit we lower it if max is below the default min.
