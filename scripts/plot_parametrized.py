@@ -21,6 +21,9 @@ parser.add_argument(
 parser.add_argument(
     "--log-time", help="Use a logarithmic time axis", action="store_true"
 )
+parser.add_argument(
+    "--titles", help="Comma-separated list of titles for the plot legend"
+)
 
 args = parser.parse_args()
 
@@ -44,5 +47,8 @@ else:
 
 if args.log_x:
     plt.xscale("log")
+
+if args.titles:
+    plt.legend(args.titles.split(","))
 
 plt.show()
