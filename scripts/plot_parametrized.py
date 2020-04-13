@@ -15,6 +15,13 @@ parser.add_argument(
     type=str,
     help="Name of the parameter / x-axis label",
 )
+parser.add_argument(
+    "--log-x", help="Use a logarithmic x (parameter) axis", action="store_true"
+)
+parser.add_argument(
+    "--log-time", help="Use a logarithmic time axis", action="store_true"
+)
+
 args = parser.parse_args()
 
 for filename in args.file:
@@ -29,5 +36,13 @@ for filename in args.file:
 
 plt.xlabel(args.parameter_name)
 plt.ylabel("Time [s]")
-plt.ylim(0, None)
+
+if args.log_time:
+    plt.yscale("log")
+else:
+    plt.ylim(0, None)
+
+if args.log_x:
+    plt.xscale("log")
+
 plt.show()
