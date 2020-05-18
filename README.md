@@ -160,6 +160,12 @@ Hyperfine can be installed via pkg:
 pkg install hyperfine
 ```
 
+### On OpenBSD
+
+```
+doas pkg_add hyperfine
+```
+
 ### With conda
 
 Hyperfine can be installed via [`conda`](https://conda.io/en/latest/) from the [`conda-forge`](https://anaconda.org/conda-forge/hyperfine) channel:
