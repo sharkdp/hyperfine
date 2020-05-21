@@ -9,6 +9,7 @@ readme = "README.md"
 repository = "https://github.com/sharkdp/hyperfine"
 version = "1.9.0"
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 colored = "1.9"
@@ -34,6 +35,11 @@ features = ["suggestions", "color", "wrap_help"]
 
 [dev-dependencies]
 approx = "0.3"
+
+[build-dependencies]
+clap = "2"
+version_check = "0.9"
+atty = "0.2"
 
 [profile.release]
 lto = true
