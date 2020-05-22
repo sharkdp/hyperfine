@@ -189,7 +189,7 @@ fn build_app() -> App<'static, 'static> {
                 .long("export-asciidoc")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing summary statistics as an Asciidoc table to the given FILE."),
+                .help("Export the timing summary statistics as an AsciiDoc table to the given FILE."),
         )
         .arg(
             Arg::with_name("export-csv")
