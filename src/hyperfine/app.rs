@@ -138,7 +138,7 @@ fn build_app() -> App<'static, 'static> {
                 .value_names(&["VAR", "VALUES"])
                 .conflicts_with_all(&["parameter-scan", "parameter-step-size"])
                 .help(
-                    "Perform benchmark runs for each value in the comma-seperated list VALUES. \
+                    "Perform benchmark runs for each value in the comma-separated list VALUES. \
                      Replaces the string '{VAR}' in each command by the current parameter value\
                      .\n\nExample:  hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'\n\n\
                      This performs benchmarks for 'gcc -O2 main.cpp' and 'clang -O2 main.cpp'.",
