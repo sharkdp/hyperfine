@@ -13,6 +13,7 @@
 - Hyperfine now comes with shell completion files for Bash, Zsh, Fish
   and PowerShell, see #290 (@four0000four).
 - Hyperfine now comes with a basic man page, see #257 (@cadeef)
+- During execution of benchmarks, hyperfine will now set a `HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET` environment variable in order to randomize the memory layout. See #235 and #241 for references and details.
 - A few enhancements for the histogram plotting scripts and the
   advanced statistics script
 - Updates for the `plot_whisker.py` script, see #275 (@ghaiklor)
