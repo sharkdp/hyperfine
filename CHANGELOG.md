@@ -1,3 +1,34 @@
+# unreleased
+
+## Features
+## Changes
+## Bugfixes
+## Other
+## Packaging
+
+# v1.10.0
+
+## Features
+
+- Hyperfine now comes with shell completion files for Bash, Zsh, Fish
+  and PowerShell, see #290 (@four0000four).
+- Hyperfine now comes with a basic man page, see #257 (@cadeef)
+- A few enhancements for the histogram plotting scripts and the
+  advanced statistics script
+- Updates for the `plot_whisker.py` script, see #275 (@ghaiklor)
+
+## Bugfixes
+
+- Fix Spin Icon on Windows, see #229
+- A few typos have been fixed, see #292 (@McMartin)
+
+## Packaging
+
+- `hyperfine` is now available on MacPorts for macOS, see #281 (@herbygillot)
+- `hyperfine` is now available on OpenBSD, see #289 (@minusf)
+
+Package authors: note that Hyperfine now comes with a set of shell completion files and a man page (see above)
+
 # v1.9.0
 
 ## Features
