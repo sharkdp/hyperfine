@@ -94,6 +94,8 @@ The JSON output is useful if you want to analyze the benchmark results in more d
 
 ## Installation
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/hyperfine.svg)](https://repology.org/project/hyperfine/versions)
+
 ### On Ubuntu
 
 Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
