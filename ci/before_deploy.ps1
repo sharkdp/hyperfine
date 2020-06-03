@@ -16,6 +16,7 @@ Copy-Item "$SRC_DIR\target\release\hyperfine.exe" '.\'
 Copy-Item $SRC_DIR\README.md '.\'
 Copy-Item $SRC_DIR\LICENSE-MIT '.\'
 Copy-Item $SRC_DIR\LICENSE-APACHE '.\'
+Copy-Item "$SRC_DIR\target\release\build\hyperfine-*\out\_hyperfine.ps1" '.\'
 
 7z a "$ZIP" *
 
