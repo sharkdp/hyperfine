@@ -13,7 +13,7 @@ build = "build.rs"
 
 [dependencies]
 colored = "1.9"
-indicatif = "0.14"
+indicatif = "0.15"
 statistical = "1.0"
 atty = "0.2"
 cfg-if = "0.1"
