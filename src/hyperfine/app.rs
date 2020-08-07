@@ -229,10 +229,8 @@ fn build_app() -> App<'static, 'static> {
                 .long("incremental-export")
                 .requires("export-csv")
                 .help(
-                    "Print the stdout and stderr of the benchmark instead of suppressing it. \
-                     This will increase the time it takes for benchmarks to run, \
-                     so it should only be used for debugging purposes or \
-                     when trying to benchmark output speed.",
+                    "Writes test results incrementally to a file after each test run \
+                    instead of waiting till all tests have finished.",
                 ),
         )
         .help_message("Print this help message.")
