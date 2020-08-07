@@ -34,6 +34,9 @@ impl Exporter for AsciidocExporter {
 
         Ok(res)
     }
+    fn write_to_file_incremental(&mut self, _: &BenchmarkResult, _: Option<Unit>) -> Result<()> { 
+        todo!() 
+    }
 }
 
 fn table_open() -> Vec<u8> {

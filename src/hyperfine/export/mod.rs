@@ -34,6 +34,7 @@ pub enum ExportType {
 trait Exporter {
     /// Export the given entries in the serialized form.
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>>;
+    fn write_to_file_incremental(&mut self, result: &BenchmarkResult, unit: Option<Unit>) -> Result<()>;
 }
 
 struct ExporterWithFilename {
@@ -58,7 +59,7 @@ impl ExportManager {
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) {
         let exporter: Box<dyn Exporter> = match export_type {
             ExportType::Asciidoc => Box::new(AsciidocExporter::default()),
-            ExportType::Csv => Box::new(CsvExporter::default()),
+            ExportType::Csv => Box::new(CsvExporter::new(filename)),
             ExportType::Json => Box::new(JsonExporter::default()),
             ExportType::Markdown => Box::new(MarkdownExporter::default()),
         };
@@ -74,6 +75,12 @@ impl ExportManager {
             let file_content = e.exporter.serialize(&results, unit)?;
             write_to_file(&e.filename, &file_content)?;
         }
+        Ok(())
+    }
+
+    pub fn write_incremental_results(&mut self, result: &BenchmarkResult, unit: Option<Unit>) -> Result<()> { 
+        for e in &mut self.exporters {
+            e.exporter.write_to_file_incremental(result, unit)?;}
         Ok(())
     }
 }

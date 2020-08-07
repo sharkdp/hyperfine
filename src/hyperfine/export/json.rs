@@ -24,4 +24,7 @@ impl Exporter for JsonExporter {
 
         output.map_err(|e| Error::new(ErrorKind::Other, e))
     }
+    fn write_to_file_incremental(&mut self, _: &BenchmarkResult, _: Option<Unit>) -> Result<()> { 
+        todo!() 
+    }
 }

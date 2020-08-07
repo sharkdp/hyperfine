@@ -26,7 +26,7 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
+fn run(commands: &[Command<'_>], options: &HyperfineOptions, export_manager: &mut ExportManager) -> io::Result<Vec<BenchmarkResult>> {
     let shell_spawning_time =
         mean_shell_spawning_time(&options.shell, options.output_style, options.show_output)?;
 
@@ -43,7 +43,13 @@ fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<B
 
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
-        timing_results.push(run_benchmark(num, cmd, shell_spawning_time, options)?);
+        let results = run_benchmark(num, cmd, shell_spawning_time, options)?;
+        
+        if options.incremental_export { 
+            export_manager.write_incremental_results(&results, options.time_unit)?;
+        }
+        
+        timing_results.push(results);
     }
 
     Ok(timing_results)
@@ -52,11 +58,11 @@ fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<B
 fn main() {
     let matches = get_arg_matches(env::args_os());
     let options = build_hyperfine_options(&matches);
-    let export_manager = build_export_manager(&matches);
+    let mut export_manager = build_export_manager(&matches);
     let commands = build_commands(&matches);
 
     let res = match options {
-        Ok(ref opts) => run(&commands, &opts),
+        Ok(ref opts) => run(&commands, &opts, &mut export_manager),
         Err(ref e) => error(&e.to_string()),
     };
 
@@ -133,6 +139,7 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
     options.cleanup_command = matches.value_of("cleanup").map(String::from);
 
     options.show_output = matches.is_present("show-output");
+    options.incremental_export = matches.is_present("incremental-export");
 
     options.output_style = match matches.value_of("style") {
         Some("full") => OutputStyleOption::Full,
