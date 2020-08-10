@@ -34,7 +34,7 @@ impl Exporter for MarkdownExporter {
         Ok(destination)
     }
     fn write_to_file_incremental(&mut self, _: &BenchmarkResult, _: Option<Unit>) -> Result<()> { 
-        todo!() 
+        Ok(())
     }
 }
 

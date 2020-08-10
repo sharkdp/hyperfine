@@ -4,7 +4,7 @@ use super::Exporter;
 use crate::hyperfine::types::BenchmarkResult;
 use crate::hyperfine::units::Unit;
 
-use std::io::{Error, ErrorKind, Result, Read};
+use std::io::{Error, ErrorKind, Result};
 
 use csv::WriterBuilder;
 use csv::Writer;
@@ -50,6 +50,8 @@ fn strip_times_and_write(writer: &mut Writer<File>, result: &BenchmarkResult) ->
 /// Integration test
 #[test]
 fn test_lines_are_appended() { 
+    use std::io::Read;
+
     let path = &String::from("incremental.csv");
     let mut exporter = CsvExporter::new(path);
     
