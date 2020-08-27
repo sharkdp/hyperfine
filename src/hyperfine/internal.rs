@@ -1,9 +1,8 @@
-use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
+use owo_colors::OwoColorize;
 
 use crate::hyperfine::types::{BenchmarkResult, OutputStyleOption};
 use crate::hyperfine::units::{Scalar, Second};
-
 use std::cmp::Ordering;
 use std::iter::Iterator;
 

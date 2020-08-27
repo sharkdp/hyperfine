@@ -12,7 +12,7 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-colored = "2.0"
+owo-colors = "1.0.3"
 indicatif = "0.15"
 statistical = "1.0"
 atty = "0.2"

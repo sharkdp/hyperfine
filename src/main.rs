@@ -4,7 +4,7 @@ use std::io;
 
 use atty::Stream;
 use clap::ArgMatches;
-use colored::*;
+use owo_colors::OwoColorize;
 
 mod hyperfine;
 
@@ -153,13 +153,6 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
     if cfg!(windows) && options.output_style == OutputStyleOption::Full {
         options.output_style = OutputStyleOption::NoColor;
     }
-
-    match options.output_style {
-        OutputStyleOption::Basic | OutputStyleOption::NoColor => {
-            colored::control::set_override(false)
-        }
-        _ => {}
-    };
 
     options.shell = matches
         .value_of("shell")

@@ -97,17 +97,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "colored"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3616f750b84d8f0de8a58bda93e08e2a81ad3f523089b05f1dffecab48c6cbd"
-dependencies = [
- "atty",
- "lazy_static",
- "winapi",
-]
-
-[[package]]
 name = "console"
 version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -186,10 +175,10 @@ dependencies = [
  "atty",
  "cfg-if",
  "clap",
- "colored",
  "csv",
  "indicatif",
  "libc",
+ "owo-colors",
  "rand 0.7.3",
  "rust_decimal",
  "serde",
@@ -317,6 +306,12 @@ name = "number_prefix"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17b02fc0ff9a9e4b35b3342880f48e896ebf69f2967921fe8646bf5b7125956a"
+
+[[package]]
+name = "owo-colors"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84b6808019774957884566d072679b27f7062778bd59f5589831dc798b01b343"
 
 [[package]]
 name = "ppv-lite86"

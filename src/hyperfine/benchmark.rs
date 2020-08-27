@@ -2,7 +2,7 @@ use std::cmp;
 use std::io;
 use std::process::Stdio;
 
-use colored::*;
+use owo_colors::OwoColorize;
 use statistical::{mean, median, standard_deviation};
 
 use crate::hyperfine::format::{format_duration, format_duration_unit};
