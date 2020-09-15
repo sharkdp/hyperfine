@@ -3,9 +3,10 @@ use atty::Stream;
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches};
 use std::ffi::OsString;
 
-pub fn get_arg_matches<T>(args: T) -> ArgMatches<'static>
+pub fn get_arg_matches<I, T>(args: I) -> ArgMatches<'static>
 where
-    T: Iterator<Item = OsString>,
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone,
 {
     let app = build_app();
     app.get_matches_from(args)
@@ -134,6 +135,7 @@ fn build_app() -> App<'static, 'static> {
                 .long("parameter-list")
                 .short("L")
                 .takes_value(true)
+                .multiple(true)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "VALUES"])
                 .conflicts_with_all(&["parameter-scan", "parameter-step-size"])

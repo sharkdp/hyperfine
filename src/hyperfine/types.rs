@@ -1,6 +1,7 @@
 use rust_decimal::Decimal;
 /// This module contains common internal types.
 use serde::*;
+use std::collections::BTreeMap;
 use std::fmt;
 
 use crate::hyperfine::units::{Second, Unit};
@@ -11,7 +12,7 @@ pub const DEFAULT_SHELL: &str = "sh";
 #[cfg(windows)]
 pub const DEFAULT_SHELL: &str = "cmd.exe";
 
-#[derive(Debug, Clone, Serialize, Copy, PartialEq)]
+#[derive(Debug, Clone, Serialize, Copy, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum NumericType {
     Int(i32),
@@ -39,7 +40,7 @@ impl Into<NumericType> for Decimal {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParameterValue {
     Text(String),
     Numeric(NumericType),
@@ -55,47 +56,77 @@ impl<'a> ToString for ParameterValue {
 }
 
 /// A command that should be benchmarked.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Command<'a> {
     /// The command that should be executed (without parameter substitution)
     expression: &'a str,
 
-    /// A possible parameter value.
-    parameter: Option<(&'a str, ParameterValue)>,
+    /// Zero or more parameter values.
+    parameters: Vec<(&'a str, ParameterValue)>,
 }
 
 impl<'a> Command<'a> {
     pub fn new(expression: &'a str) -> Command<'a> {
         Command {
             expression,
-            parameter: None,
+            parameters: Vec::new(),
         }
     }
 
     pub fn new_parametrized(
         expression: &'a str,
-        parameter: &'a str,
-        value: ParameterValue,
+        parameters: Vec<(&'a str, ParameterValue)>,
     ) -> Command<'a> {
         Command {
             expression,
-            parameter: Some((parameter, value)),
+            parameters,
         }
     }
 
     pub fn get_shell_command(&self) -> String {
-        match &self.parameter {
-            Some((param_name, param_value)) => self.expression.replace(
-                &format!("{{{param_name}}}", param_name = param_name),
-                &param_value.to_string(),
-            ),
-            None => self.expression.into(),
+        let mut result = String::new();
+        let mut replacements = BTreeMap::<String, String>::new();
+        for (param_name, param_value) in &self.parameters {
+            replacements.insert(
+                format!("{{{param_name}}}", param_name = param_name),
+                param_value.to_string(),
+            );
         }
+        let mut remaining = self.expression;
+        // Manually replace consecutive occurrences to avoid double-replacing: e.g.,
+        //
+        //     hyperfine -L foo 'a,{bar}' -L bar 'baz,quux' 'echo {foo} {bar}'
+        //
+        // should not ever run 'echo baz baz'. See `test_get_shell_command_nonoverlapping`.
+        'outer: while let Some(head) = remaining.chars().next() {
+            for (k, v) in &replacements {
+                if remaining.starts_with(k.as_str()) {
+                    result.push_str(&v);
+                    remaining = &remaining[k.len()..];
+                    continue 'outer;
+                }
+            }
+            result.push(head);
+            remaining = &remaining[head.len_utf8()..];
+        }
+        result
     }
 
-    pub fn get_parameter(&self) -> &Option<(&'a str, ParameterValue)> {
-        &self.parameter
+    pub fn get_parameters(&self) -> &Vec<(&'a str, ParameterValue)> {
+        &self.parameters
     }
+}
+
+#[test]
+fn test_get_shell_command_nonoverlapping() {
+    let cmd = Command::new_parametrized(
+        "echo {foo} {bar}",
+        vec![
+            ("foo", ParameterValue::Text("{bar} baz".into())),
+            ("bar", ParameterValue::Text("quux".into())),
+        ],
+    );
+    assert_eq!(cmd.get_shell_command(), "echo {bar} baz quux");
 }
 
 impl<'a> fmt::Display for Command<'a> {
@@ -199,6 +230,8 @@ impl Default for HyperfineOptions {
 }
 
 /// Set of values that will be exported.
+// NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
+// `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkResult {
     /// The command that was run
@@ -229,9 +262,9 @@ pub struct BenchmarkResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub times: Option<Vec<Second>>,
 
-    /// Any parameter used
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter: Option<String>,
+    /// Any parameter values used
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub parameters: BTreeMap<String, String>,
 }
 
 impl BenchmarkResult {
@@ -246,7 +279,7 @@ impl BenchmarkResult {
         min: Second,
         max: Second,
         times: Vec<Second>,
-        parameter: Option<String>,
+        parameters: BTreeMap<String, String>,
     ) -> Self {
         BenchmarkResult {
             command,
@@ -258,7 +291,7 @@ impl BenchmarkResult {
             min,
             max,
             times: Some(times),
-            parameter,
+            parameters,
         }
     }
 }

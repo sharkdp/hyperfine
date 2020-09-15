@@ -83,6 +83,7 @@ fn test_asciidoc_header() {
 /// Ensure each table row is generated properly
 #[test]
 fn test_asciidoc_table_row() {
+    use std::collections::BTreeMap;
     let result = BenchmarkResult::new(
         String::from("sleep 1"), // command
         0.10491992406666667,     // mean
@@ -98,7 +99,7 @@ fn test_asciidoc_table_row() {
             0.10745223440000001,
             0.10697327940000001,
         ],
-        None, // param
+        BTreeMap::new(), // param
     );
 
     let expms = format!(
@@ -134,6 +135,7 @@ fn test_asciidoc_table_row() {
 /// Ensure commands get properly escaped
 #[test]
 fn test_asciidoc_table_row_command_escape() {
+    use std::collections::BTreeMap;
     let result = BenchmarkResult::new(
         String::from("sleep 1|"), // command
         0.10491992406666667,      // mean
@@ -149,7 +151,7 @@ fn test_asciidoc_table_row_command_escape() {
             0.10745223440000001,
             0.10697327940000001,
         ],
-        None, // param
+        BTreeMap::new(), // param
     );
     let exps = format!(
         "| `sleep 1\\|`\n\
@@ -169,11 +171,12 @@ fn test_asciidoc_table_row_command_escape() {
 /// Integration test
 #[test]
 fn test_asciidoc() {
+    use std::collections::BTreeMap;
     let exporter = AsciidocExporter::default();
     // NOTE: results are fabricated, unlike above
     let results = vec![
         BenchmarkResult::new(
-            String::from("command | 1"),
+            String::from("FOO=1 BAR=2 command | 1"),
             1.0,
             2.0,
             1.0,
@@ -182,10 +185,15 @@ fn test_asciidoc() {
             5.0,
             6.0,
             vec![7.0, 8.0, 9.0],
-            None,
+            {
+                let mut params = BTreeMap::new();
+                params.insert("foo".into(), "1".into());
+                params.insert("bar".into(), "2".into());
+                params
+            },
         ),
         BenchmarkResult::new(
-            String::from("command | 2"),
+            String::from("FOO=1 BAR=7 command | 2"),
             11.0,
             12.0,
             11.0,
@@ -194,7 +202,12 @@ fn test_asciidoc() {
             15.0,
             16.0,
             vec![17.0, 18.0, 19.0],
-            None,
+            {
+                let mut params = BTreeMap::new();
+                params.insert("foo".into(), "1".into());
+                params.insert("bar".into(), "7".into());
+                params
+            },
         ),
     ];
     // NOTE: only testing with s, s/ms is tested elsewhere
@@ -203,11 +216,11 @@ fn test_asciidoc() {
          |===\n\
          | Command | Mean [s] | Min…Max [s]\n\
          \n\
-         | `command \\| 1`\n\
+         | `FOO=1 BAR=2 command \\| 1`\n\
          | 1.000 ± 2.000\n\
          | 5.000…6.000\n\
          \n\
-         | `command \\| 2`\n\
+         | `FOO=1 BAR=7 command \\| 2`\n\
          | 11.000 ± 12.000\n\
          | 15.000…16.000\n\
          |===\n\

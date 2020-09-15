@@ -128,6 +128,7 @@ fn test_max() {
 #[test]
 fn test_compute_relative_speed() {
     use approx::assert_relative_eq;
+    use std::collections::BTreeMap;
 
     let create_result = |name: &str, mean| BenchmarkResult {
         command: name.into(),
@@ -139,7 +140,7 @@ fn test_compute_relative_speed() {
         min: mean,
         max: mean,
         times: None,
-        parameter: None,
+        parameters: BTreeMap::new(),
     };
 
     let results = vec![
