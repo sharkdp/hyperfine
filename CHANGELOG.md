@@ -1,7 +1,23 @@
 # unreleased
 
 ## Features
+
+- The `-L`/`--parameter-list` option can now be specified multiple times to evaluate all possible combinations of the listed parameters:
+
+  ``` bash
+  hyperfine -L number 1,2 -L letter a,b,c \
+      "echo {number}{letter}" \
+      "printf '%s\n' {number}{letter}"
+  # runs 12 benchmarks: 2 commands (echo and printf) times 6 combinations of
+  # the "letter" and "number" parameters
+  ```
+
+  See: #253, #318 (@wchargin)
+
 ## Changes
+
+- When parameters are used with `--parameter-list` or `--parameter-scan`, the JSON export format now contains a dictionary `parameters` instead of a single key `parameter`.
+
 ## Bugfixes
 ## Other
 ## Packaging
