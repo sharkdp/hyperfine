@@ -223,12 +223,7 @@ pub fn run_benchmark(
         } else {
             &values[num]
         };
-        match cmd.get_parameter() {
-            Some((param, value)) => {
-                Command::new_parametrized(preparation_command, param, value.clone())
-            }
-            None => Command::new(preparation_command),
-        }
+        Command::new_parametrized(preparation_command, cmd.get_parameters().clone())
     });
 
     // Warmup phase
@@ -414,16 +409,9 @@ pub fn run_benchmark(
     }
 
     // Run cleanup command
-    let cleanup_cmd =
-        options
-            .cleanup_command
-            .as_ref()
-            .map(|cleanup_command| match cmd.get_parameter() {
-                Some((param, value)) => {
-                    Command::new_parametrized(cleanup_command, param, value.clone())
-                }
-                None => Command::new(cleanup_command),
-            });
+    let cleanup_cmd = options.cleanup_command.as_ref().map(|cleanup_command| {
+        Command::new_parametrized(cleanup_command, cmd.get_parameters().clone())
+    });
     run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
 
     Ok(BenchmarkResult::new(
@@ -436,6 +424,9 @@ pub fn run_benchmark(
         t_min,
         t_max,
         times_real,
-        cmd.get_parameter().as_ref().map(|p| p.1.to_string()),
+        cmd.get_parameters()
+            .iter()
+            .map(|(name, value)| ((*name).to_string(), value.to_string()))
+            .collect(),
     ))
 }

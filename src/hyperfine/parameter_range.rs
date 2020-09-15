@@ -94,8 +94,7 @@ fn build_parameterized_commands<'a, T: Numeric>(
         for cmd in &command_strings {
             commands.push(Command::new_parametrized(
                 cmd,
-                param_name,
-                ParameterValue::Numeric(value.into()),
+                vec![(param_name, ParameterValue::Numeric(value.into()))],
             ));
         }
     }

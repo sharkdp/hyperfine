@@ -1,4 +1,5 @@
 use std::cmp;
+use std::collections::BTreeMap;
 use std::env;
 use std::io;
 
@@ -207,27 +208,113 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
             Ok(commands) => commands,
             Err(e) => error(&e.to_string()),
         }
-    } else if let Some(mut args) = matches.values_of("parameter-list") {
-        let param_name = args.next().unwrap();
-        let param_list_str = args.next().unwrap();
-
-        let param_list = tokenize(param_list_str);
+    } else if let Some(args) = matches.values_of("parameter-list") {
+        let args: Vec<_> = args.collect();
+        let param_names_and_values: Vec<(&str, Vec<String>)> = args
+            .chunks_exact(2)
+            .map(|pair| {
+                let name = pair[0];
+                let list_str = pair[1];
+                (name, tokenize(list_str))
+            })
+            .collect();
+        {
+            let dupes = find_dupes(param_names_and_values.iter().map(|(name, _)| *name));
+            if !dupes.is_empty() {
+                error(&format!("duplicate parameter names: {}", &dupes.join(", ")))
+            }
+        }
         let command_list = command_strings.collect::<Vec<&str>>();
 
-        let mut commands = Vec::with_capacity(param_list.len() * command_list.len());
+        let dimensions: Vec<usize> = std::iter::once(command_list.len())
+            .chain(
+                param_names_and_values
+                    .iter()
+                    .map(|(_, values)| values.len()),
+            )
+            .collect();
+        let param_space_size = dimensions.iter().product();
+        if param_space_size == 0 {
+            return Vec::new();
+        }
 
-        for value in param_list {
-            for cmd in &command_list {
-                commands.push(Command::new_parametrized(
-                    cmd,
-                    param_name,
-                    ParameterValue::Text(value.clone()),
-                ));
+        let mut commands = Vec::with_capacity(param_space_size);
+        let mut index = vec![0usize; dimensions.len()];
+        'outer: loop {
+            let (command_index, params_indices) = index.split_first().unwrap();
+            let parameters = param_names_and_values
+                .iter()
+                .zip(params_indices)
+                .map(|((name, values), i)| (*name, ParameterValue::Text(values[*i].clone())))
+                .collect();
+            commands.push(Command::new_parametrized(
+                command_list[*command_index],
+                parameters,
+            ));
+
+            // Increment index, exiting loop on overflow.
+            for (i, n) in index.iter_mut().zip(dimensions.iter()) {
+                *i += 1;
+                if *i < *n {
+                    continue 'outer;
+                } else {
+                    *i = 0;
+                }
             }
+            break 'outer;
         }
 
         commands
     } else {
         command_strings.map(Command::new).collect()
     }
+}
+
+/// Finds all the strings that appear multiple times in the input iterator, returning them in
+/// sorted order. If no string appears more than once, the result is an empty vector.
+fn find_dupes<'a, I: IntoIterator<Item = &'a str>>(i: I) -> Vec<&'a str> {
+    let mut counts = BTreeMap::<&'a str, usize>::new();
+    for s in i {
+        *counts.entry(s).or_default() += 1;
+    }
+    counts
+        .into_iter()
+        .filter_map(|(k, n)| if n > 1 { Some(k) } else { None })
+        .collect()
+}
+
+#[test]
+fn test_build_commands_cross_product() {
+    let matches = get_arg_matches(vec![
+        "hyperfine",
+        "-L",
+        "foo",
+        "a,b",
+        "-L",
+        "bar",
+        "z,y",
+        "echo {foo} {bar}",
+        "printf '%s\n' {foo} {bar}",
+    ]);
+    let result = build_commands(&matches);
+
+    // Iteration order: command list first, then parameters in listed order (here, "foo" before
+    // "bar", which is distinct from their sorted order), with parameter values in listed order.
+    let pv = |s: &str| ParameterValue::Text(s.to_string());
+    let cmd = |cmd: usize, foo: &str, bar: &str| {
+        let expression = ["echo {foo} {bar}", "printf '%s\n' {foo} {bar}"][cmd];
+        let params = vec![("foo", pv(foo)), ("bar", pv(bar))];
+        Command::new_parametrized(expression, params)
+    };
+    let expected = vec![
+        cmd(0, "a", "z"),
+        cmd(1, "a", "z"),
+        cmd(0, "b", "z"),
+        cmd(1, "b", "z"),
+        cmd(0, "a", "y"),
+        cmd(1, "a", "y"),
+        cmd(0, "b", "y"),
+        cmd(1, "b", "y"),
+    ];
+    assert_eq!(result, expected);
 }
