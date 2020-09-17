@@ -224,15 +224,6 @@ fn build_app() -> App<'static, 'static> {
                      when trying to benchmark output speed.",
                 ),
         )
-        .arg(
-            Arg::with_name("incremental-export")
-                .long("incremental-export")
-                .requires("export-csv")
-                .help(
-                    "Writes test results incrementally to a file after each test run \
-                    instead of waiting till all tests have finished.",
-                ),
-        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
 }

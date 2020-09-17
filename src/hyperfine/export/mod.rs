@@ -34,7 +34,11 @@ pub enum ExportType {
 trait Exporter {
     /// Export the given entries in the serialized form.
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>>;
+    /// Export just one entry and append to output file
     fn write_to_file_incremental(&mut self, result: &BenchmarkResult, unit: Option<Unit>) -> Result<()>;
+    fn supports_incremental_writes(&self) -> bool {
+        false
+    }
 }
 
 struct ExporterWithFilename {
@@ -72,15 +76,19 @@ impl ExportManager {
     /// Write the given results to all Exporters contained within this manager
     pub fn write_results(&self, results: Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<()> {
         for e in &self.exporters {
-            let file_content = e.exporter.serialize(&results, unit)?;
-            write_to_file(&e.filename, &file_content)?;
+            if !e.exporter.supports_incremental_writes() {
+                let file_content = e.exporter.serialize(&results, unit)?;
+                write_to_file(&e.filename, &file_content)?;
+            }
         }
         Ok(())
     }
 
     pub fn write_incremental_results(&mut self, result: &BenchmarkResult, unit: Option<Unit>) -> Result<()> { 
         for e in &mut self.exporters {
-            e.exporter.write_to_file_incremental(result, unit)?;}
+            if e.exporter.supports_incremental_writes() { 
+                e.exporter.write_to_file_incremental(result, unit)?;}
+            }
         Ok(())
     }
 }

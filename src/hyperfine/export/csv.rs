@@ -37,6 +37,9 @@ impl Exporter for CsvExporter {
         strip_times_and_write(&mut self.writer, result)?;
         self.writer.flush()
     }
+    fn supports_incremental_writes(&self) -> bool { 
+        true
+    }
 }
 
 fn strip_times_and_write(writer: &mut Writer<File>, result: &BenchmarkResult) -> Result<()> { 

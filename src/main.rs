@@ -45,9 +45,7 @@ fn run(commands: &[Command<'_>], options: &HyperfineOptions, export_manager: &mu
     for (num, cmd) in commands.iter().enumerate() {
         let results = run_benchmark(num, cmd, shell_spawning_time, options)?;
         
-        if options.incremental_export { 
-            export_manager.write_incremental_results(&results, options.time_unit)?;
-        }
+        export_manager.write_incremental_results(&results, options.time_unit)?;
         
         timing_results.push(results);
     }
@@ -139,7 +137,6 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
     options.cleanup_command = matches.value_of("cleanup").map(String::from);
 
     options.show_output = matches.is_present("show-output");
-    options.incremental_export = matches.is_present("incremental-export");
 
     options.output_style = match matches.value_of("style") {
         Some("full") => OutputStyleOption::Full,

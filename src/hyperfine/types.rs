@@ -179,8 +179,6 @@ pub struct HyperfineOptions {
 
     /// Which time unit to use for CLI & Markdown output
     pub time_unit: Option<Unit>,
-
-    pub incremental_export: bool
 }
 
 impl Default for HyperfineOptions {
@@ -195,8 +193,7 @@ impl Default for HyperfineOptions {
             output_style: OutputStyleOption::Full,
             shell: DEFAULT_SHELL.to_string(),
             show_output: false,
-            time_unit: None,
-            incremental_export: false
+            time_unit: None
         }
     }
 }
