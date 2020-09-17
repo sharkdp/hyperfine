@@ -50,11 +50,11 @@ def extract_parameters(results):
             "benchmarks must all have the same parameter name, but found: %s"
             % sorted(names)
         )
-    return (next(iter(names)), values)
+    return (next(iter(names)), list(values))
 
 
 def unique_parameter(benchmark):
-    """Return the unique parameter `(name: str, value: float)`, or dies."""
+    """Return the unique parameter `(name: str, value: float)`, or die."""
     params_dict = benchmark.get("parameters", {})
     if not params_dict:
         die("benchmarks must have exactly one parameter, but found none")
@@ -63,7 +63,8 @@ def unique_parameter(benchmark):
             "benchmarks must have exactly one parameter, but found multiple: %s"
             % sorted(params_dict)
         )
-    return next(iter(params_dict.items()))
+    [(name, value)] = params_dict.items()
+    return (name, float(value))
 
 
 parameter_name = None
@@ -80,7 +81,6 @@ for filename in args.file:
         )
     parameter_name = this_parameter_name
 
-    parameter_values = [float(pv) for pv in parameter_values]
     times_mean = [b["mean"] for b in results]
     times_stddev = [b["stddev"] for b in results]
 
