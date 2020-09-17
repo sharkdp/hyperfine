@@ -16,16 +16,16 @@ impl Exporter for CsvExporter {
         let mut writer = WriterBuilder::new().from_writer(vec![]);
 
         {
-            let mut headers: Vec<String> = [
+            let mut headers: Vec<Cow<[u8]>> = [
                 // The list of times cannot be exported to the CSV file - omit it.
                 "command", "mean", "stddev", "median", "user", "system", "min", "max",
             ]
             .iter()
-            .map(|x| (*x).to_string())
+            .map(|x| Cow::Borrowed(x.as_bytes()))
             .collect();
             if let Some(res) = results.first() {
                 for param_name in res.parameters.keys() {
-                    headers.push(format!("parameter_{}", param_name));
+                    headers.push(Cow::Owned(format!("parameter_{}", param_name).into_bytes()));
                 }
             }
             writer.write_record(headers)?;
