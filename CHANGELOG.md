@@ -16,7 +16,8 @@
 
 ## Changes
 
-- When parameters are used with `--parameter-list` or `--parameter-scan`, the JSON export format now contains a dictionary `parameters` instead of a single key `parameter`.
+- When parameters are used with `--parameter-list` or `--parameter-scan`, the JSON export format now contains a dictionary `parameters` instead of a single key `parameter`. See #253, #318.
+- The `plot_parametrized.py` script now infers the parameter name, and its `--parameter-name` argument has been deprecated. See #253, #318.
 
 ## Bugfixes
 ## Other
