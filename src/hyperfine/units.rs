@@ -5,6 +5,9 @@ pub type Scalar = f64;
 /// Type alias for unit of time
 pub type Second = Scalar;
 
+/// Type alias for unit of memory
+pub type MebiByte = Scalar;
+
 /// Supported time units
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Unit {
@@ -26,6 +29,34 @@ impl Unit {
         match self {
             Unit::Second => format!("{:.3}", value),
             Unit::MilliSecond => format!("{:.1}", value * 1e3),
+        }
+    }
+}
+
+/// Supported memory units
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MemoryUnit {
+    KibiByte,
+    MebiByte,
+    GibiByte,
+}
+
+impl MemoryUnit {
+    /// The abbreviation of the Unit.
+    pub fn short_name(self) -> String {
+        match self {
+            MemoryUnit::GibiByte => String::from("GiB"),
+            MemoryUnit::MebiByte => String::from("MiB"),
+            MemoryUnit::KibiByte => String::from("KiB"),
+        }
+    }
+
+    /// Returns the Second value formatted for the Unit.
+    pub fn format(self, value: MebiByte) -> String {
+        match self {
+            MemoryUnit::GibiByte => format!("{:.3}", value / 1024f64),
+            MemoryUnit::MebiByte => format!("{:.3}", value),
+            MemoryUnit::KibiByte => format!("{:.3}", value * 1024f64),
         }
     }
 }

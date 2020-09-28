@@ -5,7 +5,9 @@ use std::process::Stdio;
 use colored::*;
 use statistical::{mean, median, standard_deviation};
 
-use crate::hyperfine::format::{format_duration, format_duration_unit};
+use crate::hyperfine::format::{
+    format_duration, format_duration_unit, format_memory, format_memory_unit,
+};
 use crate::hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
 use crate::hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::hyperfine::shell::execute_and_time;
@@ -14,7 +16,7 @@ use crate::hyperfine::timer::{TimerStart, TimerStop};
 use crate::hyperfine::types::{
     BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption,
 };
-use crate::hyperfine::units::Second;
+use crate::hyperfine::units::{MebiByte, Second};
 use crate::hyperfine::warnings::Warnings;
 
 /// Results from timing a single shell command
@@ -28,14 +30,20 @@ pub struct TimingResult {
 
     /// Time spent in kernel mode
     pub time_system: Second,
+
+    /// Maximum resident set
+    pub max_rss: MebiByte,
 }
 
 /// Correct for shell spawning time
-fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Second {
-    if time < shell_spawning_time {
-        0.0
+fn saturating_subtract<T: std::ops::Sub<T> + PartialOrd<T> + Copy>(
+    resource: T,
+    shell_spawining_resource: T,
+) -> <T as std::ops::Sub>::Output {
+    if resource < shell_spawining_resource {
+        resource - resource
     } else {
-        time - shell_spawning_time
+        resource - shell_spawining_resource
     }
 }
 
@@ -59,6 +67,7 @@ pub fn time_shell_command(
 
     let mut time_user = result.user_time;
     let mut time_system = result.system_time;
+    let mut max_rss = result.max_rss;
 
     if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
         return Err(io::Error::new(
@@ -71,9 +80,10 @@ pub fn time_shell_command(
 
     // Correct for shell spawning time
     if let Some(spawning_time) = shell_spawning_time {
-        time_real = subtract_shell_spawning_time(time_real, spawning_time.time_real);
-        time_user = subtract_shell_spawning_time(time_user, spawning_time.time_user);
-        time_system = subtract_shell_spawning_time(time_system, spawning_time.time_system);
+        time_real = saturating_subtract(time_real, spawning_time.time_real);
+        time_user = saturating_subtract(time_user, spawning_time.time_user);
+        time_system = saturating_subtract(time_system, spawning_time.time_system);
+        max_rss = saturating_subtract(max_rss, spawning_time.max_rss);
     }
 
     Ok((
@@ -81,6 +91,7 @@ pub fn time_shell_command(
             time_real,
             time_user,
             time_system,
+            max_rss,
         },
         result.status.success(),
     ))
@@ -106,6 +117,7 @@ pub fn mean_shell_spawning_time(
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
     let mut times_system: Vec<Second> = vec![];
+    let mut max_rss: Vec<MebiByte> = vec![];
 
     for _ in 0..COUNT {
         // Just run the shell without any command
@@ -138,6 +150,7 @@ pub fn mean_shell_spawning_time(
                 times_real.push(r.time_real);
                 times_user.push(r.time_user);
                 times_system.push(r.time_system);
+                max_rss.push(r.max_rss);
             }
         }
 
@@ -150,6 +163,7 @@ pub fn mean_shell_spawning_time(
         time_real: mean(&times_real),
         time_user: mean(&times_user),
         time_system: mean(&times_system),
+        max_rss: mean(&max_rss),
     })
 }
 
@@ -214,6 +228,7 @@ pub fn run_benchmark(
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
     let mut times_system: Vec<Second> = vec![];
+    let mut max_rss: Vec<MebiByte> = vec![];
     let mut all_succeeded = true;
 
     // Run init command
@@ -301,6 +316,7 @@ pub fn run_benchmark(
     times_real.push(res.time_real);
     times_user.push(res.time_user);
     times_system.push(res.time_system);
+    max_rss.push(res.max_rss);
 
     all_succeeded = all_succeeded && success;
 
@@ -330,6 +346,7 @@ pub fn run_benchmark(
         times_real.push(res.time_real);
         times_user.push(res.time_user);
         times_system.push(res.time_system);
+        max_rss.push(res.max_rss);
 
         all_succeeded = all_succeeded && success;
 
@@ -348,6 +365,11 @@ pub fn run_benchmark(
 
     let user_mean = mean(&times_user);
     let system_mean = mean(&times_system);
+    let mem_mean = mean(&max_rss);
+    let mem_stddev = standard_deviation(&max_rss, Some(mem_mean));
+    let _mem_median = median(&max_rss);
+    let mem_min = min(&max_rss);
+    let mem_max = max(&max_rss);
 
     // Formatting and console output
     let (mean_str, unit_mean) = format_duration_unit(t_mean, options.time_unit);
@@ -359,6 +381,11 @@ pub fn run_benchmark(
     let (user_str, user_unit) = format_duration_unit(user_mean, None);
     let system_str = format_duration(system_mean, Some(user_unit));
 
+    let (mem_mean_str, mem_unit) = format_memory_unit(mem_mean, None);
+    let mem_stddev_str = format_memory(mem_stddev, Some(mem_unit));
+    let mem_min_str = format_memory(mem_min, Some(mem_unit));
+    let mem_max_str = format_memory(mem_max, Some(mem_unit));
+
     if options.output_style != OutputStyleOption::Disabled {
         println!(
             "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
@@ -367,7 +394,7 @@ pub fn run_benchmark(
             mean_str.green().bold(),
             stddev_str.green(),
             user_str.blue(),
-            system_str.blue()
+            system_str.blue(),
         );
 
         println!(
@@ -377,6 +404,22 @@ pub fn run_benchmark(
             min_str.cyan(),
             max_str.purple(),
             num_str.dimmed()
+        );
+
+        println!(
+            "  Memory ({} ± {}):     {:>8} ± {:>8}",
+            "mean".green().bold(),
+            "σ".green(),
+            mem_mean_str.green().bold(),
+            mem_stddev_str.green(),
+        );
+
+        println!(
+            "  Range ({} … {}):   {:>8} … {:>8}",
+            "min".cyan(),
+            "max".purple(),
+            mem_min_str.cyan(),
+            mem_max_str.purple(),
         );
     }
 

@@ -13,6 +13,9 @@ pub struct ExecuteResult {
     /// The amount of cpu time the process used
     pub system_time: f64,
 
+    /// The maximum resident set of the process
+    pub max_rss: f64,
+
     /// The exit status of the process
     pub status: ExitStatus,
 }
@@ -29,10 +32,11 @@ pub fn execute_and_time(
     let cpu_timer = get_cpu_timer(&child);
     let status = child.wait()?;
 
-    let (user_time, system_time) = cpu_timer.stop();
+    let (user_time, system_time, max_rss) = cpu_timer.stop();
     Ok(ExecuteResult {
         user_time,
         system_time,
+        max_rss,
         status,
     })
 }
@@ -49,11 +53,12 @@ pub fn execute_and_time(
 
     let status = run_shell_command(stdout, stderr, command, shell)?;
 
-    let (user_time, system_time) = cpu_timer.stop();
+    let (user_time, system_time, max_rss) = cpu_timer.stop();
 
     Ok(ExecuteResult {
         user_time,
         system_time,
+        max_rss,
         status,
     })
 }

@@ -2,9 +2,11 @@
 
 use super::internal::CPUTimes;
 use crate::hyperfine::timer::{TimerStart, TimerStop};
-use crate::hyperfine::units::Second;
+use crate::hyperfine::units::{MebiByte, Second};
 
 use winapi::um::processthreadsapi::GetProcessTimes;
+use winapi::um::psapi::GetProcessMemoryInfo;
+use winapi::um::psapi::PROCESS_MEMORY_COUNTERS;
 use winapi::um::winnt::HANDLE;
 
 use std::mem;
@@ -13,7 +15,7 @@ use std::process::Child;
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 
-pub fn get_cpu_timer(process: &Child) -> Box<dyn TimerStop<Result = (Second, Second)>> {
+pub fn get_cpu_timer(process: &Child) -> Box<dyn TimerStop<Result = (Second, Second, MebiByte)>> {
     Box::new(CPUTimer::start_for_process(process))
 }
 
@@ -34,13 +36,14 @@ impl TimerStart for CPUTimer {
 }
 
 impl TimerStop for CPUTimer {
-    type Result = (Second, Second);
+    type Result = (Second, Second, MebiByte);
 
     fn stop(&self) -> Self::Result {
         let times = get_cpu_times(self.handle);
         (
             times.user_usec as f64 * 1e-6,
             times.system_usec as f64 * 1e-6,
+            times.max_rss_byte as f64 / 1024f64 / 1024f64,
         )
     }
 }
@@ -76,8 +79,24 @@ fn get_cpu_times(handle: RawHandle) -> CPUTimes {
         }
     };
 
+    let max_rss_byte = unsafe {
+        let mut pmc = std::mem::MaybeUninit::zeroed();
+        let res = GetProcessMemoryInfo(
+            handle as HANDLE,
+            pmc.as_mut_ptr(),
+            std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
+        );
+        if res != 0 {
+            let pmc = pmc.assume_init();
+            pmc.WorkingSetSize as i64
+        } else {
+            0
+        }
+    };
+
     CPUTimes {
         user_usec,
         system_usec,
+        max_rss_byte,
     }
 }

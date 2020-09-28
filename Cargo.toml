@@ -27,7 +27,7 @@ rand = "0.7"
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["processthreadsapi", "minwindef", "winnt"] }
+winapi = { version = "0.3", features = ["processthreadsapi", "psapi", "minwindef", "winnt"] }
 
 [dependencies.clap]
 version = "2"

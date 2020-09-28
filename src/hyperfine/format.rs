@@ -1,4 +1,4 @@
-use crate::hyperfine::units::{Second, Unit};
+use crate::hyperfine::units::*;
 
 /// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
 /// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
@@ -21,6 +21,32 @@ pub fn format_duration_value(duration: Second, unit: Option<Unit>) -> (String, U
         (Unit::MilliSecond.format(duration), Unit::MilliSecond)
     } else {
         (Unit::Second.format(duration), Unit::Second)
+    }
+}
+
+/// Format the given memory as a string. The output-unit can be enforced by setting `unit` to
+/// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
+pub fn format_memory(memory: Second, unit: Option<MemoryUnit>) -> String {
+    match format_memory_unit(memory, unit) {
+        (memory_fmt, _) => memory_fmt,
+    }
+}
+
+/// Like `format_memory`, but returns the target unit as well.
+pub fn format_memory_unit(memory: Second, unit: Option<MemoryUnit>) -> (String, MemoryUnit) {
+    let (out_str, out_unit) = format_memory_value(memory, unit);
+
+    (format!("{} {}", out_str, out_unit.short_name()), out_unit)
+}
+
+/// Like `format_memory`, but returns the target unit as well.
+pub fn format_memory_value(memory: MebiByte, unit: Option<MemoryUnit>) -> (String, MemoryUnit) {
+    if (memory < 1.0 && unit.is_none()) || unit == Some(MemoryUnit::KibiByte) {
+        (MemoryUnit::KibiByte.format(memory), MemoryUnit::KibiByte)
+    } else if (memory > 1024f64 && unit.is_none()) || unit == Some(MemoryUnit::GibiByte) {
+        (MemoryUnit::GibiByte.format(memory), MemoryUnit::GibiByte)
+    } else {
+        (MemoryUnit::MebiByte.format(memory), MemoryUnit::MebiByte)
     }
 }
 

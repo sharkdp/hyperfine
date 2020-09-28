@@ -2,12 +2,12 @@
 
 use super::internal::{CPUInterval, CPUTimes};
 use crate::hyperfine::timer::{TimerStart, TimerStop};
-use crate::hyperfine::units::Second;
+use crate::hyperfine::units::{MebiByte, Second};
 
 use std::mem;
 use std::process::Child;
 
-pub fn get_cpu_timer() -> Box<dyn TimerStop<Result = (Second, Second)>> {
+pub fn get_cpu_timer() -> Box<dyn TimerStop<Result = (Second, Second, MebiByte)>> {
     Box::new(CPUTimer::start())
 }
 
@@ -28,12 +28,12 @@ impl TimerStart for CPUTimer {
 }
 
 impl TimerStop for CPUTimer {
-    type Result = (Second, Second);
+    type Result = (Second, Second, MebiByte);
 
     fn stop(&self) -> Self::Result {
         let end_cpu = get_cpu_times();
         let cpu_interval = cpu_time_interval(&self.start_cpu, &end_cpu);
-        (cpu_interval.user, cpu_interval.system)
+        (cpu_interval.user, cpu_interval.system, cpu_interval.max_rss)
     }
 }
 
@@ -50,11 +50,19 @@ fn get_cpu_times() -> CPUTimes {
 
     const MICROSEC_PER_SEC: i64 = 1000 * 1000;
 
+    // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
+    let max_rss_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
+        result.ru_maxrss
+    } else {
+        result.ru_maxrss / 1024
+    };
+
     CPUTimes {
         user_usec: i64::from(result.ru_utime.tv_sec) * MICROSEC_PER_SEC
             + i64::from(result.ru_utime.tv_usec),
         system_usec: i64::from(result.ru_stime.tv_sec) * MICROSEC_PER_SEC
             + i64::from(result.ru_stime.tv_usec),
+        max_rss_byte: i64::from(max_rss_byte),
     }
 }
 
@@ -63,6 +71,7 @@ fn cpu_time_interval(start: &CPUTimes, end: &CPUTimes) -> CPUInterval {
     CPUInterval {
         user: ((end.user_usec - start.user_usec) as f64) * 1e-6,
         system: ((end.system_usec - start.system_usec) as f64) * 1e-6,
+        max_rss: ((end.max_rss_byte - start.max_rss_byte) as f64) / 1024f64 / 1024f64,
     }
 }
 
@@ -74,11 +83,13 @@ fn test_cpu_time_interval() {
     let t_a = CPUTimes {
         user_usec: 12345,
         system_usec: 54321,
+        max_rss_byte: 0,
     };
 
     let t_b = CPUTimes {
         user_usec: 20000,
         system_usec: 70000,
+        max_rss_byte: 0,
     };
 
     let t_zero = cpu_time_interval(&t_a, &t_a);
