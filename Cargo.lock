@@ -524,9 +524,9 @@ checksum = "7fe5bd57d1d7414c6b5ed48563a2c855d995ff777729dcd91c369ec7fea395ae"
 
 [[package]]
 name = "rust_decimal"
-version = "1.7.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95ba36e8c41bf675947e200af432325f332f60a0aea0ef2dc456636c2f6037d7"
+checksum = "c9e81662973c7a8d9663e64a0de4cd642b89a21d64966e3d99606efdc5fb0cc6"
 dependencies = [
  "num-traits",
  "serde",
