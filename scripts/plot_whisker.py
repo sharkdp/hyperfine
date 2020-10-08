@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """This program shows `hyperfine` benchmark results as a box and whisker plot.
 
