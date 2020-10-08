@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """This script performs Welch's t-test on a JSON export file with two
 benchmark results to test whether or not the two distributions are

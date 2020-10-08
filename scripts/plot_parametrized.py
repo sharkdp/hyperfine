@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """This program shows parametrized `hyperfine` benchmark results as an
 errorbar plot."""
