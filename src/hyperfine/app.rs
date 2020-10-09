@@ -226,6 +226,16 @@ fn build_app() -> App<'static, 'static> {
                      when trying to benchmark output speed.",
                 ),
         )
+        .arg(
+            Arg::with_name("command-name")
+                .long("name")
+                .short("n")
+                .takes_value(true)
+                .multiple(true)
+                .number_of_values(1)
+                .value_name("NAME")
+                .help("Give a meaningful name to a command"),
+        )
         .help_message("Print this help message.")
         .version_message("Show version information.")
 }

@@ -127,6 +127,10 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
         (None, None) => {}
     };
 
+    options.names = matches
+        .values_of("command-name")
+        .map(|values| values.map(String::from).collect::<Vec<String>>());
+
     options.preparation_command = matches
         .values_of("prepare")
         .map(|values| values.map(String::from).collect::<Vec<String>>());

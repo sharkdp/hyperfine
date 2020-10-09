@@ -202,12 +202,20 @@ pub fn run_benchmark(
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<BenchmarkResult> {
+    let shell_cmd = cmd.get_shell_command();
+    let command_name = if let Some(names) = &options.names {
+        names.get(num).unwrap_or(&shell_cmd)
+    } else {
+        &shell_cmd
+    };
+    let command_name = command_name.to_string();
+
     if options.output_style != OutputStyleOption::Disabled {
         println!(
             "{}{}: {}",
             "Benchmark #".bold(),
             (num + 1).to_string().bold(),
-            cmd
+            &command_name
         );
     }
 
@@ -415,7 +423,7 @@ pub fn run_benchmark(
     run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
 
     Ok(BenchmarkResult::new(
-        cmd.get_shell_command(),
+        command_name,
         t_mean,
         t_stddev,
         t_median,

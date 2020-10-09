@@ -210,11 +210,14 @@ pub struct HyperfineOptions {
 
     /// Which time unit to use for CLI & Markdown output
     pub time_unit: Option<Unit>,
+
+    pub names: Option<Vec<String>>,
 }
 
 impl Default for HyperfineOptions {
     fn default() -> HyperfineOptions {
         HyperfineOptions {
+            names: None,
             warmup_count: 0,
             runs: Runs::default(),
             min_time_sec: 3.0,
