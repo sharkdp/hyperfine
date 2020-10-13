@@ -211,6 +211,9 @@ pub struct HyperfineOptions {
     /// Which time unit to use for CLI & Markdown output
     pub time_unit: Option<Unit>,
 
+    /// A list of custom command names that, if defined,
+    /// will be used instead of the command itself in
+    /// benchmark outputs.
     pub names: Option<Vec<String>>,
 }
 
