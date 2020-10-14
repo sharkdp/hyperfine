@@ -14,6 +14,8 @@
 
   See: #253, #318 (@wchargin)
 
+- Add CLI option to identify a command with a custom name, see #326 (@scampi)
+
 ## Changes
 
 - When parameters are used with `--parameter-list` or `--parameter-scan`, the JSON export format now contains a dictionary `parameters` instead of a single key `parameter`. See #253, #318.
