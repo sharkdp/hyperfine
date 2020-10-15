@@ -21,6 +21,7 @@
 
 ## Bugfixes
 
+- Fix a bug in the outlier detection which would only detect "slow outliers" but not the fast ones (runs that are much faster than the rest of the benchmarking runs), see #329
 - Keep output colorized when the output is not interactive and `--style=full` or `--style=color` is used.
 
 ## Other

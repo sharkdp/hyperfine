@@ -392,7 +392,7 @@ pub fn run_benchmark(
     let scores = modified_zscores(&times_real);
     if scores[0] > OUTLIER_THRESHOLD {
         warnings.push(Warnings::SlowInitialRun(times_real[0]));
-    } else if scores.iter().any(|&s| s > OUTLIER_THRESHOLD) {
+    } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
         warnings.push(Warnings::OutliersDetected);
     }
 
