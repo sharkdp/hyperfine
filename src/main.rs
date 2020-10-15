@@ -159,7 +159,8 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
         OutputStyleOption::Basic | OutputStyleOption::NoColor => {
             colored::control::set_override(false)
         }
-        _ => {}
+        OutputStyleOption::Full | OutputStyleOption::Color => colored::control::set_override(true),
+        OutputStyleOption::Disabled => {}
     };
 
     options.shell = matches
