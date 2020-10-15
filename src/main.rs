@@ -130,6 +130,12 @@ fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions,
     options.names = matches
         .values_of("command-name")
         .map(|values| values.map(String::from).collect::<Vec<String>>());
+    if let Some(ref names) = options.names {
+        let command_strings = matches.values_of("command").unwrap();
+        if names.len() > command_strings.len() {
+            return Err(OptionsError::TooManyCommandNames(command_strings.len()));
+        }
+    }
 
     options.preparation_command = matches
         .values_of("prepare")
