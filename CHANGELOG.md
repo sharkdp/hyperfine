@@ -20,6 +20,9 @@
 - The `plot_parametrized.py` script now infers the parameter name, and its `--parameter-name` argument has been deprecated. See #253, #318.
 
 ## Bugfixes
+
+- Keep output colorized when the output is not interactive and `--style=full` or `--style=color` is used.
+
 ## Other
 ## Packaging
 
