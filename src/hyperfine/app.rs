@@ -228,7 +228,7 @@ fn build_app() -> App<'static, 'static> {
         )
         .arg(
             Arg::with_name("command-name")
-                .long("name")
+                .long("command-name")
                 .short("n")
                 .takes_value(true)
                 .multiple(true)
