@@ -86,20 +86,25 @@ fn main() {
 }
 
 /// Build the HyperfineOptions that correspond to the given ArgMatches
-fn build_hyperfine_options(matches: &ArgMatches<'_>) -> Result<HyperfineOptions, OptionsError> {
+fn build_hyperfine_options<'a>(
+    matches: &ArgMatches<'a>,
+) -> Result<HyperfineOptions, OptionsError<'a>> {
     let mut options = HyperfineOptions::default();
     let param_to_u64 = |param| {
         matches
             .value_of(param)
-            .and_then(|n| u64::from_str_radix(n, 10).ok())
+            .map(|n| {
+                u64::from_str_radix(n, 10).map_err(|e| OptionsError::NumericParsingError(param, e))
+            })
+            .transpose()
     };
 
-    options.warmup_count = param_to_u64("warmup").unwrap_or(options.warmup_count);
+    options.warmup_count = param_to_u64("warmup")?.unwrap_or(options.warmup_count);
 
-    let mut min_runs = param_to_u64("min-runs");
-    let mut max_runs = param_to_u64("max-runs");
+    let mut min_runs = param_to_u64("min-runs")?;
+    let mut max_runs = param_to_u64("max-runs")?;
 
-    if let Some(runs) = param_to_u64("runs") {
+    if let Some(runs) = param_to_u64("runs")? {
         min_runs = Some(runs);
         max_runs = Some(runs);
     }
