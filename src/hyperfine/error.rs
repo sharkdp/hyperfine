@@ -2,6 +2,7 @@ use rust_decimal::Error as DecimalError;
 use std::error::Error;
 use std::fmt;
 use std::num;
+use std::num::ParseIntError;
 
 #[derive(Debug)]
 pub enum ParameterScanError {
@@ -46,13 +47,14 @@ impl fmt::Display for ParameterScanError {
 impl Error for ParameterScanError {}
 
 #[derive(Debug)]
-pub enum OptionsError {
+pub enum OptionsError<'a> {
     RunsBelowTwo,
     EmptyRunsRange,
     TooManyCommandNames(usize),
+    NumericParsingError(&'a str, ParseIntError),
 }
 
-impl fmt::Display for OptionsError {
+impl<'a> fmt::Display for OptionsError<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             OptionsError::EmptyRunsRange => write!(f, "Empty runs range"),
@@ -60,8 +62,14 @@ impl fmt::Display for OptionsError {
             OptionsError::TooManyCommandNames(n) => {
                 write!(f, "Too many --command-name options: expected {} at most", n)
             }
+            OptionsError::NumericParsingError(cmd, ref err) => write!(
+                f,
+                "Could not read numeric argument to '--{cmd}': {err}",
+                cmd = cmd,
+                err = err
+            ),
         }
     }
 }
 
-impl Error for OptionsError {}
+impl<'a> Error for OptionsError<'a> {}
