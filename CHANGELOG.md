@@ -2,7 +2,22 @@
 
 ## Features
 
-- The `-L`/`--parameter-list` option can now be specified multiple times to evaluate all possible combinations of the listed parameters:
+## Changes
+
+## Bugfixes
+
+## Other
+
+## Packaging
+
+
+
+# v1.11.0
+
+## Features
+
+- The `-L`/`--parameter-list` option can now be specified multiple times to
+  evaluate all possible combinations of the listed parameters:
 
   ``` bash
   hyperfine -L number 1,2 -L letter a,b,c \
@@ -18,19 +33,20 @@
 
 ## Changes
 
-- When parameters are used with `--parameter-list` or `--parameter-scan`, the JSON export format now contains a dictionary `parameters` instead of a single key `parameter`. See #253, #318.
-- The `plot_parametrized.py` script now infers the parameter name, and its `--parameter-name` argument has been deprecated. See #253, #318.
+- When parameters are used with `--parameter-list` or `--parameter-scan`, the JSON export format
+  now contains a dictionary `parameters` instead of a single key `parameter`. See #253, #318.
+- The `plot_parametrized.py` script now infers the parameter name, and its `--parameter-name`
+  argument has been deprecated. See #253, #318.
 
 ## Bugfixes
 
-- Fix a bug in the outlier detection which would only detect "slow outliers" but not the fast ones (runs that are much faster than the rest of the benchmarking runs), see #329
+- Fix a bug in the outlier detection which would only detect "slow outliers" but not the fast
+  ones (runs that are much faster than the rest of the benchmarking runs), see #329
 - Better error messages for very fast commands that would lead to inf/nan results in the relative
   speed comparison, see #319
 - Show error message if `--warmup` or `--*runs` arguments can not be parsed, see #337
 - Keep output colorized when the output is not interactive and `--style=full` or `--style=color` is used.
 
-## Other
-## Packaging
 
 # v1.10.0
 
