@@ -52,6 +52,7 @@ pub fn min(vals: &[f64]) -> f64 {
         .unwrap()
 }
 
+#[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
     pub result: &'a BenchmarkResult,
     pub relative_speed: Scalar,
@@ -65,31 +66,38 @@ fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
 
 pub fn compute_relative_speed<'a>(
     results: &'a [BenchmarkResult],
-) -> Vec<BenchmarkResultWithRelativeSpeed<'a>> {
+) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
     let fastest: &BenchmarkResult = results
         .iter()
         .min_by(|&l, &r| compare_mean_time(l, r))
         .expect("at least one benchmark result");
 
-    results
-        .iter()
-        .map(|result| {
-            let ratio = result.mean / fastest.mean;
+    if fastest.mean == 0.0 {
+        return None;
+    }
 
-            // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
-            // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-            let ratio_stddev = ratio
-                * ((result.stddev / result.mean).powi(2) + (fastest.stddev / fastest.mean).powi(2))
+    Some(
+        results
+            .iter()
+            .map(|result| {
+                let ratio = result.mean / fastest.mean;
+
+                // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
+                // Covariance asssumed to be 0, i.e. variables are assumed to be independent
+                let ratio_stddev = ratio
+                    * ((result.stddev / result.mean).powi(2)
+                        + (fastest.stddev / fastest.mean).powi(2))
                     .sqrt();
 
-            BenchmarkResultWithRelativeSpeed {
-                result,
-                relative_speed: ratio,
-                relative_speed_stddev: ratio_stddev,
-                is_fastest: result == fastest,
-            }
-        })
-        .collect()
+                BenchmarkResultWithRelativeSpeed {
+                    result,
+                    relative_speed: ratio,
+                    relative_speed_stddev: ratio_stddev,
+                    is_fastest: result == fastest,
+                }
+            })
+            .collect(),
+    )
 }
 
 pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
@@ -97,21 +105,31 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
         return;
     }
 
-    let mut annotated_results = compute_relative_speed(&results);
-    annotated_results.sort_by(|l, r| compare_mean_time(l.result, r.result));
+    if let Some(mut annotated_results) = compute_relative_speed(&results) {
+        annotated_results.sort_by(|l, r| compare_mean_time(l.result, r.result));
 
-    let fastest = &annotated_results[0];
-    let others = &annotated_results[1..];
+        let fastest = &annotated_results[0];
+        let others = &annotated_results[1..];
 
-    println!("{}", "Summary".bold());
-    println!("  '{}' ran", fastest.result.command.cyan());
+        println!("{}", "Summary".bold());
+        println!("  '{}' ran", fastest.result.command.cyan());
 
-    for item in others {
-        println!(
-            "{} ± {} times faster than '{}'",
-            format!("{:8.2}", item.relative_speed).bold().green(),
-            format!("{:.2}", item.relative_speed_stddev).green(),
-            &item.result.command.magenta()
+        for item in others {
+            println!(
+                "{} ± {} times faster than '{}'",
+                format!("{:8.2}", item.relative_speed).bold().green(),
+                format!("{:.2}", item.relative_speed_stddev).green(),
+                &item.result.command.magenta()
+            );
+        }
+    } else {
+        eprintln!(
+            "{}: The benchmark comparison could not be computed as some benchmark times are zero. \
+             This could be caused by background interference during the initial calibration phase \
+             of hyperfine, in combination with very fast commands (faster than a few milliseconds). \
+             Try to re-run the benchmark on a quiet system. If it does not help, you command is \
+             most likely too fast to be accurately benchmarked by hyperfine.",
+             "Note".bold().red()
         );
     }
 }
@@ -125,12 +143,11 @@ fn test_max() {
     assert_eq!(1.0, max(&[-1.0, 1.0, 0.0]));
 }
 
-#[test]
-fn test_compute_relative_speed() {
-    use approx::assert_relative_eq;
+#[cfg(test)]
+fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
-    let create_result = |name: &str, mean| BenchmarkResult {
+    BenchmarkResult {
         command: name.into(),
         mean,
         stddev: 1.0,
@@ -141,7 +158,12 @@ fn test_compute_relative_speed() {
         max: mean,
         times: None,
         parameters: BTreeMap::new(),
-    };
+    }
+}
+
+#[test]
+fn test_compute_relative_speed() {
+    use approx::assert_relative_eq;
 
     let results = vec![
         create_result("cmd1", 3.0),
@@ -149,11 +171,20 @@ fn test_compute_relative_speed() {
         create_result("cmd3", 5.0),
     ];
 
-    let annotated_results = compute_relative_speed(&results);
+    let annotated_results = compute_relative_speed(&results).unwrap();
 
     assert_relative_eq!(1.5, annotated_results[0].relative_speed);
     assert_relative_eq!(1.0, annotated_results[1].relative_speed);
     assert_relative_eq!(2.5, annotated_results[2].relative_speed);
+}
+
+#[test]
+fn test_compute_relative_speed_for_zero_times() {
+    let results = vec![create_result("cmd1", 1.0), create_result("cmd2", 0.0)];
+
+    let annotated_results = compute_relative_speed(&results);
+
+    assert!(annotated_results.is_none());
 }
 
 pub fn tokenize<'a>(values: &'a str) -> Vec<String> {

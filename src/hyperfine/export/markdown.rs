@@ -5,7 +5,7 @@ use crate::hyperfine::internal::{compute_relative_speed, BenchmarkResultWithRela
 use crate::hyperfine::types::BenchmarkResult;
 use crate::hyperfine::units::Unit;
 
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 
 #[derive(Default)]
 pub struct MarkdownExporter {}
@@ -23,15 +23,20 @@ impl Exporter for MarkdownExporter {
             Unit::Second
         };
 
-        let annotated_results = compute_relative_speed(results);
+        if let Some(annotated_results) = compute_relative_speed(results) {
+            let mut destination = start_table(unit);
 
-        let mut destination = start_table(unit);
+            for result in annotated_results {
+                add_table_row(&mut destination, &result, unit);
+            }
 
-        for result in annotated_results {
-            add_table_row(&mut destination, &result, unit);
+            Ok(destination)
+        } else {
+            Err(Error::new(
+                ErrorKind::Other,
+                "Relative speed comparison is not available for Markdown export.",
+            ))
         }
-
-        Ok(destination)
     }
 }
 
