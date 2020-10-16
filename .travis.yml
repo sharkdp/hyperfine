@@ -46,18 +46,8 @@ jobs:
       rust: 1.43.0
       env: TARGET=x86_64-apple-darwin
 
-addons:
-  apt:
-    packages:
-      # needed for i686-unknown-linux-gnu target
-      - gcc-multilib
-      # needed to build deb packages
-      - fakeroot
-      # needed for cross-compiling for arm
-      - gcc-4.8-arm-linux-gnueabihf
-      - binutils-arm-linux-gnueabihf
-      - libc6-armhf-cross
-      - libc6-dev-armhf-cross
+before_install:
+  - ci/before_install.bash
 
 env:
   global:
