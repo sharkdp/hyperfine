@@ -16,7 +16,7 @@ use crate::hyperfine::export::{ExportManager, ExportType};
 use crate::hyperfine::internal::{tokenize, write_benchmark_comparison};
 use crate::hyperfine::parameter_range::get_parameterized_commands;
 use crate::hyperfine::types::{
-    BenchmarkResult, CmdFailureAction, Command, HyperfineOptions, OutputStyleOption, ParameterValue,
+    CmdFailureAction, Command, HyperfineOptions, OutputStyleOption, ParameterValue,
 };
 use crate::hyperfine::units::Unit;
 
@@ -27,7 +27,11 @@ pub fn error(message: &str) -> ! {
 }
 
 /// Runs the benchmark for the given commands
-fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<BenchmarkResult>> {
+fn run(
+    commands: &[Command<'_>],
+    options: &HyperfineOptions,
+    export_manager: &ExportManager,
+) -> io::Result<()> {
     let shell_spawning_time =
         mean_shell_spawning_time(&options.shell, options.output_style, options.show_output)?;
 
@@ -47,7 +51,21 @@ fn run(commands: &[Command<'_>], options: &HyperfineOptions) -> io::Result<Vec<B
         timing_results.push(run_benchmark(num, cmd, shell_spawning_time, options)?);
     }
 
-    Ok(timing_results)
+    // Print relative speed comparison
+    if options.output_style != OutputStyleOption::Disabled {
+        write_benchmark_comparison(&timing_results);
+    }
+
+    // Export results
+    let ans = export_manager.write_results(timing_results, options.time_unit);
+    if let Err(e) = ans {
+        error(&format!(
+            "The following error occurred while exporting: {}",
+            e
+        ));
+    }
+
+    Ok(())
 }
 
 fn main() {
@@ -57,26 +75,12 @@ fn main() {
     let commands = build_commands(&matches);
 
     let res = match options {
-        Ok(ref opts) => run(&commands, &opts),
+        Ok(ref opts) => run(&commands, &opts, &export_manager),
         Err(ref e) => error(&e.to_string()),
     };
 
     match res {
-        Ok(timing_results) => {
-            let options = options.unwrap();
-
-            if options.output_style != OutputStyleOption::Disabled {
-                write_benchmark_comparison(&timing_results);
-            }
-
-            let ans = export_manager.write_results(timing_results, options.time_unit);
-            if let Err(e) = ans {
-                error(&format!(
-                    "The following error occurred while exporting: {}",
-                    e
-                ));
-            }
-        }
+        Ok(_) => {}
         Err(e) => error(&e.to_string()),
     }
 }
