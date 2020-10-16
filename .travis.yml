@@ -64,7 +64,7 @@ install:
 script:
   # Incorporate TARGET env var to the build and test process
   - cargo build --target $TARGET --verbose
-  - '[[ $TARGET != arm-unknown-linux-* ]] && cargo test --target $TARGET --verbose'
+  - '[[ $TARGET == arm-unknown-linux-* ]] || cargo test --target $TARGET --verbose'
 
 before_deploy:
   - bash ci/before_deploy.bash

@@ -12,7 +12,7 @@ sudo apt-get update
 sudo apt-get install -y fakeroot
 
 # needed for i686 linux gnu target
-if [[ $TARGET == i686-unknown-linux-gnu ]]; then
+if [[ $TARGET == i686-unknown-linux-* ]]; then
     sudo apt-get install -y gcc-multilib
 fi
 
