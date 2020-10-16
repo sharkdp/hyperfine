@@ -53,6 +53,11 @@ addons:
       - gcc-multilib
       # needed to build deb packages
       - fakeroot
+      # needed for cross-compiling for arm
+      - gcc-4.8-arm-linux-gnueabihf
+      - binutils-arm-linux-gnueabihf
+      - libc6-armhf-cross
+      - libc6-dev-armhf-cross
 
 env:
   global:
