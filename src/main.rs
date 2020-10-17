@@ -49,20 +49,20 @@ fn run(
     // Run the benchmarks
     for (num, cmd) in commands.iter().enumerate() {
         timing_results.push(run_benchmark(num, cmd, shell_spawning_time, options)?);
+
+        // Export (intermediate) results
+        let ans = export_manager.write_results(&timing_results, options.time_unit);
+        if let Err(e) = ans {
+            error(&format!(
+                "The following error occurred while exporting: {}",
+                e
+            ));
+        }
     }
 
     // Print relative speed comparison
     if options.output_style != OutputStyleOption::Disabled {
         write_benchmark_comparison(&timing_results);
-    }
-
-    // Export results
-    let ans = export_manager.write_results(timing_results, options.time_unit);
-    if let Err(e) = ans {
-        error(&format!(
-            "The following error occurred while exporting: {}",
-            e
-        ));
     }
 
     Ok(())
