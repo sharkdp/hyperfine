@@ -61,11 +61,16 @@ pub fn time_shell_command(
     let mut time_system = result.system_time;
 
     if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
+        let mut exit_code = String::new();
+        if let Some(code) = result.status.code() {
+            exit_code = format!(": {}", code);
+        }
+
         return Err(io::Error::new(
             io::ErrorKind::Other,
-            "Command terminated with non-zero exit code. \
+            format!("Command terminated with non-zero exit code{}. \
              Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-             Alternatively, use the '--show-output' option to debug what went wrong.",
+             Alternatively, use the '--show-output' option to debug what went wrong.", exit_code),
         ));
     }
 
