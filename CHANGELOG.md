@@ -4,6 +4,9 @@
 
 ## Changes
 
+- When `--export-*` commands are used, result files are created before benchmark execution
+  to fail early in case of, e.g., wrong permissions. See #306 (@s1ck). 
+
 ## Bugfixes
 
 ## Other
