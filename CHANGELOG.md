@@ -4,6 +4,9 @@
 
 ## Changes
 
+- When `--export-*` options are used, result files are written after each individual 
+  benchmark command instead of writing after all benchmarks have finished. See #306 (@s1ck).
+
 ## Bugfixes
 
 ## Other
