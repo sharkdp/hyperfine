@@ -69,7 +69,7 @@ impl ExportManager {
     }
 
     /// Write the given results to all Exporters contained within this manager
-    pub fn write_results(&self, results: Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<()> {
+    pub fn write_results(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<()> {
         for e in &self.exporters {
             let file_content = e.exporter.serialize(&results, unit)?;
             write_to_file(&e.filename, &file_content)?;
