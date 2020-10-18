@@ -4,6 +4,8 @@
 
 ## Changes
 
+- When `--export-*` commands are used, result files are created before benchmark execution
+  to fail early in case of, e.g., wrong permissions. See #306 (@s1ck). 
 - When `--export-*` options are used, result files are written after each individual 
   benchmark command instead of writing after all benchmarks have finished. See #306 (@s1ck).
 

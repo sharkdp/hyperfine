@@ -71,8 +71,11 @@ fn run(
 fn main() {
     let matches = get_arg_matches(env::args_os());
     let options = build_hyperfine_options(&matches);
-    let export_manager = build_export_manager(&matches);
     let commands = build_commands(&matches);
+    let export_manager = match build_export_manager(&matches) {
+        Ok(export_manager) => export_manager,
+        Err(ref e) => error(&e.to_string())
+    };
 
     let res = match options {
         Ok(ref opts) => run(&commands, &opts, &export_manager),
@@ -202,20 +205,21 @@ fn build_hyperfine_options<'a>(
 
 /// Build the ExportManager that will export the results specified
 /// in the given ArgMatches
-fn build_export_manager(matches: &ArgMatches<'_>) -> ExportManager {
+fn build_export_manager(matches: &ArgMatches<'_>) -> io::Result<ExportManager> {
     let mut export_manager = ExportManager::new();
     {
-        let mut add_exporter = |flag, exporttype| {
+        let mut add_exporter = |flag, exporttype| -> io::Result<()> {
             if let Some(filename) = matches.value_of(flag) {
-                export_manager.add_exporter(exporttype, filename);
+                export_manager.add_exporter(exporttype, filename)?;
             }
+            Ok(())
         };
-        add_exporter("export-asciidoc", ExportType::Asciidoc);
-        add_exporter("export-json", ExportType::Json);
-        add_exporter("export-csv", ExportType::Csv);
-        add_exporter("export-markdown", ExportType::Markdown);
+        add_exporter("export-asciidoc", ExportType::Asciidoc)?;
+        add_exporter("export-json", ExportType::Json)?;
+        add_exporter("export-csv", ExportType::Csv)?;
+        add_exporter("export-markdown", ExportType::Markdown)?;
     }
-    export_manager
+    Ok(export_manager)
 }
 
 /// Build the commands to benchmark
