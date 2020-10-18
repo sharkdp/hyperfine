@@ -8,7 +8,7 @@ use self::csv::CsvExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{Result, Write};
 
 use crate::hyperfine::types::BenchmarkResult;
@@ -55,7 +55,9 @@ impl ExportManager {
     }
 
     /// Add an additional exporter to the ExportManager
-    pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) {
+    pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) -> Result<()> {
+        let _ = File::create(filename)?;
+
         let exporter: Box<dyn Exporter> = match export_type {
             ExportType::Asciidoc => Box::new(AsciidocExporter::default()),
             ExportType::Csv => Box::new(CsvExporter::default()),
@@ -66,10 +68,12 @@ impl ExportManager {
             exporter,
             filename: filename.to_string(),
         });
+
+        Ok(())
     }
 
     /// Write the given results to all Exporters contained within this manager
-    pub fn write_results(&self, results: Vec<BenchmarkResult>, unit: Option<Unit>) -> Result<()> {
+    pub fn write_results(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<()> {
         for e in &self.exporters {
             let file_content = e.exporter.serialize(&results, unit)?;
             write_to_file(&e.filename, &file_content)?;
@@ -80,6 +84,6 @@ impl ExportManager {
 
 /// Write the given content to a file with the specified name
 fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
-    let mut file = File::create(filename)?;
+    let mut file = OpenOptions::new().write(true).open(filename)?;
     file.write_all(content)
 }
