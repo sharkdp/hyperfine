@@ -1,12 +1,14 @@
 # unreleased
 
+- Add command exit code to output if it fails, see #342 (@KaindlJulian)
+
 ## Features
 
 ## Changes
 
 - When `--export-*` commands are used, result files are created before benchmark execution
-  to fail early in case of, e.g., wrong permissions. See #306 (@s1ck). 
-- When `--export-*` options are used, result files are written after each individual 
+  to fail early in case of, e.g., wrong permissions. See #306 (@s1ck).
+- When `--export-*` options are used, result files are written after each individual
   benchmark command instead of writing after all benchmarks have finished. See #306 (@s1ck).
 
 ## Bugfixes
@@ -15,8 +17,6 @@
 
 ## Packaging
 
-
-
 # v1.11.0
 
 ## Features
@@ -24,7 +24,7 @@
 - The `-L`/`--parameter-list` option can now be specified multiple times to
   evaluate all possible combinations of the listed parameters:
 
-  ``` bash
+  ```bash
   hyperfine -L number 1,2 -L letter a,b,c \
       "echo {number}{letter}" \
       "printf '%s\n' {number}{letter}"
@@ -51,7 +51,6 @@
   speed comparison, see #319
 - Show error message if `--warmup` or `--*runs` arguments can not be parsed, see #337
 - Keep output colorized when the output is not interactive and `--style=full` or `--style=color` is used.
-
 
 # v1.10.0
 
@@ -86,7 +85,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
   This is similar to `--parameter-scan <VAR> <MIN> <MAX>`, but doesn't
   necessarily required numeric arguments.
 
-  ``` bash
+  ```bash
   hyperfine --parameter-list compiler "gcc,clang" \
       "{compiler} -O2 main.cpp"
   ```
@@ -118,7 +117,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 - The `--prepare <CMD>` option can now be specified multiple times to
   run specific preparation commands for each of the benchmarked programs:
 
-  ``` bash
+  ```bash
   hyperfine --prepare "make clean; git checkout master"  "make" \
             --prepare "make clean; git checkout feature" "make"
   ```
@@ -144,7 +143,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
   the step size for `--parameter-scan` benchmarks. In addition, decimal numbers
   are now allowed for parameter scans. For example, the following command runs
   `sleep 0.3`, `sleep 0.5` and `sleep 0.7`:
-  ``` bash
+  ```bash
   hyperfine --parameter-scan delay 0.3 0.7 -D 0.2 'sleep {delay}'
   ```
   For more details, see #184 (@piyushrungta25)
@@ -166,7 +165,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 - Add parameter values (for `--parameter-scan` benchmarks) to exported CSV and JSON files. See #131 (@bbannier)
 - Added AsciiDoc export option, see #137 (@5paceToast)
 - The relative speed is now part of the Markdown export, see #127 (@mathiasrw and @sharkdp).
-- The *median* run time is now exported via CSV and JSON, see #171 (@hosewiejacke and @sharkdp).
+- The _median_ run time is now exported via CSV and JSON, see #171 (@hosewiejacke and @sharkdp).
 
 ## Other
 
@@ -198,7 +197,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 ## Feature
 
 - Compute and print standard deviation of the speed ratio, see #83 (@Shnatsel)
-- More compact output format, see #70  (@jasonpeacock)
+- More compact output format, see #70 (@jasonpeacock)
 - Added `--style=color`, see #70 (@jasonpeacock)
 - Added options to specify the max/exact numbers of runs, see #77 (@orium)
 
@@ -208,7 +207,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 
 ## Other
 
-- Binary releases for Windows are now available, see #87 
+- Binary releases for Windows are now available, see #87
 
 # v1.2.0
 
@@ -217,16 +216,16 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 
 # v1.1.0
 
-* Added `--show-output` option (@chrisduerr and @sevagh)
-* Refactoring work (@stevepentland)
+- Added `--show-output` option (@chrisduerr and @sevagh)
+- Refactoring work (@stevepentland)
 
 # v1.0.0
 
 ## Features
 
-* Support for various export-formats like CSV, JSON and Markdown - see #38, #44, #49, #42 (@stevepentland)
-* Summary output that compares the different benchmarks, see #6 (@stevepentland)
-* Parameterized benchmarks via `-P`, `--parameter-scan <VAR> <MIN> <MAX>`, see #19
+- Support for various export-formats like CSV, JSON and Markdown - see #38, #44, #49, #42 (@stevepentland)
+- Summary output that compares the different benchmarks, see #6 (@stevepentland)
+- Parameterized benchmarks via `-P`, `--parameter-scan <VAR> <MIN> <MAX>`, see #19
 
 ## Thanks
 
@@ -235,15 +234,15 @@ for reviewing pull requests and for giving very valuable feedback.
 
 # v0.5.0
 
-* Proper Windows support (@stevepentland)
-* Added `--style auto/basic/nocolor/full` option (@stevepentland)
-* Correctly estimate the full execution time, see #27 (@rleungx)
-* Added Void Linux install instructions (@wpbirney)
+- Proper Windows support (@stevepentland)
+- Added `--style auto/basic/nocolor/full` option (@stevepentland)
+- Correctly estimate the full execution time, see #27 (@rleungx)
+- Added Void Linux install instructions (@wpbirney)
 
 # v0.4.0
 
 - New `--style` option to disable output coloring and interactive CLI features, see #24 (@stevepentland)
-- Statistical outlier detection, see #23 #18 
+- Statistical outlier detection, see #23 #18
 
 # v0.3.0
 
