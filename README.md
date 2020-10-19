@@ -40,6 +40,26 @@ option:
 hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
 ```
 
+### Tip: aliases and functions
+
+Aliases and shell functions can't be benchmarked directly, but you may try to put them in a separate
+file and benchmark _that_:
+
+```bash
+echo 'my_function() { sleep 1 }' > /tmp/my_function.sh
+echo 'alias my_alias="sleep 1"' > /tmp/my_alias.sh
+hyperfine 'source /tmp/my_function.sh; eval my_function'
+hyperfine 'source /tmp/my_alias.sh; eval my_alias'
+```
+
+If you're using bash, you may also want to `export` functions (can't do that with aliases, though):
+
+```
+$ my_function() { sleep 1; }
+$ export -f my_function
+$ hyperfine my_function
+```
+
 ### Warmup runs and preparation commands
 
 If the program execution time is limited by disk I/O, the benchmarking results can be heavily
