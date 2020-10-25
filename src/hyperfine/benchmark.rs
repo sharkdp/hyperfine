@@ -63,9 +63,15 @@ pub fn time_shell_command(
     if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
         return Err(io::Error::new(
             io::ErrorKind::Other,
-            "Command terminated with non-zero exit code. \
-             Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-             Alternatively, use the '--show-output' option to debug what went wrong.",
+            format!(
+                "{}. \
+                Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+                Alternatively, use the '--show-output' option to debug what went wrong.",
+                result.status.code().map_or(
+                    "The process has been terminated by a signal".into(),
+                    |c| format!("Command terminated with non-zero exit code: {}", c)
+                )
+            ),
         ));
     }
 
