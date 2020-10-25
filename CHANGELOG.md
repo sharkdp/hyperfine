@@ -1,5 +1,7 @@
 # unreleased
 
+- Add command exit code to output if it fails, see #342 (@KaindlJulian)
+
 ## Features
 
 ## Changes
