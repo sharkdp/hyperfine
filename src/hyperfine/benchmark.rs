@@ -385,8 +385,8 @@ pub fn run_benchmark(
             "min".cyan(),
             "max".purple(),
             min_str.cyan(),
-            median_str.blue(),
             max_str.purple(),
+            median_str.blue(),
             num_str.dimmed()
         );
     }
