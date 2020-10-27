@@ -380,17 +380,6 @@ pub fn run_benchmark(
             system_str.blue()
         );
 
-        // println!(
-        //     "  Range ({} … {} … {}):   {:>8} … {:>8} … {:>8}    {}",
-        //     "min".cyan(),
-        //     "median".blue(),
-        //     "max".purple(),
-        //     min_str.cyan(),
-        //     median_str.blue(),
-        //     max_str.purple(),
-        //     num_str.dimmed()
-        // );
-
         println!(
             "  Range ({} … {}):   {:>8} … {:>8}    (median: {})  {:>10}",
             "min".cyan(),
