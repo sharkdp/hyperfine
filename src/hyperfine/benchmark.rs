@@ -362,6 +362,7 @@ pub fn run_benchmark(
     let (mean_str, unit_mean) = format_duration_unit(t_mean, options.time_unit);
     let stddev_str = format_duration(t_stddev, Some(unit_mean));
     let min_str = format_duration(t_min, Some(unit_mean));
+    let median_str = format_duration(t_median, Some(unit_mean));
     let max_str = format_duration(t_max, Some(unit_mean));
     let num_str = format!("{} runs", t_num);
 
@@ -379,11 +380,23 @@ pub fn run_benchmark(
             system_str.blue()
         );
 
+        // println!(
+        //     "  Range ({} … {} … {}):   {:>8} … {:>8} … {:>8}    {}",
+        //     "min".cyan(),
+        //     "median".blue(),
+        //     "max".purple(),
+        //     min_str.cyan(),
+        //     median_str.blue(),
+        //     max_str.purple(),
+        //     num_str.dimmed()
+        // );
+
         println!(
-            "  Range ({} … {}):   {:>8} … {:>8}    {}",
+            "  Range ({} … {}):   {:>8} … {:>8}    (median: {})  {:>10}",
             "min".cyan(),
             "max".purple(),
             min_str.cyan(),
+            median_str.blue(),
             max_str.purple(),
             num_str.dimmed()
         );
