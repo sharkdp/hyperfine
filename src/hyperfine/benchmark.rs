@@ -371,7 +371,7 @@ pub fn run_benchmark(
 
     if options.output_style != OutputStyleOption::Disabled {
         println!(
-            "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
+            "  Time {} ± {}:       {:>8} ± {:>8}    [User: {}, System: {}]",
             "mean".green().bold(),
             "σ".green(),
             mean_str.green().bold(),
@@ -381,12 +381,13 @@ pub fn run_benchmark(
         );
 
         println!(
-            "  Range ({} … {}):   {:>8} … {:>8}    (median: {})  {:>10}",
+            "  {} … {} … {}:  {:>8} … {:>8} … {:>8}             {:>10}",
             "min".cyan(),
+            "median".yellow(),
             "max".purple(),
             min_str.cyan(),
+            median_str.yellow(),
             max_str.purple(),
-            median_str.blue(),
             num_str.dimmed()
         );
     }
