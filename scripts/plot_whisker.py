@@ -36,7 +36,8 @@ colors = [cmap(val / len(times)) for val in range(len(times))]
 for patch, color in zip(boxplot["boxes"], colors):
     patch.set_facecolor(color)
 
-plt.title(args.title)
+if args.title:
+    plt.title(args.title)
 plt.legend(handles=boxplot["boxes"], labels=labels, loc="best", fontsize="medium")
 plt.ylabel("Time [s]")
 plt.ylim(0, None)
