@@ -117,7 +117,7 @@ pub fn mean_shell_spawning_time(
         // Just run the shell without any command
         let res = time_shell_command(
             shell,
-            &Command::new(""),
+            &Command::new(None, ""),
             show_output,
             CmdFailureAction::RaiseError,
             None,
@@ -208,20 +208,13 @@ pub fn run_benchmark(
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
 ) -> io::Result<BenchmarkResult> {
-    let shell_cmd = cmd.get_shell_command();
-    let command_name = if let Some(names) = &options.names {
-        names.get(num).unwrap_or(&shell_cmd)
-    } else {
-        &shell_cmd
-    };
-    let command_name = command_name.to_string();
-
+    let command_name = cmd.get_name();
     if options.output_style != OutputStyleOption::Disabled {
         println!(
             "{}{}: {}",
             "Benchmark #".bold(),
             (num + 1).to_string().bold(),
-            &command_name
+            command_name,
         );
     }
 
@@ -237,7 +230,7 @@ pub fn run_benchmark(
         } else {
             &values[num]
         };
-        Command::new_parametrized(preparation_command, cmd.get_parameters().clone())
+        Command::new_parametrized(None, preparation_command, cmd.get_parameters().clone())
     });
 
     // Warmup phase
@@ -424,7 +417,7 @@ pub fn run_benchmark(
 
     // Run cleanup command
     let cleanup_cmd = options.cleanup_command.as_ref().map(|cleanup_command| {
-        Command::new_parametrized(cleanup_command, cmd.get_parameters().clone())
+        Command::new_parametrized(None, cleanup_command, cmd.get_parameters().clone())
     });
     run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
 
