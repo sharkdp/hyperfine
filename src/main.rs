@@ -74,7 +74,7 @@ fn main() {
     let commands = build_commands(&matches);
     let export_manager = match build_export_manager(&matches) {
         Ok(export_manager) => export_manager,
-        Err(ref e) => error(&e.to_string())
+        Err(ref e) => error(&e.to_string()),
     };
 
     let res = match options {
@@ -138,16 +138,6 @@ fn build_hyperfine_options<'a>(
         }
         (None, None) => {}
     };
-
-    options.names = matches
-        .values_of("command-name")
-        .map(|values| values.map(String::from).collect::<Vec<String>>());
-    if let Some(ref names) = options.names {
-        let command_strings = matches.values_of("command").unwrap();
-        if names.len() > command_strings.len() {
-            return Err(OptionsError::TooManyCommandNames(command_strings.len()));
-        }
-    }
 
     options.preparation_command = matches
         .values_of("prepare")
@@ -224,15 +214,18 @@ fn build_export_manager(matches: &ArgMatches<'_>) -> io::Result<ExportManager> {
 
 /// Build the commands to benchmark
 fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
+    let command_names = matches.values_of("command-name");
     let command_strings = matches.values_of("command").unwrap();
 
     if let Some(args) = matches.values_of("parameter-scan") {
         let step_size = matches.value_of("parameter-step-size");
-        match get_parameterized_commands(command_strings, args, step_size) {
+        match get_parameterized_commands(command_names, command_strings, args, step_size) {
             Ok(commands) => commands,
             Err(e) => error(&e.to_string()),
         }
     } else if let Some(args) = matches.values_of("parameter-list") {
+        let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
+
         let args: Vec<_> = args.collect();
         let param_names_and_values: Vec<(&str, Vec<String>)> = args
             .chunks_exact(2)
@@ -262,9 +255,19 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
             return Vec::new();
         }
 
+        let mut i = 0;
+        let name_count = command_names.len();
         let mut commands = Vec::with_capacity(param_space_size);
         let mut index = vec![0usize; dimensions.len()];
         'outer: loop {
+            // Sets the command name by index (remainder) if exists.
+            let name = if name_count > 0 {
+                Some(command_names[i % name_count])
+            } else {
+                None
+            };
+            i += 1;
+
             let (command_index, params_indices) = index.split_first().unwrap();
             let parameters = param_names_and_values
                 .iter()
@@ -272,6 +275,7 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
                 .map(|((name, values), i)| (*name, ParameterValue::Text(values[*i].clone())))
                 .collect();
             commands.push(Command::new_parametrized(
+                name,
                 command_list[*command_index],
                 parameters,
             ));
@@ -290,7 +294,18 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
 
         commands
     } else {
-        command_strings.map(Command::new).collect()
+        let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
+        if command_names.len() > command_strings.len() {
+            let err = OptionsError::TooManyCommandNames(command_strings.len());
+            error(&err.to_string());
+        }
+
+        let command_list = command_strings.collect::<Vec<&str>>();
+        let mut commands = Vec::with_capacity(command_list.len());
+        for (i, s) in command_list.iter().enumerate() {
+            commands.push(Command::new(command_names.get(i).copied(), &s));
+        }
+        commands
     }
 }
 
@@ -328,7 +343,7 @@ fn test_build_commands_cross_product() {
     let cmd = |cmd: usize, foo: &str, bar: &str| {
         let expression = ["echo {foo} {bar}", "printf '%s\n' {foo} {bar}"][cmd];
         let params = vec![("foo", pv(foo)), ("bar", pv(bar))];
-        Command::new_parametrized(expression, params)
+        Command::new_parametrized(None, expression, params)
     };
     let expected = vec![
         cmd(0, "a", "z"),
@@ -341,4 +356,45 @@ fn test_build_commands_cross_product() {
         cmd(1, "b", "y"),
     ];
     assert_eq!(result, expected);
+}
+
+#[test]
+fn test_build_parameter_list_commands() {
+    let matches = get_arg_matches(vec![
+        "hyperfine",
+        "echo {foo}",
+        "--parameter-list",
+        "foo",
+        "1,2",
+        "--command-name",
+        "name-{foo}",
+    ]);
+    let commands = build_commands(&matches);
+    assert_eq!(commands.len(), 2);
+    assert_eq!(commands[0].get_name(), "name-1");
+    assert_eq!(commands[1].get_name(), "name-2");
+    assert_eq!(commands[0].get_shell_command(), "echo 1");
+    assert_eq!(commands[1].get_shell_command(), "echo 2");
+}
+
+#[test]
+fn test_build_parameter_range_commands() {
+    let matches = get_arg_matches(vec![
+        "hyperfine",
+        "echo {val}",
+        "--parameter-scan",
+        "val",
+        "1",
+        "2",
+        "--parameter-step-size",
+        "1",
+        "--command-name",
+        "name-{val}",
+    ]);
+    let commands = build_commands(&matches);
+    assert_eq!(commands.len(), 2);
+    assert_eq!(commands[0].get_name(), "name-1");
+    assert_eq!(commands[1].get_name(), "name-2");
+    assert_eq!(commands[0].get_shell_command(), "echo 1");
+    assert_eq!(commands[1].get_shell_command(), "echo 2");
 }
