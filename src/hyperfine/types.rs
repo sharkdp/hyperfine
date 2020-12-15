@@ -58,6 +58,9 @@ impl<'a> ToString for ParameterValue {
 /// A command that should be benchmarked.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Command<'a> {
+    /// The command name (without parameter substitution)
+    name: Option<&'a str>,
+
     /// The command that should be executed (without parameter substitution)
     expression: &'a str,
 
@@ -66,24 +69,42 @@ pub struct Command<'a> {
 }
 
 impl<'a> Command<'a> {
-    pub fn new(expression: &'a str) -> Command<'a> {
+    pub fn new(name: Option<&'a str>, expression: &'a str) -> Command<'a> {
         Command {
+            name,
             expression,
             parameters: Vec::new(),
         }
     }
 
     pub fn new_parametrized(
+        name: Option<&'a str>,
         expression: &'a str,
         parameters: Vec<(&'a str, ParameterValue)>,
     ) -> Command<'a> {
         Command {
+            name,
             expression,
             parameters,
         }
     }
 
+    pub fn get_name(&self) -> String {
+        self.name.map_or_else(
+            || self.get_shell_command(),
+            |name| self.replace_parameters_in(name),
+        )
+    }
+
     pub fn get_shell_command(&self) -> String {
+        self.replace_parameters_in(self.expression)
+    }
+
+    pub fn get_parameters(&self) -> &Vec<(&'a str, ParameterValue)> {
+        &self.parameters
+    }
+
+    fn replace_parameters_in(&self, original: &str) -> String {
         let mut result = String::new();
         let mut replacements = BTreeMap::<String, String>::new();
         for (param_name, param_value) in &self.parameters {
@@ -92,7 +113,7 @@ impl<'a> Command<'a> {
                 param_value.to_string(),
             );
         }
-        let mut remaining = self.expression;
+        let mut remaining = original;
         // Manually replace consecutive occurrences to avoid double-replacing: e.g.,
         //
         //     hyperfine -L foo 'a,{bar}' -L bar 'baz,quux' 'echo {foo} {bar}'
@@ -111,15 +132,12 @@ impl<'a> Command<'a> {
         }
         result
     }
-
-    pub fn get_parameters(&self) -> &Vec<(&'a str, ParameterValue)> {
-        &self.parameters
-    }
 }
 
 #[test]
 fn test_get_shell_command_nonoverlapping() {
     let cmd = Command::new_parametrized(
+        None,
         "echo {foo} {bar}",
         vec![
             ("foo", ParameterValue::Text("{bar} baz".into())),
@@ -127,6 +145,19 @@ fn test_get_shell_command_nonoverlapping() {
         ],
     );
     assert_eq!(cmd.get_shell_command(), "echo {bar} baz quux");
+}
+
+#[test]
+fn test_get_parameterized_command_name() {
+    let cmd = Command::new_parametrized(
+        Some("name-{bar}-{foo}"),
+        "echo {foo} {bar}",
+        vec![
+            ("foo", ParameterValue::Text("baz".into())),
+            ("bar", ParameterValue::Text("quux".into())),
+        ],
+    );
+    assert_eq!(cmd.get_name(), "name-quux-baz");
 }
 
 impl<'a> fmt::Display for Command<'a> {

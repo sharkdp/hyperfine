@@ -83,6 +83,7 @@ fn build_parameterized_commands<'a, T: Numeric>(
     param_min: T,
     param_max: T,
     step: T,
+    command_names: Vec<&'a str>,
     command_strings: Vec<&'a str>,
     param_name: &'a str,
 ) -> Result<Vec<Command<'a>>, ParameterScanError> {
@@ -90,9 +91,20 @@ fn build_parameterized_commands<'a, T: Numeric>(
     let param_range = RangeStep::new(param_min, param_max, step);
     let mut commands = vec![];
 
+    let mut i = 0;
+    let name_count = command_names.len();
     for value in param_range {
         for cmd in &command_strings {
+            // Sets the command name by index (remainder) if exists.
+            let name = if name_count > 0 {
+                Some(command_names[i % name_count])
+            } else {
+                None
+            };
+            i += 1;
+
             commands.push(Command::new_parametrized(
+                name,
                 cmd,
                 vec![(param_name, ParameterValue::Numeric(value.into()))],
             ));
@@ -102,10 +114,12 @@ fn build_parameterized_commands<'a, T: Numeric>(
 }
 
 pub fn get_parameterized_commands<'a>(
+    command_names: Option<Values<'a>>,
     command_strings: Values<'a>,
     mut vals: clap::Values<'a>,
     step: Option<&str>,
 ) -> Result<Vec<Command<'a>>, ParameterScanError> {
+    let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
     let command_strings = command_strings.collect::<Vec<&str>>();
     let param_name = vals.next().unwrap();
     let param_min = vals.next().unwrap();
@@ -121,6 +135,7 @@ pub fn get_parameterized_commands<'a>(
             param_min,
             param_max,
             step,
+            command_names,
             command_strings,
             param_name,
         );
@@ -135,7 +150,14 @@ pub fn get_parameterized_commands<'a>(
     }
 
     let step = Decimal::from_str(step.unwrap())?;
-    build_parameterized_commands(param_min, param_max, step, command_strings, param_name)
+    build_parameterized_commands(
+        param_min,
+        param_max,
+        step,
+        command_names,
+        command_strings,
+        param_name,
+    )
 }
 
 #[test]
@@ -163,8 +185,9 @@ fn test_decimal_range() {
 #[test]
 fn test_get_parameterized_commands_int() {
     let commands =
-        build_parameterized_commands(1i32, 7i32, 3i32, vec!["echo {val}"], "val").unwrap();
+        build_parameterized_commands(1i32, 7i32, 3i32, vec![], vec!["echo {val}"], "val").unwrap();
     assert_eq!(commands.len(), 3);
+    assert_eq!(commands[2].get_name(), "echo 7");
     assert_eq!(commands[2].get_shell_command(), "echo 7");
 }
 
@@ -174,9 +197,54 @@ fn test_get_parameterized_commands_decimal() {
     let param_max = Decimal::from_str("1").unwrap();
     let step = Decimal::from_str("0.33").unwrap();
 
-    let commands =
-        build_parameterized_commands(param_min, param_max, step, vec!["echo {val}"], "val")
-            .unwrap();
+    let commands = build_parameterized_commands(
+        param_min,
+        param_max,
+        step,
+        vec![],
+        vec!["echo {val}"],
+        "val",
+    )
+    .unwrap();
     assert_eq!(commands.len(), 4);
+    assert_eq!(commands[3].get_name(), "echo 0.99");
     assert_eq!(commands[3].get_shell_command(), "echo 0.99");
+}
+
+#[test]
+fn test_get_parameterized_command_names() {
+    let commands = build_parameterized_commands(
+        1i32,
+        3i32,
+        1i32,
+        vec!["name-{val}"],
+        vec!["echo {val}"],
+        "val",
+    )
+    .unwrap();
+    assert_eq!(commands.len(), 3);
+    let command_names = commands
+        .iter()
+        .map(|c| c.get_name())
+        .collect::<Vec<String>>();
+    assert_eq!(command_names, vec!["name-1", "name-2", "name-3"]);
+}
+
+#[test]
+fn test_get_specified_command_names() {
+    let commands = build_parameterized_commands(
+        1i32,
+        3i32,
+        1i32,
+        vec!["name-a", "name-b", "name-c"],
+        vec!["echo {val}"],
+        "val",
+    )
+    .unwrap();
+    assert_eq!(commands.len(), 3);
+    let command_names = commands
+        .iter()
+        .map(|c| c.get_name())
+        .collect::<Vec<String>>();
+    assert_eq!(command_names, vec!["name-a", "name-b", "name-c"]);
 }
