@@ -25,7 +25,9 @@ parser.add_argument(
 parser.add_argument(
     "--titles", help="Comma-separated list of titles for the plot legend"
 )
-parser.add_argument("--imgname", help="Save image to the given filename.")
+parser.add_argument(
+    "-o", "--output", help="Save image to the given filename."
+)
 
 args = parser.parse_args()
 if args.parameter_name is not None:
@@ -101,7 +103,7 @@ if args.log_x:
 if args.titles:
     plt.legend(args.titles.split(","))
 
-if args.imgname:
-    plt.savefig(args.imgname)
+if args.output:
+    plt.savefig(args.output)
 else:
     plt.show()

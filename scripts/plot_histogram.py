@@ -17,7 +17,10 @@ parser.add_argument("--bins", help="Number of bins (default: auto)")
 parser.add_argument(
     "--type", help="Type of histogram (*bar*, barstacked, step, stepfilled)"
 )
-parser.add_argument("--imgname", help="Save image to the given filename.")
+parser.add_argument(
+    "-o", "--output", help="Save image to the given filename."
+)
+
 args = parser.parse_args()
 
 with open(args.file) as f:
@@ -44,7 +47,7 @@ plt.xlabel("Time [s]")
 if args.title:
     plt.title(args.title)
 
-if args.imgname:
-    plt.savefig(args.imgname)
+if args.output:
+    plt.savefig(args.output)
 else:
     plt.show()
