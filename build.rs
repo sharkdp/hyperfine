@@ -28,4 +28,5 @@ fn main() {
     app.gen_completions("hyperfine", Shell::Fish, &outdir);
     app.gen_completions("hyperfine", Shell::Zsh, &outdir);
     app.gen_completions("hyperfine", Shell::PowerShell, &outdir);
+    app.gen_completions("hyperfine", Shell::Elvish, &outdir);
 }
