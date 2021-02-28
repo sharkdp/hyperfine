@@ -17,7 +17,7 @@ impl Exporter for CsvExporter {
 
         {
             let mut headers: Vec<Cow<[u8]>> = [
-                // The list of times cannot be exported to the CSV file - omit it.
+                // The list of times and exit codes cannot be exported to the CSV file - omit them.
                 "command", "mean", "stddev", "median", "user", "system", "min", "max",
             ]
             .iter()
@@ -68,6 +68,7 @@ fn test_csv() {
             5.0,
             6.0,
             vec![7.0, 8.0, 9.0],
+            vec![0, 0, 0],
             {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "one".into());
@@ -85,6 +86,7 @@ fn test_csv() {
             15.0,
             16.5,
             vec![17.0, 18.0, 19.0],
+            vec![0, 0, 0],
             {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "one".into());
