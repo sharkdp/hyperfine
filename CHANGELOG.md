@@ -1,6 +1,7 @@
 # unreleased
 
 - Add command exit code to output if it fails, see #342 (@KaindlJulian)
+- Export command exit code to JSON output, see #371 (@JordiChauzi)
 
 ## Features
 

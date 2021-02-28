@@ -102,6 +102,7 @@ fn test_markdown_format_ms() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
@@ -115,6 +116,7 @@ fn test_markdown_format_ms() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
@@ -150,6 +152,7 @@ fn test_markdown_format_s() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
@@ -163,6 +166,7 @@ fn test_markdown_format_s() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
@@ -197,6 +201,7 @@ fn test_markdown_format_time_unit_s() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
@@ -210,6 +215,7 @@ fn test_markdown_format_time_unit_s() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
@@ -250,6 +256,7 @@ fn test_markdown_format_time_unit_ms() {
         2.0020,              // min
         2.0080,              // max
         vec![2.0, 2.0, 2.0], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
@@ -263,6 +270,7 @@ fn test_markdown_format_time_unit_ms() {
         0.1023,              // min
         0.1080,              // max
         vec![0.1, 0.1, 0.1], // times
+        vec![0, 0, 0],       // exit codes
         BTreeMap::new(),     // parameter
     ));
 
