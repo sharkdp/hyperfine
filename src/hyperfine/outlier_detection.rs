@@ -13,7 +13,7 @@ pub const OUTLIER_THRESHOLD: f64 = 1.4826 * 10.0;
 
 /// Compute modifized Z-scores for a given sample. A (unmodified) Z-score is defined by
 /// `(x_i - x_mean)/x_stddev` whereas the modified Z-score is defined by `(x_i - x_median)/MAD`
-/// where MAD is the median average deviation.
+/// where MAD is the median absolute deviation.
 ///
 /// References:
 /// - <https://en.wikipedia.org/wiki/Median_absolute_deviation>
