@@ -219,7 +219,7 @@ pub fn run_benchmark(
     if options.output_style != OutputStyleOption::Disabled {
         println!(
             "{}{}: {}",
-            "Benchmark #".bold(),
+            "Benchmark ".bold(),
             (num + 1).to_string().bold(),
             &command_name
         );
