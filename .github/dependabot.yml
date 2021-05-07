@@ -6,13 +6,3 @@ updates:
     interval: monthly
     time: "04:00"
     timezone: Europe/Berlin
-  ignore:
-  - dependency-name: indicatif
-    versions:
-    - "< 0.11, >= 0.10.a"
-  - dependency-name: rand
-    versions:
-    - 0.8.3
-  - dependency-name: serde
-    versions:
-    - 1.0.123
