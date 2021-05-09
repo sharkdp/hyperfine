@@ -99,8 +99,8 @@ fn test_asciidoc_table_row() {
             0.10745223440000001,
             0.10697327940000001,
         ],
-        vec![0, 0, 0],   // exit codes
-        BTreeMap::new(), // param
+        vec![Some(0), Some(0), Some(0)], // exit codes
+        BTreeMap::new(),                 // param
     );
 
     let expms = format!(
@@ -152,8 +152,8 @@ fn test_asciidoc_table_row_command_escape() {
             0.10745223440000001,
             0.10697327940000001,
         ],
-        vec![0, 0, 0],   // exit codes
-        BTreeMap::new(), // param
+        vec![Some(0), Some(0), Some(0)], // exit codes
+        BTreeMap::new(),                 // param
     );
     let exps = format!(
         "| `sleep 1\\|`\n\
@@ -187,7 +187,7 @@ fn test_asciidoc() {
             5.0,
             6.0,
             vec![7.0, 8.0, 9.0],
-            vec![0, 0, 0],
+            vec![Some(0), Some(0), Some(0)],
             {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "1".into());
@@ -205,7 +205,7 @@ fn test_asciidoc() {
             15.0,
             16.0,
             vec![17.0, 18.0, 19.0],
-            vec![0, 0, 0],
+            vec![Some(0), Some(0), Some(0)],
             {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "1".into());

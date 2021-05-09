@@ -202,23 +202,19 @@ fn run_cleanup_command(
 }
 
 #[cfg(unix)]
-fn extract_exit_code(status: ExitStatus) -> i32 {
+fn extract_exit_code(status: ExitStatus) -> Option<i32> {
     use std::os::unix::process::ExitStatusExt;
 
     /* From the ExitStatus::code documentation:
        "On Unix, this will return None if the process was terminated by a signal."
        In that case, ExitStatusExt::signal should never return None.
     */
-    status.code().unwrap_or_else(|| status.signal().unwrap())
+    status.code().or_else(|| status.signal())
 }
 
 #[cfg(not(unix))]
-fn extract_exit_code(status: ExitStatus) -> i32 {
-    /* From the ExitStatus::code documentation:
-       "On Unix, this will return None if the process was terminated by a signal."
-       On the other configurations, ExitStatus::code should never return None.
-    */
-    status.code().unwrap()
+fn extract_exit_code(status: ExitStatus) -> Option<i32> {
+    status.code()
 }
 
 /// Run the benchmark for a single shell command
@@ -248,7 +244,7 @@ pub fn run_benchmark(
     let mut times_real: Vec<Second> = vec![];
     let mut times_user: Vec<Second> = vec![];
     let mut times_system: Vec<Second> = vec![];
-    let mut exit_codes: Vec<i32> = vec![];
+    let mut exit_codes: Vec<Option<i32>> = vec![];
     let mut all_succeeded = true;
 
     // Run init command
