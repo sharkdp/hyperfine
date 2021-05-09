@@ -269,7 +269,7 @@ pub struct BenchmarkResult {
     pub times: Option<Vec<Second>>,
 
     /// All run exit codes
-    pub exit_codes: Vec<i32>,
+    pub exit_codes: Vec<Option<i32>>,
 
     /// Any parameter values used
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -288,7 +288,7 @@ impl BenchmarkResult {
         min: Second,
         max: Second,
         times: Vec<Second>,
-        exit_codes: Vec<i32>,
+        exit_codes: Vec<Option<i32>>,
         parameters: BTreeMap<String, String>,
     ) -> Self {
         BenchmarkResult {
