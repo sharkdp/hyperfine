@@ -202,7 +202,7 @@ Hyperfine can be installed via [cargo](https://doc.rust-lang.org/cargo/):
 cargo install hyperfine
 ```
 
-Make sure that you use Rust 1.43 or higher.
+Make sure that you use Rust 1.46 or higher.
 
 ### From binaries (Linux, macOS, Windows)
 
