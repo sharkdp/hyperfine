@@ -209,7 +209,12 @@ fn extract_exit_code(status: ExitStatus) -> Option<i32> {
        "On Unix, this will return None if the process was terminated by a signal."
        In that case, ExitStatusExt::signal should never return None.
     */
-    status.code().or_else(|| status.signal())
+    status.code().or_else(||
+        /* To differentiate between "normal" exit codes and signals, we are using
+           something similar to bash exit codes (https://tldp.org/LDP/abs/html/exitcodes.html)
+           by adding 128 to a signal integer value.
+         */
+        status.signal().map(|s| 128 + s))
 }
 
 #[cfg(not(unix))]
