@@ -1,15 +1,15 @@
 # unreleased
 
+## Features
+
 - Add command exit code to output if it fails, see #342 (@KaindlJulian)
 - Export command exit code to JSON output, see #371 (@JordiChauzi)
-
-## Features
 
 ## Changes
 
 - When `--export-*` commands are used, result files are created before benchmark execution
-  to fail early in case of, e.g., wrong permissions. See #306 (@s1ck). 
-- When `--export-*` options are used, result files are written after each individual 
+  to fail early in case of, e.g., wrong permissions. See #306 (@s1ck).
+- When `--export-*` options are used, result files are written after each individual
   benchmark command instead of writing after all benchmarks have finished. See #306 (@s1ck).
 
 ## Bugfixes
@@ -211,7 +211,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 
 ## Other
 
-- Binary releases for Windows are now available, see #87 
+- Binary releases for Windows are now available, see #87
 
 # v1.2.0
 
@@ -246,7 +246,7 @@ for reviewing pull requests and for giving very valuable feedback.
 # v0.4.0
 
 - New `--style` option to disable output coloring and interactive CLI features, see #24 (@stevepentland)
-- Statistical outlier detection, see #23 #18 
+- Statistical outlier detection, see #23 #18
 
 # v0.3.0
 
