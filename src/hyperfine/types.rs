@@ -1,7 +1,9 @@
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 /// This module contains common internal types.
 use serde::*;
 use std::collections::BTreeMap;
+use std::convert::TryFrom;
 use std::fmt;
 
 use crate::hyperfine::units::{Second, Unit};
@@ -37,6 +39,20 @@ impl Into<NumericType> for i32 {
 impl Into<NumericType> for Decimal {
     fn into(self) -> NumericType {
         NumericType::Decimal(self)
+    }
+}
+
+impl TryFrom<NumericType> for usize {
+    type Error = ();
+
+    fn try_from(numeric: NumericType) -> Result<Self, Self::Error> {
+        match numeric {
+            NumericType::Int(i) => usize::try_from(i).map_err(|_| ()),
+            NumericType::Decimal(d) => match d.to_u64() {
+                Some(u) => usize::try_from(u).map_err(|_| ()),
+                None => Err(()),
+            },
+        }
     }
 }
 

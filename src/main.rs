@@ -255,17 +255,24 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
             return Vec::new();
         }
 
+        // `--command-name` should appear exactly once or same count with parameters.
+        let command_name_count = command_names.len();
+        if command_name_count > 1 && command_name_count != param_space_size {
+            let err = OptionsError::DifferentCommandNameCountWithParameters(
+                command_name_count,
+                param_space_size,
+            );
+            error(&err.to_string());
+        }
+
         let mut i = 0;
-        let name_count = command_names.len();
         let mut commands = Vec::with_capacity(param_space_size);
         let mut index = vec![0usize; dimensions.len()];
         'outer: loop {
-            // Sets the command name by index (remainder) if exists.
-            let name = if name_count > 0 {
-                Some(command_names[i % name_count])
-            } else {
-                None
-            };
+            let name = command_names
+                .get(i)
+                .or_else(|| command_names.get(0))
+                .map(|s| *s);
             i += 1;
 
             let (command_index, params_indices) = index.split_first().unwrap();
