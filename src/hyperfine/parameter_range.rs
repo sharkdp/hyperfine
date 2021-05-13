@@ -2,6 +2,7 @@ use crate::hyperfine::error::ParameterScanError;
 use crate::hyperfine::types::{Command, NumericType, ParameterValue};
 use clap::Values;
 use rust_decimal::Decimal;
+use std::convert::TryInto;
 use std::ops::{Add, AddAssign, Div, Sub};
 use std::str::FromStr;
 
@@ -45,6 +46,22 @@ impl<T: Numeric> RangeStep<T> {
             step,
         }
     }
+
+    fn validate(&self) -> Result<(), ParameterScanError> {
+        if self.end < self.state {
+            return Err(ParameterScanError::EmptyRange);
+        }
+
+        if self.step == T::from(0) {
+            return Err(ParameterScanError::ZeroStep);
+        }
+
+        const MAX_PARAMETERS: usize = 100_000;
+        match self.size_hint() {
+            (_, Some(size)) if size <= MAX_PARAMETERS => Ok(()),
+            _ => Err(ParameterScanError::TooLarge),
+        }
+    }
 }
 
 impl<T: Numeric> Iterator for RangeStep<T> {
@@ -59,24 +76,18 @@ impl<T: Numeric> Iterator for RangeStep<T> {
 
         Some(return_val)
     }
-}
 
-fn validate_params<T: Numeric>(start: T, end: T, step: T) -> Result<(), ParameterScanError> {
-    if end < start {
-        return Err(ParameterScanError::EmptyRange);
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.step == T::from(0) {
+            return (usize::MAX, None);
+        }
+
+        let steps = (self.end - self.state + T::from(1)) / self.step;
+        steps
+            .into()
+            .try_into()
+            .map_or((usize::MAX, None), |u| (u, Some(u)))
     }
-
-    if step == T::from(0) {
-        return Err(ParameterScanError::ZeroStep);
-    }
-
-    const MAX_PARAMETERS: i32 = 100_000;
-    let steps = (end - start + T::from(1)) / step;
-    if steps > T::from(MAX_PARAMETERS) {
-        return Err(ParameterScanError::TooLarge);
-    }
-
-    Ok(())
 }
 
 fn build_parameterized_commands<'a, T: Numeric>(
@@ -87,27 +98,33 @@ fn build_parameterized_commands<'a, T: Numeric>(
     command_strings: Vec<&'a str>,
     param_name: &'a str,
 ) -> Result<Vec<Command<'a>>, ParameterScanError> {
-    validate_params(param_min, param_max, step)?;
     let param_range = RangeStep::new(param_min, param_max, step);
-    let mut commands = vec![];
+    param_range.validate()?;
+    let param_count = param_range.size_hint().1.unwrap();
+    let command_name_count = command_names.len();
+
+    // `--command-name` should appear exactly once or same count with parameters.
+    if command_name_count > 1 && command_name_count != param_count {
+        return Err(ParameterScanError::DifferentCommandNameCountWithParameters(
+            command_name_count,
+            param_count,
+        ));
+    }
 
     let mut i = 0;
-    let name_count = command_names.len();
+    let mut commands = vec![];
     for value in param_range {
         for cmd in &command_strings {
-            // Sets the command name by index (remainder) if exists.
-            let name = if name_count > 0 {
-                Some(command_names[i % name_count])
-            } else {
-                None
-            };
-            i += 1;
-
+            let name = command_names
+                .get(i)
+                .or_else(|| command_names.get(0))
+                .map(|s| *s);
             commands.push(Command::new_parametrized(
                 name,
                 cmd,
                 vec![(param_name, ParameterValue::Numeric(value.into()))],
             ));
+            i += 1;
         }
     }
     Ok(commands)
@@ -183,6 +200,37 @@ fn test_decimal_range() {
 }
 
 #[test]
+fn test_range_step_validate() {
+    let range_step = RangeStep::new(0, 10, 3);
+    assert!(range_step.validate().is_ok());
+
+    let range_step = RangeStep::new(
+        Decimal::from(0),
+        Decimal::from(1),
+        Decimal::from_str("0.1").unwrap(),
+    );
+    assert!(range_step.validate().is_ok());
+
+    let range_step = RangeStep::new(11, 10, 1);
+    assert_eq!(
+        format!("{}", range_step.validate().unwrap_err()),
+        "Empty parameter range"
+    );
+
+    let range_step = RangeStep::new(0, 10, 0);
+    assert_eq!(
+        format!("{}", range_step.validate().unwrap_err()),
+        "Zero is not a valid parameter step"
+    );
+
+    let range_step = RangeStep::new(0, 100_001, 1);
+    assert_eq!(
+        format!("{}", range_step.validate().unwrap_err()),
+        "Parameter range is too large"
+    );
+}
+
+#[test]
 fn test_get_parameterized_commands_int() {
     let commands =
         build_parameterized_commands(1i32, 7i32, 3i32, vec![], vec!["echo {val}"], "val").unwrap();
@@ -247,4 +295,20 @@ fn test_get_specified_command_names() {
         .map(|c| c.get_name())
         .collect::<Vec<String>>();
     assert_eq!(command_names, vec!["name-a", "name-b", "name-c"]);
+}
+
+#[test]
+fn test_different_command_name_count_with_parameters() {
+    let result = build_parameterized_commands(
+        1i32,
+        3i32,
+        1i32,
+        vec!["name-1", "name-2"],
+        vec!["echo {val}"],
+        "val",
+    );
+    assert_eq!(
+        format!("{}", result.unwrap_err()),
+        "Current --command-name count is 2: expected 3 as parameters"
+    );
 }
