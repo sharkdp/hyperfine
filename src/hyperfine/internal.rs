@@ -29,7 +29,7 @@ pub fn get_progress_bar(length: u64, msg: &str, option: OutputStyleOption) -> Pr
         OutputStyleOption::Basic | OutputStyleOption::Color => ProgressBar::hidden(),
         _ => ProgressBar::new(length),
     };
-    progress_bar.set_style(progressbar_style.clone());
+    progress_bar.set_style(progressbar_style);
     progress_bar.enable_steady_tick(TICK_SETTINGS.1);
     progress_bar.set_message(msg.to_owned());
 
@@ -64,9 +64,9 @@ fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
     l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal)
 }
 
-pub fn compute_relative_speed<'a>(
-    results: &'a [BenchmarkResult],
-) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
+pub fn compute_relative_speed (
+    results: & [BenchmarkResult],
+) -> Option<Vec<BenchmarkResultWithRelativeSpeed>> {
     let fastest: &BenchmarkResult = results
         .iter()
         .min_by(|&l, &r| compare_mean_time(l, r))
@@ -188,7 +188,7 @@ fn test_compute_relative_speed_for_zero_times() {
     assert!(annotated_results.is_none());
 }
 
-pub fn tokenize<'a>(values: &'a str) -> Vec<String> {
+pub fn tokenize(values: &str) -> Vec<String> {
     let mut tokens = vec![];
     let mut buf = String::new();
 

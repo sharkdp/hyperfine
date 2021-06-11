@@ -51,10 +51,10 @@ fn get_cpu_times() -> CPUTimes {
     const MICROSEC_PER_SEC: i64 = 1000 * 1000;
 
     CPUTimes {
-        user_usec: i64::from(result.ru_utime.tv_sec) * MICROSEC_PER_SEC
-            + i64::from(result.ru_utime.tv_usec),
-        system_usec: i64::from(result.ru_stime.tv_sec) * MICROSEC_PER_SEC
-            + i64::from(result.ru_stime.tv_usec),
+        user_usec: result.ru_utime.tv_sec * MICROSEC_PER_SEC
+            + result.ru_utime.tv_usec,
+        system_usec: result.ru_stime.tv_sec * MICROSEC_PER_SEC
+            + result.ru_stime.tv_usec,
     }
 }
 
