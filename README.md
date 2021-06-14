@@ -125,6 +125,11 @@ wget https://github.com/sharkdp/hyperfine/releases/download/v1.11.0/hyperfine_1.
 sudo dpkg -i hyperfine_1.11.0_amd64.deb
 ```
 
+Or you can install and manage hyperfine using [Pacstall](https://github.com/pacstall/pacstall)
+```
+sudo pacstall -I hyperfine-bin
+```
+
 ### On Fedora
 
 On Fedora, hyperfine can be installed from the official repositories:
