@@ -35,7 +35,7 @@ default-features = false
 features = ["suggestions", "color", "wrap_help"]
 
 [dev-dependencies]
-approx = "0.4"
+approx = "0.5"
 
 [build-dependencies]
 clap = "2"
