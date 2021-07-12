@@ -385,14 +385,14 @@ pub fn run_benchmark(
     let system_mean = mean(&times_system);
 
     // Formatting and console output
-    let (mean_str, unit_mean) = format_duration_unit(t_mean, options.time_unit);
-    let stddev_str = format_duration(t_stddev, Some(unit_mean));
-    let min_str = format_duration(t_min, Some(unit_mean));
-    let max_str = format_duration(t_max, Some(unit_mean));
+    let (mean_str, time_unit) = format_duration_unit(t_mean, options.time_unit);
+    let stddev_str = format_duration(t_stddev, Some(time_unit));
+    let min_str = format_duration(t_min, Some(time_unit));
+    let max_str = format_duration(t_max, Some(time_unit));
     let num_str = format!("{} runs", t_num);
 
-    let (user_str, user_unit) = format_duration_unit(user_mean, None);
-    let system_str = format_duration(system_mean, Some(user_unit));
+    let user_str = format_duration(user_mean, Some(time_unit));
+    let system_str = format_duration(system_mean, Some(time_unit));
 
     if options.output_style != OutputStyleOption::Disabled {
         println!(
