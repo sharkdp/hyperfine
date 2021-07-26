@@ -14,6 +14,8 @@
 
 ## Bugfixes
 
+- User and system time should be in consistent time units, see #408 and #409 (@film42)
+
 ## Other
 
 ## Packaging
