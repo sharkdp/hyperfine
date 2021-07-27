@@ -12,7 +12,7 @@ pub enum ParameterScanError {
     TooLarge,
     ZeroStep,
     StepRequired,
-    DifferentCommandNameCountWithParameters(usize, usize),
+    UnexpectedCommandNameCount(usize, usize),
 }
 
 impl From<num::ParseIntError> for ParameterScanError {
@@ -41,10 +41,10 @@ impl fmt::Display for ParameterScanError {
                  floating point numbers. The step size can be specified \
                  with the '--parameter-step-size' parameter"
             ),
-            ParameterScanError::DifferentCommandNameCountWithParameters(real, expected) => {
+            ParameterScanError::UnexpectedCommandNameCount(real, expected) => {
                 write!(
                     f,
-                    "Current --command-name count is {}: expected {} as parameters",
+                    "'--command-name' has been specified {} times. It has to appear exactly once, or exactly {} times (number of benchmarks)",
                     real, expected
                 )
             }
@@ -59,7 +59,7 @@ pub enum OptionsError<'a> {
     RunsBelowTwo,
     EmptyRunsRange,
     TooManyCommandNames(usize),
-    DifferentCommandNameCountWithParameters(usize, usize),
+    UnexpectedCommandNameCount(usize, usize),
     NumericParsingError(&'a str, ParseIntError),
 }
 
@@ -71,10 +71,10 @@ impl<'a> fmt::Display for OptionsError<'a> {
             OptionsError::TooManyCommandNames(n) => {
                 write!(f, "Too many --command-name options: expected {} at most", n)
             }
-            OptionsError::DifferentCommandNameCountWithParameters(real, expected) => {
+            OptionsError::UnexpectedCommandNameCount(real, expected) => {
                 write!(
                     f,
-                    "Current --command-name count is {}: expected {} as parameters",
+                    "'--command-name' has been specified {} times. It has to appear exactly once, or exactly {} times (number of benchmarks)",
                     real, expected
                 )
             }
