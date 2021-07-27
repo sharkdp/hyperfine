@@ -255,13 +255,12 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
             return Vec::new();
         }
 
-        // `--command-name` should appear exactly once or same count with parameters.
+        // `--command-name` should appear exactly once or exactly B times,
+        // where B is the total number of benchmarks.
         let command_name_count = command_names.len();
         if command_name_count > 1 && command_name_count != param_space_size {
-            let err = OptionsError::DifferentCommandNameCountWithParameters(
-                command_name_count,
-                param_space_size,
-            );
+            let err =
+                OptionsError::UnexpectedCommandNameCount(command_name_count, param_space_size);
             error(&err.to_string());
         }
 
