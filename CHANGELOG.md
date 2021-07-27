@@ -12,6 +12,7 @@
   to fail early in case of, e.g., wrong permissions. See #306 (@s1ck).
 - When `--export-*` options are used, result files are written after each individual
   benchmark command instead of writing after all benchmarks have finished. See #306 (@s1ck).
+- Reduce number of shell startup time measurements from 200 to 50, generally speeding up benchmarks. See #378
 
 ## Bugfixes
 
