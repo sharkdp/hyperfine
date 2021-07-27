@@ -98,7 +98,7 @@ pub fn mean_shell_spawning_time(
     style: OutputStyleOption,
     show_output: bool,
 ) -> io::Result<TimingResult> {
-    const COUNT: u64 = 200;
+    const COUNT: u64 = 50;
     let progress_bar = if style != OutputStyleOption::Disabled {
         Some(get_progress_bar(
             COUNT,
