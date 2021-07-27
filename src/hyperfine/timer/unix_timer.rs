@@ -82,8 +82,8 @@ fn test_cpu_time_interval() {
     };
 
     let t_zero = cpu_time_interval(&t_a, &t_a);
-    assert_eq!(0.0, t_zero.user);
-    assert_eq!(0.0, t_zero.system);
+    assert!(t_zero.user.abs() < f64::EPSILON);
+    assert!(t_zero.system.abs() < f64::EPSILON);
 
     let t_ab = cpu_time_interval(&t_a, &t_b);
     assert_relative_eq!(0.007655, t_ab.user);

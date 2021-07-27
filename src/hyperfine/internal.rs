@@ -136,11 +136,15 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
 
 #[test]
 fn test_max() {
-    assert_eq!(1.0, max(&[1.0]));
-    assert_eq!(-1.0, max(&[-1.0]));
-    assert_eq!(-1.0, max(&[-2.0, -1.0]));
-    assert_eq!(1.0, max(&[-1.0, 1.0]));
-    assert_eq!(1.0, max(&[-1.0, 1.0, 0.0]));
+    let assert_float_eq = |a, b| {
+        assert!((a - b) < f64::EPSILON);
+    };
+
+    assert_float_eq(1.0, max(&[1.0]));
+    assert_float_eq(-1.0, max(&[-1.0]));
+    assert_float_eq(-1.0, max(&[-2.0, -1.0]));
+    assert_float_eq(1.0, max(&[-1.0, 1.0]));
+    assert_float_eq(1.0, max(&[-1.0, 1.0, 0.0]));
 }
 
 #[cfg(test)]
