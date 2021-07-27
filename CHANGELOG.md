@@ -2,6 +2,7 @@
 
 ## Features
 
+- `--command-name` can now take parameter names from `--parameter-*` options, see #351 and #391 (@silathdiir)
 - Add command exit code to output if it fails, see #342 (@KaindlJulian)
 - Export command exit code to JSON output, see #371 (@JordiChauzi)
 
