@@ -8,12 +8,6 @@ use rust_decimal::Decimal;
 
 use crate::hyperfine::units::Second;
 
-#[cfg(not(windows))]
-pub const DEFAULT_SHELL: &str = "sh";
-
-#[cfg(windows)]
-pub const DEFAULT_SHELL: &str = "cmd.exe";
-
 #[derive(Debug, Clone, Serialize, Copy, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum NumericType {

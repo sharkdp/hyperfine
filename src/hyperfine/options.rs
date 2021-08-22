@@ -1,7 +1,10 @@
-use super::{
-    types::DEFAULT_SHELL,
-    units::{Second, Unit},
-};
+use super::units::{Second, Unit};
+
+#[cfg(not(windows))]
+pub const DEFAULT_SHELL: &str = "sh";
+
+#[cfg(windows)]
+pub const DEFAULT_SHELL: &str = "cmd.exe";
 
 /// Action to take when an executed command fails.
 #[derive(Debug, Clone, Copy, PartialEq)]
