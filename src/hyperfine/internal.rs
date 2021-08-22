@@ -64,8 +64,8 @@ fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
     l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal)
 }
 
-pub fn compute_relative_speed (
-    results: & [BenchmarkResult],
+pub fn compute_relative_speed(
+    results: &[BenchmarkResult],
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed>> {
     let fastest: &BenchmarkResult = results
         .iter()
