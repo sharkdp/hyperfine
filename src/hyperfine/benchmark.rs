@@ -8,13 +8,12 @@ use statistical::{mean, median, standard_deviation};
 use crate::hyperfine::command::Command;
 use crate::hyperfine::format::{format_duration, format_duration_unit};
 use crate::hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
+use crate::hyperfine::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use crate::hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::hyperfine::shell::execute_and_time;
 use crate::hyperfine::timer::wallclocktimer::WallClockTimer;
 use crate::hyperfine::timer::{TimerStart, TimerStop};
-use crate::hyperfine::types::{
-    BenchmarkResult, CmdFailureAction, HyperfineOptions, OutputStyleOption,
-};
+use crate::hyperfine::types::BenchmarkResult;
 use crate::hyperfine::units::Second;
 use crate::hyperfine::warnings::Warnings;
 
