@@ -1,5 +1,6 @@
 pub mod app;
 pub mod benchmark;
+pub mod command;
 pub mod error;
 pub mod export;
 pub mod format;

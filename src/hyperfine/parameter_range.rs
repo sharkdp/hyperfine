@@ -1,10 +1,13 @@
-use crate::hyperfine::error::ParameterScanError;
-use crate::hyperfine::types::{Command, NumericType, ParameterValue};
-use clap::Values;
-use rust_decimal::Decimal;
 use std::convert::TryInto;
 use std::ops::{Add, AddAssign, Div, Sub};
 use std::str::FromStr;
+
+use clap::Values;
+use rust_decimal::Decimal;
+
+use crate::hyperfine::command::Command;
+use crate::hyperfine::error::ParameterScanError;
+use crate::hyperfine::types::{NumericType, ParameterValue};
 
 trait Numeric:
     Add<Output = Self>

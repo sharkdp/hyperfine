@@ -11,12 +11,13 @@ mod hyperfine;
 
 use crate::hyperfine::app::get_arg_matches;
 use crate::hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
+use crate::hyperfine::command::Command;
 use crate::hyperfine::error::OptionsError;
 use crate::hyperfine::export::{ExportManager, ExportType};
 use crate::hyperfine::internal::{tokenize, write_benchmark_comparison};
 use crate::hyperfine::parameter_range::get_parameterized_commands;
 use crate::hyperfine::types::{
-    CmdFailureAction, Command, HyperfineOptions, OutputStyleOption, ParameterValue,
+    CmdFailureAction, HyperfineOptions, OutputStyleOption, ParameterValue,
 };
 use crate::hyperfine::units::Unit;
 
