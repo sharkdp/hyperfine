@@ -118,8 +118,7 @@ fn build_parameterized_commands<'a, T: Numeric>(
         for cmd in &command_strings {
             let name = command_names
                 .get(i)
-                .or_else(|| command_names.get(0))
-                .map(|s| *s);
+                .or_else(|| command_names.get(0)).copied();
             commands.push(Command::new_parametrized(
                 name,
                 cmd,
