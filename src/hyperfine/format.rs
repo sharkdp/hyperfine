@@ -3,9 +3,8 @@ use crate::hyperfine::units::{Second, Unit};
 /// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
 /// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
 pub fn format_duration(duration: Second, unit: Option<Unit>) -> String {
-    match format_duration_unit(duration, unit) {
-        (duration_fmt, _) => duration_fmt,
-    }
+    let (duration_fmt, _) = format_duration_unit(duration, unit);
+    duration_fmt
 }
 
 /// Like `format_duration`, but returns the target unit as well.

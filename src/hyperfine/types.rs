@@ -30,15 +30,15 @@ impl fmt::Display for NumericType {
     }
 }
 
-impl Into<NumericType> for i32 {
-    fn into(self) -> NumericType {
-        NumericType::Int(self)
+impl From<i32> for NumericType {
+    fn from(x: i32) -> NumericType {
+        NumericType::Int(x)
     }
 }
 
-impl Into<NumericType> for Decimal {
-    fn into(self) -> NumericType {
-        NumericType::Decimal(self)
+impl From<Decimal> for NumericType {
+    fn from(x: Decimal) -> NumericType {
+        NumericType::Decimal(x)
     }
 }
 
@@ -325,6 +325,7 @@ pub struct BenchmarkResult {
 
 impl BenchmarkResult {
     /// Create a new entry with the given values.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         command: String,
         mean: Second,
