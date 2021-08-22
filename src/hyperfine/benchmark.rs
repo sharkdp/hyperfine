@@ -343,7 +343,9 @@ pub fn run_benchmark(
             format!("Current estimate: {}", mean.to_string().green())
         };
 
-        progress_bar.as_ref().map(|bar| bar.set_message(msg.to_owned()));
+        progress_bar
+            .as_ref()
+            .map(|bar| bar.set_message(msg.to_owned()));
 
         let (res, status) = time_shell_command(
             &options.shell,
