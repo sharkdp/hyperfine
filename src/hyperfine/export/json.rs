@@ -1,5 +1,5 @@
 use super::Exporter;
-use crate::hyperfine::types::BenchmarkResult;
+use crate::hyperfine::benchmark_result::BenchmarkResult;
 use crate::hyperfine::units::Unit;
 
 use std::io::{Error, ErrorKind, Result};

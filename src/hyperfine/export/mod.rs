@@ -11,7 +11,7 @@ use self::markdown::MarkdownExporter;
 use std::fs::{File, OpenOptions};
 use std::io::{Result, Write};
 
-use crate::hyperfine::types::BenchmarkResult;
+use crate::hyperfine::benchmark_result::BenchmarkResult;
 use crate::hyperfine::units::Unit;
 
 /// The desired form of exporter to use for a given file.
