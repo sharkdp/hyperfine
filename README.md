@@ -226,8 +226,7 @@ The name *hyperfine* was chosen in reference to the hyperfine levels of caesium 
 — the second.
 
 ## License
-Copyright (c) 2018-2020 The hyperfine developers
 
-`hyperfine` is distributed under the terms of both the MIT License and the Apache License 2.0.
+`hyperfine` is dual-licensed under the terms of the MIT License and the Apache License 2.0.
 
-See the [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) files for license details.
+See the [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) files for details.
