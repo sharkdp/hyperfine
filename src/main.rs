@@ -78,7 +78,7 @@ fn main() {
     };
 
     let res = match options {
-        Ok(ref opts) => run(&commands, &opts, &export_manager),
+        Ok(ref opts) => run(&commands, opts, &export_manager),
         Err(ref e) => error(&e.to_string()),
     };
 
@@ -270,8 +270,7 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
         'outer: loop {
             let name = command_names
                 .get(i)
-                .or_else(|| command_names.get(0))
-                .map(|s| *s);
+                .or_else(|| command_names.get(0)).copied();
             i += 1;
 
             let (command_index, params_indices) = index.split_first().unwrap();
@@ -309,7 +308,7 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
         let command_list = command_strings.collect::<Vec<&str>>();
         let mut commands = Vec::with_capacity(command_list.len());
         for (i, s) in command_list.iter().enumerate() {
-            commands.push(Command::new(command_names.get(i).copied(), &s));
+            commands.push(Command::new(command_names.get(i).copied(), s));
         }
         commands
     }

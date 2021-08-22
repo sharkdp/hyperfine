@@ -138,7 +138,7 @@ impl<'a> Command<'a> {
         'outer: while let Some(head) = remaining.chars().next() {
             for (k, v) in &replacements {
                 if remaining.starts_with(k.as_str()) {
-                    result.push_str(&v);
+                    result.push_str(v);
                     remaining = &remaining[k.len()..];
                     continue 'outer;
                 }

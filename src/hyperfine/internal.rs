@@ -105,7 +105,7 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
         return;
     }
 
-    if let Some(mut annotated_results) = compute_relative_speed(&results) {
+    if let Some(mut annotated_results) = compute_relative_speed(results) {
         annotated_results.sort_by(|l, r| compare_mean_time(l.result, r.result));
 
         let fastest = &annotated_results[0];
