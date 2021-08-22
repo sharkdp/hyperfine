@@ -42,6 +42,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
+        args: --locked
 
   build:
     name: ${{ matrix.job.os }} (${{ matrix.job.target }})
