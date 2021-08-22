@@ -97,7 +97,8 @@ fn build_hyperfine_options<'a>(
         matches
             .value_of(param)
             .map(|n| {
-                u64::from_str_radix(n, 10).map_err(|e| OptionsError::NumericParsingError(param, e))
+                n.parse::<u64>()
+                    .map_err(|e| OptionsError::NumericParsingError(param, e))
             })
             .transpose()
     };
@@ -270,7 +271,8 @@ fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
         'outer: loop {
             let name = command_names
                 .get(i)
-                .or_else(|| command_names.get(0)).copied();
+                .or_else(|| command_names.get(0))
+                .copied();
             i += 1;
 
             let (command_index, params_indices) = index.split_first().unwrap();

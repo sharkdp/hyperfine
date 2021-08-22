@@ -50,6 +50,7 @@ fn get_cpu_times() -> CPUTimes {
 
     const MICROSEC_PER_SEC: i64 = 1000 * 1000;
 
+    #[allow(clippy::useless_conversion)]
     CPUTimes {
         user_usec: i64::from(result.ru_utime.tv_sec) * MICROSEC_PER_SEC
             + i64::from(result.ru_utime.tv_usec),
