@@ -1,7 +1,8 @@
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::hyperfine::types::{BenchmarkResult, OutputStyleOption};
+use crate::hyperfine::options::OutputStyleOption;
+use crate::hyperfine::types::BenchmarkResult;
 use crate::hyperfine::units::{Scalar, Second};
 
 use std::cmp::Ordering;

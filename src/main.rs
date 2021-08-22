@@ -15,10 +15,9 @@ use crate::hyperfine::command::Command;
 use crate::hyperfine::error::OptionsError;
 use crate::hyperfine::export::{ExportManager, ExportType};
 use crate::hyperfine::internal::{tokenize, write_benchmark_comparison};
+use crate::hyperfine::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use crate::hyperfine::parameter_range::get_parameterized_commands;
-use crate::hyperfine::types::{
-    CmdFailureAction, HyperfineOptions, OutputStyleOption, ParameterValue,
-};
+use crate::hyperfine::types::ParameterValue;
 use crate::hyperfine::units::Unit;
 
 /// Print error message to stderr and terminate
