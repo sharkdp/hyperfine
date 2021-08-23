@@ -17,7 +17,7 @@ fn hyperfine() -> assert_cmd::Command {
 fn hyperfine_runs_successfully() {
     hyperfine()
         .arg("--runs=2")
-        .arg("echo 'dummy benchmark'")
+        .arg("echo dummy benchmark")
         .assert()
         .success();
 }
@@ -26,7 +26,7 @@ fn hyperfine_runs_successfully() {
 fn at_least_two_runs_are_required() {
     hyperfine()
         .arg("--runs=1")
-        .arg("echo 'dummy benchmark'")
+        .arg("echo dummy benchmark")
         .assert()
         .failure();
 }
@@ -59,7 +59,7 @@ impl ExecutionOrderTest {
 
     fn get_command(&self, output: &str) -> String {
         format!(
-            "echo '{output}' >> {path}",
+            "echo {output} >> {path}",
             output = output,
             path = self.logfile_path.to_string_lossy()
         )
@@ -82,6 +82,12 @@ impl ExecutionOrderTest {
 
     fn expect_output(&mut self, output: &str) -> &mut Self {
         self.expected_content.push_str(output);
+
+        #[cfg(windows)]
+        {
+            self.expected_content.push_str(" \r");
+        }
+
         self.expected_content.push('\n');
         self
     }
