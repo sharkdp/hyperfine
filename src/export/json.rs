@@ -1,11 +1,11 @@
-use super::Exporter;
-use crate::benchmark_result::BenchmarkResult;
-use crate::units::Unit;
-
 use std::io::{Error, ErrorKind, Result};
 
 use serde::*;
 use serde_json::to_vec_pretty;
+
+use super::Exporter;
+use crate::benchmark_result::BenchmarkResult;
+use crate::units::Unit;
 
 #[derive(Serialize, Debug)]
 struct HyperfineSummary<'a> {

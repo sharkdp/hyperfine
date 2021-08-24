@@ -1,12 +1,12 @@
+use std::cmp::Ordering;
+use std::iter::Iterator;
+
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::benchmark_result::BenchmarkResult;
 use crate::options::OutputStyleOption;
 use crate::units::{Scalar, Second};
-
-use std::cmp::Ordering;
-use std::iter::Iterator;
 
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;

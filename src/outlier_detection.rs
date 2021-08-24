@@ -1,9 +1,10 @@
-/// A module for statistical outlier detection.
-///
-/// References:
-/// - Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect and Handle Outliers",
-///   The ASQC Basic References in Quality Control: Statistical Techniques, Edward F. Mykytka,
-///   Ph.D., Editor.
+//! A module for statistical outlier detection.
+//!
+//! References:
+//! - Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect and Handle Outliers",
+//!   The ASQC Basic References in Quality Control: Statistical Techniques, Edward F. Mykytka,
+//!   Ph.D., Editor.
+
 use statistical::median;
 
 /// Minimum modified Z-score for a datapoint to be an outlier. Here, 1.4826 is a factor that

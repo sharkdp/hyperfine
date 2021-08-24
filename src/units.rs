@@ -1,4 +1,4 @@
-/// This module contains common units.
+//! This module contains common units.
 
 pub type Scalar = f64;
 

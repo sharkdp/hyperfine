@@ -1,5 +1,6 @@
-use serde::Serialize;
 use std::collections::BTreeMap;
+
+use serde::Serialize;
 
 use crate::units::Second;
 

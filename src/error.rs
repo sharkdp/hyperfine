@@ -1,8 +1,9 @@
-use rust_decimal::Error as DecimalError;
 use std::error::Error;
 use std::fmt;
 use std::num;
 use std::num::ParseIntError;
+
+use rust_decimal::Error as DecimalError;
 
 #[derive(Debug)]
 pub enum ParameterScanError {
