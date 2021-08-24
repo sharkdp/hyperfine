@@ -7,18 +7,33 @@ use atty::Stream;
 use clap::ArgMatches;
 use colored::*;
 
-mod hyperfine;
+pub mod app;
+pub mod benchmark;
+pub mod benchmark_result;
+pub mod command;
+pub mod error;
+pub mod export;
+pub mod format;
+pub mod internal;
+pub mod options;
+pub mod outlier_detection;
+pub mod parameter_range;
+pub mod shell;
+pub mod timer;
+pub mod types;
+pub mod units;
+pub mod warnings;
 
-use crate::hyperfine::app::get_arg_matches;
-use crate::hyperfine::benchmark::{mean_shell_spawning_time, run_benchmark};
-use crate::hyperfine::command::Command;
-use crate::hyperfine::error::OptionsError;
-use crate::hyperfine::export::{ExportManager, ExportType};
-use crate::hyperfine::internal::{tokenize, write_benchmark_comparison};
-use crate::hyperfine::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
-use crate::hyperfine::parameter_range::get_parameterized_commands;
-use crate::hyperfine::types::ParameterValue;
-use crate::hyperfine::units::Unit;
+use app::get_arg_matches;
+use benchmark::{mean_shell_spawning_time, run_benchmark};
+use command::Command;
+use error::OptionsError;
+use export::{ExportManager, ExportType};
+use internal::{tokenize, write_benchmark_comparison};
+use options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use parameter_range::get_parameterized_commands;
+use types::ParameterValue;
+use units::Unit;
 
 /// Print error message to stderr and terminate
 pub fn error(message: &str) -> ! {

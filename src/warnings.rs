@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::hyperfine::format::format_duration;
-use crate::hyperfine::internal::MIN_EXECUTION_TIME;
-use crate::hyperfine::units::Second;
+use crate::format::format_duration;
+use crate::internal::MIN_EXECUTION_TIME;
+use crate::units::Second;
 
 /// A list of all possible warnings
 pub enum Warnings {

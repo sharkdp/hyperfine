@@ -1,6 +1,6 @@
 use super::Exporter;
-use crate::hyperfine::benchmark_result::BenchmarkResult;
-use crate::hyperfine::units::Unit;
+use crate::benchmark_result::BenchmarkResult;
+use crate::units::Unit;
 
 use std::io::{Error, ErrorKind, Result};
 
