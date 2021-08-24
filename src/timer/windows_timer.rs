@@ -1,15 +1,15 @@
 #![cfg(windows)]
 
-use super::internal::CPUTimes;
-use crate::timer::{TimerStart, TimerStop};
-use crate::units::Second;
+use std::mem;
+use std::os::windows::io::{AsRawHandle, RawHandle};
+use std::process::Child;
 
 use winapi::um::processthreadsapi::GetProcessTimes;
 use winapi::um::winnt::HANDLE;
 
-use std::mem;
-use std::os::windows::io::{AsRawHandle, RawHandle};
-use std::process::Child;
+use super::internal::CPUTimes;
+use crate::timer::{TimerStart, TimerStop};
+use crate::units::Second;
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 

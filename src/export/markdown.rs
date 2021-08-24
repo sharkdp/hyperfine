@@ -1,11 +1,10 @@
-use super::Exporter;
+use std::io::{Error, ErrorKind, Result};
 
+use super::Exporter;
 use crate::benchmark_result::BenchmarkResult;
 use crate::format::format_duration_value;
 use crate::internal::{compute_relative_speed, BenchmarkResultWithRelativeSpeed};
 use crate::units::Unit;
-
-use std::io::{Error, ErrorKind, Result};
 
 #[derive(Default)]
 pub struct MarkdownExporter {}

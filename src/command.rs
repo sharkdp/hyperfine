@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use super::types::ParameterValue;
+use crate::types::ParameterValue;
 
 /// A command that should be benchmarked.
 #[derive(Debug, Clone, PartialEq, Eq)]

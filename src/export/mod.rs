@@ -1,3 +1,6 @@
+use std::fs::{File, OpenOptions};
+use std::io::{Result, Write};
+
 mod asciidoc;
 mod csv;
 mod json;
@@ -7,9 +10,6 @@ use self::asciidoc::AsciidocExporter;
 use self::csv::CsvExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
-
-use std::fs::{File, OpenOptions};
-use std::io::{Result, Write};
 
 use crate::benchmark_result::BenchmarkResult;
 use crate::units::Unit;

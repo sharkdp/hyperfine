@@ -1,6 +1,7 @@
+use std::ffi::OsString;
+
 use atty::Stream;
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches};
-use std::ffi::OsString;
 
 pub fn get_arg_matches<I, T>(args: I) -> ArgMatches<'static>
 where

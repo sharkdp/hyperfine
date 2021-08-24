@@ -1,11 +1,11 @@
 #![cfg(not(windows))]
 
+use std::mem;
+use std::process::Child;
+
 use super::internal::{CPUInterval, CPUTimes};
 use crate::timer::{TimerStart, TimerStop};
 use crate::units::Second;
-
-use std::mem;
-use std::process::Child;
 
 pub fn get_cpu_timer() -> Box<dyn TimerStop<Result = (Second, Second)>> {
     Box::new(CPUTimer::start())

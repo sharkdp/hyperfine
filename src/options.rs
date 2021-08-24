@@ -1,4 +1,4 @@
-use super::units::{Second, Unit};
+use crate::units::{Second, Unit};
 
 #[cfg(not(windows))]
 pub const DEFAULT_SHELL: &str = "sh";

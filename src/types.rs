@@ -1,9 +1,9 @@
-use serde::Serialize;
 use std::convert::TryFrom;
 use std::fmt;
 
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize, Copy, PartialEq, Eq)]
 #[serde(untagged)]
