@@ -3,7 +3,7 @@ use std::io::{Error, ErrorKind, Result};
 use super::Exporter;
 use crate::benchmark_result::BenchmarkResult;
 use crate::format::format_duration_value;
-use crate::internal::{compute_relative_speed, BenchmarkResultWithRelativeSpeed};
+use crate::relative_speed::{self, BenchmarkResultWithRelativeSpeed};
 use crate::units::Unit;
 
 #[derive(Default)]
@@ -22,7 +22,7 @@ impl Exporter for MarkdownExporter {
             Unit::Second
         };
 
-        if let Some(annotated_results) = compute_relative_speed(results) {
+        if let Some(annotated_results) = relative_speed::compute(results) {
             let mut destination = start_table(unit);
 
             for result in annotated_results {
