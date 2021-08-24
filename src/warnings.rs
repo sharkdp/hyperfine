@@ -1,7 +1,7 @@
 use std::fmt;
 
+use crate::benchmark::MIN_EXECUTION_TIME;
 use crate::format::format_duration;
-use crate::internal::MIN_EXECUTION_TIME;
 use crate::units::Second;
 
 /// A list of all possible warnings
