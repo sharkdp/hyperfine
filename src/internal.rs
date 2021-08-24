@@ -1,9 +1,9 @@
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::hyperfine::benchmark_result::BenchmarkResult;
-use crate::hyperfine::options::OutputStyleOption;
-use crate::hyperfine::units::{Scalar, Second};
+use crate::benchmark_result::BenchmarkResult;
+use crate::options::OutputStyleOption;
+use crate::units::{Scalar, Second};
 
 use std::cmp::Ordering;
 use std::iter::Iterator;

@@ -1,7 +1,7 @@
 use std::io;
 use std::process::{Command, ExitStatus, Stdio};
 
-use crate::hyperfine::timer::get_cpu_timer;
+use crate::timer::get_cpu_timer;
 
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]

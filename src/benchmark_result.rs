@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::collections::BTreeMap;
 
-use crate::hyperfine::units::Second;
+use crate::units::Second;
 
 /// Set of values that will be exported.
 // NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the

@@ -2,7 +2,7 @@ use std::fs;
 
 use clap::Shell;
 
-include!("src/hyperfine/app.rs");
+include!("src/app.rs");
 
 fn main() {
     let min_version = "1.39";

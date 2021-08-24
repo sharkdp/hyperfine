@@ -5,9 +5,9 @@ use std::str::FromStr;
 use clap::Values;
 use rust_decimal::Decimal;
 
-use crate::hyperfine::command::Command;
-use crate::hyperfine::error::ParameterScanError;
-use crate::hyperfine::types::{NumericType, ParameterValue};
+use crate::command::Command;
+use crate::error::ParameterScanError;
+use crate::types::{NumericType, ParameterValue};
 
 trait Numeric:
     Add<Output = Self>

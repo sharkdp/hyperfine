@@ -5,17 +5,17 @@ use std::process::{ExitStatus, Stdio};
 use colored::*;
 use statistical::{mean, median, standard_deviation};
 
-use crate::hyperfine::benchmark_result::BenchmarkResult;
-use crate::hyperfine::command::Command;
-use crate::hyperfine::format::{format_duration, format_duration_unit};
-use crate::hyperfine::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
-use crate::hyperfine::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
-use crate::hyperfine::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
-use crate::hyperfine::shell::execute_and_time;
-use crate::hyperfine::timer::wallclocktimer::WallClockTimer;
-use crate::hyperfine::timer::{TimerStart, TimerStop};
-use crate::hyperfine::units::Second;
-use crate::hyperfine::warnings::Warnings;
+use crate::benchmark_result::BenchmarkResult;
+use crate::command::Command;
+use crate::format::{format_duration, format_duration_unit};
+use crate::internal::{get_progress_bar, max, min, MIN_EXECUTION_TIME};
+use crate::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use crate::shell::execute_and_time;
+use crate::timer::wallclocktimer::WallClockTimer;
+use crate::timer::{TimerStart, TimerStop};
+use crate::units::Second;
+use crate::warnings::Warnings;
 
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]

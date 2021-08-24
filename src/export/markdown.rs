@@ -1,9 +1,9 @@
 use super::Exporter;
 
-use crate::hyperfine::benchmark_result::BenchmarkResult;
-use crate::hyperfine::format::format_duration_value;
-use crate::hyperfine::internal::{compute_relative_speed, BenchmarkResultWithRelativeSpeed};
-use crate::hyperfine::units::Unit;
+use crate::benchmark_result::BenchmarkResult;
+use crate::format::format_duration_value;
+use crate::internal::{compute_relative_speed, BenchmarkResultWithRelativeSpeed};
+use crate::units::Unit;
 
 use std::io::{Error, ErrorKind, Result};
 

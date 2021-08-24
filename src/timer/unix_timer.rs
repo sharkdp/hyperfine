@@ -1,8 +1,8 @@
 #![cfg(not(windows))]
 
 use super::internal::{CPUInterval, CPUTimes};
-use crate::hyperfine::timer::{TimerStart, TimerStop};
-use crate::hyperfine::units::Second;
+use crate::timer::{TimerStart, TimerStop};
+use crate::units::Second;
 
 use std::mem;
 use std::process::Child;
