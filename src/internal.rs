@@ -1,8 +1,6 @@
 use std::cmp::Ordering;
 use std::iter::Iterator;
 
-use colored::*;
-
 use crate::benchmark_result::BenchmarkResult;
 use crate::units::{Scalar, Second};
 
@@ -33,7 +31,7 @@ pub struct BenchmarkResultWithRelativeSpeed<'a> {
     pub is_fastest: bool,
 }
 
-fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
+pub fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
     l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal)
 }
 
@@ -71,40 +69,6 @@ pub fn compute_relative_speed(
             })
             .collect(),
     )
-}
-
-pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
-    if results.len() < 2 {
-        return;
-    }
-
-    if let Some(mut annotated_results) = compute_relative_speed(results) {
-        annotated_results.sort_by(|l, r| compare_mean_time(l.result, r.result));
-
-        let fastest = &annotated_results[0];
-        let others = &annotated_results[1..];
-
-        println!("{}", "Summary".bold());
-        println!("  '{}' ran", fastest.result.command.cyan());
-
-        for item in others {
-            println!(
-                "{} ± {} times faster than '{}'",
-                format!("{:8.2}", item.relative_speed).bold().green(),
-                format!("{:.2}", item.relative_speed_stddev).green(),
-                &item.result.command.magenta()
-            );
-        }
-    } else {
-        eprintln!(
-            "{}: The benchmark comparison could not be computed as some benchmark times are zero. \
-             This could be caused by background interference during the initial calibration phase \
-             of hyperfine, in combination with very fast commands (faster than a few milliseconds). \
-             Try to re-run the benchmark on a quiet system. If it does not help, you command is \
-             most likely too fast to be accurately benchmarked by hyperfine.",
-             "Note".bold().red()
-        );
-    }
 }
 
 #[test]

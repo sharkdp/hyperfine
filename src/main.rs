@@ -28,10 +28,10 @@ pub mod warnings;
 
 use app::get_arg_matches;
 use benchmark::{mean_shell_spawning_time, run_benchmark};
+use benchmark_result::BenchmarkResult;
 use command::Command;
 use error::OptionsError;
 use export::{ExportManager, ExportType};
-use internal::write_benchmark_comparison;
 use options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use parameter_range::get_parameterized_commands;
 use tokenize::tokenize;
@@ -42,6 +42,40 @@ use units::Unit;
 pub fn error(message: &str) -> ! {
     eprintln!("{} {}", "Error:".red(), message);
     std::process::exit(1);
+}
+
+pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
+    if results.len() < 2 {
+        return;
+    }
+
+    if let Some(mut annotated_results) = internal::compute_relative_speed(results) {
+        annotated_results.sort_by(|l, r| internal::compare_mean_time(l.result, r.result));
+
+        let fastest = &annotated_results[0];
+        let others = &annotated_results[1..];
+
+        println!("{}", "Summary".bold());
+        println!("  '{}' ran", fastest.result.command.cyan());
+
+        for item in others {
+            println!(
+                "{} ± {} times faster than '{}'",
+                format!("{:8.2}", item.relative_speed).bold().green(),
+                format!("{:.2}", item.relative_speed_stddev).green(),
+                &item.result.command.magenta()
+            );
+        }
+    } else {
+        eprintln!(
+            "{}: The benchmark comparison could not be computed as some benchmark times are zero. \
+             This could be caused by background interference during the initial calibration phase \
+             of hyperfine, in combination with very fast commands (faster than a few milliseconds). \
+             Try to re-run the benchmark on a quiet system. If it does not help, you command is \
+             most likely too fast to be accurately benchmarked by hyperfine.",
+             "Note".bold().red()
+        );
+    }
 }
 
 /// Runs the benchmark for the given commands
