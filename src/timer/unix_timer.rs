@@ -3,8 +3,7 @@
 use std::mem;
 use std::process::Child;
 
-use super::internal::{CPUInterval, CPUTimes};
-use crate::timer::{TimerStart, TimerStop};
+use crate::timer::{CPUInterval, CPUTimes, TimerStart, TimerStop};
 use crate::units::Second;
 
 pub fn get_cpu_timer() -> Box<dyn TimerStop<Result = (Second, Second)>> {

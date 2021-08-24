@@ -1,6 +1,7 @@
 use std::process::Child;
 
-mod internal;
+use crate::units::Second;
+
 pub mod wallclocktimer;
 
 #[cfg(windows)]
@@ -23,4 +24,22 @@ pub trait TimerStart {
 pub trait TimerStop {
     type Result;
     fn stop(&self) -> Self::Result;
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct CPUTimes {
+    /// Total amount of time spent executing in user mode
+    pub user_usec: i64,
+
+    /// Total amount of time spent executing in kernel mode
+    pub system_usec: i64,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct CPUInterval {
+    /// Total amount of time spent executing in user mode
+    pub user: Second,
+
+    /// Total amount of time spent executing in kernel mode
+    pub system: Second,
 }
