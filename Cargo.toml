@@ -41,7 +41,6 @@ tempfile = "3.2.0"
 
 [build-dependencies]
 clap = "2"
-version_check = "0.9"
 atty = "0.2"
 
 [profile.release]
