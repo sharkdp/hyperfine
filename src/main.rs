@@ -19,6 +19,7 @@ pub mod options;
 pub mod outlier_detection;
 pub mod parameter_range;
 pub mod progress_bar;
+pub mod relative_speed;
 pub mod shell;
 pub mod timer;
 pub mod tokenize;
@@ -49,8 +50,8 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
         return;
     }
 
-    if let Some(mut annotated_results) = internal::compute_relative_speed(results) {
-        annotated_results.sort_by(|l, r| internal::compare_mean_time(l.result, r.result));
+    if let Some(mut annotated_results) = relative_speed::compute(results) {
+        annotated_results.sort_by(|l, r| relative_speed::compare_mean_time(l.result, r.result));
 
         let fastest = &annotated_results[0];
         let others = &annotated_results[1..];
