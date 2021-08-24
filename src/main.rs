@@ -18,6 +18,7 @@ pub mod internal;
 pub mod options;
 pub mod outlier_detection;
 pub mod parameter_range;
+pub mod progress_bar;
 pub mod shell;
 pub mod timer;
 pub mod types;
