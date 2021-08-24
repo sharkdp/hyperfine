@@ -1,10 +1,5 @@
 use std::iter::Iterator;
 
-use crate::units::Second;
-
-/// Threshold for warning about fast execution time
-pub const MIN_EXECUTION_TIME: Second = 5e-3;
-
 /// A max function for f64's without NaNs
 pub fn max(vals: &[f64]) -> f64 {
     *vals

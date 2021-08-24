@@ -8,7 +8,7 @@ use statistical::{mean, median, standard_deviation};
 use crate::benchmark_result::BenchmarkResult;
 use crate::command::Command;
 use crate::format::{format_duration, format_duration_unit};
-use crate::internal::{max, min, MIN_EXECUTION_TIME};
+use crate::min_max::{max, min};
 use crate::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::progress_bar::get_progress_bar;
@@ -17,6 +17,9 @@ use crate::timer::wallclocktimer::WallClockTimer;
 use crate::timer::{TimerStart, TimerStop};
 use crate::units::Second;
 use crate::warnings::Warnings;
+
+/// Threshold for warning about fast execution time
+pub const MIN_EXECUTION_TIME: Second = 5e-3;
 
 /// Results from timing a single shell command
 #[derive(Debug, Default, Copy, Clone)]

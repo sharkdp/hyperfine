@@ -14,7 +14,7 @@ pub mod command;
 pub mod error;
 pub mod export;
 pub mod format;
-pub mod internal;
+pub mod min_max;
 pub mod options;
 pub mod outlier_detection;
 pub mod parameter_range;
