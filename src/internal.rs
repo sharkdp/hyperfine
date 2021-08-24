@@ -137,8 +137,8 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
 
 #[test]
 fn test_max() {
-    let assert_float_eq = |a, b| {
-        assert!((a - b) < f64::EPSILON);
+    let assert_float_eq = |a: f64, b: f64| {
+        assert!((a - b).abs() < f64::EPSILON);
     };
 
     assert_float_eq(1.0, max(&[1.0]));
