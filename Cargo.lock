@@ -239,7 +239,6 @@ dependencies = [
  "approx",
  "assert_cmd",
  "atty",
- "cfg-if",
  "clap",
  "colored",
  "csv",
