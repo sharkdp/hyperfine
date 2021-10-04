@@ -62,6 +62,8 @@ pub enum OptionsError<'a> {
     TooManyCommandNames(usize),
     UnexpectedCommandNameCount(usize, usize),
     NumericParsingError(&'a str, ParseIntError),
+    EmptyShell,
+    ShellParseError(shell_words::ParseError),
 }
 
 impl<'a> fmt::Display for OptionsError<'a> {
@@ -85,6 +87,10 @@ impl<'a> fmt::Display for OptionsError<'a> {
                 cmd = cmd,
                 err = err
             ),
+            OptionsError::EmptyShell => write!(f, "Empty command at --shell option"),
+            OptionsError::ShellParseError(ref err) => {
+                write!(f, "Could not parse --shell value as command line: {}", err)
+            }
         }
     }
 }

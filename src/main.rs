@@ -33,7 +33,7 @@ use benchmark_result::BenchmarkResult;
 use command::Command;
 use error::OptionsError;
 use export::{ExportManager, ExportType};
-use options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use options::{CmdFailureAction, HyperfineOptions, OutputStyleOption, Shell};
 use parameter_range::get_parameterized_commands;
 use tokenize::tokenize;
 use types::ParameterValue;
@@ -229,10 +229,9 @@ fn build_hyperfine_options<'a>(
         OutputStyleOption::Disabled => {}
     };
 
-    options.shell = matches
-        .value_of("shell")
-        .unwrap_or(&options.shell)
-        .to_string();
+    if let Some(shell) = matches.value_of("shell") {
+        options.shell = Shell::parse(shell)?;
+    }
 
     if matches.is_present("ignore-failure") {
         options.failure_action = CmdFailureAction::Ignore;

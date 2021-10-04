@@ -1,6 +1,7 @@
 use std::io;
-use std::process::{Command, ExitStatus, Stdio};
+use std::process::{ExitStatus, Stdio};
 
+use crate::options::Shell;
 use crate::timer::get_cpu_timer;
 
 /// Used to indicate the result of running a command
@@ -22,7 +23,7 @@ pub fn execute_and_time(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
-    shell: &str,
+    shell: &Shell,
 ) -> io::Result<ExecuteResult> {
     let mut child = run_shell_command(stdout, stderr, command, shell)?;
     let cpu_timer = get_cpu_timer(&child);
@@ -42,7 +43,7 @@ pub fn execute_and_time(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
-    shell: &str,
+    shell: &Shell,
 ) -> io::Result<ExecuteResult> {
     let cpu_timer = get_cpu_timer();
 
@@ -63,9 +64,10 @@ fn run_shell_command(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
-    shell: &str,
+    shell: &Shell,
 ) -> io::Result<std::process::ExitStatus> {
-    Command::new(shell)
+    shell
+        .command()
         .arg("-c")
         .arg(command)
         .env(
@@ -84,9 +86,10 @@ fn run_shell_command(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
-    shell: &str,
+    shell: &Shell,
 ) -> io::Result<std::process::Child> {
-    Command::new(shell)
+    shell
+        .command()
         .arg("/C")
         .arg(command)
         .stdin(Stdio::null())
