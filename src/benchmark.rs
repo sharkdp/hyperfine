@@ -9,7 +9,7 @@ use crate::benchmark_result::BenchmarkResult;
 use crate::command::Command;
 use crate::format::{format_duration, format_duration_unit};
 use crate::min_max::{max, min};
-use crate::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption};
+use crate::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption, Shell};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::progress_bar::get_progress_bar;
 use crate::shell::execute_and_time;
@@ -45,7 +45,7 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 
 /// Run the given shell command and measure the execution time
 pub fn time_shell_command(
-    shell: &str,
+    shell: &Shell,
     command: &Command<'_>,
     show_output: bool,
     failure_action: CmdFailureAction,
@@ -98,7 +98,7 @@ pub fn time_shell_command(
 
 /// Measure the average shell spawning time
 pub fn mean_shell_spawning_time(
-    shell: &str,
+    shell: &Shell,
     style: OutputStyleOption,
     show_output: bool,
 ) -> io::Result<TimingResult> {
@@ -168,7 +168,7 @@ pub fn mean_shell_spawning_time(
 }
 
 fn run_intermediate_command(
-    shell: &str,
+    shell: &Shell,
     command: &Option<Command<'_>>,
     show_output: bool,
     error_output: &'static str,
@@ -187,7 +187,7 @@ fn run_intermediate_command(
 
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(
-    shell: &str,
+    shell: &Shell,
     command: &Option<Command<'_>>,
     show_output: bool,
 ) -> io::Result<TimingResult> {
@@ -199,7 +199,7 @@ fn run_preparation_command(
 
 /// Run the command specified by `--cleanup`.
 fn run_cleanup_command(
-    shell: &str,
+    shell: &Shell,
     command: &Option<Command<'_>>,
     show_output: bool,
 ) -> io::Result<TimingResult> {

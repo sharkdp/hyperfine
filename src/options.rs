@@ -1,3 +1,7 @@
+use std::fmt;
+use std::process::Command;
+
+use crate::error::OptionsError;
 use crate::units::{Second, Unit};
 
 #[cfg(not(windows))]
@@ -5,6 +9,62 @@ pub const DEFAULT_SHELL: &str = "sh";
 
 #[cfg(windows)]
 pub const DEFAULT_SHELL: &str = "cmd.exe";
+
+/// Shell to use for executing benchmarked commands
+pub enum Shell {
+    /// Default shell command
+    Default(&'static str),
+    /// Custom shell command specified via --shell
+    Custom(Vec<String>),
+}
+
+impl Default for Shell {
+    fn default() -> Self {
+        Shell::Default(DEFAULT_SHELL)
+    }
+}
+
+impl fmt::Display for Shell {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Shell::Default(cmd) => write!(f, "{}", cmd),
+            Shell::Custom(cmdline) => {
+                let mut first = true;
+                for s in cmdline.iter() {
+                    if first {
+                        first = false;
+                        write!(f, "{}", s)?;
+                    } else {
+                        write!(f, " {}", s)?;
+                    }
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+impl Shell {
+    /// Parse given string as shell command line
+    pub fn parse<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
+        let v = shell_words::split(s.as_ref()).map_err(OptionsError::ShellParseError)?;
+        if v.is_empty() {
+            return Err(OptionsError::EmptyShell);
+        }
+        Ok(Shell::Custom(v))
+    }
+
+    pub fn command(&self) -> Command {
+        match self {
+            Shell::Default(cmd) => Command::new(cmd),
+            Shell::Custom(cmdline) => {
+                let mut c = Command::new(&cmdline[0]);
+                c.args(&cmdline[1..]);
+                c
+            }
+        }
+    }
+}
 
 /// Action to take when an executed command fails.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -74,7 +134,7 @@ pub struct HyperfineOptions {
     pub output_style: OutputStyleOption,
 
     /// The shell to use for executing commands.
-    pub shell: String,
+    pub shell: Shell,
 
     /// Forward benchmark's stdout to hyperfine's stdout
     pub show_output: bool,
@@ -99,7 +159,7 @@ impl Default for HyperfineOptions {
             preparation_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
-            shell: DEFAULT_SHELL.to_string(),
+            shell: Shell::default(),
             show_output: false,
             time_unit: None,
         }
