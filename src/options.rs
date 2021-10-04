@@ -37,7 +37,7 @@ impl fmt::Display for Shell {
 impl Shell {
     /// Parse given string as shell command line
     pub fn parse<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
-        let v = shell_words::split(s.as_ref()).map_err(OptionsError::ShellParseError)?;
+        let v = shell_words::split(s).map_err(OptionsError::ShellParseError)?;
         if v.is_empty() || v[0].is_empty() {
             return Err(OptionsError::EmptyShell);
         }

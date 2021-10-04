@@ -249,7 +249,7 @@ fn build_hyperfine_options<'a>(
 /// Build the ExportManager that will export the results specified
 /// in the given ArgMatches
 fn build_export_manager(matches: &ArgMatches<'_>) -> io::Result<ExportManager> {
-    let mut export_manager = ExportManager::new();
+    let mut export_manager = ExportManager::default();
     {
         let mut add_exporter = |flag, exporttype| -> io::Result<()> {
             if let Some(filename) = matches.value_of(flag) {
