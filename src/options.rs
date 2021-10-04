@@ -11,6 +11,7 @@ pub const DEFAULT_SHELL: &str = "sh";
 pub const DEFAULT_SHELL: &str = "cmd.exe";
 
 /// Shell to use for executing benchmarked commands
+#[derive(Debug)]
 pub enum Shell {
     /// Default shell command
     Default(&'static str),
@@ -28,18 +29,7 @@ impl fmt::Display for Shell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Shell::Default(cmd) => write!(f, "{}", cmd),
-            Shell::Custom(cmdline) => {
-                let mut first = true;
-                for s in cmdline.iter() {
-                    if first {
-                        first = false;
-                        write!(f, "{}", s)?;
-                    } else {
-                        write!(f, " {}", s)?;
-                    }
-                }
-                Ok(())
-            }
+            Shell::Custom(cmdline) => write!(f, "{}", shell_words::join(cmdline)),
         }
     }
 }
@@ -48,7 +38,7 @@ impl Shell {
     /// Parse given string as shell command line
     pub fn parse<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
         let v = shell_words::split(s.as_ref()).map_err(OptionsError::ShellParseError)?;
-        if v.is_empty() {
+        if v.is_empty() || v[0].is_empty() {
             return Err(OptionsError::EmptyShell);
         }
         Ok(Shell::Custom(v))
@@ -163,5 +153,50 @@ impl Default for HyperfineOptions {
             show_output: false,
             time_unit: None,
         }
+    }
+}
+
+#[test]
+fn test_shell_default_command() {
+    let shell = Shell::default();
+
+    let s = format!("{}", shell);
+    assert_eq!(&s, DEFAULT_SHELL);
+
+    let cmd = shell.command();
+    // Command::get_program is not yet available in stable channel.
+    // https://doc.rust-lang.org/std/process/struct.Command.html#method.get_program
+    let s = format!("{:?}", cmd);
+    assert_eq!(s, format!("\"{}\"", DEFAULT_SHELL));
+}
+
+#[test]
+fn test_shell_parse_command() {
+    let shell = Shell::parse("shell -x 'aaa bbb'").unwrap();
+
+    let s = format!("{}", shell);
+    assert_eq!(&s, "shell -x 'aaa bbb'");
+
+    let cmd = shell.command();
+    // Command::get_program and Command::args are not yet available in stable channel.
+    // https://doc.rust-lang.org/std/process/struct.Command.html#method.get_program
+    let s = format!("{:?}", cmd);
+    assert_eq!(&s, r#""shell" "-x" "aaa bbb""#);
+
+    // Error cases
+
+    match Shell::parse("shell 'foo").unwrap_err() {
+        OptionsError::ShellParseError(_) => { /* ok */ }
+        e => assert!(false, "Unexpected error: {}", e),
+    }
+
+    match Shell::parse("").unwrap_err() {
+        OptionsError::EmptyShell => { /* ok */ }
+        e => assert!(false, "Unexpected error: {}", e),
+    }
+
+    match Shell::parse("''").unwrap_err() {
+        OptionsError::EmptyShell => { /* ok */ }
+        e => assert!(false, "Unexpected error: {}", e),
     }
 }
