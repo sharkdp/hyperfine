@@ -46,14 +46,16 @@ pub struct ExportManager {
     exporters: Vec<ExporterWithFilename>,
 }
 
-impl ExportManager {
+impl Default for ExportManager {
     /// Create a new ExportManager
-    pub fn new() -> ExportManager {
+    fn default() -> ExportManager {
         ExportManager {
             exporters: Vec::new(),
         }
     }
+}
 
+impl ExportManager {
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) -> Result<()> {
         let _ = File::create(filename)?;
