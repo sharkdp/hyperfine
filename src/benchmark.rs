@@ -108,6 +108,7 @@ pub fn mean_shell_spawning_time(
             COUNT,
             "Measuring shell spawning time",
             style,
+            true,
         ))
     } else {
         None
@@ -270,6 +271,7 @@ pub fn run_benchmark(
                 options.warmup_count,
                 "Performing warmup runs",
                 options.output_style,
+                false,
             ))
         } else {
             None
@@ -299,6 +301,7 @@ pub fn run_benchmark(
             options.runs.min,
             "Initial time measurement",
             options.output_style,
+            true,
         ))
     } else {
         None
@@ -343,6 +346,22 @@ pub fn run_benchmark(
     all_succeeded = all_succeeded && success;
 
     // Re-configure the progress bar
+
+    // Clear the current progress bar and set up another with eta instead of duration
+    if let Some(bar) = progress_bar.as_ref() {
+        bar.finish_and_clear()
+    }
+    let progress_bar = if options.output_style != OutputStyleOption::Disabled {
+        Some(get_progress_bar(
+            options.runs.min,
+            "Current estimate: ",
+            options.output_style,
+            false,
+        ))
+    } else {
+        None
+    };
+
     if let Some(bar) = progress_bar.as_ref() {
         bar.set_length(count)
     }
