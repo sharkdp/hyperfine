@@ -89,35 +89,34 @@ fn test_markdown_format_ms() {
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
-    let mut timing_results = vec![];
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 0.1"),
-        0.1057,                          // mean
-        0.0016,                          // std dev
-        0.1057,                          // median
-        0.0009,                          // user_mean
-        0.0011,                          // system_mean
-        0.1023,                          // min
-        0.1080,                          // max
-        vec![0.1, 0.1, 0.1],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 2"),
-        2.0050,                          // mean
-        0.0020,                          // std dev
-        2.0050,                          // median
-        0.0009,                          // user_mean
-        0.0012,                          // system_mean
-        2.0020,                          // min
-        2.0080,                          // max
-        vec![2.0, 2.0, 2.0],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
+    let timing_results = vec![
+        BenchmarkResult::new(
+            String::from("sleep 0.1"),
+            0.1057,                          // mean
+            0.0016,                          // std dev
+            0.1057,                          // median
+            0.0009,                          // user_mean
+            0.0011,                          // system_mean
+            0.1023,                          // min
+            0.1080,                          // max
+            vec![0.1, 0.1, 0.1],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+        BenchmarkResult::new(
+            String::from("sleep 2"),
+            2.0050,                          // mean
+            0.0020,                          // std dev
+            2.0050,                          // median
+            0.0009,                          // user_mean
+            0.0012,                          // system_mean
+            2.0020,                          // min
+            2.0080,                          // max
+            vec![2.0, 2.0, 2.0],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+    ];
 
     let formatted = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
 
@@ -139,35 +138,34 @@ fn test_markdown_format_s() {
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
-    let mut timing_results = vec![];
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 2"),
-        2.0050,                          // mean
-        0.0020,                          // std dev
-        2.0050,                          // median
-        0.0009,                          // user_mean
-        0.0012,                          // system_mean
-        2.0020,                          // min
-        2.0080,                          // max
-        vec![2.0, 2.0, 2.0],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 0.1"),
-        0.1057,                          // mean
-        0.0016,                          // std dev
-        0.1057,                          // median
-        0.0009,                          // user_mean
-        0.0011,                          // system_mean
-        0.1023,                          // min
-        0.1080,                          // max
-        vec![0.1, 0.1, 0.1],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
+    let timing_results = vec![
+        BenchmarkResult::new(
+            String::from("sleep 2"),
+            2.0050,                          // mean
+            0.0020,                          // std dev
+            2.0050,                          // median
+            0.0009,                          // user_mean
+            0.0012,                          // system_mean
+            2.0020,                          // min
+            2.0080,                          // max
+            vec![2.0, 2.0, 2.0],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+        BenchmarkResult::new(
+            String::from("sleep 0.1"),
+            0.1057,                          // mean
+            0.0016,                          // std dev
+            0.1057,                          // median
+            0.0009,                          // user_mean
+            0.0011,                          // system_mean
+            0.1023,                          // min
+            0.1080,                          // max
+            vec![0.1, 0.1, 0.1],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+    ];
 
     let formatted = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
 
@@ -188,35 +186,34 @@ fn test_markdown_format_time_unit_s() {
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
-    let mut timing_results = vec![];
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 0.1"),
-        0.1057,                          // mean
-        0.0016,                          // std dev
-        0.1057,                          // median
-        0.0009,                          // user_mean
-        0.0011,                          // system_mean
-        0.1023,                          // min
-        0.1080,                          // max
-        vec![0.1, 0.1, 0.1],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 2"),
-        2.0050,                          // mean
-        0.0020,                          // std dev
-        2.0050,                          // median
-        0.0009,                          // user_mean
-        0.0012,                          // system_mean
-        2.0020,                          // min
-        2.0080,                          // max
-        vec![2.0, 2.0, 2.0],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
+    let timing_results = vec![
+        BenchmarkResult::new(
+            String::from("sleep 0.1"),
+            0.1057,                          // mean
+            0.0016,                          // std dev
+            0.1057,                          // median
+            0.0009,                          // user_mean
+            0.0011,                          // system_mean
+            0.1023,                          // min
+            0.1080,                          // max
+            vec![0.1, 0.1, 0.1],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+        BenchmarkResult::new(
+            String::from("sleep 2"),
+            2.0050,                          // mean
+            0.0020,                          // std dev
+            2.0050,                          // median
+            0.0009,                          // user_mean
+            0.0012,                          // system_mean
+            2.0020,                          // min
+            2.0080,                          // max
+            vec![2.0, 2.0, 2.0],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+    ];
 
     let formatted = String::from_utf8(
         exporter
@@ -243,35 +240,34 @@ fn test_markdown_format_time_unit_ms() {
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
-    let mut timing_results = vec![];
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 2"),
-        2.0050,                          // mean
-        0.0020,                          // std dev
-        2.0050,                          // median
-        0.0009,                          // user_mean
-        0.0012,                          // system_mean
-        2.0020,                          // min
-        2.0080,                          // max
-        vec![2.0, 2.0, 2.0],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
-
-    timing_results.push(BenchmarkResult::new(
-        String::from("sleep 0.1"),
-        0.1057,                          // mean
-        0.0016,                          // std dev
-        0.1057,                          // median
-        0.0009,                          // user_mean
-        0.0011,                          // system_mean
-        0.1023,                          // min
-        0.1080,                          // max
-        vec![0.1, 0.1, 0.1],             // times
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // parameter
-    ));
+    let timing_results = vec![
+        BenchmarkResult::new(
+            String::from("sleep 2"),
+            2.0050,                          // mean
+            0.0020,                          // std dev
+            2.0050,                          // median
+            0.0009,                          // user_mean
+            0.0012,                          // system_mean
+            2.0020,                          // min
+            2.0080,                          // max
+            vec![2.0, 2.0, 2.0],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+        BenchmarkResult::new(
+            String::from("sleep 0.1"),
+            0.1057,                          // mean
+            0.0016,                          // std dev
+            0.1057,                          // median
+            0.0009,                          // user_mean
+            0.0011,                          // system_mean
+            0.1023,                          // min
+            0.1080,                          // max
+            vec![0.1, 0.1, 0.1],             // times
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // parameter
+        ),
+    ];
 
     let formatted = String::from_utf8(
         exporter
