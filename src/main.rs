@@ -387,22 +387,22 @@ fn test_build_commands_cross_product() {
     let matches = get_arg_matches(vec![
         "hyperfine",
         "-L",
-        "foo",
+        "par1",
         "a,b",
         "-L",
-        "bar",
+        "par2",
         "z,y",
-        "echo {foo} {bar}",
-        "printf '%s\n' {foo} {bar}",
+        "echo {par1} {par2}",
+        "printf '%s\n' {par1} {par2}",
     ]);
     let result = build_commands(&matches);
 
-    // Iteration order: command list first, then parameters in listed order (here, "foo" before
-    // "bar", which is distinct from their sorted order), with parameter values in listed order.
+    // Iteration order: command list first, then parameters in listed order (here, "par1" before
+    // "par2", which is distinct from their sorted order), with parameter values in listed order.
     let pv = |s: &str| ParameterValue::Text(s.to_string());
-    let cmd = |cmd: usize, foo: &str, bar: &str| {
-        let expression = ["echo {foo} {bar}", "printf '%s\n' {foo} {bar}"][cmd];
-        let params = vec![("foo", pv(foo)), ("bar", pv(bar))];
+    let cmd = |cmd: usize, par1: &str, par2: &str| {
+        let expression = ["echo {par1} {par2}", "printf '%s\n' {par1} {par2}"][cmd];
+        let params = vec![("par1", pv(par1)), ("par2", pv(par2))];
         Command::new_parametrized(None, expression, params)
     };
     let expected = vec![

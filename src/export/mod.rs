@@ -82,6 +82,13 @@ impl ExportManager {
     }
 }
 
+impl Default for ExportManager {
+    /// Create a new default ExportManager
+    fn default() -> Self {
+        ExportManager::new()
+    }
+}
+
 /// Write the given content to a file with the specified name
 fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
     let mut file = OpenOptions::new().write(true).open(filename)?;
