@@ -42,17 +42,9 @@ struct ExporterWithFilename {
 }
 
 /// Handles the management of multiple file exporters.
+#[derive(Default)]
 pub struct ExportManager {
     exporters: Vec<ExporterWithFilename>,
-}
-
-impl Default for ExportManager {
-    /// Create a new ExportManager
-    fn default() -> ExportManager {
-        ExportManager {
-            exporters: Vec::new(),
-        }
-    }
 }
 
 impl ExportManager {
@@ -81,13 +73,6 @@ impl ExportManager {
             write_to_file(&e.filename, &file_content)?;
         }
         Ok(())
-    }
-}
-
-impl Default for ExportManager {
-    /// Create a new default ExportManager
-    fn default() -> Self {
-        ExportManager::new()
     }
 }
 
