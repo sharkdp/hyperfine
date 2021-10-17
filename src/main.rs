@@ -145,6 +145,10 @@ fn main() {
 fn build_hyperfine_options<'a>(
     matches: &ArgMatches<'a>,
 ) -> Result<HyperfineOptions, OptionsError<'a>> {
+    // Enabled ANSI colors on Windows 10
+    #[cfg(windows)]
+    colored::control::set_virtual_terminal(true).unwrap();
+
     let mut options = HyperfineOptions::default();
     let param_to_u64 = |param| {
         matches
@@ -215,11 +219,6 @@ fn build_hyperfine_options<'a>(
             }
         }
     };
-
-    // We default Windows to NoColor if full had been specified.
-    if cfg!(windows) && options.output_style == OutputStyleOption::Full {
-        options.output_style = OutputStyleOption::NoColor;
-    }
 
     match options.output_style {
         OutputStyleOption::Basic | OutputStyleOption::NoColor => {
