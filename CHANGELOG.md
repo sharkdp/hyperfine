@@ -2,9 +2,24 @@
 
 ## Features
 
+## Changes
+
+## Bugfixes
+
+## Other
+
+## Packaging
+
+
+
+# v1.12.0
+
+## Features
+
 - `--command-name` can now take parameter names from `--parameter-*` options, see #351 and #391 (@silathdiir)
-- Add command exit code to output if it fails, see #342 (@KaindlJulian)
-- Export command exit code to JSON output, see #371 (@JordiChauzi)
+- Exit codes (or signals) are now printed in cases of command failures, see #342 (@KaindlJulian)
+- Exit codes are now part of the JSON output, see #371 (@JordiChauzi)
+- Colorized output should now be enabled on Windows by default, see #427
 
 ## Changes
 
@@ -13,14 +28,7 @@
 - When `--export-*` options are used, result files are written after each individual
   benchmark command instead of writing after all benchmarks have finished. See #306 (@s1ck).
 - Reduce number of shell startup time measurements from 200 to 50, generally speeding up benchmarks. See #378
-
-## Bugfixes
-
-- User and system time should be in consistent time units, see #408 and #409 (@film42)
-
-## Other
-
-## Packaging
+- User and system time are now in consistent time units, see #408 and #409 (@film42)
 
 
 
