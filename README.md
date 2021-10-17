@@ -120,8 +120,8 @@ The JSON output is useful if you want to analyze the benchmark results in more d
 Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
 and install it via `dpkg`:
 ```
-wget https://github.com/sharkdp/hyperfine/releases/download/v1.11.0/hyperfine_1.11.0_amd64.deb
-sudo dpkg -i hyperfine_1.11.0_amd64.deb
+wget https://github.com/sharkdp/hyperfine/releases/download/v1.12.0/hyperfine_1.12.0_amd64.deb
+sudo dpkg -i hyperfine_1.12.0_amd64.deb
 ```
 
 ### On Fedora
