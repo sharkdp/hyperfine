@@ -70,6 +70,11 @@ impl ExecutionOrderTest {
         self
     }
 
+    fn setup(&mut self, output: &str) -> &mut Self {
+        self.arg("--setup");
+        self.command(output)
+    }
+
     fn prepare(&mut self, output: &str) -> &mut Self {
         self.arg("--prepare");
         self.command(output)
@@ -148,6 +153,22 @@ fn warmup_runs_are_executed_before_benchmarking_runs() {
 }
 
 #[test]
+fn setup_commands_are_executed_before_each_series_of_timing_runs() {
+    ExecutionOrderTest::new()
+        .arg("--runs=2")
+        .setup("setup")
+        .command("command 1")
+        .command("command 2")
+        .expect_output("setup")
+        .expect_output("command 1")
+        .expect_output("command 1")
+        .expect_output("setup")
+        .expect_output("command 2")
+        .expect_output("command 2")
+        .run();
+}
+
+#[test]
 fn prepare_commands_are_executed_before_each_timing_run() {
     ExecutionOrderTest::new()
         .arg("--runs=2")
@@ -178,6 +199,23 @@ fn cleanup_commands_are_executed_once_after_each_benchmark() {
         .expect_output("command 2")
         .expect_output("command 2")
         .expect_output("cleanup")
+        .run();
+}
+
+#[test]
+fn setup_prepare_cleanup_combined() {
+    ExecutionOrderTest::new()
+        .arg("--runs=2")
+        .setup("make")
+        .prepare("make testclean")
+        .command("make test")
+        .cleanup("make clean")
+        .expect_output("make")
+        .expect_output("make testclean")
+        .expect_output("make test")
+        .expect_output("make testclean")
+        .expect_output("make test")
+        .expect_output("make clean")
         .run();
 }
 

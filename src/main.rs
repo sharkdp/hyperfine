@@ -193,6 +193,8 @@ fn build_hyperfine_options<'a>(
         (None, None) => {}
     };
 
+    options.setup_command = matches.value_of("setup").map(String::from);
+
     options.preparation_command = matches
         .values_of("prepare")
         .map(|values| values.map(String::from).collect::<Vec<String>>());
