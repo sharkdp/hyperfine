@@ -391,7 +391,10 @@ pub fn run_benchmark(
     // Compute statistical quantities
     let t_num = times_real.len();
     let t_mean = mean(&times_real);
-    let t_stddev = standard_deviation(&times_real, Some(t_mean));
+    let mut t_stddev = 0.0;
+    if times_real.len() != 1 {
+        t_stddev = standard_deviation(&times_real, Some(t_mean));
+    }
     let t_median = median(&times_real);
     let t_min = min(&times_real);
     let t_max = max(&times_real);
@@ -409,7 +412,16 @@ pub fn run_benchmark(
     let user_str = format_duration(user_mean, Some(time_unit));
     let system_str = format_duration(system_mean, Some(time_unit));
 
-    if options.output_style != OutputStyleOption::Disabled {
+    if options.output_style != OutputStyleOption::Disabled && times_real.len() == 1 {
+        println!(
+            "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
+            "abs".green().bold(),
+            mean_str.green().bold(),
+            "        ".to_string(), // alignment
+            user_str.blue(),
+            system_str.blue()
+        );
+    } else if options.output_style != OutputStyleOption::Disabled {
         println!(
             "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
             "mean".green().bold(),

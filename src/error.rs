@@ -57,7 +57,6 @@ impl Error for ParameterScanError {}
 
 #[derive(Debug)]
 pub enum OptionsError<'a> {
-    RunsBelowTwo,
     EmptyRunsRange,
     TooManyCommandNames(usize),
     UnexpectedCommandNameCount(usize, usize),
@@ -70,7 +69,6 @@ impl<'a> fmt::Display for OptionsError<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             OptionsError::EmptyRunsRange => write!(f, "Empty runs range"),
-            OptionsError::RunsBelowTwo => write!(f, "Number of runs below two"),
             OptionsError::TooManyCommandNames(n) => {
                 write!(f, "Too many --command-name options: expected {} at most", n)
             }
