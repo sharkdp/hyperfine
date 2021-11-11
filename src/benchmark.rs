@@ -185,6 +185,18 @@ fn run_intermediate_command(
     })
 }
 
+/// Run the command specified by `--setup`.
+fn run_setup_command(
+    shell: &Shell,
+    command: &Option<Command<'_>>,
+    show_output: bool,
+) -> io::Result<TimingResult> {
+    let error_output = "The setup command terminated with a non-zero exit code. \
+                        Append ' || true' to the command if you are sure that this can be ignored.";
+
+    run_intermediate_command(shell, command, show_output, error_output)
+}
+
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(
     shell: &Shell,
@@ -262,6 +274,12 @@ pub fn run_benchmark(
         };
         Command::new_parametrized(None, preparation_command, cmd.get_parameters().clone())
     });
+
+    // Run setup command
+    let setup_cmd = options.setup_command.as_ref().map(|setup_command| {
+        Command::new_parametrized(None, setup_command, cmd.get_parameters().clone())
+    });
+    run_setup_command(&options.shell, &setup_cmd, options.show_output)?;
 
     // Warmup phase
     if options.warmup_count > 0 {

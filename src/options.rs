@@ -114,6 +114,9 @@ pub struct HyperfineOptions {
     /// Whether or not to ignore non-zero exit codes
     pub failure_action: CmdFailureAction,
 
+    /// Command to run before each batch of timing runs
+    pub setup_command: Option<String>,
+
     /// Command to run before each timing run
     pub preparation_command: Option<Vec<String>>,
 
@@ -146,6 +149,7 @@ impl Default for HyperfineOptions {
             runs: Runs::default(),
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
+            setup_command: None,
             preparation_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,

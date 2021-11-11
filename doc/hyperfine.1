@@ -62,6 +62,12 @@ Perform at most \fImaxruns\fP (number) runs for each command. Default: no limit.
 Perform exactly \fIruns\fP (number) runs for each command. If this option is not specified,
 \fBhyperfine\fR automatically determines the number of runs.
 .HP
+\fB\-s\fR, \fB\-\-setup\fR \fIcmd\fP
+.IP
+Execute \fIcmd\fP once before each set of timing runs. This is useful
+for compiling software or doing other one-off setup.
+The \fB\-\-setup\fR option can only be specified once.
+.HP
 \fB\-p\fR, \fB\-\-prepare\fR \fIcmd...\fP
 .IP
 Execute \fIcmd\fP before each timing run. This is useful for clearing disk caches,
@@ -119,14 +125,15 @@ Example:
 .IP
 This performs benchmarks for 'gcc \-O2 main.cpp' and 'clang \-O2 main.cpp'.
 .HP
-\fB\-s\fR, \fB\-\-style\fR \fItype\fP
+\fB\-\-style\fR \fItype\fP
 .IP
 Set output style \fItype\fP (default: auto). Set this to 'basic' to disable output
 coloring and interactive elements. Set it to 'full' to enable all effects even
 if no interactive terminal was detected. Set this to 'nocolor' to keep the
 interactive output without any colors. Set this to 'color' to keep the colors
 without any interactive output. Set this to 'none' to disable all the output
-of the tool.
+of the tool. In hyperfine versions v0.4.0..v1.12.0 this option took the \fB\-s\fR,
+short option, which is now used by \fB\--setup\fR.
 .HP
 \fB\-S\fR, \fB\-\-shell\fR \fIshell\fP
 .IP
@@ -206,6 +213,18 @@ Export the results of a parameter scan benchmark to a markdown table:
 .nf
 \fBhyperfine\fR \fB\-\-export\-markdown\fR output.md \fB\-\-parameter-scan\fR time 1 5 'sleep {time}'
 .fi
+.RE
+.LP
+Demonstrate when each of \fB\-\-setup\fR, \fB\-\-prepare\fR, \fIcmd\fP and \fB\-\-cleanup\fR will run:
+.RS
+.nf
+\fBhyperfine\fR \fB\-L\fR n 1,2 \fB\-r\fR 2 \fB\-\-show-output\fR \\
+	\fB\-\-setup\fR 'echo setup n={n}' \\
+	\fB\-\-prepare\fR 'echo prepare={n}' \\
+	\fB\-\-cleanup\fR 'echo cleanup n={n}' \\
+	'echo command n={n}'
+.fi
+.RE
 .RE
 .SH AUTHOR
 .LP

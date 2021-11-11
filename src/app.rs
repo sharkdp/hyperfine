@@ -74,6 +74,20 @@ fn build_app() -> App<'static, 'static> {
                        hyperfine automatically determines the number of runs."),
         )
         .arg(
+            Arg::with_name("setup")
+                .long("setup")
+                .short("s")
+                .takes_value(true)
+                .number_of_values(1)
+                .value_name("CMD")
+                .help(
+                    "Execute CMD before each set of timing runs. This is useful for \
+                     compiling your software with the provided parameters, or to do any \
+                     other work that should happen once before a series of benchmark runs,\
+                     not every time as would happen with the --prepare option."
+                ),
+        )
+        .arg(
             Arg::with_name("prepare")
                 .long("prepare")
                 .short("p")
@@ -155,7 +169,6 @@ fn build_app() -> App<'static, 'static> {
         .arg(
             Arg::with_name("style")
                 .long("style")
-                .short("s")
                 .takes_value(true)
                 .value_name("TYPE")
                 .possible_values(&["auto", "basic", "full", "nocolor", "color", "none"])

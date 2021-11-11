@@ -2,7 +2,13 @@
 
 ## Features
 
+- Added `--setup` (`s`) option that can be used to run `make all` or
+  similar. It runs once per set of tests, like `--cleanup` (`c`).
+
 ## Changes
+
+- The `-s` short option for `--style` has been usurped by the new
+  `--setup` option.
 
 ## Bugfixes
 
