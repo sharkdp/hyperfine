@@ -23,12 +23,12 @@ fn hyperfine_runs_successfully() {
 }
 
 #[test]
-fn at_least_two_runs_are_required() {
+fn one_run_is_supported() {
     hyperfine()
         .arg("--runs=1")
         .arg("echo dummy benchmark")
         .assert()
-        .failure();
+        .success();
 }
 
 struct ExecutionOrderTest {
@@ -107,6 +107,17 @@ impl Default for ExecutionOrderTest {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[test]
+fn benchmarks_are_executed_sequentially_one() {
+    ExecutionOrderTest::new()
+        .arg("--runs=1")
+        .command("command 1")
+        .command("command 2")
+        .expect_output("command 1")
+        .expect_output("command 2")
+        .run();
 }
 
 #[test]
