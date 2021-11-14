@@ -33,7 +33,13 @@ impl Exporter for CsvExporter {
         for res in results {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
-                res.mean, res.stddev, res.median, res.user, res.system, res.min, res.max,
+                res.mean,
+                res.stddev.unwrap_or(0.0),
+                res.median,
+                res.user,
+                res.system,
+                res.min,
+                res.max,
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
@@ -59,7 +65,7 @@ fn test_csv() {
         BenchmarkResult::new(
             String::from("FOO=one BAR=two command | 1"),
             1.0,
-            2.0,
+            Some(2.0),
             1.0,
             3.0,
             4.0,
@@ -77,7 +83,7 @@ fn test_csv() {
         BenchmarkResult::new(
             String::from("FOO=one BAR=seven command | 2"),
             11.0,
-            12.0,
+            Some(12.0),
             11.0,
             13.0,
             14.0,

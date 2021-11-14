@@ -60,7 +60,7 @@ fn table_row(entry: &BenchmarkResult, unit: Unit) -> Vec<u8> {
          | {}…{}\n",
         entry.command.replace("|", "\\|"),
         form(entry.mean).0,
-        form(entry.stddev).0,
+        entry.stddev.map(|s| form(s).0).unwrap_or("?".into()),
         form(entry.min).0,
         form(entry.max).0
     )
@@ -84,14 +84,14 @@ fn test_asciidoc_header() {
 fn test_asciidoc_table_row() {
     use std::collections::BTreeMap;
     let result = BenchmarkResult::new(
-        String::from("sleep 1"), // command
-        0.10491992406666667,     // mean
-        0.00397851689425097,     // stddev
-        0.10491992406666667,     // median
-        0.005182013333333333,    // user
-        0.0,                     // system
-        0.1003342584,            // min
-        0.10745223440000001,     // max
+        String::from("sleep 1"),   // command
+        0.10491992406666667,       // mean
+        Some(0.00397851689425097), // stddev
+        0.10491992406666667,       // median
+        0.005182013333333333,      // user
+        0.0,                       // system
+        0.1003342584,              // min
+        0.10745223440000001,       // max
         vec![
             // times
             0.1003342584,
@@ -108,7 +108,7 @@ fn test_asciidoc_table_row() {
          | {}…{}\n",
         result.command,
         Unit::MilliSecond.format(result.mean),
-        Unit::MilliSecond.format(result.stddev),
+        Unit::MilliSecond.format(result.stddev.unwrap()),
         Unit::MilliSecond.format(result.min),
         Unit::MilliSecond.format(result.max)
     )
@@ -119,7 +119,7 @@ fn test_asciidoc_table_row() {
          | {}…{}\n",
         result.command,
         Unit::Second.format(result.mean),
-        Unit::Second.format(result.stddev),
+        Unit::Second.format(result.stddev.unwrap()),
         Unit::Second.format(result.min),
         Unit::Second.format(result.max)
     )
@@ -137,14 +137,14 @@ fn test_asciidoc_table_row() {
 fn test_asciidoc_table_row_command_escape() {
     use std::collections::BTreeMap;
     let result = BenchmarkResult::new(
-        String::from("sleep 1|"), // command
-        0.10491992406666667,      // mean
-        0.00397851689425097,      // stddev
-        0.10491992406666667,      // median
-        0.005182013333333333,     // user
-        0.0,                      // system
-        0.1003342584,             // min
-        0.10745223440000001,      // max
+        String::from("sleep 1|"),  // command
+        0.10491992406666667,       // mean
+        Some(0.00397851689425097), // stddev
+        0.10491992406666667,       // median
+        0.005182013333333333,      // user
+        0.0,                       // system
+        0.1003342584,              // min
+        0.10745223440000001,       // max
         vec![
             // times
             0.1003342584,
@@ -159,7 +159,7 @@ fn test_asciidoc_table_row_command_escape() {
          | {} ± {}\n\
          | {}…{}\n",
         Unit::Second.format(result.mean),
-        Unit::Second.format(result.stddev),
+        Unit::Second.format(result.stddev.unwrap()),
         Unit::Second.format(result.min),
         Unit::Second.format(result.max)
     )
@@ -179,7 +179,7 @@ fn test_asciidoc() {
         BenchmarkResult::new(
             String::from("FOO=1 BAR=2 command | 1"),
             1.0,
-            2.0,
+            Some(2.0),
             1.0,
             3.0,
             4.0,
@@ -197,7 +197,7 @@ fn test_asciidoc() {
         BenchmarkResult::new(
             String::from("FOO=1 BAR=7 command | 2"),
             11.0,
-            12.0,
+            Some(12.0),
             11.0,
             13.0,
             14.0,

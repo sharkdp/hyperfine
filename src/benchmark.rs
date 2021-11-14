@@ -391,10 +391,11 @@ pub fn run_benchmark(
     // Compute statistical quantities
     let t_num = times_real.len();
     let t_mean = mean(&times_real);
-    let mut t_stddev = 0.0;
-    if times_real.len() != 1 {
-        t_stddev = standard_deviation(&times_real, Some(t_mean));
-    }
+    let t_stddev = if times_real.len() > 1 {
+        Some(standard_deviation(&times_real, Some(t_mean)))
+    } else {
+        None
+    };
     let t_median = median(&times_real);
     let t_min = min(&times_real);
     let t_max = max(&times_real);
@@ -404,7 +405,6 @@ pub fn run_benchmark(
 
     // Formatting and console output
     let (mean_str, time_unit) = format_duration_unit(t_mean, options.time_unit);
-    let stddev_str = format_duration(t_stddev, Some(time_unit));
     let min_str = format_duration(t_min, Some(time_unit));
     let max_str = format_duration(t_max, Some(time_unit));
     let num_str = format!("{} runs", t_num);
@@ -412,34 +412,38 @@ pub fn run_benchmark(
     let user_str = format_duration(user_mean, Some(time_unit));
     let system_str = format_duration(system_mean, Some(time_unit));
 
-    if options.output_style != OutputStyleOption::Disabled && times_real.len() == 1 {
-        println!(
-            "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
-            "abs".green().bold(),
-            mean_str.green().bold(),
-            "        ".to_string(), // alignment
-            user_str.blue(),
-            system_str.blue()
-        );
-    } else if options.output_style != OutputStyleOption::Disabled {
-        println!(
-            "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-            "mean".green().bold(),
-            "σ".green(),
-            mean_str.green().bold(),
-            stddev_str.green(),
-            user_str.blue(),
-            system_str.blue()
-        );
+    if options.output_style != OutputStyleOption::Disabled {
+        if times_real.len() == 1 {
+            println!(
+                "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
+                "abs".green().bold(),
+                mean_str.green().bold(),
+                "        ".to_string(), // alignment
+                user_str.blue(),
+                system_str.blue()
+            );
+        } else {
+            let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
 
-        println!(
-            "  Range ({} … {}):   {:>8} … {:>8}    {}",
-            "min".cyan(),
-            "max".purple(),
-            min_str.cyan(),
-            max_str.purple(),
-            num_str.dimmed()
-        );
+            println!(
+                "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
+                "mean".green().bold(),
+                "σ".green(),
+                mean_str.green().bold(),
+                stddev_str.green(),
+                user_str.blue(),
+                system_str.blue()
+            );
+
+            println!(
+                "  Range ({} … {}):   {:>8} … {:>8}    {}",
+                "min".cyan(),
+                "max".purple(),
+                min_str.cyan(),
+                max_str.purple(),
+                num_str.dimmed()
+            );
+        }
     }
 
     // Warnings
