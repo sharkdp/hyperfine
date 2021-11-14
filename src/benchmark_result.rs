@@ -15,8 +15,8 @@ pub struct BenchmarkResult {
     /// The mean run time
     pub mean: Second,
 
-    /// The standard deviation of all run times
-    pub stddev: Second,
+    /// The standard deviation of all run times. Not available if only one run has been performed
+    pub stddev: Option<Second>,
 
     /// The median run time
     pub median: Second,
@@ -51,7 +51,7 @@ impl BenchmarkResult {
     pub fn new(
         command: String,
         mean: Second,
-        stddev: Second,
+        stddev: Option<Second>,
         median: Second,
         user: Second,
         system: Second,

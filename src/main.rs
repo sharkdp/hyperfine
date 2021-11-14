@@ -61,9 +61,13 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
 
         for item in others {
             println!(
-                "{} ± {} times faster than '{}'",
+                "{}{} times faster than '{}'",
                 format!("{:8.2}", item.relative_speed).bold().green(),
-                format!("{:.2}", item.relative_speed_stddev).green(),
+                if let Some(stddev) = item.relative_speed_stddev {
+                    format!(" ± {}", format!("{:.2}", stddev).green())
+                } else {
+                    "".into()
+                },
                 &item.result.command.magenta()
             );
         }

@@ -53,19 +53,27 @@ fn start_table(unit: Unit) -> Vec<u8> {
 fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResultWithRelativeSpeed, unit: Unit) {
     let result = &entry.result;
     let mean_str = format_duration_value(result.mean, Some(unit)).0;
-    let stddev_str = format_duration_value(result.stddev, Some(unit)).0;
+    let stddev_str = if let Some(stddev) = result.stddev {
+        format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
+    } else {
+        "".into()
+    };
     let min_str = format_duration_value(result.min, Some(unit)).0;
     let max_str = format_duration_value(result.max, Some(unit)).0;
     let rel_str = format!("{:.2}", entry.relative_speed);
     let rel_stddev_str = if entry.is_fastest {
         "".into()
     } else {
-        format!(" ± {:.2}", entry.relative_speed_stddev)
+        if let Some(stddev) = entry.relative_speed_stddev {
+            format!(" ± {:.2}", stddev)
+        } else {
+            "".into()
+        }
     };
 
     dest.extend(
         format!(
-            "| `{command}` | {mean} ± {stddev} | {min} | {max} | {rel}{rel_stddev} |\n",
+            "| `{command}` | {mean}{stddev} | {min} | {max} | {rel}{rel_stddev} |\n",
             command = result.command.replace("|", "\\|"),
             mean = mean_str,
             stddev = stddev_str,
@@ -93,7 +101,7 @@ fn test_markdown_format_ms() {
         BenchmarkResult::new(
             String::from("sleep 0.1"),
             0.1057,                          // mean
-            0.0016,                          // std dev
+            Some(0.0016),                    // std dev
             0.1057,                          // median
             0.0009,                          // user_mean
             0.0011,                          // system_mean
@@ -106,7 +114,7 @@ fn test_markdown_format_ms() {
         BenchmarkResult::new(
             String::from("sleep 2"),
             2.0050,                          // mean
-            0.0020,                          // std dev
+            Some(0.0020),                    // std dev
             2.0050,                          // median
             0.0009,                          // user_mean
             0.0012,                          // system_mean
@@ -142,7 +150,7 @@ fn test_markdown_format_s() {
         BenchmarkResult::new(
             String::from("sleep 2"),
             2.0050,                          // mean
-            0.0020,                          // std dev
+            Some(0.0020),                    // std dev
             2.0050,                          // median
             0.0009,                          // user_mean
             0.0012,                          // system_mean
@@ -155,7 +163,7 @@ fn test_markdown_format_s() {
         BenchmarkResult::new(
             String::from("sleep 0.1"),
             0.1057,                          // mean
-            0.0016,                          // std dev
+            Some(0.0016),                    // std dev
             0.1057,                          // median
             0.0009,                          // user_mean
             0.0011,                          // system_mean
@@ -190,7 +198,7 @@ fn test_markdown_format_time_unit_s() {
         BenchmarkResult::new(
             String::from("sleep 0.1"),
             0.1057,                          // mean
-            0.0016,                          // std dev
+            Some(0.0016),                    // std dev
             0.1057,                          // median
             0.0009,                          // user_mean
             0.0011,                          // system_mean
@@ -203,7 +211,7 @@ fn test_markdown_format_time_unit_s() {
         BenchmarkResult::new(
             String::from("sleep 2"),
             2.0050,                          // mean
-            0.0020,                          // std dev
+            Some(0.0020),                    // std dev
             2.0050,                          // median
             0.0009,                          // user_mean
             0.0012,                          // system_mean
@@ -244,7 +252,7 @@ fn test_markdown_format_time_unit_ms() {
         BenchmarkResult::new(
             String::from("sleep 2"),
             2.0050,                          // mean
-            0.0020,                          // std dev
+            Some(0.0020),                    // std dev
             2.0050,                          // median
             0.0009,                          // user_mean
             0.0012,                          // system_mean
@@ -257,7 +265,7 @@ fn test_markdown_format_time_unit_ms() {
         BenchmarkResult::new(
             String::from("sleep 0.1"),
             0.1057,                          // mean
-            0.0016,                          // std dev
+            Some(0.0016),                    // std dev
             0.1057,                          // median
             0.0009,                          // user_mean
             0.0011,                          // system_mean
