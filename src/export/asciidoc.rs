@@ -1,9 +1,11 @@
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 
-use super::Exporter;
 use crate::benchmark_result::BenchmarkResult;
 use crate::format::format_duration_value;
+use crate::relative_speed::{self, BenchmarkResultWithRelativeSpeed};
 use crate::units::Unit;
+
+use super::Exporter;
 
 #[derive(Default)]
 pub struct AsciidocExporter {}
@@ -21,22 +23,29 @@ impl Exporter for AsciidocExporter {
             Unit::Second
         };
 
-        let mut res: Vec<u8> = Vec::new();
-        res.append(&mut table_open());
-        res.append(&mut table_startend());
-        res.append(&mut table_header(unit));
-        for result in results {
-            res.push(b'\n');
-            res.append(&mut table_row(result, unit));
-        }
-        res.append(&mut table_startend());
+        if let Some(annotated_results) = relative_speed::compute(results) {
+            let mut res: Vec<u8> = Vec::new();
+            res.append(&mut table_open());
+            res.append(&mut table_startend());
+            res.append(&mut table_header(unit));
+            for result in annotated_results {
+                res.push(b'\n');
+                res.append(&mut table_row(&result, unit));
+            }
+            res.append(&mut table_startend());
 
-        Ok(res)
+            Ok(res)
+        } else {
+            Err(Error::new(
+                ErrorKind::Other,
+                "Relative speed comparison is not available for Asciidoctor export.",
+            ))
+        }
     }
 }
 
 fn table_open() -> Vec<u8> {
-    "[cols=\"<,>,>\"]\n".bytes().collect()
+    "[cols=\"<,>,>,>,>\"]\n".bytes().collect()
 }
 
 fn table_startend() -> Vec<u8> {
@@ -46,23 +55,46 @@ fn table_startend() -> Vec<u8> {
 fn table_header(unittype: Unit) -> Vec<u8> {
     let unit_short_name = unittype.short_name();
     format!(
-        "| Command | Mean [{unit}] | Min…Max [{unit}]\n",
+        "| Command \n| Mean [{unit}] \n| Min [{unit}] \n| Max [{unit}] \n| Relative \n",
         unit = unit_short_name
     )
     .into_bytes()
 }
 
-fn table_row(entry: &BenchmarkResult, unit: Unit) -> Vec<u8> {
-    let form = |val| format_duration_value(val, Some(unit));
+fn table_row(entry: &BenchmarkResultWithRelativeSpeed, unit: Unit) -> Vec<u8> {
+    let result = &entry.result;
+    let mean_str = format_duration_value(result.mean, Some(unit)).0;
+    let stddev_str = if let Some(stddev) = result.stddev {
+        format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
+    } else {
+        "".into()
+    };
+    let min_str = format_duration_value(result.min, Some(unit)).0;
+    let max_str = format_duration_value(result.max, Some(unit)).0;
+    let rel_str = format!("{:.2}", entry.relative_speed);
+    let rel_stddev_str = if entry.is_fastest {
+        "".into()
+    } else {
+        if let Some(stddev) = entry.relative_speed_stddev {
+            format!(" ± {:.2}", stddev)
+        } else {
+            "".into()
+        }
+    };
+
     format!(
-        "| `{}`\n\
-         | {} ± {}\n\
-         | {}…{}\n",
-        entry.command.replace("|", "\\|"),
-        form(entry.mean).0,
-        entry.stddev.map(|s| form(s).0).unwrap_or("?".into()),
-        form(entry.min).0,
-        form(entry.max).0
+        "| `{command}` \n\
+         | {mean}{stddev} \n\
+         | {min} \n\
+         | {max} \n\
+         | {rel}{rel_stddev} \n",
+        command = result.command.replace("|", "\\|"),
+        mean = mean_str,
+        stddev = stddev_str,
+        min = min_str,
+        max = max_str,
+        rel = rel_str,
+        rel_stddev = rel_stddev_str
     )
     .into_bytes()
 }
@@ -70,8 +102,12 @@ fn table_row(entry: &BenchmarkResult, unit: Unit) -> Vec<u8> {
 /// Ensure various options for the header generate correct results
 #[test]
 fn test_asciidoc_header() {
-    let conms: Vec<u8> = "| Command | Mean [ms] | Min…Max [ms]\n".bytes().collect();
-    let cons: Vec<u8> = "| Command | Mean [s] | Min…Max [s]\n".bytes().collect();
+    let conms: Vec<u8> = "| Command \n| Mean [ms] \n| Min [ms] \n| Max [ms] \n| Relative \n"
+        .bytes()
+        .collect();
+    let cons: Vec<u8> = "| Command \n| Mean [s] \n| Min [s] \n| Max [s] \n| Relative \n"
+        .bytes()
+        .collect();
     let genms = table_header(Unit::MilliSecond);
     let gens = table_header(Unit::Second);
 
@@ -83,90 +119,96 @@ fn test_asciidoc_header() {
 #[test]
 fn test_asciidoc_table_row() {
     use std::collections::BTreeMap;
-    let result = BenchmarkResult::new(
-        String::from("sleep 1"),   // command
-        0.10491992406666667,       // mean
-        Some(0.00397851689425097), // stddev
-        0.10491992406666667,       // median
-        0.005182013333333333,      // user
-        0.0,                       // system
-        0.1003342584,              // min
-        0.10745223440000001,       // max
-        vec![
-            // times
-            0.1003342584,
-            0.10745223440000001,
-            0.10697327940000001,
-        ],
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // param
-    );
 
-    let expms = format!(
-        "| `{}`\n\
-         | {} ± {}\n\
-         | {}…{}\n",
-        result.command,
-        Unit::MilliSecond.format(result.mean),
-        Unit::MilliSecond.format(result.stddev.unwrap()),
-        Unit::MilliSecond.format(result.min),
-        Unit::MilliSecond.format(result.max)
-    )
-    .into_bytes();
-    let exps = format!(
-        "| `{}`\n\
-         | {} ± {}\n\
-         | {}…{}\n",
-        result.command,
-        Unit::Second.format(result.mean),
-        Unit::Second.format(result.stddev.unwrap()),
-        Unit::Second.format(result.min),
-        Unit::Second.format(result.max)
-    )
-    .into_bytes();
+    let timing_result = BenchmarkResultWithRelativeSpeed {
+        result: &BenchmarkResult::new(
+            String::from("sleep 1"),   // command
+            0.10491992406666667,       // mean
+            Some(0.00397851689425097), // stddev
+            0.10491992406666667,       // median
+            0.005182013333333333,      // user
+            0.0,                       // system
+            0.1003342584,              // min
+            0.10745223440000001,       // max
+            vec![
+                // times
+                0.1003342584,
+                0.10745223440000001,
+                0.10697327940000001,
+            ],
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // param
+        ),
+        relative_speed: 1.000,                     // relative_speed
+        relative_speed_stddev: Option::from(1.03), // relative_speed_stddev
+        is_fastest: true,                          // is_fastest
+    };
 
-    let genms = table_row(&result, Unit::MilliSecond);
-    let gens = table_row(&result, Unit::Second);
+    let formatted = String::from_utf8(table_row(&timing_result, Unit::MilliSecond)).unwrap();
 
-    assert_eq!(expms, genms);
-    assert_eq!(exps, gens);
+    let formatted_expected = "| `sleep 1` \n\
+         | 104.9 ± 4.0 \n\
+         | 100.3 \n\
+         | 107.5 \n\
+         | 1.00 \n";
+
+    assert_eq!(formatted_expected, formatted);
+
+    let formatted_seconds = String::from_utf8(table_row(&timing_result, Unit::Second)).unwrap();
+    let formatted_expected_seconds = "| `sleep 1` \n\
+         | 0.105 ± 0.004 \n\
+         | 0.100 \n\
+         | 0.107 \n\
+         | 1.00 \n";
+
+    assert_eq!(formatted_expected_seconds, formatted_seconds);
 }
 
 /// Ensure commands get properly escaped
 #[test]
 fn test_asciidoc_table_row_command_escape() {
     use std::collections::BTreeMap;
-    let result = BenchmarkResult::new(
-        String::from("sleep 1|"),  // command
-        0.10491992406666667,       // mean
-        Some(0.00397851689425097), // stddev
-        0.10491992406666667,       // median
-        0.005182013333333333,      // user
-        0.0,                       // system
-        0.1003342584,              // min
-        0.10745223440000001,       // max
-        vec![
-            // times
-            0.1003342584,
-            0.10745223440000001,
-            0.10697327940000001,
-        ],
-        vec![Some(0), Some(0), Some(0)], // exit codes
-        BTreeMap::new(),                 // param
+    let benchmark_result = BenchmarkResultWithRelativeSpeed {
+        result: &BenchmarkResult::new(
+            String::from("sleep 1|"),  // command
+            0.10491992406666667,       // mean
+            Some(0.00397851689425097), // stddev
+            0.10491992406666667,       // median
+            0.005182013333333333,      // user
+            0.0,                       // system
+            0.1003342584,              // min
+            0.10745223440000001,       // max
+            vec![
+                // times
+                0.1003342584,
+                0.10745223440000001,
+                0.10697327940000001,
+            ],
+            vec![Some(0), Some(0), Some(0)], // exit codes
+            BTreeMap::new(),                 // param
+        ),
+        relative_speed: 1.000,                     // relative_speed
+        relative_speed_stddev: Option::from(1.03), // relative_speed_stddev
+        is_fastest: true,                          // is_fastest
+    };
+    let expected = String::from_utf8(
+        format!(
+            "| `sleep 1\\|` \n\
+         | {} ± {} \n\
+         | {} \n\
+         | {} \n\
+         | {:.2} \n",
+            Unit::Second.format(benchmark_result.result.mean),
+            Unit::Second.format(benchmark_result.result.stddev.unwrap()),
+            Unit::Second.format(benchmark_result.result.min),
+            Unit::Second.format(benchmark_result.result.max),
+            benchmark_result.relative_speed
+        )
+        .into_bytes(),
     );
-    let exps = format!(
-        "| `sleep 1\\|`\n\
-         | {} ± {}\n\
-         | {}…{}\n",
-        Unit::Second.format(result.mean),
-        Unit::Second.format(result.stddev.unwrap()),
-        Unit::Second.format(result.min),
-        Unit::Second.format(result.max)
-    )
-    .into_bytes();
-    let gens = table_row(&result, Unit::Second);
+    let generated_seconds = String::from_utf8(table_row(&benchmark_result, Unit::Second));
 
-    assert_eq!(exps, gens);
+    assert_eq!(expected, generated_seconds);
 }
 
 /// Integration test
@@ -214,23 +256,31 @@ fn test_asciidoc() {
         ),
     ];
     // NOTE: only testing with s, s/ms is tested elsewhere
-    let exps: String = String::from(
-        "[cols=\"<,>,>\"]\n\
+    let expected: String = String::from(
+        "[cols=\"<,>,>,>,>\"]\n\
          |===\n\
-         | Command | Mean [s] | Min…Max [s]\n\
+         | Command \n\
+         | Mean [s] \n\
+         | Min [s] \n\
+         | Max [s] \n\
+         | Relative \n\
          \n\
-         | `FOO=1 BAR=2 command \\| 1`\n\
-         | 1.000 ± 2.000\n\
-         | 5.000…6.000\n\
+         | `FOO=1 BAR=2 command \\| 1` \n\
+         | 1.000 ± 2.000 \n\
+         | 5.000 \n\
+         | 6.000 \n\
+         | 1.00 \n\
          \n\
-         | `FOO=1 BAR=7 command \\| 2`\n\
-         | 11.000 ± 12.000\n\
-         | 15.000…16.000\n\
+         | `FOO=1 BAR=7 command \\| 2` \n\
+         | 11.000 ± 12.000 \n\
+         | 15.000 \n\
+         | 16.000 \n\
+         | 11.00 ± 25.06 \n\
          |===\n\
          ",
     );
-    let gens =
+    let given =
         String::from_utf8(exporter.serialize(&results, Some(Unit::Second)).unwrap()).unwrap();
 
-    assert_eq!(exps, gens);
+    assert_eq!(expected, given);
 }
