@@ -37,7 +37,7 @@ features = ["suggestions", "color", "wrap_help"]
 [dev-dependencies]
 approx = "0.5"
 assert_cmd = "2.0"
-predicates = "2.0"
+predicates = "2.1"
 tempfile = "3.2"
 
 [build-dependencies]
