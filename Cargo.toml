@@ -30,7 +30,7 @@ libc = "0.2"
 winapi = { version = "0.3", features = ["processthreadsapi", "minwindef", "winnt"] }
 
 [dependencies.clap]
-version = "2"
+version = "3"
 default-features = false
 features = ["suggestions", "color", "wrap_help"]
 
@@ -41,7 +41,7 @@ predicates = "2.1"
 tempfile = "3.2"
 
 [build-dependencies]
-clap = "2"
+clap = "3"
 atty = "0.2"
 
 [profile.release]
