@@ -146,9 +146,7 @@ fn main() {
 }
 
 /// Build the HyperfineOptions that correspond to the given ArgMatches
-fn build_hyperfine_options<'a>(
-    matches: &ArgMatches<'a>,
-) -> Result<HyperfineOptions, OptionsError<'a>> {
+fn build_hyperfine_options<'a>(matches: &ArgMatches) -> Result<HyperfineOptions, OptionsError<'a>> {
     // Enabled ANSI colors on Windows 10
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
@@ -245,7 +243,7 @@ fn build_hyperfine_options<'a>(
 
 /// Build the ExportManager that will export the results specified
 /// in the given ArgMatches
-fn build_export_manager(matches: &ArgMatches<'_>) -> io::Result<ExportManager> {
+fn build_export_manager(matches: &ArgMatches) -> io::Result<ExportManager> {
     let mut export_manager = ExportManager::default();
     {
         let mut add_exporter = |flag, exporttype| -> io::Result<()> {
@@ -263,7 +261,7 @@ fn build_export_manager(matches: &ArgMatches<'_>) -> io::Result<ExportManager> {
 }
 
 /// Build the commands to benchmark
-fn build_commands<'a>(matches: &'a ArgMatches<'_>) -> Vec<Command<'a>> {
+fn build_commands<'a>(matches: &'a ArgMatches) -> Vec<Command<'a>> {
     let command_names = matches.values_of("command-name");
     let command_strings = matches.values_of("command").unwrap();
 

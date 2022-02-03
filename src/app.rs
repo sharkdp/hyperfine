@@ -1,45 +1,38 @@
 use std::ffi::OsString;
 
-use atty::Stream;
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches};
 
-pub fn get_arg_matches<I, T>(args: I) -> ArgMatches<'static>
+pub fn get_arg_matches<'a, I, T>(args: I) -> ArgMatches
 where
     I: IntoIterator<Item = T>,
-    T: Into<OsString> + Clone,
+    T: Into<OsString> + Clone + 'a,
 {
     let app = build_app();
     app.get_matches_from(args)
 }
 
 /// Build the clap app for parsing command line arguments
-fn build_app() -> App<'static, 'static> {
-    let clap_color_setting = if atty::is(Stream::Stdout) {
-        AppSettings::ColoredHelp
-    } else {
-        AppSettings::ColorNever
-    };
-
+fn build_app() -> App<'static> {
     App::new("hyperfine")
         .version(crate_version!())
-        .setting(clap_color_setting)
         .setting(AppSettings::DeriveDisplayOrder)
-        .setting(AppSettings::UnifiedHelpMessage)
         .setting(AppSettings::NextLineHelp)
-        .setting(AppSettings::HidePossibleValuesInHelp)
+        .setting(AppSettings::HidePossibleValues)
         .max_term_width(90)
         .about("A command-line benchmarking tool.")
         .arg(
-            Arg::with_name("command")
-                .help("Command to benchmark")
+            Arg::new("command")
+                .help("Command to benchmark. This can be the name of an executable or a shell \
+                       command like \"sleep 0.5 && echo test\". If multiple commands are given, \
+                       hyperfine will show a comparison of the respective runtimes.")
                 .required(true)
-                .multiple(true)
-                .empty_values(false),
+                .multiple_occurrences(true)
+                .forbid_empty_values(true),
         )
         .arg(
-            Arg::with_name("warmup")
+            Arg::new("warmup")
                 .long("warmup")
-                .short("w")
+                .short('w')
                 .takes_value(true)
                 .value_name("NUM")
                 .help(
@@ -48,35 +41,35 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("min-runs")
+            Arg::new("min-runs")
                 .long("min-runs")
-                .short("m")
+                .short('m')
                 .takes_value(true)
                 .value_name("NUM")
                 .help("Perform at least NUM runs for each command (default: 10)."),
         )
         .arg(
-            Arg::with_name("max-runs")
+            Arg::new("max-runs")
                 .long("max-runs")
-                .short("M")
+                .short('M')
                 .takes_value(true)
                 .value_name("NUM")
                 .help("Perform at most NUM runs for each command. By default, there is no limit."),
         )
         .arg(
-            Arg::with_name("runs")
+            Arg::new("runs")
                 .long("runs")
                 .conflicts_with_all(&["max-runs", "min-runs"])
-                .short("r")
+                .short('r')
                 .takes_value(true)
                 .value_name("NUM")
                 .help("Perform exactly NUM runs for each command. If this option is not specified, \
                        hyperfine automatically determines the number of runs."),
         )
         .arg(
-            Arg::with_name("setup")
+            Arg::new("setup")
                 .long("setup")
-                .short("s")
+                .short('s')
                 .takes_value(true)
                 .number_of_values(1)
                 .value_name("CMD")
@@ -88,11 +81,11 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("prepare")
+            Arg::new("prepare")
                 .long("prepare")
-                .short("p")
+                .short('p')
                 .takes_value(true)
-                .multiple(true)
+                .multiple_occurrences(true)
                 .number_of_values(1)
                 .value_name("CMD")
                 .help(
@@ -104,9 +97,9 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("cleanup")
+            Arg::new("cleanup")
                 .long("cleanup")
-                .short("c")
+                .short('c')
                 .takes_value(true)
                 .value_name("CMD")
                 .help(
@@ -117,9 +110,9 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("parameter-scan")
+            Arg::new("parameter-scan")
                 .long("parameter-scan")
-                .short("P")
+                .short('P')
                 .takes_value(true)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "MIN", "MAX"])
@@ -135,9 +128,9 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("parameter-step-size")
+            Arg::new("parameter-step-size")
                 .long("parameter-step-size")
-                .short("D")
+                .short('D')
                 .takes_value(true)
                 .value_names(&["DELTA"])
                 .requires("parameter-scan")
@@ -149,11 +142,11 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("parameter-list")
+            Arg::new("parameter-list")
                 .long("parameter-list")
-                .short("L")
+                .short('L')
                 .takes_value(true)
-                .multiple(true)
+                .multiple_occurrences(true)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "VALUES"])
                 .conflicts_with_all(&["parameter-scan", "parameter-step-size"])
@@ -167,7 +160,7 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("style")
+            Arg::new("style")
                 .long("style")
                 .takes_value(true)
                 .value_name("TYPE")
@@ -182,38 +175,38 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("shell")
+            Arg::new("shell")
                 .long("shell")
-                .short("S")
+                .short('S')
                 .takes_value(true)
                 .value_name("SHELL")
                 .overrides_with("shell")
                 .help("Set the shell to use for executing benchmarked commands."),
         )
         .arg(
-            Arg::with_name("ignore-failure")
+            Arg::new("ignore-failure")
                 .long("ignore-failure")
-                .short("i")
+                .short('i')
                 .help("Ignore non-zero exit codes of the benchmarked programs."),
         )
         .arg(
-            Arg::with_name("time-unit")
+            Arg::new("time-unit")
                 .long("time-unit")
-                .short("u")
+                .short('u')
                 .takes_value(true)
                 .value_name("UNIT")
                 .possible_values(&["millisecond", "second"])
                 .help("Set the time unit to be used. Possible values: millisecond, second."),
         )
         .arg(
-            Arg::with_name("export-asciidoc")
+            Arg::new("export-asciidoc")
                 .long("export-asciidoc")
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as an AsciiDoc table to the given FILE."),
         )
         .arg(
-            Arg::with_name("export-csv")
+            Arg::new("export-csv")
                 .long("export-csv")
                 .takes_value(true)
                 .value_name("FILE")
@@ -221,21 +214,21 @@ fn build_app() -> App<'static, 'static> {
                        the timing results for each individual run, use the JSON export format."),
         )
         .arg(
-            Arg::with_name("export-json")
+            Arg::new("export-json")
                 .long("export-json")
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE."),
         )
         .arg(
-            Arg::with_name("export-markdown")
+            Arg::new("export-markdown")
                 .long("export-markdown")
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Markdown table to the given FILE."),
         )
         .arg(
-            Arg::with_name("show-output")
+            Arg::new("show-output")
                 .long("show-output")
                 .conflicts_with("style")
                 .help(
@@ -246,15 +239,19 @@ fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("command-name")
+            Arg::new("command-name")
                 .long("command-name")
-                .short("n")
+                .short('n')
                 .takes_value(true)
-                .multiple(true)
+                .multiple_occurrences(true)
                 .number_of_values(1)
                 .value_name("NAME")
-                .help("Give a meaningful name to a command"),
+                .help("Give a meaningful name to a command. This can be specified multiple times \
+                       if several commands are benchmarked."),
         )
-        .help_message("Print this help message.")
-        .version_message("Show version information.")
+}
+
+#[test]
+fn verify_app() {
+    build_app().debug_assert();
 }
