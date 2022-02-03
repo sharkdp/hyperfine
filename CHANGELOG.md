@@ -7,8 +7,8 @@
 
 ## Changes
 
-- The `-s` short option for `--style` has been usurped by the new
-  `--setup` option.
+- Breaking change: the `-s` short option for `--style` is now used for
+  the new `--setup` option.
 
 ## Bugfixes
 
