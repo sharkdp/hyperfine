@@ -203,7 +203,7 @@ conda install -c conda-forge hyperfine
 
 ### With cargo (Linux, macOS, Windows)
 
-Hyperfine can be installed via [cargo](https://doc.rust-lang.org/cargo/):
+Hyperfine can be installed from source via [cargo](https://doc.rust-lang.org/cargo/):
 ```
 cargo install hyperfine
 ```
