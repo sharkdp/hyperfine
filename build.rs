@@ -1,6 +1,6 @@
 use std::fs;
 
-use clap::Shell;
+use clap_complete::{generate_to, Shell};
 
 include!("src/app.rs");
 
@@ -13,8 +13,13 @@ fn main() {
     fs::create_dir_all(&outdir).unwrap();
 
     let mut app = build_app();
-    app.gen_completions("hyperfine", Shell::Bash, &outdir);
-    app.gen_completions("hyperfine", Shell::Fish, &outdir);
-    app.gen_completions("hyperfine", Shell::Zsh, &outdir);
-    app.gen_completions("hyperfine", Shell::PowerShell, &outdir);
+    for shell in [
+        Shell::Bash,
+        Shell::Fish,
+        Shell::Zsh,
+        Shell::PowerShell,
+        Shell::Elvish,
+    ] {
+        generate_to(shell, &mut app, "hyperfine", &outdir).unwrap();
+    }
 }
