@@ -63,12 +63,10 @@ fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResultWithRelativeSpeed, u
     let rel_str = format!("{:.2}", entry.relative_speed);
     let rel_stddev_str = if entry.is_fastest {
         "".into()
+    } else if let Some(stddev) = entry.relative_speed_stddev {
+        format!(" ± {:.2}", stddev)
     } else {
-        if let Some(stddev) = entry.relative_speed_stddev {
-            format!(" ± {:.2}", stddev)
-        } else {
-            "".into()
-        }
+        "".into()
     };
 
     dest.extend(

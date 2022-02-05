@@ -55,7 +55,7 @@ impl fmt::Display for ParameterScanError {
 
 impl Error for ParameterScanError {}
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum OptionsError<'a> {
     EmptyRunsRange,
     TooManyCommandNames(usize),

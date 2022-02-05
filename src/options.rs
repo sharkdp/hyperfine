@@ -182,25 +182,21 @@ fn test_shell_parse_command() {
     assert_eq!(&s, "shell -x 'aaa bbb'");
 
     let cmd = shell.command();
-    // Command::get_program and Command::args are not yet available in stable channel.
-    // https://doc.rust-lang.org/std/process/struct.Command.html#method.get_program
-    let s = format!("{:?}", cmd);
-    assert_eq!(&s, r#""shell" "-x" "aaa bbb""#);
+    assert_eq!(cmd.get_program().to_string_lossy(), "shell");
+    assert_eq!(
+        cmd.get_args()
+            .map(|a| a.to_string_lossy())
+            .collect::<Vec<_>>(),
+        vec!["-x", "aaa bbb"]
+    );
 
     // Error cases
+    assert!(matches!(
+        Shell::parse("shell 'foo").unwrap_err(),
+        OptionsError::ShellParseError(_)
+    ));
 
-    match Shell::parse("shell 'foo").unwrap_err() {
-        OptionsError::ShellParseError(_) => { /* ok */ }
-        e => assert!(false, "Unexpected error: {}", e),
-    }
+    assert_eq!(Shell::parse("").unwrap_err(), OptionsError::EmptyShell);
 
-    match Shell::parse("").unwrap_err() {
-        OptionsError::EmptyShell => { /* ok */ }
-        e => assert!(false, "Unexpected error: {}", e),
-    }
-
-    match Shell::parse("''").unwrap_err() {
-        OptionsError::EmptyShell => { /* ok */ }
-        e => assert!(false, "Unexpected error: {}", e),
-    }
+    assert_eq!(Shell::parse("''").unwrap_err(), OptionsError::EmptyShell);
 }
