@@ -1,8 +1,11 @@
 use std::collections::BTreeMap;
 use std::fmt;
+use std::str::FromStr;
 
-use crate::error::OptionsError;
-use crate::parameter::range::get_parameterized_commands;
+use crate::{
+    error::{OptionsError, ParameterScanError},
+    parameter::range_step::{Numeric, RangeStep},
+};
 
 use clap::ArgMatches;
 
@@ -10,6 +13,8 @@ use crate::parameter::tokenize::tokenize;
 use crate::parameter::ParameterValue;
 
 use anyhow::{bail, Result};
+use clap::Values;
+use rust_decimal::Decimal;
 
 /// A command that should be benchmarked.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,10 +108,96 @@ fn find_duplicates<'a, I: IntoIterator<Item = &'a str>>(i: I) -> Vec<&'a str> {
         .collect()
 }
 
+fn build_parameterized_commands<'a, T: Numeric>(
+    param_min: T,
+    param_max: T,
+    step: T,
+    command_names: Vec<&'a str>,
+    command_strings: Vec<&'a str>,
+    param_name: &'a str,
+) -> Result<Vec<Command<'a>>, ParameterScanError> {
+    let param_range = RangeStep::new(param_min, param_max, step)?;
+    let param_count = param_range.size_hint().1.unwrap();
+    let command_name_count = command_names.len();
+
+    // `--command-name` should appear exactly once or exactly B times,
+    // where B is the total number of benchmarks.
+    if command_name_count > 1 && command_name_count != param_count {
+        return Err(ParameterScanError::UnexpectedCommandNameCount(
+            command_name_count,
+            param_count,
+        ));
+    }
+
+    let mut i = 0;
+    let mut commands = vec![];
+    for value in param_range {
+        for cmd in &command_strings {
+            let name = command_names
+                .get(i)
+                .or_else(|| command_names.get(0))
+                .copied();
+            commands.push(Command::new_parametrized(
+                name,
+                cmd,
+                vec![(param_name, ParameterValue::Numeric(value.into()))],
+            ));
+            i += 1;
+        }
+    }
+    Ok(commands)
+}
+
+fn get_parameterized_commands<'a>(
+    command_names: Option<Values<'a>>,
+    command_strings: Values<'a>,
+    mut vals: clap::Values<'a>,
+    step: Option<&str>,
+) -> Result<Vec<Command<'a>>, ParameterScanError> {
+    let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
+    let command_strings = command_strings.collect::<Vec<&str>>();
+    let param_name = vals.next().unwrap();
+    let param_min = vals.next().unwrap();
+    let param_max = vals.next().unwrap();
+
+    // attempt to parse as integers
+    if let (Ok(param_min), Ok(param_max), Ok(step)) = (
+        param_min.parse::<i32>(),
+        param_max.parse::<i32>(),
+        step.unwrap_or("1").parse::<i32>(),
+    ) {
+        return build_parameterized_commands(
+            param_min,
+            param_max,
+            step,
+            command_names,
+            command_strings,
+            param_name,
+        );
+    }
+
+    // try parsing them as decimals
+    let param_min = Decimal::from_str(param_min)?;
+    let param_max = Decimal::from_str(param_max)?;
+
+    if step.is_none() {
+        return Err(ParameterScanError::StepRequired);
+    }
+
+    let step = Decimal::from_str(step.unwrap())?;
+    build_parameterized_commands(
+        param_min,
+        param_max,
+        step,
+        command_names,
+        command_strings,
+        param_name,
+    )
+}
+
 pub struct Commands<'a>(Vec<Command<'a>>);
 
 impl<'a> Commands<'a> {
-    /// Build the commands to benchmark
     pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands> {
         let command_names = matches.values_of("command-name");
         let command_strings = matches.values_of("command").unwrap();
@@ -334,4 +425,87 @@ fn test_build_parameter_range_commands() {
     assert_eq!(commands[1].get_name(), "name-2");
     assert_eq!(commands[0].get_shell_command(), "echo 1");
     assert_eq!(commands[1].get_shell_command(), "echo 2");
+}
+
+#[test]
+fn test_get_parameterized_commands_int() {
+    let commands =
+        build_parameterized_commands(1i32, 7i32, 3i32, vec![], vec!["echo {val}"], "val").unwrap();
+    assert_eq!(commands.len(), 3);
+    assert_eq!(commands[2].get_name(), "echo 7");
+    assert_eq!(commands[2].get_shell_command(), "echo 7");
+}
+
+#[test]
+fn test_get_parameterized_commands_decimal() {
+    let param_min = Decimal::from_str("0").unwrap();
+    let param_max = Decimal::from_str("1").unwrap();
+    let step = Decimal::from_str("0.33").unwrap();
+
+    let commands = build_parameterized_commands(
+        param_min,
+        param_max,
+        step,
+        vec![],
+        vec!["echo {val}"],
+        "val",
+    )
+    .unwrap();
+    assert_eq!(commands.len(), 4);
+    assert_eq!(commands[3].get_name(), "echo 0.99");
+    assert_eq!(commands[3].get_shell_command(), "echo 0.99");
+}
+
+#[test]
+fn test_get_parameterized_command_names() {
+    let commands = build_parameterized_commands(
+        1i32,
+        3i32,
+        1i32,
+        vec!["name-{val}"],
+        vec!["echo {val}"],
+        "val",
+    )
+    .unwrap();
+    assert_eq!(commands.len(), 3);
+    let command_names = commands
+        .iter()
+        .map(|c| c.get_name())
+        .collect::<Vec<String>>();
+    assert_eq!(command_names, vec!["name-1", "name-2", "name-3"]);
+}
+
+#[test]
+fn test_get_specified_command_names() {
+    let commands = build_parameterized_commands(
+        1i32,
+        3i32,
+        1i32,
+        vec!["name-a", "name-b", "name-c"],
+        vec!["echo {val}"],
+        "val",
+    )
+    .unwrap();
+    assert_eq!(commands.len(), 3);
+    let command_names = commands
+        .iter()
+        .map(|c| c.get_name())
+        .collect::<Vec<String>>();
+    assert_eq!(command_names, vec!["name-a", "name-b", "name-c"]);
+}
+
+#[test]
+fn test_different_command_name_count_with_parameters() {
+    let result = build_parameterized_commands(
+        1i32,
+        3i32,
+        1i32,
+        vec!["name-1", "name-2"],
+        vec!["echo {val}"],
+        "val",
+    );
+    assert_eq!(
+        format!("{}", result.unwrap_err()),
+        "'--command-name' has been specified 2 times. It has to appear exactly once, or exactly 3 times (number of benchmarks)"
+    );
 }
