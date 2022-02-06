@@ -1,12 +1,13 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use crate::{error::OptionsError, parameter_range::get_parameterized_commands};
+use crate::error::OptionsError;
+use crate::parameter::range::get_parameterized_commands;
 
 use clap::ArgMatches;
 
-use crate::tokenize::tokenize;
-use crate::types::ParameterValue;
+use crate::parameter::tokenize::tokenize;
+use crate::parameter::ParameterValue;
 
 use anyhow::{bail, Result};
 
