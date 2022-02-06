@@ -1,6 +1,8 @@
 mod common;
 use common::hyperfine;
 
+use predicates::prelude::*;
+
 #[test]
 fn hyperfine_runs_successfully() {
     hyperfine()
@@ -17,4 +19,15 @@ fn one_run_is_supported() {
         .arg("echo dummy benchmark")
         .assert()
         .success();
+}
+
+#[test]
+fn fails_with_wrong_number_of_command_name_arguments() {
+    hyperfine()
+        .arg("--command-name=a")
+        .arg("--command-name=b")
+        .arg("echo a")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Too many --command-name options"));
 }
