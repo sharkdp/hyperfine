@@ -1,4 +1,4 @@
-use crate::benchmark_result::BenchmarkResult;
+use crate::benchmark::result::BenchmarkResult;
 use crate::format::format_duration_value;
 use crate::relative_speed::{self, BenchmarkResultWithRelativeSpeed};
 use crate::units::Unit;

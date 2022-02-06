@@ -4,7 +4,6 @@ use colored::*;
 
 pub mod app;
 pub mod benchmark;
-pub mod benchmark_result;
 pub mod command;
 pub mod error;
 pub mod export;
@@ -23,8 +22,8 @@ pub mod units;
 pub mod warnings;
 
 use app::get_arg_matches;
+use benchmark::result::BenchmarkResult;
 use benchmark::{mean_shell_spawning_time, run_benchmark};
-use benchmark_result::BenchmarkResult;
 use command::{build_commands, Command};
 use export::ExportManager;
 use options::{Options, OutputStyleOption};

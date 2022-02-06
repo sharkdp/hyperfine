@@ -2,7 +2,7 @@ use serde::*;
 use serde_json::to_vec_pretty;
 
 use super::Exporter;
-use crate::benchmark_result::BenchmarkResult;
+use crate::benchmark::result::BenchmarkResult;
 use crate::units::Unit;
 
 use anyhow::Result;
