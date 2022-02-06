@@ -8,7 +8,7 @@ use winapi::um::processthreadsapi::GetProcessTimes;
 use winapi::um::winnt::HANDLE;
 
 use crate::timer::{CPUTimes, TimerStart, TimerStop};
-use crate::units::Second;
+use crate::util::units::Second;
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 

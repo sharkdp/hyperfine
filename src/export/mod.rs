@@ -12,7 +12,7 @@ use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 
 use crate::benchmark::result::BenchmarkResult;
-use crate::units::Unit;
+use crate::util::units::Unit;
 
 use anyhow::{Context, Result};
 use clap::ArgMatches;

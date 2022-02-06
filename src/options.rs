@@ -5,7 +5,7 @@ use atty::Stream;
 use clap::ArgMatches;
 
 use crate::error::OptionsError;
-use crate::units::{Second, Unit};
+use crate::util::units::{Second, Unit};
 
 #[cfg(not(windows))]
 pub const DEFAULT_SHELL: &str = "sh";

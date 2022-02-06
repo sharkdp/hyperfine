@@ -2,7 +2,7 @@ use std::process::Child;
 use std::time::Instant;
 
 use crate::timer::{TimerStart, TimerStop};
-use crate::units::Second;
+use crate::util::units::Second;
 
 pub struct WallClockTimer {
     start: Instant,
