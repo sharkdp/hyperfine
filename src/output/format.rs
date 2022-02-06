@@ -1,4 +1,4 @@
-use crate::units::{Second, Unit};
+use crate::util::units::{Second, Unit};
 
 /// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
 /// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.

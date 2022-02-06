@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::benchmark::MIN_EXECUTION_TIME;
 use crate::output::format::format_duration;
-use crate::units::Second;
+use crate::util::units::Second;
 
 /// A list of all possible warnings
 pub enum Warnings {

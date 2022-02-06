@@ -4,7 +4,7 @@ use csv::WriterBuilder;
 
 use super::Exporter;
 use crate::benchmark::result::BenchmarkResult;
-use crate::units::Unit;
+use crate::util::units::Unit;
 
 use anyhow::Result;
 

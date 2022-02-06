@@ -8,7 +8,7 @@ use rust_decimal::Decimal;
 use super::ParameterValue;
 use crate::command::Command;
 use crate::error::ParameterScanError;
-use crate::number::Number;
+use crate::util::number::Number;
 
 trait Numeric:
     Add<Output = Self>

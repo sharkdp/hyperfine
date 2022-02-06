@@ -4,7 +4,7 @@ use std::mem;
 use std::process::Child;
 
 use crate::timer::{CPUInterval, CPUTimes, TimerStart, TimerStop};
-use crate::units::Second;
+use crate::util::units::Second;
 
 pub fn get_cpu_timer() -> Box<dyn TimerStop<Result = (Second, Second)>> {
     Box::new(CPUTimer::start())

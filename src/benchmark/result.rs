@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::units::Second;
+use crate::util::units::Second;
 
 /// Set of values that will be exported.
 // NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the

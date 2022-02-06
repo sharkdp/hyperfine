@@ -9,7 +9,6 @@ use statistical::{mean, median, standard_deviation};
 
 use crate::benchmark::result::BenchmarkResult;
 use crate::command::Command;
-use crate::min_max::{max, min};
 use crate::options::{CmdFailureAction, Options, OutputStyleOption, Shell};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
@@ -18,7 +17,8 @@ use crate::output::warnings::Warnings;
 use crate::shell::execute_and_time;
 use crate::timer::wallclocktimer::WallClockTimer;
 use crate::timer::{TimerStart, TimerStop};
-use crate::units::Second;
+use crate::util::min_max::{max, min};
+use crate::util::units::Second;
 
 use anyhow::{bail, Result};
 

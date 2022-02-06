@@ -1,4 +1,4 @@
-use crate::number::Number;
+use crate::util::number::Number;
 
 pub mod range;
 pub mod tokenize;
