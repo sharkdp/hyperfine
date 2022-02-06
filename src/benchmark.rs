@@ -503,20 +503,21 @@ pub fn run_benchmark(
     });
     run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
 
-    Ok(BenchmarkResult::new(
-        command_name,
-        t_mean,
-        t_stddev,
-        t_median,
-        user_mean,
-        system_mean,
-        t_min,
-        t_max,
-        times_real,
+    Ok(BenchmarkResult {
+        command: command_name,
+        mean: t_mean,
+        stddev: t_stddev,
+        median: t_median,
+        user: user_mean,
+        system: system_mean,
+        min: t_min,
+        max: t_max,
+        times: Some(times_real),
         exit_codes,
-        cmd.get_parameters()
+        parameters: cmd
+            .get_parameters()
             .iter()
             .map(|(name, value)| ((*name).to_string(), value.to_string()))
             .collect(),
-    ))
+    })
 }
