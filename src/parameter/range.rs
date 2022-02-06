@@ -8,7 +8,7 @@ use rust_decimal::Decimal;
 use super::ParameterValue;
 use crate::command::Command;
 use crate::error::ParameterScanError;
-use crate::numeric::NumericType;
+use crate::number::Number;
 
 trait Numeric:
     Add<Output = Self>
@@ -19,7 +19,7 @@ trait Numeric:
     + Copy
     + Clone
     + From<i32>
-    + Into<NumericType>
+    + Into<Number>
 {
 }
 impl<
@@ -31,7 +31,7 @@ impl<
             + Copy
             + Clone
             + From<i32>
-            + Into<NumericType>,
+            + Into<Number>,
     > Numeric for T
 {
 }

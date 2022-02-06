@@ -1,4 +1,4 @@
-use crate::numeric::NumericType;
+use crate::number::Number;
 
 pub mod range;
 pub mod tokenize;
@@ -6,7 +6,7 @@ pub mod tokenize;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParameterValue {
     Text(String),
-    Numeric(NumericType),
+    Numeric(Number),
 }
 
 impl<'a> ToString for ParameterValue {
