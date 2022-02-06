@@ -1,5 +1,6 @@
 pub mod relative_speed;
 pub mod result;
+pub mod schedule;
 
 use std::cmp;
 use std::process::{ExitStatus, Stdio};
