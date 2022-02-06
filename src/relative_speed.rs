@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
-use crate::{benchmark_result::BenchmarkResult, units::Scalar};
+use crate::benchmark::result::BenchmarkResult;
+use crate::units::Scalar;
 
 #[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {

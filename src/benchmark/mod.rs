@@ -1,10 +1,12 @@
+pub mod result;
+
 use std::cmp;
 use std::process::{ExitStatus, Stdio};
 
 use colored::*;
 use statistical::{mean, median, standard_deviation};
 
-use crate::benchmark_result::BenchmarkResult;
+use crate::benchmark::result::BenchmarkResult;
 use crate::command::Command;
 use crate::format::{format_duration, format_duration_unit};
 use crate::min_max::{max, min};
