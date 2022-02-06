@@ -1,24 +1,5 @@
 use std::env;
 
-use colored::*;
-
-pub mod app;
-pub mod benchmark;
-pub mod command;
-pub mod error;
-pub mod export;
-pub mod min_max;
-pub mod options;
-pub mod outlier_detection;
-pub mod output;
-pub mod parameter_range;
-pub mod relative_speed;
-pub mod shell;
-pub mod timer;
-pub mod tokenize;
-pub mod types;
-pub mod units;
-
 use app::get_arg_matches;
 use benchmark::result::BenchmarkResult;
 use benchmark::{mean_shell_spawning_time, run_benchmark};
@@ -27,6 +8,23 @@ use export::ExportManager;
 use options::{Options, OutputStyleOption};
 
 use anyhow::{bail, Result};
+use colored::*;
+
+pub mod app;
+pub mod benchmark;
+pub mod command;
+pub mod error;
+pub mod export;
+pub mod min_max;
+pub mod numeric;
+pub mod options;
+pub mod outlier_detection;
+pub mod output;
+pub mod parameter;
+pub mod relative_speed;
+pub mod shell;
+pub mod timer;
+pub mod units;
 
 pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
     if results.len() < 2 {

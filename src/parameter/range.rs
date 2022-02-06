@@ -5,9 +5,10 @@ use std::str::FromStr;
 use clap::Values;
 use rust_decimal::Decimal;
 
+use super::ParameterValue;
 use crate::command::Command;
 use crate::error::ParameterScanError;
-use crate::types::{NumericType, ParameterValue};
+use crate::numeric::NumericType;
 
 trait Numeric:
     Add<Output = Self>

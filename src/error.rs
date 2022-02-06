@@ -1,5 +1,4 @@
-use std::num;
-use std::num::ParseIntError;
+use std::num::{self, ParseIntError};
 
 use rust_decimal::Error as DecimalError;
 use thiserror::Error;
