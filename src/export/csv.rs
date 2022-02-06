@@ -1,11 +1,12 @@
 use std::borrow::Cow;
-use std::io::{Error, ErrorKind, Result};
 
 use csv::WriterBuilder;
 
 use super::Exporter;
 use crate::benchmark_result::BenchmarkResult;
 use crate::units::Unit;
+
+use anyhow::Result;
 
 #[derive(Default)]
 pub struct CsvExporter {}
@@ -49,9 +50,7 @@ impl Exporter for CsvExporter {
             writer.write_record(fields)?;
         }
 
-        writer
-            .into_inner()
-            .map_err(|e| Error::new(ErrorKind::Other, e))
+        Ok(writer.into_inner()?)
     }
 }
 

@@ -1,11 +1,11 @@
-use std::io::{Error, ErrorKind, Result};
-
 use serde::*;
 use serde_json::to_vec_pretty;
 
 use super::Exporter;
 use crate::benchmark_result::BenchmarkResult;
 use crate::units::Unit;
+
+use anyhow::Result;
 
 #[derive(Serialize, Debug)]
 struct HyperfineSummary<'a> {
@@ -22,6 +22,6 @@ impl Exporter for JsonExporter {
             content.push(b'\n');
         }
 
-        output.map_err(|e| Error::new(ErrorKind::Other, e))
+        Ok(output?)
     }
 }

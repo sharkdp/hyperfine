@@ -1,5 +1,4 @@
 use std::cmp;
-use std::io;
 use std::process::{ExitStatus, Stdio};
 
 use colored::*;
@@ -17,6 +16,8 @@ use crate::timer::wallclocktimer::WallClockTimer;
 use crate::timer::{TimerStart, TimerStop};
 use crate::units::Second;
 use crate::warnings::Warnings;
+
+use anyhow::{bail, Result};
 
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;
@@ -50,7 +51,7 @@ pub fn time_shell_command(
     show_output: bool,
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
-) -> io::Result<(TimingResult, ExitStatus)> {
+) -> Result<(TimingResult, ExitStatus)> {
     let (stdout, stderr) = if show_output {
         (Stdio::inherit(), Stdio::inherit())
     } else {
@@ -65,18 +66,14 @@ pub fn time_shell_command(
     let mut time_system = result.system_time;
 
     if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!(
-                "{}. \
-                Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+        bail!(
+            "{}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
                 Alternatively, use the '--show-output' option to debug what went wrong.",
-                result.status.code().map_or(
-                    "The process has been terminated by a signal".into(),
-                    |c| format!("Command terminated with non-zero exit code: {}", c)
-                )
-            ),
-        ));
+            result.status.code().map_or(
+                "The process has been terminated by a signal".into(),
+                |c| format!("Command terminated with non-zero exit code: {}", c)
+            )
+        );
     }
 
     // Correct for shell spawning time
@@ -101,7 +98,7 @@ pub fn mean_shell_spawning_time(
     shell: &Shell,
     style: OutputStyleOption,
     show_output: bool,
-) -> io::Result<TimingResult> {
+) -> Result<TimingResult> {
     const COUNT: u64 = 50;
     let progress_bar = if style != OutputStyleOption::Disabled {
         Some(get_progress_bar(
@@ -135,14 +132,10 @@ pub fn mean_shell_spawning_time(
                     format!("{} -c \"\"", shell)
                 };
 
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    format!(
-                        "Could not measure shell execution time. \
-                         Make sure you can run '{}'.",
-                        shell_cmd
-                    ),
-                ));
+                bail!(
+                    "Could not measure shell execution time. Make sure you can run '{}'.",
+                    shell_cmd
+                );
             }
             Ok((r, _)) => {
                 times_real.push(r.time_real);
@@ -172,11 +165,11 @@ fn run_intermediate_command(
     command: &Option<Command<'_>>,
     show_output: bool,
     error_output: &'static str,
-) -> io::Result<TimingResult> {
+) -> Result<TimingResult> {
     if let Some(ref cmd) = command {
         let res = time_shell_command(shell, cmd, show_output, CmdFailureAction::RaiseError, None);
         if res.is_err() {
-            return Err(io::Error::new(io::ErrorKind::Other, error_output));
+            bail!(error_output);
         }
         return res.map(|r| r.0);
     }
@@ -190,7 +183,7 @@ fn run_setup_command(
     shell: &Shell,
     command: &Option<Command<'_>>,
     show_output: bool,
-) -> io::Result<TimingResult> {
+) -> Result<TimingResult> {
     let error_output = "The setup command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
@@ -202,7 +195,7 @@ fn run_preparation_command(
     shell: &Shell,
     command: &Option<Command<'_>>,
     show_output: bool,
-) -> io::Result<TimingResult> {
+) -> Result<TimingResult> {
     let error_output = "The preparation command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
@@ -214,7 +207,7 @@ fn run_cleanup_command(
     shell: &Shell,
     command: &Option<Command<'_>>,
     show_output: bool,
-) -> io::Result<TimingResult> {
+) -> Result<TimingResult> {
     let error_output = "The cleanup command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
@@ -248,7 +241,7 @@ pub fn run_benchmark(
     cmd: &Command<'_>,
     shell_spawning_time: TimingResult,
     options: &HyperfineOptions,
-) -> io::Result<BenchmarkResult> {
+) -> Result<BenchmarkResult> {
     let command_name = cmd.get_name();
     if options.output_style != OutputStyleOption::Disabled {
         println!(

@@ -1,10 +1,10 @@
-use std::io::{Error, ErrorKind, Result};
-
 use super::Exporter;
 use crate::benchmark_result::BenchmarkResult;
 use crate::format::format_duration_value;
 use crate::relative_speed::{self, BenchmarkResultWithRelativeSpeed};
 use crate::units::Unit;
+
+use anyhow::{anyhow, Result};
 
 #[derive(Default)]
 pub struct MarkdownExporter {}
@@ -31,9 +31,8 @@ impl Exporter for MarkdownExporter {
 
             Ok(destination)
         } else {
-            Err(Error::new(
-                ErrorKind::Other,
-                "Relative speed comparison is not available for Markdown export.",
+            Err(anyhow!(
+                "Relative speed comparison is not available for Markdown export."
             ))
         }
     }
