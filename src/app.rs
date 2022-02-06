@@ -2,7 +2,7 @@ use std::ffi::OsString;
 
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches};
 
-pub fn get_arg_matches<'a, I, T>(args: I) -> ArgMatches
+pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone + 'a,

@@ -1,5 +1,6 @@
+use crate::command::Commands;
+use crate::export::ExportManager;
 use crate::options::{Options, OutputStyleOption};
-use crate::{command::Command, export::ExportManager};
 
 use super::{mean_shell_spawning_time, relative_speed, result::BenchmarkResult, run_benchmark};
 
@@ -45,7 +46,7 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
 }
 
 pub fn run_benchmarks_and_print_comparison(
-    commands: &[Command<'_>],
+    commands: &Commands,
     options: &Options,
     export_manager: &ExportManager,
 ) -> Result<()> {
