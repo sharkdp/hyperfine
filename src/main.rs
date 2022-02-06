@@ -1,8 +1,8 @@
 use std::env;
 
-use app::get_arg_matches;
+use app::get_cli_arguments;
 use benchmark::schedule::run_benchmarks_and_print_comparison;
-use command::build_commands;
+use command::Commands;
 use export::ExportManager;
 use options::Options;
 
@@ -27,10 +27,10 @@ fn run() -> Result<()> {
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
 
-    let matches = get_arg_matches(env::args_os());
-    let options = Options::from_cli_arguments(&matches)?;
-    let commands = build_commands(&matches)?;
-    let export_manager = ExportManager::from_cli_arguments(&matches)?;
+    let cli_arguments = get_cli_arguments(env::args_os());
+    let options = Options::from_cli_arguments(&cli_arguments)?;
+    let commands = Commands::from_cli_arguments(&cli_arguments)?;
+    let export_manager = ExportManager::from_cli_arguments(&cli_arguments)?;
 
     run_benchmarks_and_print_comparison(&commands, &options, &export_manager)
 }
