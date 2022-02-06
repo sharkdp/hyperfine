@@ -1,18 +1,24 @@
-use std::error::Error;
-use std::fmt;
 use std::num;
 use std::num::ParseIntError;
 
 use rust_decimal::Error as DecimalError;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum ParameterScanError {
+    #[error("Error while parsing parameter scan arguments ({0})")]
     ParseIntError(num::ParseIntError),
+    #[error("Error while parsing parameter scan arguments ({0})")]
     ParseDecimalError(DecimalError),
+    #[error("Empty parameter range")]
     EmptyRange,
+    #[error("Parameter range is too large")]
     TooLarge,
+    #[error("Zero is not a valid parameter step")]
     ZeroStep,
+    #[error("A step size is required when the range bounds are floating point numbers. The step size can be specified with the '--parameter-step-size' parameter")]
     StepRequired,
+    #[error("'--command-name' has been specified {0} times. It has to appear exactly once, or exactly {1} times (number of benchmarks)")]
     UnexpectedCommandNameCount(usize, usize),
 }
 
@@ -28,69 +34,20 @@ impl From<DecimalError> for ParameterScanError {
     }
 }
 
-impl fmt::Display for ParameterScanError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            ParameterScanError::ParseIntError(ref e) => write!(f, "{}", e),
-            ParameterScanError::ParseDecimalError(ref e) => write!(f, "{}", e),
-            ParameterScanError::EmptyRange => write!(f, "Empty parameter range"),
-            ParameterScanError::TooLarge => write!(f, "Parameter range is too large"),
-            ParameterScanError::ZeroStep => write!(f, "Zero is not a valid parameter step"),
-            ParameterScanError::StepRequired => write!(
-                f,
-                "A step size is required when the range bounds are \
-                 floating point numbers. The step size can be specified \
-                 with the '--parameter-step-size' parameter"
-            ),
-            ParameterScanError::UnexpectedCommandNameCount(real, expected) => {
-                write!(
-                    f,
-                    "'--command-name' has been specified {} times. It has to appear exactly once, or exactly {} times (number of benchmarks)",
-                    real, expected
-                )
-            }
-        }
-    }
-}
-
-impl Error for ParameterScanError {}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum OptionsError<'a> {
+    #[error(
+        "Conflicting requirements for the number of runs (empty range, min is larger than max)"
+    )]
     EmptyRunsRange,
+    #[error("Too many --command-name options: Expected {0} at most")]
     TooManyCommandNames(usize),
+    #[error("'--command-name' has been specified {0} times. It has to appear exactly once, or exactly {1} times (number of benchmarks)")]
     UnexpectedCommandNameCount(usize, usize),
+    #[error("Could not read numeric argument to '--{0}': {1}")]
     NumericParsingError(&'a str, ParseIntError),
+    #[error("An empty command has been specified for the '--shell <command>' option")]
     EmptyShell,
+    #[error("Failed to parse '--shell <command>' expression as command line: {0}")]
     ShellParseError(shell_words::ParseError),
 }
-
-impl<'a> fmt::Display for OptionsError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            OptionsError::EmptyRunsRange => write!(f, "Empty runs range"),
-            OptionsError::TooManyCommandNames(n) => {
-                write!(f, "Too many --command-name options: expected {} at most", n)
-            }
-            OptionsError::UnexpectedCommandNameCount(real, expected) => {
-                write!(
-                    f,
-                    "'--command-name' has been specified {} times. It has to appear exactly once, or exactly {} times (number of benchmarks)",
-                    real, expected
-                )
-            }
-            OptionsError::NumericParsingError(cmd, ref err) => write!(
-                f,
-                "Could not read numeric argument to '--{cmd}': {err}",
-                cmd = cmd,
-                err = err
-            ),
-            OptionsError::EmptyShell => write!(f, "Empty command at --shell option"),
-            OptionsError::ShellParseError(ref err) => {
-                write!(f, "Could not parse --shell value as command line: {}", err)
-            }
-        }
-    }
-}
-
-impl<'a> Error for OptionsError<'a> {}

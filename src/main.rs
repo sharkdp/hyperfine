@@ -261,7 +261,7 @@ fn build_export_manager(matches: &ArgMatches) -> io::Result<ExportManager> {
 }
 
 /// Build the commands to benchmark
-fn build_commands(matches: &ArgMatches) -> Vec<Command> {
+fn build_commands(matches: &ArgMatches) -> Result<Vec<Command>> {
     let command_names = matches.values_of("command-name");
     let command_strings = matches.values_of("command").unwrap();
 
