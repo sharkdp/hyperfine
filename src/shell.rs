@@ -98,4 +98,5 @@ fn run_shell_command(
         .stdout(stdout)
         .stderr(stderr)
         .spawn()
+        .with_context(|| format!("Failed to run command '{}'", command))
 }
