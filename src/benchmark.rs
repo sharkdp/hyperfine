@@ -8,7 +8,7 @@ use crate::benchmark_result::BenchmarkResult;
 use crate::command::Command;
 use crate::format::{format_duration, format_duration_unit};
 use crate::min_max::{max, min};
-use crate::options::{CmdFailureAction, HyperfineOptions, OutputStyleOption, Shell};
+use crate::options::{CmdFailureAction, Options, OutputStyleOption, Shell};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::progress_bar::get_progress_bar;
 use crate::shell::execute_and_time;
@@ -240,7 +240,7 @@ pub fn run_benchmark(
     num: usize,
     cmd: &Command<'_>,
     shell_spawning_time: TimingResult,
-    options: &HyperfineOptions,
+    options: &Options,
 ) -> Result<BenchmarkResult> {
     let command_name = cmd.get_name();
     if options.output_style != OutputStyleOption::Disabled {
