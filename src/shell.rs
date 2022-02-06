@@ -1,8 +1,9 @@
-use std::io;
 use std::process::{ExitStatus, Stdio};
 
 use crate::options::Shell;
 use crate::timer::get_cpu_timer;
+
+use anyhow::{Context, Result};
 
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]
@@ -24,7 +25,7 @@ pub fn execute_and_time(
     stderr: Stdio,
     command: &str,
     shell: &Shell,
-) -> io::Result<ExecuteResult> {
+) -> Result<ExecuteResult> {
     let mut child = run_shell_command(stdout, stderr, command, shell)?;
     let cpu_timer = get_cpu_timer(&child);
     let status = child.wait()?;
@@ -44,7 +45,7 @@ pub fn execute_and_time(
     stderr: Stdio,
     command: &str,
     shell: &Shell,
-) -> io::Result<ExecuteResult> {
+) -> Result<ExecuteResult> {
     let cpu_timer = get_cpu_timer();
 
     let status = run_shell_command(stdout, stderr, command, shell)?;
@@ -65,7 +66,7 @@ fn run_shell_command(
     stderr: Stdio,
     command: &str,
     shell: &Shell,
-) -> io::Result<std::process::ExitStatus> {
+) -> Result<std::process::ExitStatus> {
     shell
         .command()
         .arg("-c")
@@ -78,6 +79,7 @@ fn run_shell_command(
         .stdout(stdout)
         .stderr(stderr)
         .status()
+        .with_context(|| format!("Failed to run command '{}'", command))
 }
 
 /// Run a Windows shell command using `cmd.exe /C`
@@ -87,7 +89,7 @@ fn run_shell_command(
     stderr: Stdio,
     command: &str,
     shell: &Shell,
-) -> io::Result<std::process::Child> {
+) -> Result<std::process::Child> {
     shell
         .command()
         .arg("/C")

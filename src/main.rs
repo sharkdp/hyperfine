@@ -1,7 +1,6 @@
 use std::cmp;
 use std::collections::BTreeMap;
 use std::env;
-use std::io;
 
 use atty::Stream;
 use clap::ArgMatches;
@@ -39,11 +38,7 @@ use tokenize::tokenize;
 use types::ParameterValue;
 use units::Unit;
 
-/// Print error message to stderr and terminate
-pub fn error(message: &str) -> ! {
-    eprintln!("{} {}", "Error:".red(), message);
-    std::process::exit(1);
-}
+use anyhow::{bail, Result};
 
 pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
     if results.len() < 2 {
@@ -83,12 +78,11 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
     }
 }
 
-/// Runs the benchmark for the given commands
-fn run(
+fn run_benchmarks_and_print_comparison(
     commands: &[Command<'_>],
     options: &HyperfineOptions,
     export_manager: &ExportManager,
-) -> io::Result<()> {
+) -> Result<()> {
     let shell_spawning_time =
         mean_shell_spawning_time(&options.shell, options.output_style, options.show_output)?;
 
@@ -96,9 +90,9 @@ fn run(
 
     if let Some(preparation_command) = &options.preparation_command {
         if preparation_command.len() > 1 && commands.len() != preparation_command.len() {
-            error(
+            bail!(
                 "The '--prepare' option has to be provided just once or N times, where N is the \
-                 number of benchmark commands.",
+                 number of benchmark commands."
             );
         }
     }
@@ -108,13 +102,7 @@ fn run(
         timing_results.push(run_benchmark(num, cmd, shell_spawning_time, options)?);
 
         // Export (intermediate) results
-        let ans = export_manager.write_results(&timing_results, options.time_unit);
-        if let Err(e) = ans {
-            error(&format!(
-                "The following error occurred while exporting: {}",
-                e
-            ));
-        }
+        export_manager.write_results(&timing_results, options.time_unit)?;
     }
 
     // Print relative speed comparison
@@ -125,23 +113,22 @@ fn run(
     Ok(())
 }
 
-fn main() {
+fn run() -> Result<()> {
     let matches = get_arg_matches(env::args_os());
-    let options = build_hyperfine_options(&matches);
-    let commands = build_commands(&matches);
-    let export_manager = match build_export_manager(&matches) {
-        Ok(export_manager) => export_manager,
-        Err(ref e) => error(&e.to_string()),
-    };
+    let options = build_hyperfine_options(&matches)?;
+    let commands = build_commands(&matches)?;
+    let export_manager = build_export_manager(&matches)?;
 
-    let res = match options {
-        Ok(ref opts) => run(&commands, opts, &export_manager),
-        Err(ref e) => error(&e.to_string()),
-    };
+    run_benchmarks_and_print_comparison(&commands, &options, &export_manager)
+}
 
-    match res {
+fn main() {
+    match run() {
         Ok(_) => {}
-        Err(e) => error(&e.to_string()),
+        Err(e) => {
+            eprintln!("{} {:#}", "Error:".red(), e);
+            std::process::exit(1);
+        }
     }
 }
 
@@ -243,10 +230,10 @@ fn build_hyperfine_options<'a>(matches: &ArgMatches) -> Result<HyperfineOptions,
 
 /// Build the ExportManager that will export the results specified
 /// in the given ArgMatches
-fn build_export_manager(matches: &ArgMatches) -> io::Result<ExportManager> {
+fn build_export_manager(matches: &ArgMatches) -> Result<ExportManager> {
     let mut export_manager = ExportManager::default();
     {
-        let mut add_exporter = |flag, exporttype| -> io::Result<()> {
+        let mut add_exporter = |flag, exporttype| -> Result<()> {
             if let Some(filename) = matches.value_of(flag) {
                 export_manager.add_exporter(exporttype, filename)?;
             }
@@ -267,10 +254,12 @@ fn build_commands(matches: &ArgMatches) -> Result<Vec<Command>> {
 
     if let Some(args) = matches.values_of("parameter-scan") {
         let step_size = matches.value_of("parameter-step-size");
-        match get_parameterized_commands(command_names, command_strings, args, step_size) {
-            Ok(commands) => commands,
-            Err(e) => error(&e.to_string()),
-        }
+        Ok(get_parameterized_commands(
+            command_names,
+            command_strings,
+            args,
+            step_size,
+        )?)
     } else if let Some(args) = matches.values_of("parameter-list") {
         let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
 
@@ -286,7 +275,7 @@ fn build_commands(matches: &ArgMatches) -> Result<Vec<Command>> {
         {
             let dupes = find_dupes(param_names_and_values.iter().map(|(name, _)| *name));
             if !dupes.is_empty() {
-                error(&format!("duplicate parameter names: {}", &dupes.join(", ")))
+                bail!("Duplicate parameter names: {}", &dupes.join(", "));
             }
         }
         let command_list = command_strings.collect::<Vec<&str>>();
@@ -300,16 +289,18 @@ fn build_commands(matches: &ArgMatches) -> Result<Vec<Command>> {
             .collect();
         let param_space_size = dimensions.iter().product();
         if param_space_size == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
 
         // `--command-name` should appear exactly once or exactly B times,
         // where B is the total number of benchmarks.
         let command_name_count = command_names.len();
         if command_name_count > 1 && command_name_count != param_space_size {
-            let err =
-                OptionsError::UnexpectedCommandNameCount(command_name_count, param_space_size);
-            error(&err.to_string());
+            return Err(OptionsError::UnexpectedCommandNameCount(
+                command_name_count,
+                param_space_size,
+            )
+            .into());
         }
 
         let mut i = 0;
@@ -346,12 +337,11 @@ fn build_commands(matches: &ArgMatches) -> Result<Vec<Command>> {
             break 'outer;
         }
 
-        commands
+        Ok(commands)
     } else {
         let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
         if command_names.len() > command_strings.len() {
-            let err = OptionsError::TooManyCommandNames(command_strings.len());
-            error(&err.to_string());
+            return Err(OptionsError::TooManyCommandNames(command_strings.len()).into());
         }
 
         let command_list = command_strings.collect::<Vec<&str>>();
@@ -359,7 +349,7 @@ fn build_commands(matches: &ArgMatches) -> Result<Vec<Command>> {
         for (i, s) in command_list.iter().enumerate() {
             commands.push(Command::new(command_names.get(i).copied(), s));
         }
-        commands
+        Ok(commands)
     }
 }
 
@@ -389,7 +379,7 @@ fn test_build_commands_cross_product() {
         "echo {par1} {par2}",
         "printf '%s\n' {par1} {par2}",
     ]);
-    let result = build_commands(&matches);
+    let result = build_commands(&matches).unwrap();
 
     // Iteration order: command list first, then parameters in listed order (here, "par1" before
     // "par2", which is distinct from their sorted order), with parameter values in listed order.
@@ -423,7 +413,7 @@ fn test_build_parameter_list_commands() {
         "--command-name",
         "name-{foo}",
     ]);
-    let commands = build_commands(&matches);
+    let commands = build_commands(&matches).unwrap();
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");
@@ -445,7 +435,7 @@ fn test_build_parameter_range_commands() {
         "--command-name",
         "name-{val}",
     ]);
-    let commands = build_commands(&matches);
+    let commands = build_commands(&matches).unwrap();
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");

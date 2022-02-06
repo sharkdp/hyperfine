@@ -1,11 +1,11 @@
-use std::io::{Error, ErrorKind, Result};
-
 use crate::benchmark_result::BenchmarkResult;
 use crate::format::format_duration_value;
 use crate::relative_speed::{self, BenchmarkResultWithRelativeSpeed};
 use crate::units::Unit;
 
 use super::Exporter;
+
+use anyhow::{anyhow, Result};
 
 #[derive(Default)]
 pub struct AsciidocExporter {}
@@ -36,9 +36,8 @@ impl Exporter for AsciidocExporter {
 
             Ok(res)
         } else {
-            Err(Error::new(
-                ErrorKind::Other,
-                "Relative speed comparison is not available for Asciidoctor export.",
+            Err(anyhow!(
+                "Relative speed comparison is not available for Asciidoctor export."
             ))
         }
     }

@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::{Result, Write};
+use std::io::Write;
 
 mod asciidoc;
 mod csv;
@@ -13,6 +13,8 @@ use self::markdown::MarkdownExporter;
 
 use crate::benchmark_result::BenchmarkResult;
 use crate::units::Unit;
+
+use anyhow::{Context, Result};
 
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]
@@ -50,7 +52,8 @@ pub struct ExportManager {
 impl ExportManager {
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) -> Result<()> {
-        let _ = File::create(filename)?;
+        let _ = File::create(filename)
+            .with_context(|| format!("Could not create export file '{filename}'"))?;
 
         let exporter: Box<dyn Exporter> = match export_type {
             ExportType::Asciidoc => Box::new(AsciidocExporter::default()),
@@ -80,4 +83,5 @@ impl ExportManager {
 fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
     let mut file = OpenOptions::new().write(true).open(filename)?;
     file.write_all(content)
+        .with_context(|| format!("Failed to export results to '{}'", filename))
 }
