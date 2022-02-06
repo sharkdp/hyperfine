@@ -161,6 +161,33 @@ fn prepare_commands_are_executed_before_each_timing_run() {
 }
 
 #[test]
+fn prepare_commands_are_executed_before_each_warmup() {
+    ExecutionOrderTest::new()
+        .arg("--warmup=2")
+        .arg("--runs=1")
+        .prepare("prepare")
+        .command("command 1")
+        .command("command 2")
+        // warmup 1
+        .expect_output("prepare")
+        .expect_output("command 1")
+        .expect_output("prepare")
+        .expect_output("command 1")
+        // benchmark 1
+        .expect_output("prepare")
+        .expect_output("command 1")
+        // warmup 2
+        .expect_output("prepare")
+        .expect_output("command 2")
+        .expect_output("prepare")
+        .expect_output("command 2")
+        // benchmark 2
+        .expect_output("prepare")
+        .expect_output("command 2")
+        .run();
+}
+
+#[test]
 fn cleanup_commands_are_executed_once_after_each_benchmark() {
     ExecutionOrderTest::new()
         .arg("--runs=2")
@@ -179,17 +206,31 @@ fn cleanup_commands_are_executed_once_after_each_benchmark() {
 #[test]
 fn setup_prepare_cleanup_combined() {
     ExecutionOrderTest::new()
+        .arg("--warmup=1")
         .arg("--runs=2")
-        .setup("make")
-        .prepare("make testclean")
-        .command("make test")
-        .cleanup("make clean")
-        .expect_output("make")
-        .expect_output("make testclean")
-        .expect_output("make test")
-        .expect_output("make testclean")
-        .expect_output("make test")
-        .expect_output("make clean")
+        .setup("setup")
+        .prepare("prepare")
+        .command("command1")
+        .command("command2")
+        .cleanup("cleanup")
+        // 1
+        .expect_output("setup")
+        .expect_output("prepare")
+        .expect_output("command1")
+        .expect_output("prepare")
+        .expect_output("command1")
+        .expect_output("prepare")
+        .expect_output("command1")
+        .expect_output("cleanup")
+        // 2
+        .expect_output("setup")
+        .expect_output("prepare")
+        .expect_output("command2")
+        .expect_output("prepare")
+        .expect_output("command2")
+        .expect_output("prepare")
+        .expect_output("command2")
+        .expect_output("cleanup")
         .run();
 }
 

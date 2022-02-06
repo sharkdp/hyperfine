@@ -76,7 +76,7 @@ fn build_app() -> App<'static> {
                 .help(
                     "Execute CMD before each set of timing runs. This is useful for \
                      compiling your software with the provided parameters, or to do any \
-                     other work that should happen once before a series of benchmark runs,\
+                     other work that should happen once before a series of benchmark runs, \
                      not every time as would happen with the --prepare option."
                 ),
         )
