@@ -28,7 +28,7 @@
      showgrid="false"
      inkscape:zoom="0.38529391"
      inkscape:cx="1027.7868"
-     inkscape:cy="991.45091"
+     inkscape:cy="991.45092"
      inkscape:window-width="1920"
      inkscape:window-height="1175"
      inkscape:window-x="1920"
@@ -118,69 +118,63 @@
        transform="matrix(1.2893387,0,0,1.2893387,-202.89709,353.8546)"><tspan
          x="-79.596779"
          y="-115.14695"
-         id="tspan291013">hyperfine<tspan
-   style="font-weight:bold;font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-   id="tspan291011">
+         id="tspan5244"><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
+           id="tspan5242">hyperfine
 </tspan></tspan><tspan
          x="-79.596779"
          y="-102.16832"
-         id="tspan291017"><tspan
-   style="fill:#e35a00"
-   id="tspan291015">  --warmup 2</tspan>
-</tspan><tspan
+         id="tspan5250"><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#e35a00"
+           id="tspan5246">  --warmup 2</tspan><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
+           id="tspan5248">
+</tspan></tspan><tspan
          x="-79.596779"
          y="-89.189692"
-         id="tspan291023"><tspan
-           style="fill:#00bbeb"
-           id="tspan291019">  --runs 3</tspan><tspan
-           style="font-weight:bold;font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291021">
+         id="tspan5256"><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#00bbeb"
+           id="tspan5252">  --runs 3</tspan><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
+           id="tspan5254">
 </tspan></tspan><tspan
          x="-79.596779"
          y="-76.211062"
-         id="tspan291031"><tspan
+         id="tspan5260"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291025">  --setup   &lt;</tspan><tspan
-           style="font-style:italic"
-           id="tspan291027">setup&gt;</tspan><tspan
-           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291029">
+           id="tspan5258">  --setup   &lt;setup&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-63.232432"
-         id="tspan291037"><tspan
+         id="tspan5264"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291033">  --prepare &lt;</tspan><tspan
-           style="font-style:italic"
-           id="tspan291035">prepare1&gt;
+           id="tspan5262">  --prepare &lt;prepare1&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-50.253802"
-         id="tspan291043"><tspan
-           style="fill:#ffffff"
-           id="tspan291039">  &lt;command1&gt;</tspan><tspan
+         id="tspan5270"><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff"
+           id="tspan5266">  &lt;command1&gt;</tspan><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291041">
+           id="tspan5268">
 </tspan></tspan><tspan
          x="-79.596779"
          y="-37.275172"
-         id="tspan291051"><tspan
+         id="tspan5274"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291045">  --prepare &lt;</tspan><tspan
-           style="font-style:italic"
-           id="tspan291047">prepare2&gt;</tspan><tspan
-           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291049">
+           id="tspan5272">  --prepare &lt;prepare2&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-24.296542"
-         id="tspan291055"><tspan
-           style="font-style:italic;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff"
-           id="tspan291053">  &lt;command2&gt;
+         id="tspan5278"><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff"
+           id="tspan5276">  &lt;command2&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-11.317913"
-         id="tspan291057">  --cleanup &lt;cleanup&gt;</tspan></text>
+         id="tspan5282"><tspan
+           style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
+           id="tspan5280">  --cleanup &lt;cleanup&gt;</tspan></tspan></text>
     <rect
        style="fill:#80e5ff;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect6355"
@@ -331,7 +325,7 @@
        transform="translate(34.591878,14.34874)"><tspan
          x="-16.304935"
          y="161.32399"
-         id="tspan291059">3 benchmark runs</tspan></text>
+         id="tspan5284">3 benchmark runs</tspan></text>
     <rect
        style="fill:#b3b3b3;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect13386"
@@ -596,7 +590,7 @@
        transform="translate(34.591878,257.76541)"><tspan
          x="-16.304935"
          y="161.32399"
-         id="tspan291061">3 benchmark runs</tspan></text>
+         id="tspan5286">3 benchmark runs</tspan></text>
     <rect
        style="fill:#b3b3b3;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272454"
@@ -720,8 +714,8 @@
        transform="matrix(1.2893387,0,0,1.2893387,-225.35928,177.7847)"><tspan
          x="-79.596779"
          y="-115.14695"
-         id="tspan291065"><tspan
+         id="tspan5290"><tspan
            style="font-weight:bold;font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan291063">benchmark execution order</tspan></tspan></text>
+           id="tspan5288">benchmark execution order</tspan></tspan></text>
   </g>
 </svg>
