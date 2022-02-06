@@ -1,5 +1,8 @@
-use std::fmt;
 use std::process::Command;
+use std::{cmp, fmt};
+
+use atty::Stream;
+use clap::ArgMatches;
 
 use crate::error::OptionsError;
 use crate::units::{Second, Unit};
@@ -157,6 +160,101 @@ impl Default for HyperfineOptions {
             show_output: false,
             time_unit: None,
         }
+    }
+}
+
+impl HyperfineOptions {
+    pub fn from_cli_arguments<'a>(matches: &ArgMatches) -> Result<Self, OptionsError<'a>> {
+        let mut options = Self::default();
+        let param_to_u64 = |param| {
+            matches
+                .value_of(param)
+                .map(|n| {
+                    n.parse::<u64>()
+                        .map_err(|e| OptionsError::NumericParsingError(param, e))
+                })
+                .transpose()
+        };
+
+        options.warmup_count = param_to_u64("warmup")?.unwrap_or(options.warmup_count);
+
+        let mut min_runs = param_to_u64("min-runs")?;
+        let mut max_runs = param_to_u64("max-runs")?;
+
+        if let Some(runs) = param_to_u64("runs")? {
+            min_runs = Some(runs);
+            max_runs = Some(runs);
+        }
+
+        match (min_runs, max_runs) {
+            (Some(min), None) => {
+                options.runs.min = min;
+            }
+            (None, Some(max)) => {
+                // Since the minimum was not explicit we lower it if max is below the default min.
+                options.runs.min = cmp::min(options.runs.min, max);
+                options.runs.max = Some(max);
+            }
+            (Some(min), Some(max)) if min > max => {
+                return Err(OptionsError::EmptyRunsRange);
+            }
+            (Some(min), Some(max)) => {
+                options.runs.min = min;
+                options.runs.max = Some(max);
+            }
+            (None, None) => {}
+        };
+
+        options.setup_command = matches.value_of("setup").map(String::from);
+
+        options.preparation_command = matches
+            .values_of("prepare")
+            .map(|values| values.map(String::from).collect::<Vec<String>>());
+
+        options.cleanup_command = matches.value_of("cleanup").map(String::from);
+
+        options.show_output = matches.is_present("show-output");
+
+        options.output_style = match matches.value_of("style") {
+            Some("full") => OutputStyleOption::Full,
+            Some("basic") => OutputStyleOption::Basic,
+            Some("nocolor") => OutputStyleOption::NoColor,
+            Some("color") => OutputStyleOption::Color,
+            Some("none") => OutputStyleOption::Disabled,
+            _ => {
+                if !options.show_output && atty::is(Stream::Stdout) {
+                    OutputStyleOption::Full
+                } else {
+                    OutputStyleOption::Basic
+                }
+            }
+        };
+
+        match options.output_style {
+            OutputStyleOption::Basic | OutputStyleOption::NoColor => {
+                colored::control::set_override(false)
+            }
+            OutputStyleOption::Full | OutputStyleOption::Color => {
+                colored::control::set_override(true)
+            }
+            OutputStyleOption::Disabled => {}
+        };
+
+        if let Some(shell) = matches.value_of("shell") {
+            options.shell = Shell::parse(shell)?;
+        }
+
+        if matches.is_present("ignore-failure") {
+            options.failure_action = CmdFailureAction::Ignore;
+        }
+
+        options.time_unit = match matches.value_of("time-unit") {
+            Some("millisecond") => Some(Unit::MilliSecond),
+            Some("second") => Some(Unit::Second),
+            _ => None,
+        };
+
+        Ok(options)
     }
 }
 
