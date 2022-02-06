@@ -196,7 +196,7 @@ fn test_shell_parse_command() {
         OptionsError::ShellParseError(_)
     ));
 
-    assert_eq!(Shell::parse("").unwrap_err(), OptionsError::EmptyShell);
+    assert!(matches!(Shell::parse("").unwrap_err(), OptionsError::EmptyShell));
 
-    assert_eq!(Shell::parse("''").unwrap_err(), OptionsError::EmptyShell);
+    assert!(matches!(Shell::parse("''").unwrap_err(), OptionsError::EmptyShell));
 }
