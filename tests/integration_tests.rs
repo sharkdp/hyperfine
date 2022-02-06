@@ -33,6 +33,30 @@ fn fails_with_wrong_number_of_command_name_arguments() {
 }
 
 #[test]
+fn fails_with_wrong_number_of_prepare_options() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--prepare=echo a")
+        .arg("--prepare=echo b")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--prepare=echo a")
+        .arg("--prepare=echo b")
+        .arg("echo a")
+        .arg("echo b")
+        .arg("echo c")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The '--prepare' option has to be provided",
+        ));
+}
+
+#[test]
 fn fails_for_unknown_command() {
     hyperfine()
         .arg("some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
