@@ -115,7 +115,7 @@ fn run_benchmarks_and_print_comparison(
 
 fn run() -> Result<()> {
     let matches = get_arg_matches(env::args_os());
-    let options = build_hyperfine_options(&matches)?;
+    let options = convert_cli_arguments_to_options(&matches)?;
     let commands = build_commands(&matches)?;
     let export_manager = build_export_manager(&matches)?;
 
@@ -132,8 +132,9 @@ fn main() {
     }
 }
 
-/// Build the HyperfineOptions that correspond to the given ArgMatches
-fn build_hyperfine_options<'a>(matches: &ArgMatches) -> Result<HyperfineOptions, OptionsError<'a>> {
+fn convert_cli_arguments_to_options<'a>(
+    matches: &ArgMatches,
+) -> Result<HyperfineOptions, OptionsError<'a>> {
     // Enabled ANSI colors on Windows 10
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
