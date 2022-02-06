@@ -119,27 +119,22 @@ fn test_asciidoc_table_row() {
     use std::collections::BTreeMap;
 
     let timing_result = BenchmarkResultWithRelativeSpeed {
-        result: &BenchmarkResult::new(
-            String::from("sleep 1"),   // command
-            0.10491992406666667,       // mean
-            Some(0.00397851689425097), // stddev
-            0.10491992406666667,       // median
-            0.005182013333333333,      // user
-            0.0,                       // system
-            0.1003342584,              // min
-            0.10745223440000001,       // max
-            vec![
-                // times
-                0.1003342584,
-                0.10745223440000001,
-                0.10697327940000001,
-            ],
-            vec![Some(0), Some(0), Some(0)], // exit codes
-            BTreeMap::new(),                 // param
-        ),
-        relative_speed: 1.000,                     // relative_speed
-        relative_speed_stddev: Option::from(1.03), // relative_speed_stddev
-        is_fastest: true,                          // is_fastest
+        result: &BenchmarkResult {
+            command: String::from("sleep 1"),
+            mean: 0.10491992406666667,
+            stddev: Some(0.00397851689425097),
+            median: 0.10491992406666667,
+            user: 0.005182013333333333,
+            system: 0.0,
+            min: 0.1003342584,
+            max: 0.10745223440000001,
+            times: Some(vec![0.1003342584, 0.10745223440000001, 0.10697327940000001]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        relative_speed: 1.000,
+        relative_speed_stddev: Option::from(1.03),
+        is_fastest: true,
     };
 
     let formatted = String::from_utf8(table_row(&timing_result, Unit::MilliSecond)).unwrap();
@@ -167,27 +162,22 @@ fn test_asciidoc_table_row() {
 fn test_asciidoc_table_row_command_escape() {
     use std::collections::BTreeMap;
     let benchmark_result = BenchmarkResultWithRelativeSpeed {
-        result: &BenchmarkResult::new(
-            String::from("sleep 1|"),  // command
-            0.10491992406666667,       // mean
-            Some(0.00397851689425097), // stddev
-            0.10491992406666667,       // median
-            0.005182013333333333,      // user
-            0.0,                       // system
-            0.1003342584,              // min
-            0.10745223440000001,       // max
-            vec![
-                // times
-                0.1003342584,
-                0.10745223440000001,
-                0.10697327940000001,
-            ],
-            vec![Some(0), Some(0), Some(0)], // exit codes
-            BTreeMap::new(),                 // param
-        ),
-        relative_speed: 1.000,                     // relative_speed
-        relative_speed_stddev: Option::from(1.03), // relative_speed_stddev
-        is_fastest: true,                          // is_fastest
+        result: &BenchmarkResult {
+            command: String::from("sleep 1|"),
+            mean: 0.10491992406666667,
+            stddev: Some(0.00397851689425097),
+            median: 0.10491992406666667,
+            user: 0.005182013333333333,
+            system: 0.0,
+            min: 0.1003342584,
+            max: 0.10745223440000001,
+            times: Some(vec![0.1003342584, 0.10745223440000001, 0.10697327940000001]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        relative_speed: 1.000,
+        relative_speed_stddev: Option::from(1.03),
+        is_fastest: true,
     };
     let expected = String::from_utf8(
         format!(
@@ -216,42 +206,42 @@ fn test_asciidoc() {
     let exporter = AsciidocExporter::default();
     // NOTE: results are fabricated, unlike above
     let results = vec![
-        BenchmarkResult::new(
-            String::from("FOO=1 BAR=2 command | 1"),
-            1.0,
-            Some(2.0),
-            1.0,
-            3.0,
-            4.0,
-            5.0,
-            6.0,
-            vec![7.0, 8.0, 9.0],
-            vec![Some(0), Some(0), Some(0)],
-            {
+        BenchmarkResult {
+            command: String::from("FOO=1 BAR=2 command | 1"),
+            mean: 1.0,
+            stddev: Some(2.0),
+            median: 1.0,
+            user: 3.0,
+            system: 4.0,
+            min: 5.0,
+            max: 6.0,
+            times: Some(vec![7.0, 8.0, 9.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "1".into());
                 params.insert("bar".into(), "2".into());
                 params
             },
-        ),
-        BenchmarkResult::new(
-            String::from("FOO=1 BAR=7 command | 2"),
-            11.0,
-            Some(12.0),
-            11.0,
-            13.0,
-            14.0,
-            15.0,
-            16.0,
-            vec![17.0, 18.0, 19.0],
-            vec![Some(0), Some(0), Some(0)],
-            {
+        },
+        BenchmarkResult {
+            command: String::from("FOO=1 BAR=7 command | 2"),
+            mean: 11.0,
+            stddev: Some(12.0),
+            median: 11.0,
+            user: 13.0,
+            system: 14.0,
+            min: 15.0,
+            max: 16.0,
+            times: Some(vec![17.0, 18.0, 19.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "1".into());
                 params.insert("bar".into(), "7".into());
                 params
             },
-        ),
+        },
     ];
     // NOTE: only testing with s, s/ms is tested elsewhere
     let expected: String = String::from(

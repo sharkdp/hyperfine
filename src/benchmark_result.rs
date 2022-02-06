@@ -44,35 +44,3 @@ pub struct BenchmarkResult {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parameters: BTreeMap<String, String>,
 }
-
-impl BenchmarkResult {
-    /// Create a new entry with the given values.
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        command: String,
-        mean: Second,
-        stddev: Option<Second>,
-        median: Second,
-        user: Second,
-        system: Second,
-        min: Second,
-        max: Second,
-        times: Vec<Second>,
-        exit_codes: Vec<Option<i32>>,
-        parameters: BTreeMap<String, String>,
-    ) -> Self {
-        BenchmarkResult {
-            command,
-            mean,
-            stddev,
-            median,
-            user,
-            system,
-            min,
-            max,
-            times: Some(times),
-            exit_codes,
-            parameters,
-        }
-    }
-}
