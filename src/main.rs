@@ -29,7 +29,7 @@ use benchmark::{mean_shell_spawning_time, run_benchmark};
 use benchmark_result::BenchmarkResult;
 use command::Command;
 use error::OptionsError;
-use export::{ExportManager, ExportType};
+use export::ExportManager;
 use options::{Options, OutputStyleOption};
 use parameter_range::get_parameterized_commands;
 use tokenize::tokenize;
@@ -118,7 +118,7 @@ fn run() -> Result<()> {
     let matches = get_arg_matches(env::args_os());
     let options = Options::from_cli_arguments(&matches)?;
     let commands = build_commands(&matches)?;
-    let export_manager = build_export_manager(&matches)?;
+    let export_manager = ExportManager::from_cli_arguments(&matches)?;
 
     run_benchmarks_and_print_comparison(&commands, &options, &export_manager)
 }
@@ -131,25 +131,6 @@ fn main() {
             std::process::exit(1);
         }
     }
-}
-
-/// Build the ExportManager that will export the results specified
-/// in the given ArgMatches
-fn build_export_manager(matches: &ArgMatches) -> Result<ExportManager> {
-    let mut export_manager = ExportManager::default();
-    {
-        let mut add_exporter = |flag, exporttype| -> Result<()> {
-            if let Some(filename) = matches.value_of(flag) {
-                export_manager.add_exporter(exporttype, filename)?;
-            }
-            Ok(())
-        };
-        add_exporter("export-asciidoc", ExportType::Asciidoc)?;
-        add_exporter("export-json", ExportType::Json)?;
-        add_exporter("export-csv", ExportType::Csv)?;
-        add_exporter("export-markdown", ExportType::Markdown)?;
-    }
-    Ok(export_manager)
 }
 
 /// Build the commands to benchmark

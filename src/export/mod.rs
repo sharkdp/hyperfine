@@ -15,6 +15,7 @@ use crate::benchmark_result::BenchmarkResult;
 use crate::units::Unit;
 
 use anyhow::{Context, Result};
+use clap::ArgMatches;
 
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]
@@ -50,6 +51,25 @@ pub struct ExportManager {
 }
 
 impl ExportManager {
+    /// Build the ExportManager that will export the results specified
+    /// in the given ArgMatches
+    pub fn from_cli_arguments(matches: &ArgMatches) -> Result<Self> {
+        let mut export_manager = Self::default();
+        {
+            let mut add_exporter = |flag, exporttype| -> Result<()> {
+                if let Some(filename) = matches.value_of(flag) {
+                    export_manager.add_exporter(exporttype, filename)?;
+                }
+                Ok(())
+            };
+            add_exporter("export-asciidoc", ExportType::Asciidoc)?;
+            add_exporter("export-json", ExportType::Json)?;
+            add_exporter("export-csv", ExportType::Csv)?;
+            add_exporter("export-markdown", ExportType::Markdown)?;
+        }
+        Ok(export_manager)
+    }
+
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) -> Result<()> {
         let _ = File::create(filename)
