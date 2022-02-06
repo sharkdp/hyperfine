@@ -30,7 +30,7 @@ use benchmark_result::BenchmarkResult;
 use command::Command;
 use error::OptionsError;
 use export::{ExportManager, ExportType};
-use options::{HyperfineOptions, OutputStyleOption};
+use options::{Options, OutputStyleOption};
 use parameter_range::get_parameterized_commands;
 use tokenize::tokenize;
 use types::ParameterValue;
@@ -77,7 +77,7 @@ pub fn write_benchmark_comparison(results: &[BenchmarkResult]) {
 
 fn run_benchmarks_and_print_comparison(
     commands: &[Command<'_>],
-    options: &HyperfineOptions,
+    options: &Options,
     export_manager: &ExportManager,
 ) -> Result<()> {
     let shell_spawning_time =
@@ -116,7 +116,7 @@ fn run() -> Result<()> {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let matches = get_arg_matches(env::args_os());
-    let options = HyperfineOptions::from_cli_arguments(&matches)?;
+    let options = Options::from_cli_arguments(&matches)?;
     let commands = build_commands(&matches)?;
     let export_manager = build_export_manager(&matches)?;
 

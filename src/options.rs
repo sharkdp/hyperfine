@@ -104,7 +104,7 @@ impl Default for Runs {
 }
 
 /// A set of options for hyperfine
-pub struct HyperfineOptions {
+pub struct Options {
     /// Number of warmup runs
     pub warmup_count: u64,
 
@@ -144,9 +144,9 @@ pub struct HyperfineOptions {
     pub names: Option<Vec<String>>,
 }
 
-impl Default for HyperfineOptions {
-    fn default() -> HyperfineOptions {
-        HyperfineOptions {
+impl Default for Options {
+    fn default() -> Options {
+        Options {
             names: None,
             warmup_count: 0,
             runs: Runs::default(),
@@ -163,7 +163,7 @@ impl Default for HyperfineOptions {
     }
 }
 
-impl HyperfineOptions {
+impl Options {
     pub fn from_cli_arguments<'a>(matches: &ArgMatches) -> Result<Self, OptionsError<'a>> {
         let mut options = Self::default();
         let param_to_u64 = |param| {
