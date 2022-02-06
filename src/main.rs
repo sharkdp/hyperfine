@@ -1,8 +1,6 @@
-use std::cmp;
 use std::collections::BTreeMap;
 use std::env;
 
-use atty::Stream;
 use clap::ArgMatches;
 use colored::*;
 
@@ -32,11 +30,10 @@ use benchmark_result::BenchmarkResult;
 use command::Command;
 use error::OptionsError;
 use export::{ExportManager, ExportType};
-use options::{CmdFailureAction, HyperfineOptions, OutputStyleOption, Shell};
+use options::{HyperfineOptions, OutputStyleOption};
 use parameter_range::get_parameterized_commands;
 use tokenize::tokenize;
 use types::ParameterValue;
-use units::Unit;
 
 use anyhow::{bail, Result};
 
@@ -114,8 +111,12 @@ fn run_benchmarks_and_print_comparison(
 }
 
 fn run() -> Result<()> {
+    // Enabled ANSI colors on Windows 10
+    #[cfg(windows)]
+    colored::control::set_virtual_terminal(true).unwrap();
+
     let matches = get_arg_matches(env::args_os());
-    let options = convert_cli_arguments_to_options(&matches)?;
+    let options = HyperfineOptions::from_cli_arguments(&matches)?;
     let commands = build_commands(&matches)?;
     let export_manager = build_export_manager(&matches)?;
 
@@ -130,103 +131,6 @@ fn main() {
             std::process::exit(1);
         }
     }
-}
-
-fn convert_cli_arguments_to_options<'a>(
-    matches: &ArgMatches,
-) -> Result<HyperfineOptions, OptionsError<'a>> {
-    // Enabled ANSI colors on Windows 10
-    #[cfg(windows)]
-    colored::control::set_virtual_terminal(true).unwrap();
-
-    let mut options = HyperfineOptions::default();
-    let param_to_u64 = |param| {
-        matches
-            .value_of(param)
-            .map(|n| {
-                n.parse::<u64>()
-                    .map_err(|e| OptionsError::NumericParsingError(param, e))
-            })
-            .transpose()
-    };
-
-    options.warmup_count = param_to_u64("warmup")?.unwrap_or(options.warmup_count);
-
-    let mut min_runs = param_to_u64("min-runs")?;
-    let mut max_runs = param_to_u64("max-runs")?;
-
-    if let Some(runs) = param_to_u64("runs")? {
-        min_runs = Some(runs);
-        max_runs = Some(runs);
-    }
-
-    match (min_runs, max_runs) {
-        (Some(min), None) => {
-            options.runs.min = min;
-        }
-        (None, Some(max)) => {
-            // Since the minimum was not explicit we lower it if max is below the default min.
-            options.runs.min = cmp::min(options.runs.min, max);
-            options.runs.max = Some(max);
-        }
-        (Some(min), Some(max)) if min > max => {
-            return Err(OptionsError::EmptyRunsRange);
-        }
-        (Some(min), Some(max)) => {
-            options.runs.min = min;
-            options.runs.max = Some(max);
-        }
-        (None, None) => {}
-    };
-
-    options.setup_command = matches.value_of("setup").map(String::from);
-
-    options.preparation_command = matches
-        .values_of("prepare")
-        .map(|values| values.map(String::from).collect::<Vec<String>>());
-
-    options.cleanup_command = matches.value_of("cleanup").map(String::from);
-
-    options.show_output = matches.is_present("show-output");
-
-    options.output_style = match matches.value_of("style") {
-        Some("full") => OutputStyleOption::Full,
-        Some("basic") => OutputStyleOption::Basic,
-        Some("nocolor") => OutputStyleOption::NoColor,
-        Some("color") => OutputStyleOption::Color,
-        Some("none") => OutputStyleOption::Disabled,
-        _ => {
-            if !options.show_output && atty::is(Stream::Stdout) {
-                OutputStyleOption::Full
-            } else {
-                OutputStyleOption::Basic
-            }
-        }
-    };
-
-    match options.output_style {
-        OutputStyleOption::Basic | OutputStyleOption::NoColor => {
-            colored::control::set_override(false)
-        }
-        OutputStyleOption::Full | OutputStyleOption::Color => colored::control::set_override(true),
-        OutputStyleOption::Disabled => {}
-    };
-
-    if let Some(shell) = matches.value_of("shell") {
-        options.shell = Shell::parse(shell)?;
-    }
-
-    if matches.is_present("ignore-failure") {
-        options.failure_action = CmdFailureAction::Ignore;
-    }
-
-    options.time_unit = match matches.value_of("time-unit") {
-        Some("millisecond") => Some(Unit::MilliSecond),
-        Some("second") => Some(Unit::Second),
-        _ => None,
-    };
-
-    Ok(options)
 }
 
 /// Build the ExportManager that will export the results specified
