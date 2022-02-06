@@ -57,6 +57,21 @@ fn fails_with_wrong_number_of_prepare_options() {
 }
 
 #[test]
+fn fails_with_duplicate_parameter_names() {
+    hyperfine()
+        .arg("--parameter-list")
+        .arg("x")
+        .arg("1,2,3")
+        .arg("--parameter-list")
+        .arg("x")
+        .arg("a,b,c")
+        .arg("echo test")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Duplicate parameter names: x"));
+}
+
+#[test]
 fn fails_for_unknown_command() {
     hyperfine()
         .arg("some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
