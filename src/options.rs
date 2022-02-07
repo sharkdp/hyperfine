@@ -1,11 +1,15 @@
 use std::process::Command;
 use std::{cmp, fmt};
 
+use anyhow::ensure;
 use atty::Stream;
 use clap::ArgMatches;
 
+use crate::command::Commands;
 use crate::error::OptionsError;
 use crate::util::units::{Second, Unit};
+
+use anyhow::Result;
 
 #[cfg(not(windows))]
 pub const DEFAULT_SHELL: &str = "sh";
@@ -255,6 +259,18 @@ impl Options {
         };
 
         Ok(options)
+    }
+
+    pub fn validate_against_command_list(&self, commands: &Commands) -> Result<()> {
+        if let Some(preparation_command) = &self.preparation_command {
+            ensure!(
+                preparation_command.len() <= 1 || commands.len() == preparation_command.len(),
+                "The '--prepare' option has to be provided just once or N times, where N is the \
+             number of benchmark commands."
+            );
+        }
+
+        Ok(())
     }
 }
 
