@@ -44,6 +44,7 @@ fn fails_with_wrong_number_of_prepare_options() {
         .success();
 
     hyperfine()
+        .arg("--runs=1")
         .arg("--prepare=echo a")
         .arg("--prepare=echo b")
         .arg("echo a")

@@ -1,7 +1,7 @@
 use std::env;
 
 use app::get_cli_arguments;
-use benchmark::schedule::run_benchmarks_and_print_comparison;
+use benchmark::scheduler::Scheduler;
 use command::Commands;
 use export::ExportManager;
 use options::Options;
@@ -32,7 +32,13 @@ fn run() -> Result<()> {
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
     let export_manager = ExportManager::from_cli_arguments(&cli_arguments)?;
 
-    run_benchmarks_and_print_comparison(&commands, &options, &export_manager)
+    options.validate_against_command_list(&commands)?;
+
+    let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
+    scheduler.run_benchmarks()?;
+    scheduler.print_relative_speed_comparison();
+
+    Ok(())
 }
 
 fn main() {
