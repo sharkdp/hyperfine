@@ -35,12 +35,12 @@ impl<'a> Scheduler<'a> {
             self.options.show_output,
         )?;
 
-        // Run the benchmarks
         for (num, cmd) in self.commands.iter().enumerate() {
             self.results
                 .push(run_benchmark(num, cmd, shell_spawning_time, self.options)?);
 
-            // Export (intermediate) results
+            // We export (all results so far) after each individual benchmark, because
+            // we would risk losing all results if a later benchmark fails.
             self.export_manager
                 .write_results(&self.results, self.options.time_unit)?;
         }
