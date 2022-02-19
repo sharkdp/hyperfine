@@ -311,7 +311,7 @@ pub fn run_benchmark(
     // Set up progress bar (and spinner for initial measurement)
     let progress_bar = if options.output_style != OutputStyleOption::Disabled {
         Some(get_progress_bar(
-            options.runs.min,
+            options.run_bounds.min,
             "Initial time measurement",
             options.output_style,
         ))
@@ -337,10 +337,10 @@ pub fn run_benchmark(
         as u64;
 
     let count = {
-        let min = cmp::max(runs_in_min_time, options.runs.min);
+        let min = cmp::max(runs_in_min_time, options.run_bounds.min);
 
         options
-            .runs
+            .run_bounds
             .max
             .as_ref()
             .map(|max| cmp::min(min, *max))

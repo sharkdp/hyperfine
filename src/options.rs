@@ -93,8 +93,8 @@ pub enum OutputStyleOption {
     Disabled,
 }
 
-/// Number of runs for a benchmark
-pub struct Runs {
+/// Bounds for the number of benchmark runs
+pub struct RunBounds {
     /// Minimum number of benchmark runs
     pub min: u64,
 
@@ -102,9 +102,9 @@ pub struct Runs {
     pub max: Option<u64>,
 }
 
-impl Default for Runs {
-    fn default() -> Runs {
-        Runs { min: 10, max: None }
+impl Default for RunBounds {
+    fn default() -> RunBounds {
+        RunBounds { min: 10, max: None }
     }
 }
 
@@ -113,8 +113,8 @@ pub struct Options {
     /// Number of warmup runs
     pub warmup_count: u64,
 
-    /// Number of benchmark runs
-    pub runs: Runs,
+    /// Upper and lower bound for the number of benchmark runs
+    pub run_bounds: RunBounds,
 
     /// Minimum benchmarking time
     pub min_time_sec: Second,
@@ -154,7 +154,7 @@ impl Default for Options {
         Options {
             names: None,
             warmup_count: 0,
-            runs: Runs::default(),
+            run_bounds: RunBounds::default(),
             min_time_sec: 3.0,
             failure_action: CmdFailureAction::RaiseError,
             setup_command: None,
@@ -193,19 +193,19 @@ impl Options {
 
         match (min_runs, max_runs) {
             (Some(min), None) => {
-                options.runs.min = min;
+                options.run_bounds.min = min;
             }
             (None, Some(max)) => {
                 // Since the minimum was not explicit we lower it if max is below the default min.
-                options.runs.min = cmp::min(options.runs.min, max);
-                options.runs.max = Some(max);
+                options.run_bounds.min = cmp::min(options.run_bounds.min, max);
+                options.run_bounds.max = Some(max);
             }
             (Some(min), Some(max)) if min > max => {
                 return Err(OptionsError::EmptyRunsRange);
             }
             (Some(min), Some(max)) => {
-                options.runs.min = min;
-                options.runs.max = Some(max);
+                options.run_bounds.min = min;
+                options.run_bounds.max = Some(max);
             }
             (None, None) => {}
         };
