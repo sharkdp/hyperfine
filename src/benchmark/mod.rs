@@ -26,7 +26,7 @@ use anyhow::{bail, Result};
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;
 
-/// Results from timing a single shell command
+/// Results from timing a single command
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TimingResult {
     /// Wall clock time
