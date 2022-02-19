@@ -22,6 +22,7 @@ pub const DEFAULT_SHELL: &str = "cmd.exe";
 pub enum Shell {
     /// Default shell command
     Default(&'static str),
+
     /// Custom shell command specified via --shell
     Custom(Vec<String>),
 }
@@ -264,7 +265,8 @@ impl Options {
     pub fn validate_against_command_list(&self, commands: &Commands) -> Result<()> {
         if let Some(preparation_command) = &self.preparation_command {
             ensure!(
-                preparation_command.len() <= 1 || commands.len() == preparation_command.len(),
+                preparation_command.len() <= 1
+                    || commands.num_commands() == preparation_command.len(),
                 "The '--prepare' option has to be provided just once or N times, where N is the \
              number of benchmark commands."
             );

@@ -209,7 +209,7 @@ impl<'a> Commands<'a> {
         self.0.iter()
     }
 
-    pub fn len(&self) -> usize {
+    pub fn num_commands(&self) -> usize {
         self.0.len()
     }
 
