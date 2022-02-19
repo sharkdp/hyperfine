@@ -319,7 +319,7 @@ pub fn run_benchmark(
         None
     };
 
-    let prepare_res = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
+    let prepare_result = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
 
     // Initial timing run
     let (res, status) = time_shell_command(
@@ -333,7 +333,7 @@ pub fn run_benchmark(
 
     // Determine number of benchmark runs
     let runs_in_min_time = (options.min_time_sec
-        / (res.time_real + prepare_res.time_real + shell_spawning_time.time_real))
+        / (res.time_real + prepare_result.time_real + shell_spawning_time.time_real))
         as u64;
 
     let count = {
