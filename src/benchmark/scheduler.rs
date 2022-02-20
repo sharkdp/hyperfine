@@ -26,7 +26,7 @@ use crate::util::units::Second;
 
 use anyhow::{bail, Result};
 
-///////////////
+/////////////// TODO: refactor the following part
 
 /// Correct for shell spawning time
 fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Second {
@@ -301,14 +301,14 @@ impl<'a> Scheduler<'a> {
         self.run_intermediate_command(command, error_output)
     }
 
-    /// Run the benchmark for a single shell command
+    /// Run the benchmark for a single command
     pub fn run_benchmark(
         &self,
         benchmark_number: usize,
-        cmd: &Command<'_>,
+        command: &Command<'_>,
         shell_spawning_time: TimingResult,
     ) -> Result<BenchmarkResult> {
-        let command_name = cmd.get_name();
+        let command_name = command.get_name();
         if self.options.output_style != OutputStyleOption::Disabled {
             println!(
                 "{}{}: {}",
@@ -333,11 +333,11 @@ impl<'a> Scheduler<'a> {
             Command::new_parametrized(
                 None,
                 preparation_command,
-                cmd.get_parameters().iter().cloned(),
+                command.get_parameters().iter().cloned(),
             )
         });
 
-        self.run_setup_command(cmd.get_parameters().iter().cloned())?;
+        self.run_setup_command(command.get_parameters().iter().cloned())?;
 
         // Warmup phase
         if self.options.warmup_count > 0 {
@@ -355,7 +355,7 @@ impl<'a> Scheduler<'a> {
                 let _ = self.run_preparation_command(&prepare_cmd)?;
                 let _ = time_shell_command(
                     &self.options.shell,
-                    cmd,
+                    command,
                     self.options.command_output_policy,
                     self.options.command_failure_action,
                     None,
@@ -385,7 +385,7 @@ impl<'a> Scheduler<'a> {
         // Initial timing run
         let (res, status) = time_shell_command(
             &self.options.shell,
-            cmd,
+            command,
             self.options.command_output_policy,
             self.options.command_failure_action,
             Some(shell_spawning_time),
@@ -441,7 +441,7 @@ impl<'a> Scheduler<'a> {
 
             let (res, status) = time_shell_command(
                 &self.options.shell,
-                cmd,
+                command,
                 self.options.command_output_policy,
                 self.options.command_failure_action,
                 Some(shell_spawning_time),
@@ -555,7 +555,7 @@ impl<'a> Scheduler<'a> {
             println!(" ");
         }
 
-        self.run_cleanup_command(cmd.get_parameters().iter().cloned())?;
+        self.run_cleanup_command(command.get_parameters().iter().cloned())?;
 
         Ok(BenchmarkResult {
             command: command_name,
@@ -568,7 +568,7 @@ impl<'a> Scheduler<'a> {
             max: t_max,
             times: Some(times_real),
             exit_codes,
-            parameters: cmd
+            parameters: command
                 .get_parameters()
                 .iter()
                 .map(|(name, value)| ((*name).to_string(), value.to_string()))
