@@ -571,7 +571,7 @@ impl<'a> Scheduler<'a> {
             parameters: command
                 .get_parameters()
                 .iter()
-                .map(|(name, value)| ((*name).to_string(), value.to_string()))
+                .map(|(name, value)| (name.to_string(), value.to_string()))
                 .collect(),
         })
     }
