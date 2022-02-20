@@ -276,17 +276,26 @@ impl<'a> Scheduler<'a> {
         self.run_intermediate_command(&command, error_output)
     }
 
+    /// Run the command specified by `--cleanup`.
+    fn run_cleanup_command(
+        &self,
+        parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
+    ) -> Result<TimingResult> {
+        let command = self
+            .options
+            .cleanup_command
+            .as_ref()
+            .map(|cleanup_command| Command::new_parametrized(None, cleanup_command, parameters));
+
+        let error_output = "The cleanup command terminated with a non-zero exit code. \
+                Append ' || true' to the command if you are sure that this can be ignored.";
+
+        self.run_intermediate_command(&command, error_output)
+    }
+
     /// Run the command specified by `--prepare`.
     fn run_preparation_command(&self, command: &Option<Command<'_>>) -> Result<TimingResult> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
-                        Append ' || true' to the command if you are sure that this can be ignored.";
-
-        self.run_intermediate_command(command, error_output)
-    }
-
-    /// Run the command specified by `--cleanup`.
-    fn run_cleanup_command(&self, command: &Option<Command<'_>>) -> Result<TimingResult> {
-        let error_output = "The cleanup command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
         self.run_intermediate_command(command, error_output)
@@ -315,7 +324,6 @@ impl<'a> Scheduler<'a> {
         let mut exit_codes: Vec<Option<i32>> = vec![];
         let mut all_succeeded = true;
 
-        // Run init command
         let prepare_cmd = self.options.preparation_command.as_ref().map(|values| {
             let preparation_command = if values.len() == 1 {
                 &values[0]
@@ -418,7 +426,7 @@ impl<'a> Scheduler<'a> {
             bar.inc(1)
         }
 
-        // Gather statistics
+        // Gather statistics (perform the actual benchmark)
         for _ in 0..count_remaining {
             self.run_preparation_command(&prepare_cmd)?;
 
@@ -547,19 +555,7 @@ impl<'a> Scheduler<'a> {
             println!(" ");
         }
 
-        // Run cleanup command
-        let cleanup_cmd = self
-            .options
-            .cleanup_command
-            .as_ref()
-            .map(|cleanup_command| {
-                Command::new_parametrized(
-                    None,
-                    cleanup_command,
-                    cmd.get_parameters().iter().cloned(),
-                )
-            });
-        self.run_cleanup_command(&cleanup_cmd)?;
+        self.run_cleanup_command(cmd.get_parameters().iter().cloned())?;
 
         Ok(BenchmarkResult {
             command: command_name,
