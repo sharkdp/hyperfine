@@ -24,7 +24,7 @@ use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
 use crate::util::units::Second;
 
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 
 /////////////// TODO: refactor the following part
 
@@ -241,17 +241,15 @@ impl<'a> Scheduler<'a> {
         command: &Command<'_>,
         error_output: &'static str,
     ) -> Result<TimingResult> {
-        let res = time_shell_command(
+        time_shell_command(
             &self.options.shell,
             command,
             self.options.command_output_policy,
             CmdFailureAction::RaiseError,
             None,
-        );
-        if res.is_err() {
-            bail!(error_output);
-        }
-        return res.map(|r| r.0);
+        )
+        .map(|r| r.0)
+        .map_err(|_| anyhow!(error_output))
     }
 
     /// Run the command specified by `--setup`.
