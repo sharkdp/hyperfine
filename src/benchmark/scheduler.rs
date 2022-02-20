@@ -16,6 +16,7 @@ use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::Warnings;
+use crate::parameter::ParameterNameAndValue;
 use crate::shell::execute_and_time;
 use crate::timer::wallclocktimer::WallClockTimer;
 use crate::timer::{TimerStart, TimerStop};
@@ -182,7 +183,7 @@ impl<'a> Scheduler<'a> {
 
         for (num, cmd) in self.commands.iter().enumerate() {
             self.results
-                .push(self.run_benchmark(num, cmd, shell_spawning_time, self.options)?);
+                .push(self.run_benchmark(num, cmd, shell_spawning_time)?);
 
             // We export (all results so far) after each individual benchmark, because
             // we would risk losing all results if a later benchmark fails.
@@ -259,11 +260,20 @@ impl<'a> Scheduler<'a> {
     }
 
     /// Run the command specified by `--setup`.
-    fn run_setup_command(&self, command: &Option<Command<'_>>) -> Result<TimingResult> {
+    fn run_setup_command(
+        &self,
+        parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
+    ) -> Result<TimingResult> {
+        let command = self
+            .options
+            .setup_command
+            .as_ref()
+            .map(|setup_command| Command::new_parametrized(None, setup_command, parameters));
+
         let error_output = "The setup command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output)
+        self.run_intermediate_command(&command, error_output)
     }
 
     /// Run the command specified by `--prepare`.
@@ -288,10 +298,9 @@ impl<'a> Scheduler<'a> {
         num: usize,
         cmd: &Command<'_>,
         shell_spawning_time: TimingResult,
-        options: &Options,
     ) -> Result<BenchmarkResult> {
         let command_name = cmd.get_name();
-        if options.output_style != OutputStyleOption::Disabled {
+        if self.options.output_style != OutputStyleOption::Disabled {
             println!(
                 "{}{}: {}",
                 "Benchmark ".bold(),
@@ -307,7 +316,7 @@ impl<'a> Scheduler<'a> {
         let mut all_succeeded = true;
 
         // Run init command
-        let prepare_cmd = options.preparation_command.as_ref().map(|values| {
+        let prepare_cmd = self.options.preparation_command.as_ref().map(|values| {
             let preparation_command = if values.len() == 1 {
                 &values[0]
             } else {
@@ -320,31 +329,27 @@ impl<'a> Scheduler<'a> {
             )
         });
 
-        // Run setup command
-        let setup_cmd = options.setup_command.as_ref().map(|setup_command| {
-            Command::new_parametrized(None, setup_command, cmd.get_parameters().iter().cloned())
-        });
-        self.run_setup_command(&setup_cmd)?;
+        self.run_setup_command(cmd.get_parameters().iter().cloned())?;
 
         // Warmup phase
-        if options.warmup_count > 0 {
-            let progress_bar = if options.output_style != OutputStyleOption::Disabled {
+        if self.options.warmup_count > 0 {
+            let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
                 Some(get_progress_bar(
-                    options.warmup_count,
+                    self.options.warmup_count,
                     "Performing warmup runs",
-                    options.output_style,
+                    self.options.output_style,
                 ))
             } else {
                 None
             };
 
-            for _ in 0..options.warmup_count {
+            for _ in 0..self.options.warmup_count {
                 let _ = self.run_preparation_command(&prepare_cmd)?;
                 let _ = time_shell_command(
-                    &options.shell,
+                    &self.options.shell,
                     cmd,
-                    options.command_output_policy,
-                    options.command_failure_action,
+                    self.options.command_output_policy,
+                    self.options.command_failure_action,
                     None,
                 )?;
                 if let Some(bar) = progress_bar.as_ref() {
@@ -357,11 +362,11 @@ impl<'a> Scheduler<'a> {
         }
 
         // Set up progress bar (and spinner for initial measurement)
-        let progress_bar = if options.output_style != OutputStyleOption::Disabled {
+        let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
             Some(get_progress_bar(
-                options.run_bounds.min,
+                self.options.run_bounds.min,
                 "Initial time measurement",
-                options.output_style,
+                self.options.output_style,
             ))
         } else {
             None
@@ -371,23 +376,23 @@ impl<'a> Scheduler<'a> {
 
         // Initial timing run
         let (res, status) = time_shell_command(
-            &options.shell,
+            &self.options.shell,
             cmd,
-            options.command_output_policy,
-            options.command_failure_action,
+            self.options.command_output_policy,
+            self.options.command_failure_action,
             Some(shell_spawning_time),
         )?;
         let success = status.success();
 
         // Determine number of benchmark runs
-        let runs_in_min_time = (options.min_benchmarking_time
+        let runs_in_min_time = (self.options.min_benchmarking_time
             / (res.time_real + prepare_result.time_real + shell_spawning_time.time_real))
             as u64;
 
         let count = {
-            let min = cmp::max(runs_in_min_time, options.run_bounds.min);
+            let min = cmp::max(runs_in_min_time, self.options.run_bounds.min);
 
-            options
+            self.options
                 .run_bounds
                 .max
                 .as_ref()
@@ -418,7 +423,7 @@ impl<'a> Scheduler<'a> {
             self.run_preparation_command(&prepare_cmd)?;
 
             let msg = {
-                let mean = format_duration(mean(&times_real), options.time_unit);
+                let mean = format_duration(mean(&times_real), self.options.time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -427,10 +432,10 @@ impl<'a> Scheduler<'a> {
             }
 
             let (res, status) = time_shell_command(
-                &options.shell,
+                &self.options.shell,
                 cmd,
-                options.command_output_policy,
-                options.command_failure_action,
+                self.options.command_output_policy,
+                self.options.command_failure_action,
                 Some(shell_spawning_time),
             )?;
             let success = status.success();
@@ -467,7 +472,7 @@ impl<'a> Scheduler<'a> {
         let system_mean = mean(&times_system);
 
         // Formatting and console output
-        let (mean_str, time_unit) = format_duration_unit(t_mean, options.time_unit);
+        let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
         let min_str = format_duration(t_min, Some(time_unit));
         let max_str = format_duration(t_max, Some(time_unit));
         let num_str = format!("{} runs", t_num);
@@ -475,7 +480,7 @@ impl<'a> Scheduler<'a> {
         let user_str = format_duration(user_mean, Some(time_unit));
         let system_str = format_duration(system_mean, Some(time_unit));
 
-        if options.output_style != OutputStyleOption::Disabled {
+        if self.options.output_style != OutputStyleOption::Disabled {
             if times_real.len() == 1 {
                 println!(
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
@@ -538,14 +543,22 @@ impl<'a> Scheduler<'a> {
             }
         }
 
-        if options.output_style != OutputStyleOption::Disabled {
+        if self.options.output_style != OutputStyleOption::Disabled {
             println!(" ");
         }
 
         // Run cleanup command
-        let cleanup_cmd = options.cleanup_command.as_ref().map(|cleanup_command| {
-            Command::new_parametrized(None, cleanup_command, cmd.get_parameters().iter().cloned())
-        });
+        let cleanup_cmd = self
+            .options
+            .cleanup_command
+            .as_ref()
+            .map(|cleanup_command| {
+                Command::new_parametrized(
+                    None,
+                    cleanup_command,
+                    cmd.get_parameters().iter().cloned(),
+                )
+            });
         self.run_cleanup_command(&cleanup_cmd)?;
 
         Ok(BenchmarkResult {
