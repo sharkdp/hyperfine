@@ -236,6 +236,7 @@ impl<'a> Scheduler<'a> {
         }
     }
 
+    /// Run setup, cleanup, or preparation commands
     fn run_intermediate_command(
         &self,
         command: &Command<'_>,
@@ -264,7 +265,7 @@ impl<'a> Scheduler<'a> {
             .map(|setup_command| Command::new_parametrized(None, setup_command, parameters));
 
         let error_output = "The setup command terminated with a non-zero exit code. \
-                        Append ' || true' to the command if you are sure that this can be ignored.";
+                            Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
             .map(|cmd| self.run_intermediate_command(&cmd, error_output))
@@ -284,7 +285,7 @@ impl<'a> Scheduler<'a> {
             .map(|cleanup_command| Command::new_parametrized(None, cleanup_command, parameters));
 
         let error_output = "The cleanup command terminated with a non-zero exit code. \
-                Append ' || true' to the command if you are sure that this can be ignored.";
+                            Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
             .map(|cmd| self.run_intermediate_command(&cmd, error_output))
@@ -295,7 +296,7 @@ impl<'a> Scheduler<'a> {
     /// Run the command specified by `--prepare`.
     fn run_preparation_command(&self, command: &Command<'_>) -> Result<TimingResult> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
-                        Append ' || true' to the command if you are sure that this can be ignored.";
+                            Append ' || true' to the command if you are sure that this can be ignored.";
 
         self.run_intermediate_command(command, error_output)
     }
