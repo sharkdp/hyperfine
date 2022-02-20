@@ -10,7 +10,7 @@ use statistical::{mean, median, standard_deviation};
 
 use crate::benchmark::result::BenchmarkResult;
 use crate::command::Command;
-use crate::options::{CmdFailureAction, Options, OutputStyleOption, Shell};
+use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
@@ -52,14 +52,13 @@ fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Se
 pub fn time_shell_command(
     shell: &Shell,
     command: &Command<'_>,
-    show_output: bool,
+    command_output_policy: CommandOutputPolicy,
     failure_action: CmdFailureAction,
     shell_spawning_time: Option<TimingResult>,
 ) -> Result<(TimingResult, ExitStatus)> {
-    let (stdout, stderr) = if show_output {
-        (Stdio::inherit(), Stdio::inherit())
-    } else {
-        (Stdio::null(), Stdio::null())
+    let (stdout, stderr) = match command_output_policy {
+        CommandOutputPolicy::Discard => (Stdio::null(), Stdio::null()),
+        CommandOutputPolicy::Forward => (Stdio::inherit(), Stdio::inherit()),
     };
 
     let wallclock_timer = WallClockTimer::start();
@@ -101,7 +100,7 @@ pub fn time_shell_command(
 pub fn mean_shell_spawning_time(
     shell: &Shell,
     style: OutputStyleOption,
-    show_output: bool,
+    command_output_policy: CommandOutputPolicy,
 ) -> Result<TimingResult> {
     const COUNT: u64 = 50;
     let progress_bar = if style != OutputStyleOption::Disabled {
@@ -123,7 +122,7 @@ pub fn mean_shell_spawning_time(
         let res = time_shell_command(
             shell,
             &Command::new(None, ""),
-            show_output,
+            command_output_policy,
             CmdFailureAction::RaiseError,
             None,
         );
@@ -167,11 +166,17 @@ pub fn mean_shell_spawning_time(
 fn run_intermediate_command(
     shell: &Shell,
     command: &Option<Command<'_>>,
-    show_output: bool,
+    command_output_policy: CommandOutputPolicy,
     error_output: &'static str,
 ) -> Result<TimingResult> {
     if let Some(ref cmd) = command {
-        let res = time_shell_command(shell, cmd, show_output, CmdFailureAction::RaiseError, None);
+        let res = time_shell_command(
+            shell,
+            cmd,
+            command_output_policy,
+            CmdFailureAction::RaiseError,
+            None,
+        );
         if res.is_err() {
             bail!(error_output);
         }
@@ -186,36 +191,36 @@ fn run_intermediate_command(
 fn run_setup_command(
     shell: &Shell,
     command: &Option<Command<'_>>,
-    show_output: bool,
+    output_policy: CommandOutputPolicy,
 ) -> Result<TimingResult> {
     let error_output = "The setup command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
-    run_intermediate_command(shell, command, show_output, error_output)
+    run_intermediate_command(shell, command, output_policy, error_output)
 }
 
 /// Run the command specified by `--prepare`.
 fn run_preparation_command(
     shell: &Shell,
     command: &Option<Command<'_>>,
-    show_output: bool,
+    output_policy: CommandOutputPolicy,
 ) -> Result<TimingResult> {
     let error_output = "The preparation command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
-    run_intermediate_command(shell, command, show_output, error_output)
+    run_intermediate_command(shell, command, output_policy, error_output)
 }
 
 /// Run the command specified by `--cleanup`.
 fn run_cleanup_command(
     shell: &Shell,
     command: &Option<Command<'_>>,
-    show_output: bool,
+    output_policy: CommandOutputPolicy,
 ) -> Result<TimingResult> {
     let error_output = "The cleanup command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
-    run_intermediate_command(shell, command, show_output, error_output)
+    run_intermediate_command(shell, command, output_policy, error_output)
 }
 
 #[cfg(unix)]
@@ -276,7 +281,7 @@ pub fn run_benchmark(
     let setup_cmd = options.setup_command.as_ref().map(|setup_command| {
         Command::new_parametrized(None, setup_command, cmd.get_parameters().clone())
     });
-    run_setup_command(&options.shell, &setup_cmd, options.show_output)?;
+    run_setup_command(&options.shell, &setup_cmd, options.command_output_policy)?;
 
     // Warmup phase
     if options.warmup_count > 0 {
@@ -291,12 +296,16 @@ pub fn run_benchmark(
         };
 
         for _ in 0..options.warmup_count {
-            let _ = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
+            let _ = run_preparation_command(
+                &options.shell,
+                &prepare_cmd,
+                options.command_output_policy,
+            )?;
             let _ = time_shell_command(
                 &options.shell,
                 cmd,
-                options.show_output,
-                options.failure_action,
+                options.command_output_policy,
+                options.command_failure_action,
                 None,
             )?;
             if let Some(bar) = progress_bar.as_ref() {
@@ -319,20 +328,21 @@ pub fn run_benchmark(
         None
     };
 
-    let prepare_result = run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
+    let prepare_result =
+        run_preparation_command(&options.shell, &prepare_cmd, options.command_output_policy)?;
 
     // Initial timing run
     let (res, status) = time_shell_command(
         &options.shell,
         cmd,
-        options.show_output,
-        options.failure_action,
+        options.command_output_policy,
+        options.command_failure_action,
         Some(shell_spawning_time),
     )?;
     let success = status.success();
 
     // Determine number of benchmark runs
-    let runs_in_min_time = (options.min_time_sec
+    let runs_in_min_time = (options.min_benchmarking_time
         / (res.time_real + prepare_result.time_real + shell_spawning_time.time_real))
         as u64;
 
@@ -367,7 +377,7 @@ pub fn run_benchmark(
 
     // Gather statistics
     for _ in 0..count_remaining {
-        run_preparation_command(&options.shell, &prepare_cmd, options.show_output)?;
+        run_preparation_command(&options.shell, &prepare_cmd, options.command_output_policy)?;
 
         let msg = {
             let mean = format_duration(mean(&times_real), options.time_unit);
@@ -381,8 +391,8 @@ pub fn run_benchmark(
         let (res, status) = time_shell_command(
             &options.shell,
             cmd,
-            options.show_output,
-            options.failure_action,
+            options.command_output_policy,
+            options.command_failure_action,
             Some(shell_spawning_time),
         )?;
         let success = status.success();
@@ -498,7 +508,7 @@ pub fn run_benchmark(
     let cleanup_cmd = options.cleanup_command.as_ref().map(|cleanup_command| {
         Command::new_parametrized(None, cleanup_command, cmd.get_parameters().clone())
     });
-    run_cleanup_command(&options.shell, &cleanup_cmd, options.show_output)?;
+    run_cleanup_command(&options.shell, &cleanup_cmd, options.command_output_policy)?;
 
     Ok(BenchmarkResult {
         command: command_name,

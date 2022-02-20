@@ -32,7 +32,7 @@ impl<'a> Scheduler<'a> {
         let shell_spawning_time = mean_shell_spawning_time(
             &self.options.shell,
             self.options.output_style,
-            self.options.show_output,
+            self.options.command_output_policy,
         )?;
 
         for (num, cmd) in self.commands.iter().enumerate() {

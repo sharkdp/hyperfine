@@ -103,42 +103,58 @@ pub struct RunBounds {
 }
 
 impl Default for RunBounds {
-    fn default() -> RunBounds {
+    fn default() -> Self {
         RunBounds { min: 10, max: None }
     }
 }
 
-/// A set of options for hyperfine
-pub struct Options {
-    /// Number of warmup runs
-    pub warmup_count: u64,
+/// How to handle the output of benchmarked commands
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CommandOutputPolicy {
+    /// Discard all output
+    Discard,
 
+    /// Show command output on the terminal
+    Forward,
+}
+
+impl Default for CommandOutputPolicy {
+    fn default() -> Self {
+        CommandOutputPolicy::Discard
+    }
+}
+
+/// The main settings for a hyperfine benchmark session
+pub struct Options {
     /// Upper and lower bound for the number of benchmark runs
     pub run_bounds: RunBounds,
 
+    /// Number of warmup runs
+    pub warmup_count: u64,
+
     /// Minimum benchmarking time
-    pub min_time_sec: Second,
+    pub min_benchmarking_time: Second,
 
     /// Whether or not to ignore non-zero exit codes
-    pub failure_action: CmdFailureAction,
-
-    /// Command to run before each batch of timing runs
-    pub setup_command: Option<String>,
+    pub command_failure_action: CmdFailureAction,
 
     /// Command to run before each timing run
     pub preparation_command: Option<Vec<String>>,
 
-    /// Command to run after each benchmark
+    /// Command to run before each *batch* of timing runs, i.e. before each individual benchmark
+    pub setup_command: Option<String>,
+
+    /// Command to run after each *batch* of timing runs, i.e. after each individual benchmark
     pub cleanup_command: Option<String>,
 
-    /// What color mode to use for output
+    /// What color mode to use for the terminal output
     pub output_style: OutputStyleOption,
 
     /// The shell to use for executing commands.
     pub shell: Shell,
 
-    /// Forward benchmark's stdout to hyperfine's stdout
-    pub show_output: bool,
+    /// What to do with the output of the benchmarked command
+    pub command_output_policy: CommandOutputPolicy,
 
     /// Which time unit to use for CLI & Markdown output
     pub time_unit: Option<Unit>,
@@ -155,14 +171,14 @@ impl Default for Options {
             names: None,
             warmup_count: 0,
             run_bounds: RunBounds::default(),
-            min_time_sec: 3.0,
-            failure_action: CmdFailureAction::RaiseError,
+            min_benchmarking_time: 3.0,
+            command_failure_action: CmdFailureAction::RaiseError,
             setup_command: None,
             preparation_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
             shell: Shell::default(),
-            show_output: false,
+            command_output_policy: CommandOutputPolicy::Discard,
             time_unit: None,
         }
     }
@@ -218,7 +234,11 @@ impl Options {
 
         options.cleanup_command = matches.value_of("cleanup").map(String::from);
 
-        options.show_output = matches.is_present("show-output");
+        options.command_output_policy = if matches.is_present("show-output") {
+            CommandOutputPolicy::Forward
+        } else {
+            CommandOutputPolicy::Discard
+        };
 
         options.output_style = match matches.value_of("style") {
             Some("full") => OutputStyleOption::Full,
@@ -227,7 +247,9 @@ impl Options {
             Some("color") => OutputStyleOption::Color,
             Some("none") => OutputStyleOption::Disabled,
             _ => {
-                if !options.show_output && atty::is(Stream::Stdout) {
+                if options.command_output_policy == CommandOutputPolicy::Discard
+                    && atty::is(Stream::Stdout)
+                {
                     OutputStyleOption::Full
                 } else {
                     OutputStyleOption::Basic
@@ -250,7 +272,7 @@ impl Options {
         }
 
         if matches.is_present("ignore-failure") {
-            options.failure_action = CmdFailureAction::Ignore;
+            options.command_failure_action = CmdFailureAction::Ignore;
         }
 
         options.time_unit = match matches.value_of("time-unit") {
