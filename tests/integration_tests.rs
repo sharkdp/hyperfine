@@ -83,6 +83,42 @@ fn fails_for_unknown_command() {
         ));
 }
 
+#[test]
+fn fails_for_unknown_setup_command() {
+    hyperfine()
+        .arg("--setup=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
+        .arg("echo test")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The setup command terminated with a non-zero exit code.",
+        ));
+}
+
+#[test]
+fn fails_for_unknown_cleanup_command() {
+    hyperfine()
+        .arg("--cleanup=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
+        .arg("echo test")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The cleanup command terminated with a non-zero exit code.",
+        ));
+}
+
+#[test]
+fn fails_for_unknown_prepare_command() {
+    hyperfine()
+        .arg("--prepare=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
+        .arg("echo test")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The preparation command terminated with a non-zero exit code.",
+        ));
+}
+
 #[cfg(unix)]
 #[test]
 fn can_run_failing_commands_with_ignore_failure_option() {
