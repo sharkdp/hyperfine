@@ -181,9 +181,9 @@ impl<'a> Scheduler<'a> {
             self.options.command_output_policy,
         )?;
 
-        for (num, cmd) in self.commands.iter().enumerate() {
+        for (benchmark_number, cmd) in self.commands.iter().enumerate() {
             self.results
-                .push(self.run_benchmark(num, cmd, shell_spawning_time)?);
+                .push(self.run_benchmark(benchmark_number, cmd, shell_spawning_time)?);
 
             // We export (all results so far) after each individual benchmark, because
             // we would risk losing all results if a later benchmark fails.
@@ -304,7 +304,7 @@ impl<'a> Scheduler<'a> {
     /// Run the benchmark for a single shell command
     pub fn run_benchmark(
         &self,
-        num: usize,
+        benchmark_number: usize,
         cmd: &Command<'_>,
         shell_spawning_time: TimingResult,
     ) -> Result<BenchmarkResult> {
@@ -313,7 +313,7 @@ impl<'a> Scheduler<'a> {
             println!(
                 "{}{}: {}",
                 "Benchmark ".bold(),
-                (num + 1).to_string().bold(),
+                (benchmark_number + 1).to_string().bold(),
                 command_name,
             );
         }
@@ -328,7 +328,7 @@ impl<'a> Scheduler<'a> {
             let preparation_command = if values.len() == 1 {
                 &values[0]
             } else {
-                &values[num]
+                &values[benchmark_number]
             };
             Command::new_parametrized(
                 None,
