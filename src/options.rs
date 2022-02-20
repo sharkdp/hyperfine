@@ -300,10 +300,7 @@ fn test_shell_default_command() {
     assert_eq!(&s, DEFAULT_SHELL);
 
     let cmd = shell.command();
-    // Command::get_program is not yet available in stable channel.
-    // https://doc.rust-lang.org/std/process/struct.Command.html#method.get_program
-    let s = format!("{:?}", cmd);
-    assert_eq!(s, format!("\"{}\"", DEFAULT_SHELL));
+    assert_eq!(cmd.get_program(), DEFAULT_SHELL);
 }
 
 #[test]
