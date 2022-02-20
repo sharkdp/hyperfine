@@ -9,10 +9,10 @@ use crate::util::units::Second;
 // `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkResult {
-    /// The command that was run
+    /// The full command line of the program that is being benchmarked
     pub command: String,
 
-    /// The mean run time
+    /// The average run time
     pub mean: Second,
 
     /// The standard deviation of all run times. Not available if only one run has been performed
@@ -21,26 +21,26 @@ pub struct BenchmarkResult {
     /// The median run time
     pub median: Second,
 
-    /// Time spend in user space
+    /// Time spent in user mode
     pub user: Second,
 
-    /// Time spent in system space
+    /// Time spent in kernel mode
     pub system: Second,
 
-    /// Min time measured
+    /// Minimum of all measured times
     pub min: Second,
 
-    /// Max time measured
+    /// Maximum of all measured times
     pub max: Second,
 
     /// All run time measurements
     #[serde(skip_serializing_if = "Option::is_none")]
     pub times: Option<Vec<Second>>,
 
-    /// All run exit codes
+    /// Exit codes of all command invocations
     pub exit_codes: Vec<Option<i32>>,
 
-    /// Any parameter values used
+    /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parameters: BTreeMap<String, String>,
 }
