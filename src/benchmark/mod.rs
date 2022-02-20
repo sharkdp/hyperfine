@@ -103,6 +103,14 @@ pub fn mean_shell_spawning_time(
     style: OutputStyleOption,
     show_output: bool,
 ) -> Result<TimingResult> {
+    if let Shell::None = shell {
+        return Ok(TimingResult {
+            time_real: 0.0,
+            time_user: 0.0,
+            time_system: 0.0,
+        });
+    }
+
     const COUNT: u64 = 50;
     let progress_bar = if style != OutputStyleOption::Disabled {
         Some(get_progress_bar(

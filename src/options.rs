@@ -24,6 +24,8 @@ pub enum Shell {
     Default(&'static str),
     /// Custom shell command specified via --shell
     Custom(Vec<String>),
+    /// No shell, each command is parsed (via `shell-words`) and directly executed
+    None,
 }
 
 impl Default for Shell {
@@ -37,6 +39,7 @@ impl fmt::Display for Shell {
         match self {
             Shell::Default(cmd) => write!(f, "{}", cmd),
             Shell::Custom(cmdline) => write!(f, "{}", shell_words::join(cmdline)),
+            Shell::None => write!(f, "[none]"),
         }
     }
 }
@@ -51,14 +54,15 @@ impl Shell {
         Ok(Shell::Custom(v))
     }
 
-    pub fn command(&self) -> Command {
+    pub fn command(&self) -> Option<Command> {
         match self {
-            Shell::Default(cmd) => Command::new(cmd),
+            Shell::Default(cmd) => Some(Command::new(cmd)),
             Shell::Custom(cmdline) => {
                 let mut c = Command::new(&cmdline[0]);
                 c.args(&cmdline[1..]);
-                c
+                Some(c)
             }
+            Shell::None => None,
         }
     }
 }
@@ -247,6 +251,9 @@ impl Options {
         if let Some(shell) = matches.value_of("shell") {
             options.shell = Shell::parse(shell)?;
         }
+        if matches.is_present("no-shell") {
+            options.shell = Shell::None;
+        }
 
         if matches.is_present("ignore-failure") {
             options.failure_action = CmdFailureAction::Ignore;
@@ -281,7 +288,7 @@ fn test_shell_default_command() {
     let s = format!("{}", shell);
     assert_eq!(&s, DEFAULT_SHELL);
 
-    let cmd = shell.command();
+    let cmd = shell.command().unwrap();
     // Command::get_program is not yet available in stable channel.
     // https://doc.rust-lang.org/std/process/struct.Command.html#method.get_program
     let s = format!("{:?}", cmd);
@@ -295,7 +302,7 @@ fn test_shell_parse_command() {
     let s = format!("{}", shell);
     assert_eq!(&s, "shell -x 'aaa bbb'");
 
-    let cmd = shell.command();
+    let cmd = shell.command().unwrap();
     assert_eq!(cmd.get_program().to_string_lossy(), "shell");
     assert_eq!(
         cmd.get_args()

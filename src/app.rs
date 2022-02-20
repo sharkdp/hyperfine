@@ -184,6 +184,11 @@ fn build_app() -> App<'static> {
                 .help("Set the shell to use for executing benchmarked commands."),
         )
         .arg(
+            Arg::new("no-shell")
+                .long("no-shell")
+                .help("Execute benchmarked commands without a shell."),
+        )
+        .arg(
             Arg::new("ignore-failure")
                 .long("ignore-failure")
                 .short('i')
