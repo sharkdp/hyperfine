@@ -44,7 +44,7 @@ impl fmt::Display for Shell {
 
 impl Shell {
     /// Parse given string as shell command line
-    pub fn parse<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
+    pub fn from_str<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
         let v = shell_words::split(s).map_err(OptionsError::ShellParseError)?;
         if v.is_empty() || v[0].is_empty() {
             return Err(OptionsError::EmptyShell);
@@ -138,7 +138,7 @@ pub struct Options {
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
 
-    /// Command to run before each timing run
+    /// Command(s) to run before each timing run
     pub preparation_command: Option<Vec<String>>,
 
     /// Command to run before each *batch* of timing runs, i.e. before each individual benchmark
@@ -268,7 +268,7 @@ impl Options {
         };
 
         if let Some(shell) = matches.value_of("shell") {
-            options.shell = Shell::parse(shell)?;
+            options.shell = Shell::from_str(shell)?;
         }
 
         if matches.is_present("ignore-failure") {
@@ -313,8 +313,8 @@ fn test_shell_default_command() {
 }
 
 #[test]
-fn test_shell_parse_command() {
-    let shell = Shell::parse("shell -x 'aaa bbb'").unwrap();
+fn test_can_parse_shell_command_line_from_str() {
+    let shell = Shell::from_str("shell -x 'aaa bbb'").unwrap();
 
     let s = format!("{}", shell);
     assert_eq!(&s, "shell -x 'aaa bbb'");
@@ -330,17 +330,17 @@ fn test_shell_parse_command() {
 
     // Error cases
     assert!(matches!(
-        Shell::parse("shell 'foo").unwrap_err(),
+        Shell::from_str("shell 'foo").unwrap_err(),
         OptionsError::ShellParseError(_)
     ));
 
     assert!(matches!(
-        Shell::parse("").unwrap_err(),
+        Shell::from_str("").unwrap_err(),
         OptionsError::EmptyShell
     ));
 
     assert!(matches!(
-        Shell::parse("''").unwrap_err(),
+        Shell::from_str("''").unwrap_err(),
         OptionsError::EmptyShell
     ));
 }
