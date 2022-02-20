@@ -238,25 +238,20 @@ impl<'a> Scheduler<'a> {
 
     fn run_intermediate_command(
         &self,
-        command: &Option<Command<'_>>,
+        command: &Command<'_>,
         error_output: &'static str,
     ) -> Result<TimingResult> {
-        if let Some(ref cmd) = command {
-            let res = time_shell_command(
-                &self.options.shell,
-                cmd,
-                self.options.command_output_policy,
-                CmdFailureAction::RaiseError,
-                None,
-            );
-            if res.is_err() {
-                bail!(error_output);
-            }
-            return res.map(|r| r.0);
+        let res = time_shell_command(
+            &self.options.shell,
+            command,
+            self.options.command_output_policy,
+            CmdFailureAction::RaiseError,
+            None,
+        );
+        if res.is_err() {
+            bail!(error_output);
         }
-        Ok(TimingResult {
-            ..Default::default()
-        })
+        return res.map(|r| r.0);
     }
 
     /// Run the command specified by `--setup`.
@@ -273,7 +268,10 @@ impl<'a> Scheduler<'a> {
         let error_output = "The setup command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(&command, error_output)
+        Ok(command
+            .map(|cmd| self.run_intermediate_command(&cmd, error_output))
+            .transpose()?
+            .unwrap_or_default())
     }
 
     /// Run the command specified by `--cleanup`.
@@ -290,11 +288,14 @@ impl<'a> Scheduler<'a> {
         let error_output = "The cleanup command terminated with a non-zero exit code. \
                 Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(&command, error_output)
+        Ok(command
+            .map(|cmd| self.run_intermediate_command(&cmd, error_output))
+            .transpose()?
+            .unwrap_or_default())
     }
 
     /// Run the command specified by `--prepare`.
-    fn run_preparation_command(&self, command: &Option<Command<'_>>) -> Result<TimingResult> {
+    fn run_preparation_command(&self, command: &Command<'_>) -> Result<TimingResult> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
@@ -324,7 +325,7 @@ impl<'a> Scheduler<'a> {
         let mut exit_codes: Vec<Option<i32>> = vec![];
         let mut all_succeeded = true;
 
-        let prepare_cmd = self.options.preparation_command.as_ref().map(|values| {
+        let preparation_command = self.options.preparation_command.as_ref().map(|values| {
             let preparation_command = if values.len() == 1 {
                 &values[0]
             } else {
@@ -336,6 +337,13 @@ impl<'a> Scheduler<'a> {
                 command.get_parameters().iter().cloned(),
             )
         });
+        let run_preparation_command = || {
+            if let Some(ref cmd) = preparation_command {
+                self.run_preparation_command(cmd)
+            } else {
+                Ok(TimingResult::default())
+            }
+        };
 
         self.run_setup_command(command.get_parameters().iter().cloned())?;
 
@@ -352,7 +360,7 @@ impl<'a> Scheduler<'a> {
             };
 
             for _ in 0..self.options.warmup_count {
-                let _ = self.run_preparation_command(&prepare_cmd)?;
+                let _ = run_preparation_command()?;
                 let _ = time_shell_command(
                     &self.options.shell,
                     command,
@@ -380,7 +388,7 @@ impl<'a> Scheduler<'a> {
             None
         };
 
-        let prepare_result = self.run_preparation_command(&prepare_cmd)?;
+        let preparation_result = run_preparation_command()?;
 
         // Initial timing run
         let (res, status) = time_shell_command(
@@ -394,7 +402,7 @@ impl<'a> Scheduler<'a> {
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real + prepare_result.time_real + shell_spawning_time.time_real))
+            / (res.time_real + preparation_result.time_real + shell_spawning_time.time_real))
             as u64;
 
         let count = {
@@ -428,7 +436,7 @@ impl<'a> Scheduler<'a> {
 
         // Gather statistics (perform the actual benchmark)
         for _ in 0..count_remaining {
-            self.run_preparation_command(&prepare_cmd)?;
+            run_preparation_command()?;
 
             let msg = {
                 let mean = format_duration(mean(&times_real), self.options.time_unit);
