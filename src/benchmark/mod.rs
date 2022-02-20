@@ -18,6 +18,7 @@ use crate::output::warnings::Warnings;
 use crate::shell::execute_and_time;
 use crate::timer::wallclocktimer::WallClockTimer;
 use crate::timer::{TimerStart, TimerStop};
+use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
 use crate::util::units::Second;
 
@@ -221,27 +222,6 @@ fn run_cleanup_command(
                         Append ' || true' to the command if you are sure that this can be ignored.";
 
     run_intermediate_command(shell, command, output_policy, error_output)
-}
-
-#[cfg(unix)]
-fn extract_exit_code(status: ExitStatus) -> Option<i32> {
-    use std::os::unix::process::ExitStatusExt;
-
-    /* From the ExitStatus::code documentation:
-       "On Unix, this will return None if the process was terminated by a signal."
-       In that case, ExitStatusExt::signal should never return None.
-    */
-    status.code().or_else(||
-        /* To differentiate between "normal" exit codes and signals, we are using
-           something similar to bash exit codes (https://tldp.org/LDP/abs/html/exitcodes.html)
-           by adding 128 to a signal integer value.
-         */
-        status.signal().map(|s| 128 + s))
-}
-
-#[cfg(not(unix))]
-fn extract_exit_code(status: ExitStatus) -> Option<i32> {
-    status.code()
 }
 
 /// Run the benchmark for a single shell command
