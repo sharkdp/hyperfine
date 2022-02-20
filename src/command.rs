@@ -4,7 +4,10 @@ use std::str::FromStr;
 
 use crate::{
     error::{OptionsError, ParameterScanError},
-    parameter::range_step::{Numeric, RangeStep},
+    parameter::{
+        range_step::{Numeric, RangeStep},
+        ParameterNameAndValue,
+    },
 };
 
 use clap::ArgMatches;
@@ -26,7 +29,7 @@ pub struct Command<'a> {
     expression: &'a str,
 
     /// Zero or more parameter values.
-    parameters: Vec<(&'a str, ParameterValue)>,
+    parameters: Vec<ParameterNameAndValue<'a>>,
 }
 
 impl<'a> Command<'a> {
@@ -41,12 +44,12 @@ impl<'a> Command<'a> {
     pub fn new_parametrized(
         name: Option<&'a str>,
         expression: &'a str,
-        parameters: Vec<(&'a str, ParameterValue)>,
+        parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
     ) -> Command<'a> {
         Command {
             name,
             expression,
-            parameters,
+            parameters: parameters.into_iter().collect(),
         }
     }
 
@@ -61,7 +64,7 @@ impl<'a> Command<'a> {
         self.replace_parameters_in(self.expression)
     }
 
-    pub fn get_parameters(&self) -> &Vec<(&'a str, ParameterValue)> {
+    pub fn get_parameters(&self) -> &[(&'a str, ParameterValue)] {
         &self.parameters
     }
 
@@ -166,7 +169,7 @@ impl<'a> Commands<'a> {
                 i += 1;
 
                 let (command_index, params_indices) = index.split_first().unwrap();
-                let parameters = param_names_and_values
+                let parameters: Vec<_> = param_names_and_values
                     .iter()
                     .zip(params_indices)
                     .map(|((name, values), i)| (*name, ParameterValue::Text(values[*i].clone())))

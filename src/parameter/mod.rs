@@ -17,3 +17,5 @@ impl<'a> ToString for ParameterValue {
         }
     }
 }
+
+pub type ParameterNameAndValue<'a> = (&'a str, ParameterValue);
