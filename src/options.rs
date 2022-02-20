@@ -293,7 +293,7 @@ impl Options {
 }
 
 #[test]
-fn test_shell_default_command() {
+fn test_default_shell() {
     let shell = Shell::default();
 
     let s = format!("{}", shell);
