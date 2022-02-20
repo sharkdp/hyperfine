@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use csv::WriterBuilder;
 
 use super::Exporter;
-use crate::benchmark::result::BenchmarkResult;
+use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::util::units::Unit;
 
 use anyhow::Result;

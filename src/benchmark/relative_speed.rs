@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use super::result::BenchmarkResult;
+use super::benchmark_result::BenchmarkResult;
 use crate::util::units::Scalar;
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
+use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::benchmark::relative_speed::{self, BenchmarkResultWithRelativeSpeed};
-use crate::benchmark::result::BenchmarkResult;
 use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 

@@ -11,7 +11,7 @@ use self::csv::CsvExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 
-use crate::benchmark::result::BenchmarkResult;
+use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::util::units::Unit;
 
 use anyhow::{Context, Result};
