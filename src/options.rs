@@ -156,25 +156,19 @@ pub struct Options {
     /// What to do with the output of the benchmarked command
     pub command_output_policy: CommandOutputPolicy,
 
-    /// Which time unit to use for CLI & Markdown output
+    /// Which time unit to use when displaying resuls
     pub time_unit: Option<Unit>,
-
-    /// A list of custom command names that, if defined,
-    /// will be used instead of the command itself in
-    /// benchmark outputs.
-    pub names: Option<Vec<String>>,
 }
 
 impl Default for Options {
     fn default() -> Options {
         Options {
-            names: None,
-            warmup_count: 0,
             run_bounds: RunBounds::default(),
+            warmup_count: 0,
             min_benchmarking_time: 3.0,
             command_failure_action: CmdFailureAction::RaiseError,
-            setup_command: None,
             preparation_command: None,
+            setup_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
             shell: Shell::default(),
