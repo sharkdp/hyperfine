@@ -75,6 +75,7 @@ fn fails_with_duplicate_parameter_names() {
 #[test]
 fn fails_for_unknown_command() {
     hyperfine()
+        .arg("--runs=1")
         .arg("some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .assert()
         .failure()
@@ -86,6 +87,7 @@ fn fails_for_unknown_command() {
 #[test]
 fn fails_for_unknown_setup_command() {
     hyperfine()
+        .arg("--runs=1")
         .arg("--setup=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .arg("echo test")
         .assert()
@@ -98,6 +100,7 @@ fn fails_for_unknown_setup_command() {
 #[test]
 fn fails_for_unknown_cleanup_command() {
     hyperfine()
+        .arg("--runs=1")
         .arg("--cleanup=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .arg("echo test")
         .assert()
