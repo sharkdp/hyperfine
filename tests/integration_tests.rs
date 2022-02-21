@@ -137,3 +137,20 @@ fn can_run_failing_commands_with_ignore_failure_option() {
         .assert()
         .success();
 }
+
+#[test]
+fn runs_commands_using_user_defined_shell() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--show-output")
+        .arg("--shell")
+        .arg("echo 'custom_shell' '--shell-arg'")
+        .arg("echo benchmark")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("custom_shell --shell-arg -c echo benchmark").or(
+                predicate::str::contains("custom_shell --shell-arg /C echo benchmark"),
+            ),
+        );
+}
