@@ -13,14 +13,23 @@ use anyhow::{bail, Result};
 use statistical::mean;
 
 pub trait Executor {
-    fn time_command(
+    /// Run the given command and measure the execution time
+    fn run_command_and_measure(
         &self,
         command: &Command<'_>,
         command_failure_action: Option<CmdFailureAction>,
     ) -> Result<(TimingResult, ExitStatus)>;
 
+    /// Perform a calibration of this executor. For example,
+    /// when running commands through a shell, we need to
+    /// measure the shell spawning time separately in order
+    /// to subtract it from the full runtime later.
     fn calibrate(&mut self) -> Result<()>;
 
+    /// Return the time overhead for this executor when
+    /// performing a measurement. This should return the time
+    /// that is being used in addition to the actual runtime
+    /// of the command.
     fn time_overhead(&self) -> Second;
 }
 
@@ -49,8 +58,7 @@ impl<'a> ShellExecutor<'a> {
 }
 
 impl<'a> Executor for ShellExecutor<'a> {
-    /// Run the given shell command and measure the execution time
-    fn time_command(
+    fn run_command_and_measure(
         &self,
         command: &Command<'_>,
         command_failure_action: Option<CmdFailureAction>,
@@ -117,7 +125,7 @@ impl<'a> Executor for ShellExecutor<'a> {
 
         for _ in 0..COUNT {
             // Just run the shell without any command
-            let res = self.time_command(&Command::new(None, ""), None);
+            let res = self.run_command_and_measure(&Command::new(None, ""), None);
 
             match res {
                 Err(_) => {
@@ -183,7 +191,7 @@ impl MockExecutor {
 }
 
 impl Executor for MockExecutor {
-    fn time_command(
+    fn run_command_and_measure(
         &self,
         command: &Command<'_>,
         _command_failure_action: Option<CmdFailureAction>,
