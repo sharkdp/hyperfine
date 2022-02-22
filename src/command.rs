@@ -351,7 +351,7 @@ impl<'a> fmt::Display for Command<'a> {
 
 #[test]
 fn test_build_commands_cross_product() {
-    use crate::app::get_cli_arguments;
+    use crate::cli::get_cli_arguments;
 
     let matches = get_cli_arguments(vec![
         "hyperfine",
@@ -389,7 +389,7 @@ fn test_build_commands_cross_product() {
 
 #[test]
 fn test_build_parameter_list_commands() {
-    use crate::app::get_cli_arguments;
+    use crate::cli::get_cli_arguments;
 
     let matches = get_cli_arguments(vec![
         "hyperfine",
@@ -410,7 +410,7 @@ fn test_build_parameter_list_commands() {
 
 #[test]
 fn test_build_parameter_scan_commands() {
-    use crate::app::get_cli_arguments;
+    use crate::cli::get_cli_arguments;
     let matches = get_cli_arguments(vec![
         "hyperfine",
         "echo {val}",

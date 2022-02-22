@@ -2,7 +2,7 @@ use std::fs;
 
 use clap_complete::{generate_to, Shell};
 
-include!("src/app.rs");
+include!("src/cli.rs");
 
 fn main() {
     let var = std::env::var_os("SHELL_COMPLETIONS_DIR").or_else(|| std::env::var_os("OUT_DIR"));
@@ -12,7 +12,7 @@ fn main() {
     };
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut app = build_app();
+    let mut command = build_command();
     for shell in [
         Shell::Bash,
         Shell::Fish,
@@ -20,6 +20,6 @@ fn main() {
         Shell::PowerShell,
         Shell::Elvish,
     ] {
-        generate_to(shell, &mut app, "hyperfine", &outdir).unwrap();
+        generate_to(shell, &mut command, "hyperfine", &outdir).unwrap();
     }
 }

@@ -1,7 +1,7 @@
 use std::env;
 
-use app::get_cli_arguments;
 use benchmark::scheduler::Scheduler;
+use cli::get_cli_arguments;
 use command::Commands;
 use export::ExportManager;
 use options::Options;
@@ -9,8 +9,8 @@ use options::Options;
 use anyhow::Result;
 use colored::*;
 
-pub mod app;
 pub mod benchmark;
+pub mod cli;
 pub mod command;
 pub mod error;
 pub mod export;

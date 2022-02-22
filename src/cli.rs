@@ -1,23 +1,23 @@
 use std::ffi::OsString;
 
-use clap::{crate_version, App, AppSettings, Arg, ArgMatches};
+use clap::{crate_version, AppSettings, Arg, ArgMatches, Command};
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone + 'a,
 {
-    let app = build_app();
-    app.get_matches_from(args)
+    let command = build_command();
+    command.get_matches_from(args)
 }
 
-/// Build the clap app for parsing command line arguments
-fn build_app() -> App<'static> {
-    App::new("hyperfine")
+/// Build the clap command for parsing command line arguments
+fn build_command() -> Command<'static> {
+    Command::new("hyperfine")
         .version(crate_version!())
         .setting(AppSettings::DeriveDisplayOrder)
-        .setting(AppSettings::NextLineHelp)
-        .setting(AppSettings::HidePossibleValues)
+        .next_line_help(true)
+        .hide_possible_values(true)
         .max_term_width(90)
         .about("A command-line benchmarking tool.")
         .arg(
@@ -259,5 +259,5 @@ fn build_app() -> App<'static> {
 
 #[test]
 fn verify_app() {
-    build_app().debug_assert();
+    build_command().debug_assert();
 }
