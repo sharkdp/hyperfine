@@ -2,6 +2,13 @@
 
 ## Features
 
+- Added a new `--shell=none`/`-N` option to disable the intermediate
+  shell for executing the benchmarked commands. Hyperfine normally
+  measures and subtracts the shell spawning time, but the intermediate
+  shell always introduces a certain level of measurement noise. Using
+  `--shell=none`/`-N` allows users to benchmark very fast commands
+  (with a runtime on the order of a few milliseconds). See #336, #429,
+  and #487 (@cipriancraciun and @sharkdp)
 - Added `--setup` (`s`) option that can be used to run `make all` or
   similar. It runs once per set of tests, like `--cleanup` (`c`).
 
