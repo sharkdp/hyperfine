@@ -11,9 +11,3 @@ pub fn hyperfine_raw_command() -> Command {
 pub fn hyperfine() -> assert_cmd::Command {
     assert_cmd::Command::from_std(hyperfine_raw_command())
 }
-
-pub fn hyperfine_shell() -> assert_cmd::Command {
-    let mut cmd = hyperfine();
-    cmd.arg("--shell=default");
-    cmd
-}

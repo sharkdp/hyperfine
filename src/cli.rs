@@ -22,9 +22,11 @@ fn build_command() -> Command<'static> {
         .about("A command-line benchmarking tool.")
         .arg(
             Arg::new("command")
-                .help("Command to benchmark. This can be the name of an executable or a shell \
-                       command like \"sleep 0.5 && echo test\". If multiple commands are given, \
-                       hyperfine will show a comparison of the respective runtimes.")
+                .help("The command to benchmark. This can be the name of an executable, a command \
+                       line like \"grep -i todo\" or a shell command like \"sleep 0.5 && echo test\". \
+                       The latter is only available if the shell is not explicitly disabled via \
+                       '--shell=none'. If multiple commands are given, hyperfine will show a \
+                       comparison of the respective runtimes.")
                 .required(true)
                 .multiple_occurrences(true)
                 .forbid_empty_values(true),
@@ -181,7 +183,19 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("SHELL")
                 .overrides_with("shell")
-                .help("Set the shell to use for executing benchmarked commands."),
+                .help("Set the shell to use for executing benchmarked commands. This can be the \
+                       name or the path to the shell executable, or a full command line \
+                       like \"bash --norc\". It can also be set to \"default\" to explicitly select \
+                       the default shell on this patform. Finally, this can also be set to \
+                       \"none\" to disable the shell. In this case, commands will be executed \
+                       directly. They can still have arguments, but more complex things like \
+                       \"sleep 0.1; sleep 0.2\" are not possible without a shell.")
+        )
+        .arg(
+            Arg::new("no-shell")
+                .short('N')
+                .conflicts_with_all(&["shell", "debug-mode"])
+                .help("An alias for '--shell=none'.")
         )
         .arg(
             Arg::new("ignore-failure")
