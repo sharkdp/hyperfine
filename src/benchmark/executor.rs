@@ -1,7 +1,7 @@
 use std::process::{ExitStatus, Stdio};
 
 use crate::command::Command;
-use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
+use crate::options::{CmdFailureAction, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
 use crate::timer::{execute_and_measure, wall_clock_timer::WallClockTimer};
 use crate::util::randomized_environment_offset;
@@ -63,10 +63,7 @@ impl<'a> Executor for ShellExecutor<'a> {
         command: &Command<'_>,
         command_failure_action: Option<CmdFailureAction>,
     ) -> Result<(TimingResult, ExitStatus)> {
-        let (stdout, stderr) = match self.options.command_output_policy {
-            CommandOutputPolicy::Discard => (Stdio::null(), Stdio::null()),
-            CommandOutputPolicy::Forward => (Stdio::inherit(), Stdio::inherit()),
-        };
+        let (stdout, stderr) = self.options.command_output_policy.get_stdout_stderr();
 
         let mut command_builder = self.shell.command();
         command_builder

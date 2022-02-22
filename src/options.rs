@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::{cmp, fmt};
 
 use anyhow::ensure;
@@ -121,6 +121,15 @@ pub enum CommandOutputPolicy {
 impl Default for CommandOutputPolicy {
     fn default() -> Self {
         CommandOutputPolicy::Discard
+    }
+}
+
+impl CommandOutputPolicy {
+    pub fn get_stdout_stderr(&self) -> (Stdio, Stdio) {
+        match self {
+            CommandOutputPolicy::Discard => (Stdio::null(), Stdio::null()),
+            CommandOutputPolicy::Forward => (Stdio::inherit(), Stdio::inherit()),
+        }
     }
 }
 
