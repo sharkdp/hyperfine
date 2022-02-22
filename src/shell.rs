@@ -18,24 +18,8 @@ pub struct ExecuteResult {
     pub status: ExitStatus,
 }
 
-/// Execute the given command and return a timing summary
-#[cfg(windows)]
-pub fn execute_and_time(
-    stdout: Stdio,
-    stderr: Stdio,
-    command: &str,
-    shell: &Shell,
-) -> Result<ExecuteResult> {
-    let mut child = run_shell_command(stdout, stderr, command, shell)?;
-    let cpu_timer = get_cpu_timer(&child);
-    let status = child.wait()?;
-
-    let (user_time, system_time) = cpu_timer.stop();
-    Ok(ExecuteResult {
-        user_time,
-        system_time,
-        status,
-    })
+fn randomized_environment_offset_value() -> String {
+    "X".repeat(rand::random::<usize>() % 4096usize)
 }
 
 /// Execute the given command and return a timing summary
@@ -48,7 +32,19 @@ pub fn execute_and_time(
 ) -> Result<ExecuteResult> {
     let cpu_timer = get_cpu_timer();
 
-    let status = run_shell_command(stdout, stderr, command, shell)?;
+    let status = shell
+        .command()
+        .arg("-c")
+        .arg(command)
+        .env(
+            "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
+            randomized_environment_offset_value(),
+        )
+        .stdin(Stdio::null())
+        .stdout(stdout)
+        .stderr(stderr)
+        .status()
+        .with_context(|| format!("Failed to run command '{}'", command))?;
 
     let (user_time, system_time) = cpu_timer.stop();
 
@@ -59,44 +55,34 @@ pub fn execute_and_time(
     })
 }
 
-/// Run a standard shell command using `sh -c`
-#[cfg(not(windows))]
-fn run_shell_command(
+/// Execute the given command and return a timing summary
+#[cfg(windows)]
+pub fn execute_and_time(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
     shell: &Shell,
-) -> Result<std::process::ExitStatus> {
-    shell
+) -> Result<ExecuteResult> {
+    let mut child = shell
         .command()
-        .arg("-c")
+        .arg("/C")
         .arg(command)
         .env(
             "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
-            "X".repeat(rand::random::<usize>() % 4096usize),
+            randomized_environment_offset_value(),
         )
         .stdin(Stdio::null())
         .stdout(stdout)
         .stderr(stderr)
-        .status()
-        .with_context(|| format!("Failed to run command '{}'", command))
-}
-
-/// Run a Windows shell command using `cmd.exe /C`
-#[cfg(windows)]
-fn run_shell_command(
-    stdout: Stdio,
-    stderr: Stdio,
-    command: &str,
-    shell: &Shell,
-) -> Result<std::process::Child> {
-    shell
-        .command()
-        .arg("/C")
-        .arg(command)
-        .stdin(Stdio::null())
-        .stdout(stdout)
-        .stderr(stderr)
         .spawn()
-        .with_context(|| format!("Failed to run command '{}'", command))
+        .with_context(|| format!("Failed to run command '{}'", command))?;
+    let cpu_timer = get_cpu_timer(&child);
+    let status = child.wait()?;
+
+    let (user_time, system_time) = cpu_timer.stop();
+    Ok(ExecuteResult {
+        user_time,
+        system_time,
+        status,
+    })
 }
