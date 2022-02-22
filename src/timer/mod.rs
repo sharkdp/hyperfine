@@ -24,7 +24,7 @@ struct CPUTimes {
 
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]
-pub struct ExecuteResult {
+pub struct TimerResult {
     pub time_real: Second,
     pub time_user: Second,
     pub time_system: Second,
@@ -34,7 +34,7 @@ pub struct ExecuteResult {
 }
 
 /// Execute the given command and return a timing summary
-pub fn execute_and_measure(mut command: Command) -> Result<ExecuteResult> {
+pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     let wallclock_timer = WallClockTimer::start();
 
     #[cfg(not(windows))]
@@ -55,7 +55,7 @@ pub fn execute_and_measure(mut command: Command) -> Result<ExecuteResult> {
 
     let time_real = wallclock_timer.stop();
 
-    Ok(ExecuteResult {
+    Ok(TimerResult {
         time_real,
         time_user,
         time_system,
