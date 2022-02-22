@@ -14,6 +14,9 @@
 
 ## Other
 
+- Improved documentation and test coverage, cleaned up code base for
+  future improvements.
+
 ## Packaging
 
 
