@@ -57,7 +57,7 @@ impl<'a> Benchmark<'a> {
         error_output: &'static str,
     ) -> Result<TimingResult> {
         self.executor
-            .time_command(command, Some(CmdFailureAction::RaiseError))
+            .run_command_and_measure(command, Some(CmdFailureAction::RaiseError))
             .map(|r| r.0)
             .map_err(|_| anyhow!(error_output))
     }
@@ -163,7 +163,7 @@ impl<'a> Benchmark<'a> {
 
             for _ in 0..self.options.warmup_count {
                 let _ = run_preparation_command()?;
-                let _ = self.executor.time_command(self.command, None)?;
+                let _ = self.executor.run_command_and_measure(self.command, None)?;
                 if let Some(bar) = progress_bar.as_ref() {
                     bar.inc(1)
                 }
@@ -189,7 +189,7 @@ impl<'a> Benchmark<'a> {
             preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
 
         // Initial timing run
-        let (res, status) = self.executor.time_command(self.command, None)?;
+        let (res, status) = self.executor.run_command_and_measure(self.command, None)?;
         let success = status.success();
 
         // Determine number of benchmark runs
@@ -239,7 +239,7 @@ impl<'a> Benchmark<'a> {
                 bar.set_message(msg.to_owned())
             }
 
-            let (res, status) = self.executor.time_command(self.command, None)?;
+            let (res, status) = self.executor.run_command_and_measure(self.command, None)?;
             let success = status.success();
 
             times_real.push(res.time_real);
