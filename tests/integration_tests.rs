@@ -3,6 +3,12 @@ use common::hyperfine;
 
 use predicates::prelude::*;
 
+pub fn hyperfine_debug() -> assert_cmd::Command {
+    let mut cmd = hyperfine();
+    cmd.arg("--debug-mode");
+    cmd
+}
+
 #[test]
 fn hyperfine_runs_successfully() {
     hyperfine()
@@ -155,5 +161,93 @@ fn runs_commands_using_user_defined_shell() {
             predicate::str::contains("custom_shell --shell-arg -c echo benchmark").or(
                 predicate::str::contains("custom_shell --shell-arg /C echo benchmark"),
             ),
+        );
+}
+
+#[test]
+fn returns_mean_time_in_correct_unit() {
+    hyperfine_debug()
+        .arg("sleep 1.234")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Time (mean ± σ):      1.234 s ±"));
+
+    hyperfine_debug()
+        .arg("sleep 0.123")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Time (mean ± σ):     123.0 ms ±"));
+
+    hyperfine_debug()
+        .arg("--time-unit=millisecond")
+        .arg("sleep 1.234")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Time (mean ± σ):     1234.0 ms ±"));
+}
+
+#[test]
+fn performs_ten_runs_for_slow_commands() {
+    hyperfine_debug()
+        .arg("--time-unit=millisecond")
+        .arg("sleep 0.5")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("10 runs"));
+}
+
+#[test]
+fn performs_three_seconds_of_benchmarking_for_fast_commands() {
+    hyperfine_debug()
+        .arg("--time-unit=millisecond")
+        .arg("sleep 0.01")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("300 runs"));
+}
+
+#[test]
+fn takes_time_of_preparation_command_into_account() {
+    hyperfine_debug()
+        .arg("--time-unit=millisecond")
+        .arg("--prepare=sleep 0.02")
+        .arg("sleep 0.01")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("100 runs"));
+}
+
+#[test]
+fn shows_benchmark_comparison_with_relative_times() {
+    hyperfine_debug()
+        .arg("sleep 1.0")
+        .arg("sleep 2.0")
+        .arg("sleep 3.0")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("2.00 ± 0.00 times faster")
+                .and(predicate::str::contains("3.00 ± 0.00 times faster")),
+        );
+}
+
+#[test]
+fn performs_all_benchmarks_in_parameter_scan() {
+    hyperfine_debug()
+        .arg("--parameter-scan")
+        .arg("time")
+        .arg("30")
+        .arg("45")
+        .arg("--parameter-step-size")
+        .arg("5")
+        .arg("sleep {time}")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Benchmark 1: sleep 30")
+                .and(predicate::str::contains("Benchmark 2: sleep 35"))
+                .and(predicate::str::contains("Benchmark 3: sleep 40"))
+                .and(predicate::str::contains("Benchmark 4: sleep 45"))
+                .and(predicate::str::contains("Benchmark 5: sleep 50").not()),
         );
 }

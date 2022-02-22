@@ -1,11 +1,12 @@
 use colored::*;
 
 use super::benchmark_result::BenchmarkResult;
+use super::executor::{Executor, MockExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
 
 use crate::command::Commands;
 use crate::export::ExportManager;
-use crate::options::{Options, OutputStyleOption};
+use crate::options::{ExecutorKind, Options, OutputStyleOption};
 
 use anyhow::Result;
 
@@ -31,16 +32,16 @@ impl<'a> Scheduler<'a> {
     }
 
     pub fn run_benchmarks(&mut self) -> Result<()> {
-        let shell_spawning_time = super::mean_shell_spawning_time(
-            // TODO
-            &self.options.shell,
-            self.options.output_style,
-            self.options.command_output_policy,
-        )?;
+        let mut executor: Box<dyn Executor> = match self.options.executor_kind {
+            ExecutorKind::Mock(ref shell) => Box::new(MockExecutor::new(shell)),
+            ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, &self.options)),
+        };
+
+        executor.calibrate()?;
 
         for (number, cmd) in self.commands.iter().enumerate() {
             self.results
-                .push(Benchmark::new(number, cmd, self.options, &shell_spawning_time).run()?);
+                .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
 
             // We export (all results so far) after each individual benchmark, because
             // we would risk losing all results if a later benchmark fails.

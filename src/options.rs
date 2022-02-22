@@ -124,6 +124,17 @@ impl Default for CommandOutputPolicy {
     }
 }
 
+pub enum ExecutorKind {
+    Shell(Shell),
+    Mock(Shell),
+}
+
+impl Default for ExecutorKind {
+    fn default() -> Self {
+        ExecutorKind::Shell(Shell::default())
+    }
+}
+
 /// The main settings for a hyperfine benchmark session
 pub struct Options {
     /// Upper and lower bound for the number of benchmark runs
@@ -150,8 +161,8 @@ pub struct Options {
     /// What color mode to use for the terminal output
     pub output_style: OutputStyleOption,
 
-    /// The shell to use for executing commands.
-    pub shell: Shell,
+    /// Determines how we run commands
+    pub executor_kind: ExecutorKind,
 
     /// What to do with the output of the benchmarked command
     pub command_output_policy: CommandOutputPolicy,
@@ -171,7 +182,7 @@ impl Default for Options {
             setup_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
-            shell: Shell::default(),
+            executor_kind: ExecutorKind::default(),
             command_output_policy: CommandOutputPolicy::Discard,
             time_unit: None,
         }
@@ -261,9 +272,13 @@ impl Options {
             OutputStyleOption::Disabled => {}
         };
 
-        if let Some(shell) = matches.value_of("shell") {
-            options.shell = Shell::from_str(shell)?;
-        }
+        options.executor_kind = match (matches.is_present("debug-mode"), matches.value_of("shell"))
+        {
+            (false, Some(shell)) => ExecutorKind::Shell(Shell::from_str(shell)?),
+            (false, None) => ExecutorKind::Shell(Shell::default()),
+            (true, Some(shell)) => ExecutorKind::Mock(Shell::from_str(shell)?),
+            (true, None) => ExecutorKind::Mock(Shell::default()),
+        };
 
         if matches.is_present("ignore-failure") {
             options.command_failure_action = CmdFailureAction::Ignore;
