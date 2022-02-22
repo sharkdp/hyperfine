@@ -1,166 +1,38 @@
 pub mod benchmark_result;
+pub mod executor;
 pub mod relative_speed;
 pub mod scheduler;
 pub mod timing_result;
 
 use std::cmp;
-use std::process::{ExitStatus, Stdio};
 
 use crate::command::Command;
-use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
+use crate::options::{CmdFailureAction, Options, OutputStyleOption};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::Warnings;
 use crate::parameter::ParameterNameAndValue;
-use crate::shell::execute_and_time;
-use crate::timer::wallclocktimer::WallClockTimer;
-use crate::timer::{TimerStart, TimerStop};
 use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use colored::*;
 use statistical::{mean, median, standard_deviation};
 
+use self::executor::Executor;
+
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;
-
-/////////////// TODO: refactor the following part
-
-/// Correct for shell spawning time
-fn subtract_shell_spawning_time(time: Second, shell_spawning_time: Second) -> Second {
-    if time < shell_spawning_time {
-        0.0
-    } else {
-        time - shell_spawning_time
-    }
-}
-
-/// Run the given shell command and measure the execution time
-pub fn time_shell_command(
-    shell: &Shell,
-    command: &Command<'_>,
-    command_output_policy: CommandOutputPolicy,
-    failure_action: CmdFailureAction,
-    shell_spawning_time: Option<&TimingResult>,
-) -> Result<(TimingResult, ExitStatus)> {
-    let (stdout, stderr) = match command_output_policy {
-        CommandOutputPolicy::Discard => (Stdio::null(), Stdio::null()),
-        CommandOutputPolicy::Forward => (Stdio::inherit(), Stdio::inherit()),
-    };
-
-    let wallclock_timer = WallClockTimer::start();
-    let result = execute_and_time(stdout, stderr, &command.get_shell_command(), shell)?;
-    let mut time_real = wallclock_timer.stop();
-
-    let mut time_user = result.user_time;
-    let mut time_system = result.system_time;
-
-    if failure_action == CmdFailureAction::RaiseError && !result.status.success() {
-        bail!(
-            "{}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-                Alternatively, use the '--show-output' option to debug what went wrong.",
-            result.status.code().map_or(
-                "The process has been terminated by a signal".into(),
-                |c| format!("Command terminated with non-zero exit code: {}", c)
-            )
-        );
-    }
-
-    // Correct for shell spawning time
-    if let Some(spawning_time) = shell_spawning_time {
-        time_real = subtract_shell_spawning_time(time_real, spawning_time.time_real);
-        time_user = subtract_shell_spawning_time(time_user, spawning_time.time_user);
-        time_system = subtract_shell_spawning_time(time_system, spawning_time.time_system);
-    }
-
-    Ok((
-        TimingResult {
-            time_real,
-            time_user,
-            time_system,
-        },
-        result.status,
-    ))
-}
-
-/// Measure the average shell spawning time
-pub fn mean_shell_spawning_time(
-    shell: &Shell,
-    style: OutputStyleOption,
-    command_output_policy: CommandOutputPolicy,
-) -> Result<TimingResult> {
-    const COUNT: u64 = 50;
-    let progress_bar = if style != OutputStyleOption::Disabled {
-        Some(get_progress_bar(
-            COUNT,
-            "Measuring shell spawning time",
-            style,
-        ))
-    } else {
-        None
-    };
-
-    let mut times_real: Vec<Second> = vec![];
-    let mut times_user: Vec<Second> = vec![];
-    let mut times_system: Vec<Second> = vec![];
-
-    for _ in 0..COUNT {
-        // Just run the shell without any command
-        let res = time_shell_command(
-            shell,
-            &Command::new(None, ""),
-            command_output_policy,
-            CmdFailureAction::RaiseError,
-            None,
-        );
-
-        match res {
-            Err(_) => {
-                let shell_cmd = if cfg!(windows) {
-                    format!("{} /C \"\"", shell)
-                } else {
-                    format!("{} -c \"\"", shell)
-                };
-
-                bail!(
-                    "Could not measure shell execution time. Make sure you can run '{}'.",
-                    shell_cmd
-                );
-            }
-            Ok((r, _)) => {
-                times_real.push(r.time_real);
-                times_user.push(r.time_user);
-                times_system.push(r.time_system);
-            }
-        }
-
-        if let Some(bar) = progress_bar.as_ref() {
-            bar.inc(1)
-        }
-    }
-
-    if let Some(bar) = progress_bar.as_ref() {
-        bar.finish_and_clear()
-    }
-
-    Ok(TimingResult {
-        time_real: mean(&times_real),
-        time_user: mean(&times_user),
-        time_system: mean(&times_system),
-    })
-}
-///////////////
 
 pub struct Benchmark<'a> {
     number: usize,
     command: &'a Command<'a>,
     options: &'a Options,
-    shell_spawning_time: &'a TimingResult,
+    executor: &'a dyn Executor,
 }
 
 impl<'a> Benchmark<'a> {
@@ -168,13 +40,13 @@ impl<'a> Benchmark<'a> {
         number: usize,
         command: &'a Command<'a>,
         options: &'a Options,
-        shell_spawning_time: &'a TimingResult,
+        executor: &'a dyn Executor,
     ) -> Self {
         Benchmark {
             number,
             command,
             options,
-            shell_spawning_time,
+            executor,
         }
     }
 
@@ -184,15 +56,10 @@ impl<'a> Benchmark<'a> {
         command: &Command<'_>,
         error_output: &'static str,
     ) -> Result<TimingResult> {
-        time_shell_command(
-            &self.options.shell,
-            command,
-            self.options.command_output_policy,
-            CmdFailureAction::RaiseError,
-            None,
-        )
-        .map(|r| r.0)
-        .map_err(|_| anyhow!(error_output))
+        self.executor
+            .time_command(command, Some(CmdFailureAction::RaiseError))
+            .map(|r| r.0)
+            .map_err(|_| anyhow!(error_output))
     }
 
     /// Run the command specified by `--setup`.
@@ -297,13 +164,7 @@ impl<'a> Benchmark<'a> {
 
             for _ in 0..self.options.warmup_count {
                 let _ = run_preparation_command()?;
-                let _ = time_shell_command(
-                    &self.options.shell,
-                    self.command,
-                    self.options.command_output_policy,
-                    self.options.command_failure_action,
-                    None,
-                )?;
+                let _ = self.executor.time_command(self.command, None)?;
                 if let Some(bar) = progress_bar.as_ref() {
                     bar.inc(1)
                 }
@@ -327,18 +188,12 @@ impl<'a> Benchmark<'a> {
         let preparation_result = run_preparation_command()?;
 
         // Initial timing run
-        let (res, status) = time_shell_command(
-            &self.options.shell,
-            self.command,
-            self.options.command_output_policy,
-            self.options.command_failure_action,
-            Some(&self.shell_spawning_time),
-        )?;
+        let (res, status) = self.executor.time_command(self.command, None)?;
         let success = status.success();
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real + preparation_result.time_real + self.shell_spawning_time.time_real))
+            / (res.time_real + preparation_result.time_real + self.executor.time_overhead()))
             as u64;
 
         let count = {
@@ -383,13 +238,7 @@ impl<'a> Benchmark<'a> {
                 bar.set_message(msg.to_owned())
             }
 
-            let (res, status) = time_shell_command(
-                &self.options.shell,
-                self.command,
-                self.options.command_output_policy,
-                self.options.command_failure_action,
-                Some(self.shell_spawning_time),
-            )?;
+            let (res, status) = self.executor.time_command(self.command, None)?;
             let success = status.success();
 
             times_real.push(res.time_real);

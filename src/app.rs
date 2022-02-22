@@ -249,6 +249,12 @@ fn build_app() -> App<'static> {
                 .help("Give a meaningful name to a command. This can be specified multiple times \
                        if several commands are benchmarked."),
         )
+        .arg(
+            Arg::new("debug-mode")
+            .long("debug-mode")
+            .hide(true)
+            .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'")
+        )
 }
 
 #[test]
