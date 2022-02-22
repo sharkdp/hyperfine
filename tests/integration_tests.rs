@@ -115,6 +115,20 @@ fn fails_for_unknown_command_without_shell() {
         ));
 }
 
+#[cfg(unix)]
+#[test]
+fn fails_for_failing_command_without_shell() {
+    hyperfine()
+        .arg("--shell=none")
+        .arg("--runs=1")
+        .arg("false")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Command terminated with non-zero exit code",
+        ));
+}
+
 #[test]
 fn fails_for_unknown_setup_command() {
     hyperfine()
