@@ -55,12 +55,12 @@ impl<'a> Command<'a> {
 
     pub fn get_name(&self) -> String {
         self.name.map_or_else(
-            || self.get_shell_command(),
+            || self.get_command_line(),
             |name| self.replace_parameters_in(name),
         )
     }
 
-    pub fn get_shell_command(&self) -> String {
+    pub fn get_command_line(&self) -> String {
         self.replace_parameters_in(self.expression)
     }
 
@@ -82,7 +82,7 @@ impl<'a> Command<'a> {
         //
         //     hyperfine -L foo 'a,{bar}' -L bar 'baz,quux' 'echo {foo} {bar}'
         //
-        // should not ever run 'echo baz baz'. See `test_get_shell_command_nonoverlapping`.
+        // should not ever run 'echo baz baz'. See `test_get_command_line_nonoverlapping`.
         'outer: while let Some(head) = remaining.chars().next() {
             for (k, v) in &replacements {
                 if remaining.starts_with(k.as_str()) {
@@ -318,7 +318,7 @@ impl<'a> Commands<'a> {
 }
 
 #[test]
-fn test_get_shell_command_nonoverlapping() {
+fn test_get_command_line_nonoverlapping() {
     let cmd = Command::new_parametrized(
         None,
         "echo {foo} {bar}",
@@ -327,7 +327,7 @@ fn test_get_shell_command_nonoverlapping() {
             ("bar", ParameterValue::Text("quux".into())),
         ],
     );
-    assert_eq!(cmd.get_shell_command(), "echo {bar} baz quux");
+    assert_eq!(cmd.get_command_line(), "echo {bar} baz quux");
 }
 
 #[test]
@@ -345,7 +345,7 @@ fn test_get_parameterized_command_name() {
 
 impl<'a> fmt::Display for Command<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.get_shell_command())
+        write!(f, "{}", self.get_command_line())
     }
 }
 
@@ -404,8 +404,8 @@ fn test_build_parameter_list_commands() {
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");
-    assert_eq!(commands[0].get_shell_command(), "echo 1");
-    assert_eq!(commands[1].get_shell_command(), "echo 2");
+    assert_eq!(commands[0].get_command_line(), "echo 1");
+    assert_eq!(commands[1].get_command_line(), "echo 2");
 }
 
 #[test]
@@ -427,8 +427,8 @@ fn test_build_parameter_scan_commands() {
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");
-    assert_eq!(commands[0].get_shell_command(), "echo 1");
-    assert_eq!(commands[1].get_shell_command(), "echo 2");
+    assert_eq!(commands[0].get_command_line(), "echo 1");
+    assert_eq!(commands[1].get_command_line(), "echo 2");
 }
 
 #[test]
@@ -444,7 +444,7 @@ fn test_parameter_scan_commands_int() {
     .unwrap();
     assert_eq!(commands.len(), 3);
     assert_eq!(commands[2].get_name(), "echo 7");
-    assert_eq!(commands[2].get_shell_command(), "echo 7");
+    assert_eq!(commands[2].get_command_line(), "echo 7");
 }
 
 #[test]
@@ -464,7 +464,7 @@ fn test_parameter_scan_commands_decimal() {
     .unwrap();
     assert_eq!(commands.len(), 4);
     assert_eq!(commands[3].get_name(), "echo 0.99");
-    assert_eq!(commands[3].get_shell_command(), "echo 0.99");
+    assert_eq!(commands[3].get_command_line(), "echo 0.99");
 }
 
 #[test]

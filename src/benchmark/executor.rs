@@ -61,7 +61,7 @@ impl<'a> Executor for ShellExecutor<'a> {
         };
 
         let wallclock_timer = WallClockTimer::start();
-        let result = execute_and_time(stdout, stderr, &command.get_shell_command(), self.shell)?;
+        let result = execute_and_time(stdout, stderr, &command.get_command_line(), self.shell)?;
         let mut time_real = wallclock_timer.stop();
 
         let mut time_user = result.user_time;
@@ -202,7 +202,7 @@ impl Executor for MockExecutor {
 
         Ok((
             TimingResult {
-                time_real: Self::extract_time(command.get_shell_command()),
+                time_real: Self::extract_time(command.get_command_line()),
                 time_user: 0.0,
                 time_system: 0.0,
             },
