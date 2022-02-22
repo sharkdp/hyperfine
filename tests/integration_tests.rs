@@ -148,6 +148,18 @@ fn can_run_failing_commands_with_ignore_failure_option() {
 }
 
 #[test]
+fn shows_output_of_benchmarked_command() {
+    hyperfine()
+        .arg("--runs=2")
+        .arg("--command-name=dummy")
+        .arg("--show-output")
+        .arg("echo 4fd47015")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("4fd47015").count(2));
+}
+
+#[test]
 fn runs_commands_using_user_defined_shell() {
     hyperfine()
         .arg("--runs=1")
