@@ -9,7 +9,7 @@ use crate::util::units::Second;
 
 use super::timing_result::TimingResult;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use statistical::mean;
 
 pub trait Executor {
@@ -79,10 +79,10 @@ impl<'a> Executor for ShellExecutor<'a> {
             .stdin(Stdio::null())
             .stdout(stdout)
             .stderr(stderr);
-        let error_message = format!("Failed to run command '{}'", command.get_command_line());
 
         let wallclock_timer = WallClockTimer::start();
-        let result = execute_and_measure(command_builder, &error_message)?;
+        let result = execute_and_measure(command_builder)
+            .with_context(|| format!("Failed to run command '{}'", command.get_command_line()))?;
         let mut time_real = wallclock_timer.stop();
 
         let mut time_user = result.user_time;

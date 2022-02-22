@@ -10,7 +10,7 @@ use crate::util::units::Second;
 
 use std::process::{Command, ExitStatus};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 #[derive(Debug, Copy, Clone)]
 struct CPUTimes {
@@ -36,11 +36,9 @@ pub struct ExecuteResult {
 
 /// Execute the given command and return a timing summary
 #[cfg(not(windows))]
-pub fn execute_and_measure(mut command: Command, error_message: &str) -> Result<ExecuteResult> {
+pub fn execute_and_measure(mut command: Command) -> Result<ExecuteResult> {
     let cpu_timer = self::unix_timer::CPUTimer::start();
-    let status = command
-        .status()
-        .with_context(|| error_message.to_string())?;
+    let status = command.status()?;
     let (user_time, system_time) = cpu_timer.stop();
 
     Ok(ExecuteResult {
@@ -52,8 +50,8 @@ pub fn execute_and_measure(mut command: Command, error_message: &str) -> Result<
 
 /// Execute the given command and return a timing summary
 #[cfg(windows)]
-pub fn execute_and_measure(mut command: Command, error_message: &str) -> Result<ExecuteResult> {
-    let mut child = command.spawn().with_context(|| error_message.to_string())?;
+pub fn execute_and_measure(mut command: Command) -> Result<ExecuteResult> {
+    let mut child = command.spawn()?;
     let cpu_timer = self::windows_timer::CPUTimer::start_for_process(&child);
     let status = child.wait()?;
 
