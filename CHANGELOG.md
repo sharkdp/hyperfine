@@ -9,6 +9,8 @@
 
 - Breaking change: the `-s` short option for `--style` is now used for
   the new `--setup` option.
+- The environment offset randomization is now also available on Windows,
+  see #484
 
 ## Bugfixes
 
