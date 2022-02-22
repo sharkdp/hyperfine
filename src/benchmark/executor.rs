@@ -32,7 +32,6 @@ pub struct ShellExecutor<'a> {
 }
 
 impl<'a> ShellExecutor<'a> {
-    /// Correct for shell spawning time
     fn subtract_shell_spawning_time(&self, time: Second, shell_spawning_time: Second) -> Second {
         if time < shell_spawning_time {
             0.0
