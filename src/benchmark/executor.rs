@@ -67,15 +67,15 @@ impl<'a> Executor for ShellExecutor<'a> {
 
         let mut command_builder = self.shell.command();
         command_builder
-            .arg(if cfg!(windows) { "/C" } else { "-c" })
-            .arg(command.get_command_line())
+            .stdin(Stdio::null())
+            .stdout(stdout)
+            .stderr(stderr)
             .env(
                 "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
                 randomized_environment_offset::value(),
             )
-            .stdin(Stdio::null())
-            .stdout(stdout)
-            .stderr(stderr);
+            .arg(if cfg!(windows) { "/C" } else { "-c" })
+            .arg(command.get_command_line());
 
         let wallclock_timer = WallClockTimer::start();
         let result = execute_and_measure(command_builder)
