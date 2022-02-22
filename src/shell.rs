@@ -1,7 +1,6 @@
 use std::process::{ExitStatus, Stdio};
 
 use crate::options::Shell;
-use crate::timer::get_cpu_timer;
 
 use anyhow::{Context, Result};
 
@@ -30,7 +29,7 @@ pub fn execute_and_time(
     command: &str,
     shell: &Shell,
 ) -> Result<ExecuteResult> {
-    let cpu_timer = get_cpu_timer();
+    let cpu_timer = crate::timer::unix_timer::CPUTimer::start();
 
     let status = shell
         .command()
@@ -76,7 +75,7 @@ pub fn execute_and_time(
         .stderr(stderr)
         .spawn()
         .with_context(|| format!("Failed to run command '{}'", command))?;
-    let cpu_timer = get_cpu_timer(&child);
+    let cpu_timer = crate::timer::windows_timer::CPUTimer::start_for_process(&child);
     let status = child.wait()?;
 
     let (user_time, system_time) = cpu_timer.stop();
