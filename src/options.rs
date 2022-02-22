@@ -44,7 +44,7 @@ impl fmt::Display for Shell {
 
 impl Shell {
     /// Parse given string as shell command line
-    pub fn from_str<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
+    pub fn parse_from_str<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
         let v = shell_words::split(s).map_err(OptionsError::ShellParseError)?;
         if v.is_empty() || v[0].is_empty() {
             return Err(OptionsError::EmptyShell);
@@ -274,7 +274,7 @@ impl Options {
 
         options.executor_kind = match (matches.is_present("debug-mode"), matches.value_of("shell"))
         {
-            (false, Some(shell)) => ExecutorKind::Shell(Shell::from_str(shell)?),
+            (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
             (false, None) => ExecutorKind::Shell(Shell::default()),
             (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
             (true, None) => ExecutorKind::Mock(None),
@@ -320,7 +320,7 @@ fn test_default_shell() {
 
 #[test]
 fn test_can_parse_shell_command_line_from_str() {
-    let shell = Shell::from_str("shell -x 'aaa bbb'").unwrap();
+    let shell = Shell::parse_from_str("shell -x 'aaa bbb'").unwrap();
 
     let s = format!("{}", shell);
     assert_eq!(&s, "shell -x 'aaa bbb'");
@@ -336,17 +336,17 @@ fn test_can_parse_shell_command_line_from_str() {
 
     // Error cases
     assert!(matches!(
-        Shell::from_str("shell 'foo").unwrap_err(),
+        Shell::parse_from_str("shell 'foo").unwrap_err(),
         OptionsError::ShellParseError(_)
     ));
 
     assert!(matches!(
-        Shell::from_str("").unwrap_err(),
+        Shell::parse_from_str("").unwrap_err(),
         OptionsError::EmptyShell
     ));
 
     assert!(matches!(
-        Shell::from_str("''").unwrap_err(),
+        Shell::parse_from_str("''").unwrap_err(),
         OptionsError::EmptyShell
     ));
 }

@@ -34,7 +34,7 @@ impl<'a> Scheduler<'a> {
     pub fn run_benchmarks(&mut self) -> Result<()> {
         let mut executor: Box<dyn Executor> = match self.options.executor_kind {
             ExecutorKind::Mock(ref shell) => Box::new(MockExecutor::new(shell.clone())),
-            ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, &self.options)),
+            ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, self.options)),
         };
 
         executor.calibrate()?;

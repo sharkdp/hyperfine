@@ -62,7 +62,7 @@ impl<'a> Executor for ShellExecutor<'a> {
         };
 
         let wallclock_timer = WallClockTimer::start();
-        let result = execute_and_time(stdout, stderr, &command.get_shell_command(), &self.shell)?;
+        let result = execute_and_time(stdout, stderr, &command.get_shell_command(), self.shell)?;
         let mut time_real = wallclock_timer.stop();
 
         let mut time_user = result.user_time;
