@@ -5,7 +5,6 @@ use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyle
 use crate::output::progress_bar::get_progress_bar;
 use crate::shell::execute_and_time;
 use crate::timer::wallclocktimer::WallClockTimer;
-use crate::timer::{TimerStart, TimerStop};
 use crate::util::units::Second;
 
 use super::timing_result::TimingResult;

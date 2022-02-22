@@ -7,35 +7,23 @@ use std::process::Child;
 use winapi::um::processthreadsapi::GetProcessTimes;
 use winapi::um::winnt::HANDLE;
 
-use crate::timer::{CPUTimes, TimerStart, TimerStop};
+use crate::timer::CPUTimes;
 use crate::util::units::Second;
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 
-pub fn get_cpu_timer(process: &Child) -> Box<dyn TimerStop<Result = (Second, Second)>> {
-    Box::new(CPUTimer::start_for_process(process))
-}
-
-struct CPUTimer {
+pub struct CPUTimer {
     handle: RawHandle,
 }
 
-impl TimerStart for CPUTimer {
-    fn start() -> Self {
-        panic!()
-    }
-
-    fn start_for_process(process: &Child) -> Self {
+impl CPUTimer {
+    pub fn start_for_process(process: &Child) -> Self {
         CPUTimer {
             handle: process.as_raw_handle(),
         }
     }
-}
 
-impl TimerStop for CPUTimer {
-    type Result = (Second, Second);
-
-    fn stop(&self) -> Self::Result {
+    pub fn stop(&self) -> (Second, Second) {
         let times = get_cpu_times(self.handle);
         (
             times.user_usec as f64 * 1e-6,
@@ -62,7 +50,7 @@ fn get_cpu_times(handle: RawHandle) -> CPUTimes {
         // GetProcessTimes will exit with non-zero if success as per: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683223(v=vs.85).aspx
         if res != 0 {
             // Extract times as laid out here: https://support.microsoft.com/en-us/help/188768/info-working-with-the-filetime-structure
-            // Both user_time and kernel_time are spans that the proces spent in either.
+            // Both user_time and kernel_time are spans that the process spent in either.
             let user: i64 = (((user_time.dwHighDateTime as i64) << 32)
                 + user_time.dwLowDateTime as i64)
                 / HUNDRED_NS_PER_MS;
