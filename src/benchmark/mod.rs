@@ -141,11 +141,10 @@ impl<'a> Benchmark<'a> {
             )
         });
         let run_preparation_command = || {
-            if let Some(ref cmd) = preparation_command {
-                self.run_preparation_command(cmd)
-            } else {
-                Ok(TimingResult::default())
-            }
+            preparation_command
+                .as_ref()
+                .map(|cmd| self.run_preparation_command(cmd))
+                .transpose()
         };
 
         self.run_setup_command(self.command.get_parameters().iter().cloned())?;
@@ -186,6 +185,8 @@ impl<'a> Benchmark<'a> {
         };
 
         let preparation_result = run_preparation_command()?;
+        let preparation_overhead =
+            preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
 
         // Initial timing run
         let (res, status) = self.executor.time_command(self.command, None)?;
@@ -193,7 +194,7 @@ impl<'a> Benchmark<'a> {
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real + preparation_result.time_real + self.executor.time_overhead()))
+            / (res.time_real + self.executor.time_overhead() + preparation_overhead))
             as u64;
 
         let count = {

@@ -189,7 +189,6 @@ fn returns_mean_time_in_correct_unit() {
 #[test]
 fn performs_ten_runs_for_slow_commands() {
     hyperfine_debug()
-        .arg("--time-unit=millisecond")
         .arg("sleep 0.5")
         .assert()
         .success()
@@ -199,7 +198,6 @@ fn performs_ten_runs_for_slow_commands() {
 #[test]
 fn performs_three_seconds_of_benchmarking_for_fast_commands() {
     hyperfine_debug()
-        .arg("--time-unit=millisecond")
         .arg("sleep 0.01")
         .assert()
         .success()
@@ -207,14 +205,33 @@ fn performs_three_seconds_of_benchmarking_for_fast_commands() {
 }
 
 #[test]
-fn takes_time_of_preparation_command_into_account() {
+fn takes_shell_spawning_time_into_account_for_computing_number_of_runs() {
     hyperfine_debug()
-        .arg("--time-unit=millisecond")
+        .arg("--shell=sleep 0.02")
+        .arg("sleep 0.01")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("100 runs"));
+}
+
+#[test]
+fn takes_preparation_command_into_account_for_computing_number_of_runs() {
+    hyperfine_debug()
         .arg("--prepare=sleep 0.02")
         .arg("sleep 0.01")
         .assert()
         .success()
         .stdout(predicate::str::contains("100 runs"));
+
+    // Shell overhead needs to be added to both the prepare command and the actual command,
+    // leading to a total benchmark time of (prepare + shell + cmd + shell = 0.1 s)
+    hyperfine_debug()
+        .arg("--shell=sleep 0.01")
+        .arg("--prepare=sleep 0.03")
+        .arg("sleep 0.05")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("30 runs"));
 }
 
 #[test]

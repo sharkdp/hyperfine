@@ -126,7 +126,7 @@ impl Default for CommandOutputPolicy {
 
 pub enum ExecutorKind {
     Shell(Shell),
-    Mock(Shell),
+    Mock(Option<String>),
 }
 
 impl Default for ExecutorKind {
@@ -276,8 +276,8 @@ impl Options {
         {
             (false, Some(shell)) => ExecutorKind::Shell(Shell::from_str(shell)?),
             (false, None) => ExecutorKind::Shell(Shell::default()),
-            (true, Some(shell)) => ExecutorKind::Mock(Shell::from_str(shell)?),
-            (true, None) => ExecutorKind::Mock(Shell::default()),
+            (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
+            (true, None) => ExecutorKind::Mock(None),
         };
 
         if matches.is_present("ignore-failure") {

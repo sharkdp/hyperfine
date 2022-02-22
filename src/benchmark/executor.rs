@@ -165,12 +165,12 @@ impl<'a> Executor for ShellExecutor<'a> {
 }
 
 #[derive(Clone)]
-pub struct MockExecutor<'a> {
-    shell: &'a Shell,
+pub struct MockExecutor {
+    shell: Option<String>,
 }
 
-impl<'a> MockExecutor<'a> {
-    pub fn new(shell: &'a Shell) -> Self {
+impl MockExecutor {
+    pub fn new(shell: Option<String>) -> Self {
         MockExecutor { shell }
     }
 
@@ -184,7 +184,7 @@ impl<'a> MockExecutor<'a> {
     }
 }
 
-impl<'a> Executor for MockExecutor<'a> {
+impl Executor for MockExecutor {
     fn time_command(
         &self,
         command: &Command<'_>,
@@ -217,9 +217,9 @@ impl<'a> Executor for MockExecutor<'a> {
     }
 
     fn time_overhead(&self) -> Second {
-        match self.shell {
-            Shell::Default(_) => 0.0,
-            Shell::Custom(shell) => Self::extract_time(&shell[0]),
+        match &self.shell {
+            None => 0.0,
+            Some(shell) => Self::extract_time(shell),
         }
     }
 }
