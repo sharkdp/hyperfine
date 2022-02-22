@@ -3,7 +3,7 @@ use std::{fs::File, io::Read, path::PathBuf};
 use tempfile::{tempdir, TempDir};
 
 mod common;
-use common::hyperfine_shell;
+use common::hyperfine;
 
 struct ExecutionOrderTest {
     cmd: assert_cmd::Command,
@@ -19,7 +19,7 @@ impl ExecutionOrderTest {
         let logfile_path = tempdir.path().join("output.log");
 
         ExecutionOrderTest {
-            cmd: hyperfine_shell(),
+            cmd: hyperfine(),
             expected_content: String::new(),
             logfile_path,
             tempdir,
