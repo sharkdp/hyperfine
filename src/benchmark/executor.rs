@@ -40,14 +40,6 @@ pub struct ShellExecutor<'a> {
 }
 
 impl<'a> ShellExecutor<'a> {
-    fn subtract_shell_spawning_time(&self, time: Second, shell_spawning_time: Second) -> Second {
-        if time < shell_spawning_time {
-            0.0
-        } else {
-            time - shell_spawning_time
-        }
-    }
-
     pub fn new(shell: &'a Shell, options: &'a Options) -> Self {
         ShellExecutor {
             shell,
@@ -77,13 +69,8 @@ impl<'a> Executor for ShellExecutor<'a> {
             .arg(if cfg!(windows) { "/C" } else { "-c" })
             .arg(command.get_command_line());
 
-        let result = execute_and_measure(command_builder)
+        let mut result = execute_and_measure(command_builder)
             .with_context(|| format!("Failed to run command '{}'", command.get_command_line()))?;
-
-        let mut time_real = result.time_real;
-
-        let mut time_user = result.time_user;
-        let mut time_system = result.time_system;
 
         if command_failure_action.unwrap_or(self.options.command_failure_action)
             == CmdFailureAction::RaiseError
@@ -101,16 +88,16 @@ impl<'a> Executor for ShellExecutor<'a> {
 
         // Subtract shell spawning time
         if let Some(spawning_time) = self.shell_spawning_time {
-            time_real = self.subtract_shell_spawning_time(time_real, spawning_time.time_real);
-            time_user = self.subtract_shell_spawning_time(time_user, spawning_time.time_user);
-            time_system = self.subtract_shell_spawning_time(time_system, spawning_time.time_system);
+            result.time_real = (result.time_real - spawning_time.time_real).max(0.0);
+            result.time_user = (result.time_user - spawning_time.time_user).max(0.0);
+            result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
         }
 
         Ok((
             TimingResult {
-                time_real,
-                time_user,
-                time_system,
+                time_real: result.time_real,
+                time_user: result.time_user,
+                time_system: result.time_system,
             },
             result.status,
         ))
