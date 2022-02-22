@@ -10,7 +10,7 @@ pub fn hyperfine_debug() -> assert_cmd::Command {
 }
 
 #[test]
-fn hyperfine_runs_successfully() {
+fn runs_successfully() {
     hyperfine()
         .arg("--runs=2")
         .arg("echo dummy benchmark")
@@ -25,6 +25,18 @@ fn one_run_is_supported() {
         .arg("echo dummy benchmark")
         .assert()
         .success();
+}
+
+#[test]
+fn can_run_commands_without_a_shell() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--show-output")
+        .arg("--shell=none")
+        .arg("echo 'hello world' argument2")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("hello world argument2"));
 }
 
 #[test]
