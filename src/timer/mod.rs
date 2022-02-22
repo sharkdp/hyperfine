@@ -1,4 +1,4 @@
-pub mod wall_clock_timer;
+mod wall_clock_timer;
 
 #[cfg(windows)]
 mod windows_timer;
@@ -7,6 +7,7 @@ mod windows_timer;
 mod unix_timer;
 
 use crate::util::units::Second;
+use wall_clock_timer::WallClockTimer;
 
 use std::process::{Command, ExitStatus};
 
@@ -24,41 +25,40 @@ struct CPUTimes {
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]
 pub struct ExecuteResult {
-    /// The amount of user time the process used
-    pub user_time: Second,
-
-    /// The amount of cpu time the process used
-    pub system_time: Second,
+    pub time_real: Second,
+    pub time_user: Second,
+    pub time_system: Second,
 
     /// The exit status of the process
     pub status: ExitStatus,
 }
 
 /// Execute the given command and return a timing summary
-#[cfg(not(windows))]
 pub fn execute_and_measure(mut command: Command) -> Result<ExecuteResult> {
-    let cpu_timer = self::unix_timer::CPUTimer::start();
-    let status = command.status()?;
-    let (user_time, system_time) = cpu_timer.stop();
+    let wallclock_timer = WallClockTimer::start();
+
+    #[cfg(not(windows))]
+    let ((time_user, time_system), status) = {
+        let cpu_timer = self::unix_timer::CPUTimer::start();
+        let status = command.status()?;
+        (cpu_timer.stop(), status)
+    };
+
+    #[cfg(windows)]
+    let ((time_user, time_system), status) = {
+        let mut child = command.spawn()?;
+        let cpu_timer = self::windows_timer::CPUTimer::start_for_process(&child);
+        let status = child.wait()?;
+
+        (cpu_timer.stop(), status)
+    };
+
+    let time_real = wallclock_timer.stop();
 
     Ok(ExecuteResult {
-        user_time,
-        system_time,
-        status,
-    })
-}
-
-/// Execute the given command and return a timing summary
-#[cfg(windows)]
-pub fn execute_and_measure(mut command: Command) -> Result<ExecuteResult> {
-    let mut child = command.spawn()?;
-    let cpu_timer = self::windows_timer::CPUTimer::start_for_process(&child);
-    let status = child.wait()?;
-
-    let (user_time, system_time) = cpu_timer.stop();
-    Ok(ExecuteResult {
-        user_time,
-        system_time,
+        time_real,
+        time_user,
+        time_system,
         status,
     })
 }
