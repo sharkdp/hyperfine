@@ -5,6 +5,7 @@ use crate::execute::execute_and_measure;
 use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
 use crate::timer::wallclocktimer::WallClockTimer;
+use crate::util::randomized_environment_offset;
 use crate::util::units::Second;
 
 use super::timing_result::TimingResult;
@@ -68,8 +69,21 @@ impl<'a> Executor for ShellExecutor<'a> {
             CommandOutputPolicy::Forward => (Stdio::inherit(), Stdio::inherit()),
         };
 
+        let mut command_builder = self.shell.command();
+        command_builder
+            .arg(if cfg!(windows) { "/C" } else { "-c" })
+            .arg(command.get_command_line())
+            .env(
+                "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
+                randomized_environment_offset::value(),
+            )
+            .stdin(Stdio::null())
+            .stdout(stdout)
+            .stderr(stderr);
+        let error_message = format!("Failed to run command '{}'", command.get_command_line());
+
         let wallclock_timer = WallClockTimer::start();
-        let result = execute_and_measure(stdout, stderr, &command.get_command_line(), self.shell)?;
+        let result = execute_and_measure(command_builder, &error_message)?;
         let mut time_real = wallclock_timer.stop();
 
         let mut time_user = result.user_time;

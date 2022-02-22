@@ -1,7 +1,4 @@
-use std::process::{ExitStatus, Stdio};
-
-use crate::options::Shell;
-use crate::util::randomized_environment_offset;
+use std::process::{Command, ExitStatus};
 
 use anyhow::{Context, Result};
 
@@ -20,28 +17,11 @@ pub struct ExecuteResult {
 
 /// Execute the given command and return a timing summary
 #[cfg(not(windows))]
-pub fn execute_and_measure(
-    stdout: Stdio,
-    stderr: Stdio,
-    command: &str,
-    shell: &Shell,
-) -> Result<ExecuteResult> {
+pub fn execute_and_measure(mut command: Command, error_message: &str) -> Result<ExecuteResult> {
     let cpu_timer = crate::timer::unix_timer::CPUTimer::start();
-
-    let status = shell
-        .command()
-        .arg("-c")
-        .arg(command)
-        .env(
-            "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
-            randomized_environment_offset::value(),
-        )
-        .stdin(Stdio::null())
-        .stdout(stdout)
-        .stderr(stderr)
+    let status = command
         .status()
-        .with_context(|| format!("Failed to run command '{}'", command))?;
-
+        .with_context(|| error_message.to_string())?;
     let (user_time, system_time) = cpu_timer.stop();
 
     Ok(ExecuteResult {
@@ -53,25 +33,8 @@ pub fn execute_and_measure(
 
 /// Execute the given command and return a timing summary
 #[cfg(windows)]
-pub fn execute_and_measure(
-    stdout: Stdio,
-    stderr: Stdio,
-    command: &str,
-    shell: &Shell,
-) -> Result<ExecuteResult> {
-    let mut child = shell
-        .command()
-        .arg("/C")
-        .arg(command)
-        .env(
-            "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
-            randomized_environment_offset::value(),
-        )
-        .stdin(Stdio::null())
-        .stdout(stdout)
-        .stderr(stderr)
-        .spawn()
-        .with_context(|| format!("Failed to run command '{}'", command))?;
+pub fn execute_and_measure(mut command: Command, error_message: &str) -> Result<ExecuteResult> {
+    let mut child = command.spawn().with_context(|| error_message.to_string())?;
     let cpu_timer = crate::timer::windows_timer::CPUTimer::start_for_process(&child);
     let status = child.wait()?;
 
