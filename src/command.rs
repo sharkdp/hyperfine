@@ -15,7 +15,7 @@ use clap::ArgMatches;
 use crate::parameter::tokenize::tokenize;
 use crate::parameter::ParameterValue;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use clap::Values;
 use rust_decimal::Decimal;
 
@@ -62,6 +62,21 @@ impl<'a> Command<'a> {
 
     pub fn get_command_line(&self) -> String {
         self.replace_parameters_in(self.expression)
+    }
+
+    pub fn get_command(&self) -> Result<std::process::Command> {
+        let command_line = self.get_command_line();
+        let mut tokens = shell_words::split(&command_line)
+            .with_context(|| format!("Failed to parse command '{}'", command_line))?
+            .into_iter();
+
+        if let Some(program_name) = tokens.next() {
+            let mut command_builder = std::process::Command::new(program_name);
+            command_builder.args(tokens);
+            Ok(command_builder)
+        } else {
+            bail!("Can not execute empty command")
+        }
     }
 
     pub fn get_parameters(&self) -> &[(&'a str, ParameterValue)] {

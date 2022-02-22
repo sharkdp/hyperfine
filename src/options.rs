@@ -134,6 +134,7 @@ impl CommandOutputPolicy {
 }
 
 pub enum ExecutorKind {
+    Raw,
     Shell(Shell),
     Mock(Option<String>),
 }
@@ -283,8 +284,9 @@ impl Options {
 
         options.executor_kind = match (matches.is_present("debug-mode"), matches.value_of("shell"))
         {
+            (false, Some(shell)) if shell == "default" => ExecutorKind::Shell(Shell::default()),
             (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
-            (false, None) => ExecutorKind::Shell(Shell::default()),
+            (false, None) => ExecutorKind::Raw,
             (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
             (true, None) => ExecutorKind::Mock(None),
         };

@@ -7,7 +7,7 @@ pub mod timing_result;
 use std::cmp;
 
 use crate::command::Command;
-use crate::options::{CmdFailureAction, Options, OutputStyleOption};
+use crate::options::{CmdFailureAction, ExecutorKind, Options, OutputStyleOption};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
@@ -320,7 +320,9 @@ impl<'a> Benchmark<'a> {
         let mut warnings = vec![];
 
         // Check execution time
-        if times_real.iter().any(|&t| t < MIN_EXECUTION_TIME) {
+        if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
+            && times_real.iter().any(|&t| t < MIN_EXECUTION_TIME)
+        {
             warnings.push(Warnings::FastExecutionTime);
         }
 
