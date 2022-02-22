@@ -1,9 +1,9 @@
 use std::process::{ExitStatus, Stdio};
 
 use crate::command::Command;
-use crate::options::{CmdFailureAction, Options, OutputStyleOption, Shell};
+use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
-use crate::timer::execute_and_measure;
+use crate::timer::{execute_and_measure, TimerResult};
 use crate::util::randomized_environment_offset;
 use crate::util::units::Second;
 
@@ -33,6 +33,37 @@ pub trait Executor {
     fn time_overhead(&self) -> Second;
 }
 
+fn run_command_and_measure_common(
+    mut command: std::process::Command,
+    command_failure_action: CmdFailureAction,
+    command_output_policy: CommandOutputPolicy,
+    command_name: &str,
+) -> Result<TimerResult> {
+    let (stdout, stderr) = command_output_policy.get_stdout_stderr();
+    command.stdin(Stdio::null()).stdout(stdout).stderr(stderr);
+
+    command.env(
+        "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
+        randomized_environment_offset::value(),
+    );
+
+    let result = execute_and_measure(command)
+        .with_context(|| format!("Failed to run command '{}'", command_name))?;
+
+    if command_failure_action == CmdFailureAction::RaiseError && !result.status.success() {
+        bail!(
+            "{}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+            Alternatively, use the '--show-output' option to debug what went wrong.",
+            result.status.code().map_or(
+                "The process has been terminated by a signal".into(),
+                |c| format!("Command terminated with non-zero exit code: {}", c)
+            )
+        );
+    }
+
+    Ok(result)
+}
+
 pub struct ShellExecutor<'a> {
     options: &'a Options,
     shell: &'a Shell,
@@ -55,36 +86,17 @@ impl<'a> Executor for ShellExecutor<'a> {
         command: &Command<'_>,
         command_failure_action: Option<CmdFailureAction>,
     ) -> Result<(TimingResult, ExitStatus)> {
-        let (stdout, stderr) = self.options.command_output_policy.get_stdout_stderr();
-
         let mut command_builder = self.shell.command();
         command_builder
-            .stdin(Stdio::null())
-            .stdout(stdout)
-            .stderr(stderr)
-            .env(
-                "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
-                randomized_environment_offset::value(),
-            )
             .arg(if cfg!(windows) { "/C" } else { "-c" })
             .arg(command.get_command_line());
 
-        let mut result = execute_and_measure(command_builder)
-            .with_context(|| format!("Failed to run command '{}'", command.get_command_line()))?;
-
-        if command_failure_action.unwrap_or(self.options.command_failure_action)
-            == CmdFailureAction::RaiseError
-            && !result.status.success()
-        {
-            bail!(
-                "{}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-                Alternatively, use the '--show-output' option to debug what went wrong.",
-                result.status.code().map_or(
-                    "The process has been terminated by a signal".into(),
-                    |c| format!("Command terminated with non-zero exit code: {}", c)
-                )
-            );
-        }
+        let mut result = run_command_and_measure_common(
+            command_builder,
+            command_failure_action.unwrap_or(self.options.command_failure_action),
+            self.options.command_output_policy,
+            &command.get_command_line(),
+        )?;
 
         // Subtract shell spawning time
         if let Some(spawning_time) = self.shell_spawning_time {
