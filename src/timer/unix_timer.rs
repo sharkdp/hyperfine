@@ -2,8 +2,17 @@
 
 use std::mem;
 
-use crate::timer::{CPUInterval, CPUTimes};
+use crate::timer::CPUTimes;
 use crate::util::units::Second;
+
+#[derive(Debug, Copy, Clone)]
+pub struct CPUInterval {
+    /// Total amount of time spent executing in user mode
+    pub user: Second,
+
+    /// Total amount of time spent executing in kernel mode
+    pub system: Second,
+}
 
 pub struct CPUTimer {
     start_cpu: CPUTimes,

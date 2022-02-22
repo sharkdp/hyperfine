@@ -13,7 +13,6 @@ pub mod app;
 pub mod benchmark;
 pub mod command;
 pub mod error;
-pub mod execute;
 pub mod export;
 pub mod options;
 pub mod outlier_detection;
