@@ -1,9 +1,9 @@
 use std::process::{ExitStatus, Stdio};
 
 use crate::command::Command;
+use crate::execute::execute_and_measure;
 use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
-use crate::shell::execute_and_time;
 use crate::timer::wallclocktimer::WallClockTimer;
 use crate::util::units::Second;
 
@@ -69,7 +69,7 @@ impl<'a> Executor for ShellExecutor<'a> {
         };
 
         let wallclock_timer = WallClockTimer::start();
-        let result = execute_and_time(stdout, stderr, &command.get_command_line(), self.shell)?;
+        let result = execute_and_measure(stdout, stderr, &command.get_command_line(), self.shell)?;
         let mut time_real = wallclock_timer.stop();
 
         let mut time_user = result.user_time;

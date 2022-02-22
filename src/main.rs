@@ -13,12 +13,12 @@ pub mod app;
 pub mod benchmark;
 pub mod command;
 pub mod error;
+pub mod execute;
 pub mod export;
 pub mod options;
 pub mod outlier_detection;
 pub mod output;
 pub mod parameter;
-pub mod shell;
 pub mod timer;
 pub mod util;
 

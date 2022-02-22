@@ -1,6 +1,7 @@
 use std::process::{ExitStatus, Stdio};
 
 use crate::options::Shell;
+use crate::util::randomized_environment_offset;
 
 use anyhow::{Context, Result};
 
@@ -17,13 +18,9 @@ pub struct ExecuteResult {
     pub status: ExitStatus,
 }
 
-fn randomized_environment_offset_value() -> String {
-    "X".repeat(rand::random::<usize>() % 4096usize)
-}
-
 /// Execute the given command and return a timing summary
 #[cfg(not(windows))]
-pub fn execute_and_time(
+pub fn execute_and_measure(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
@@ -37,7 +34,7 @@ pub fn execute_and_time(
         .arg(command)
         .env(
             "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
-            randomized_environment_offset_value(),
+            randomized_environment_offset::value(),
         )
         .stdin(Stdio::null())
         .stdout(stdout)
@@ -56,7 +53,7 @@ pub fn execute_and_time(
 
 /// Execute the given command and return a timing summary
 #[cfg(windows)]
-pub fn execute_and_time(
+pub fn execute_and_measure(
     stdout: Stdio,
     stderr: Stdio,
     command: &str,
@@ -68,7 +65,7 @@ pub fn execute_and_time(
         .arg(command)
         .env(
             "HYPERFINE_RANDOMIZED_ENVIRONMENT_OFFSET",
-            randomized_environment_offset_value(),
+            randomized_environment_offset::value(),
         )
         .stdin(Stdio::null())
         .stdout(stdout)
