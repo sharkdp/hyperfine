@@ -3,7 +3,7 @@ use std::process::{ExitStatus, Stdio};
 use crate::command::Command;
 use crate::options::{CmdFailureAction, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
-use crate::timer::{execute_and_measure, wall_clock_timer::WallClockTimer};
+use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
 use crate::util::units::Second;
 
@@ -77,13 +77,13 @@ impl<'a> Executor for ShellExecutor<'a> {
             .arg(if cfg!(windows) { "/C" } else { "-c" })
             .arg(command.get_command_line());
 
-        let wallclock_timer = WallClockTimer::start();
         let result = execute_and_measure(command_builder)
             .with_context(|| format!("Failed to run command '{}'", command.get_command_line()))?;
-        let mut time_real = wallclock_timer.stop();
 
-        let mut time_user = result.user_time;
-        let mut time_system = result.system_time;
+        let mut time_real = result.time_real;
+
+        let mut time_user = result.time_user;
+        let mut time_system = result.time_system;
 
         if command_failure_action.unwrap_or(self.options.command_failure_action)
             == CmdFailureAction::RaiseError
