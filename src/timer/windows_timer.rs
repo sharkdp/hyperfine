@@ -44,7 +44,7 @@ impl TimerStop for CPUTimer {
     }
 }
 
-/// Read CPU execution times (dummy for now)
+/// Read CPU execution times
 fn get_cpu_times(handle: RawHandle) -> CPUTimes {
     let (user_usec, system_usec) = unsafe {
         let mut _ctime = mem::zeroed();
