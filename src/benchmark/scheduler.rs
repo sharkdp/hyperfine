@@ -1,7 +1,7 @@
 use colored::*;
 
 use super::benchmark_result::BenchmarkResult;
-use super::executor::{Executor, MockExecutor, ShellExecutor};
+use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
 
 use crate::command::Commands;
@@ -33,6 +33,7 @@ impl<'a> Scheduler<'a> {
 
     pub fn run_benchmarks(&mut self) -> Result<()> {
         let mut executor: Box<dyn Executor> = match self.options.executor_kind {
+            ExecutorKind::Raw => Box::new(RawExecutor::new(self.options)),
             ExecutorKind::Mock(ref shell) => Box::new(MockExecutor::new(shell.clone())),
             ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, self.options)),
         };

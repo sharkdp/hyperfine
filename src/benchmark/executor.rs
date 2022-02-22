@@ -64,6 +64,48 @@ fn run_command_and_measure_common(
     Ok(result)
 }
 
+pub struct RawExecutor<'a> {
+    options: &'a Options,
+}
+
+impl<'a> RawExecutor<'a> {
+    pub fn new(options: &'a Options) -> Self {
+        RawExecutor { options }
+    }
+}
+
+impl<'a> Executor for RawExecutor<'a> {
+    fn run_command_and_measure(
+        &self,
+        command: &Command<'_>,
+        command_failure_action: Option<CmdFailureAction>,
+    ) -> Result<(TimingResult, ExitStatus)> {
+        let result = run_command_and_measure_common(
+            command.get_command()?,
+            command_failure_action.unwrap_or(self.options.command_failure_action),
+            self.options.command_output_policy,
+            &command.get_command_line(),
+        )?;
+
+        Ok((
+            TimingResult {
+                time_real: result.time_real,
+                time_user: result.time_user,
+                time_system: result.time_system,
+            },
+            result.status,
+        ))
+    }
+
+    fn calibrate(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn time_overhead(&self) -> Second {
+        0.0
+    }
+}
+
 pub struct ShellExecutor<'a> {
     options: &'a Options,
     shell: &'a Shell,

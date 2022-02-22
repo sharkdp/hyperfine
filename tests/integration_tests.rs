@@ -1,5 +1,5 @@
 mod common;
-use common::hyperfine;
+use common::{hyperfine, hyperfine_shell};
 
 use predicates::prelude::*;
 
@@ -81,6 +81,18 @@ fn fails_with_duplicate_parameter_names() {
 #[test]
 fn fails_for_unknown_command() {
     hyperfine()
+        .arg("--runs=1")
+        .arg("some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Failed to run command 'some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577'",
+        ));
+}
+
+#[test]
+fn fails_for_unknown_shell_command() {
+    hyperfine_shell()
         .arg("--runs=1")
         .arg("some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .assert()
