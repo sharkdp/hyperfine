@@ -20,6 +20,12 @@ parser.add_argument(
 parser.add_argument(
     "-o", "--output", help="Save image to the given filename."
 )
+parser.add_argument(
+    "--t-min", metavar="T", help="Minimum time to be displayed (seconds)"
+)
+parser.add_argument(
+    "--t-max", metavar="T", help="Maximum time to be displayed (seconds)"
+)
 
 args = parser.parse_args()
 
@@ -32,8 +38,8 @@ else:
     labels = [b["command"] for b in results]
 all_times = [b["times"] for b in results]
 
-t_min = np.min(list(map(np.min, all_times)))
-t_max = np.max(list(map(np.max, all_times)))
+t_min = float(args.t_min) if args.t_min else np.min(list(map(np.min, all_times)))
+t_max = float(args.t_max) if args.t_max else np.max(list(map(np.max, all_times)))
 
 bins = int(args.bins) if args.bins else "auto"
 histtype = args.type if args.type else "bar"
