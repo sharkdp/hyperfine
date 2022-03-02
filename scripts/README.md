@@ -9,9 +9,9 @@ This folder contains scripts that can be used in combination with hyperfines `--
 
 ### Pre-requisites
 
-To make these scripts work, you will need to install `numpy` and `matplotlib`. Install them via
+To make these scripts work, you will need to install `numpy`, `matplotlib` and `scipy`. Install them via
 your package manager or `pip`:
 
 ```bash
-pip install numpy matplotlib  # pip3, if you are using python3
+pip install numpy matplotlib scipy  # pip3, if you are using python3
 ```
