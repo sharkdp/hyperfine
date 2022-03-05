@@ -2,6 +2,24 @@
 
 ## Features
 
+
+## Changes
+
+
+## Bugfixes
+
+
+## Other
+
+
+## Packaging
+
+
+
+# v1.13.0
+
+## Features
+
 - Added a new `--shell=none`/`-N` option to disable the intermediate
   shell for executing the benchmarked commands. Hyperfine normally
   measures and subtracts the shell spawning time, but the intermediate
@@ -21,15 +39,10 @@
 - The environment offset randomization is now also available on Windows,
   see #484
 
-## Bugfixes
-
 ## Other
 
 - Improved documentation and test coverage, cleaned up code base for
   future improvements.
-
-## Packaging
-
 
 
 # v1.12.0
