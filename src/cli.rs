@@ -186,7 +186,7 @@ fn build_command() -> Command<'static> {
                 .help("Set the shell to use for executing benchmarked commands. This can be the \
                        name or the path to the shell executable, or a full command line \
                        like \"bash --norc\". It can also be set to \"default\" to explicitly select \
-                       the default shell on this patform. Finally, this can also be set to \
+                       the default shell on this platform. Finally, this can also be set to \
                        \"none\" to disable the shell. In this case, commands will be executed \
                        directly. They can still have arguments, but more complex things like \
                        \"sleep 0.1; sleep 0.2\" are not possible without a shell.")
