@@ -128,11 +128,14 @@ hyperfine 'source /tmp/my_function.sh; eval my_function'
 hyperfine 'source /tmp/my_alias.sh; eval my_alias'
 ```
 
-### Export results
+### Exporting results
 
-Hyperfine has multiple options for exporting benchmark results: CSV, JSON, Markdown (see `--help`
-text for details). To export results to Markdown, for example, you can use the `--export-markdown`
-option that will create tables like this:
+Hyperfine has multiple options for exporting benchmark results to CSV, JSON, Markdown and other
+formats (see `--help` text for details).
+
+#### Markdown 
+
+You can use the `--export-markdown <file>` option to create tables like the following:
 
 | Command | Mean [s] | Min [s] | Max [s] | Relative |
 |:---|---:|---:|---:|---:|
@@ -140,8 +143,14 @@ option that will create tables like this:
 | `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | 1.405 | 1.468 | 6.14 ± 0.13 |
 | `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | 0.230 | 0.236 | 1.00 |
 
-The JSON output is useful if you want to analyze the benchmark results in more detail. See the
-[`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder for some examples.
+#### JSON
+
+The JSON output is useful if you want to analyze the benchmark results in more detail. The
+[`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
+of helpful Python programs to further analyze benchmark results and create helpful
+visualizations, like a histogram of runtimes:
+
+![](doc/histogram.png)
 
 ## Installation
 
