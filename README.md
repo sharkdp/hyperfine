@@ -151,9 +151,8 @@ of helpful Python programs to further analyze benchmark results and create helpf
 visualizations, like a histogram of runtimes or a whisker plot to comare
 multiple benchmarks:
 
-![](doc/histogram.png)
-
-![](doc/whisker.png)
+| ![](doc/histogram.png) | ![](doc/whisker.png) |
+|---:|---:|
 
 
 ## Installation
