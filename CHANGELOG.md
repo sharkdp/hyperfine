@@ -11,6 +11,8 @@
   and #487 (@cipriancraciun and @sharkdp)
 - Added `--setup` (`s`) option that can be used to run `make all` or
   similar. It runs once per set of tests, like `--cleanup` (`c`).
+- Added new `plot_progression.py` script to debug background interference
+  effects.
 
 ## Changes
 
