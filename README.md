@@ -155,6 +155,14 @@ multiple benchmarks:
 |---:|---:|
 
 
+### Detailed benchmark flowchart
+
+The following chart explains the execution order of various timing runs when using options
+like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`. Note that
+only the black command executions are actually timed.
+
+![](doc/execution-order.png)
+
 ## Installation
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/hyperfine.svg)](https://repology.org/project/hyperfine/versions)
