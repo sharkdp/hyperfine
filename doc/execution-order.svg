@@ -2,16 +2,16 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="1724.755"
-   height="1832.972"
-   viewBox="0 0 456.34143 484.97387"
+   width="1502.9366"
+   height="1822"
+   viewBox="0 0 397.65199 482.07085"
    version="1.1"
    id="svg5"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20, custom)"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04, custom)"
    sodipodi:docname="execution-order.svg"
    inkscape:export-filename="/home/shark/Informatik/rust/hyperfine/doc/execution-order.png"
-   inkscape:export-xdpi="44.529999"
-   inkscape:export-ydpi="44.529999"
+   inkscape:export-xdpi="38.32"
+   inkscape:export-ydpi="38.32"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -27,8 +27,8 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.38529391"
-     inkscape:cx="1064.1227"
-     inkscape:cy="949.92418"
+     inkscape:cx="1022.596"
+     inkscape:cy="939.54249"
      inkscape:window-width="1920"
      inkscape:window-height="1175"
      inkscape:window-x="1920"
@@ -47,10 +47,10 @@
     <inkscape:grid
        type="xygrid"
        id="grid949"
-       originx="334.94547"
-       originy="-10.061553" />
+       originx="323.88106"
+       originy="-12.964584" />
     <sodipodi:guide
-       position="190.74752,358.77499"
+       position="179.6831,358.775"
        orientation="1,0"
        id="guide130046" />
   </sodipodi:namedview>
@@ -60,7 +60,7 @@
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(334.94544,-10.06155)">
+     transform="translate(323.88102,-12.964581)">
     <rect
        style="fill:#ececec;fill-opacity:1;stroke:#000000;stroke-width:0.481194;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect159433"
@@ -118,69 +118,69 @@
        transform="matrix(1.1724504,0,0,1.1724504,-222.61922,201.56959)"><tspan
          x="-79.596779"
          y="-115.14695"
-         id="tspan14151"><tspan
+         id="tspan1466"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14149">hyperfine
+           id="tspan1464">hyperfine
 </tspan></tspan><tspan
          x="-79.596779"
          y="-102.16832"
-         id="tspan14157"><tspan
+         id="tspan1472"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#e35a00"
-           id="tspan14153">  --warmup 2</tspan><tspan
+           id="tspan1468">  --warmup 2</tspan><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14155">
+           id="tspan1470">
 </tspan></tspan><tspan
          x="-79.596779"
          y="-89.189692"
-         id="tspan14163"><tspan
+         id="tspan1478"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#00bbeb"
-           id="tspan14159">  --runs 3</tspan><tspan
+           id="tspan1474">  --runs 3</tspan><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14161">
+           id="tspan1476">
 </tspan></tspan><tspan
          x="-79.596779"
          y="-76.211062"
-         id="tspan14167"><tspan
+         id="tspan1482"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14165">  --setup   &lt;setup&gt;
+           id="tspan1480">  --setup   &lt;setup&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-63.232432"
-         id="tspan14171"><tspan
+         id="tspan1486"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14169">  --prepare &lt;prepare1&gt;
+           id="tspan1484">  --prepare &lt;prepare1&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-50.253802"
-         id="tspan14177"><tspan
+         id="tspan1492"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff"
-           id="tspan14173">  &lt;command1&gt;</tspan><tspan
+           id="tspan1488">  &lt;command1&gt;</tspan><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14175">
+           id="tspan1490">
 </tspan></tspan><tspan
          x="-79.596779"
          y="-37.275172"
-         id="tspan14181"><tspan
+         id="tspan1496"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14179">  --prepare &lt;prepare2&gt;
+           id="tspan1494">  --prepare &lt;prepare2&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-24.296542"
-         id="tspan14185"><tspan
+         id="tspan1500"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff"
-           id="tspan14183">  &lt;command2&gt;
+           id="tspan1498">  &lt;command2&gt;
 </tspan></tspan><tspan
          x="-79.596779"
          y="-11.317913"
-         id="tspan14189"><tspan
+         id="tspan1504"><tspan
            style="font-family:'Fira Code';-inkscape-font-specification:'Fira Code'"
-           id="tspan14187">  --cleanup &lt;cleanup&gt;</tspan></tspan></text>
+           id="tspan1502">  --cleanup &lt;cleanup&gt;</tspan></tspan></text>
     <rect
        style="fill:#80e5ff;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect6355"
        width="58.208336"
        height="111.12499"
-       x="-47.625"
+       x="-95.249992"
        y="116.41667"
        ry="0.79374999" />
     <rect
@@ -188,7 +188,7 @@
        id="rect846"
        width="58.20834"
        height="74.083336"
-       x="-47.625"
+       x="-95.249992"
        y="37.041668"
        ry="0.79374999" />
     <rect
@@ -196,124 +196,124 @@
        id="rect1145"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="137.58333"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="145.76901"
        id="text2821"><tspan
          sodipodi:role="line"
          id="tspan2819"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="145.76901">command1</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect4643"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="121.70834"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="129.40845"
        id="text4647"><tspan
          sodipodi:role="line"
          id="tspan4645"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="129.40845">prepare1</tspan></text>
     <rect
        style="fill:#010101;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect6456"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="95.249985"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="103.43568"
        id="text6460"><tspan
          sodipodi:role="line"
          id="tspan6458"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="103.43568">command1</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect6462"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="79.375"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="87.075104"
        id="text6466"><tspan
          sodipodi:role="line"
          id="tspan6464"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="87.075104">prepare1</tspan></text>
     <rect
        style="fill:#010101;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect6567"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="58.208324"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="66.39402"
        id="text6571"><tspan
          sodipodi:role="line"
          id="tspan6569"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="66.39402">command1</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect6573"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="42.333336"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="50.03344"
        id="text6577"><tspan
          sodipodi:role="line"
          id="tspan6575"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="50.03344">prepare1</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.76603px;line-height:1;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#e35a00;fill-opacity:1;stroke-width:0.264583"
-       x="18.244862"
+       x="-29.380138"
        y="76.524841"
        id="text7364"><tspan
          sodipodi:role="line"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.76603px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#e35a00;fill-opacity:1;stroke-width:0.264583"
-         x="18.244862"
+         x="-29.380138"
          y="76.524841"
          id="tspan20001">2 warmup runs</tspan></text>
     <text
@@ -322,130 +322,130 @@
        x="-16.304935"
        y="161.32399"
        id="text12858"
-       transform="translate(34.591878,14.34874)"><tspan
+       transform="translate(-13.033123,14.34874)"><tspan
          x="-16.304935"
          y="161.32399"
-         id="tspan14191">3 benchmark runs</tspan></text>
+         id="tspan1506">3 benchmark runs</tspan></text>
     <rect
        style="fill:#b3b3b3;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect13386"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="21.166664"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="29.352339"
        id="text13390"><tspan
          sodipodi:role="line"
          id="tspan13388"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="29.352339">setup</tspan></text>
     <rect
        style="fill:#b3b3b3;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect37849"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="232.83333"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="241.019"
        id="text37853"><tspan
          sodipodi:role="line"
          id="tspan37851"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="241.019">cleanup</tspan></text>
     <rect
        style="fill:#010101;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect38128"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="174.62498"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="182.81067"
        id="text38132"><tspan
          sodipodi:role="line"
          id="tspan38130"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="182.81067">command1</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect38134"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="158.75"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="166.4501"
        id="text38138"><tspan
          sodipodi:role="line"
          id="tspan38136"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="166.4501">prepare1</tspan></text>
     <rect
        style="fill:#010101;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect38140"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="211.66666"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="219.85234"
        id="text38144"><tspan
          sodipodi:role="line"
          id="tspan38142"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="219.85234">command1</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect38146"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="195.79167"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="203.49178"
        id="text38150"><tspan
          sodipodi:role="line"
          id="tspan38148"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="203.49178">prepare1</tspan></text>
     <rect
        style="fill:#80e5ff;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272406"
        width="58.208336"
        height="111.12499"
-       x="-47.625"
+       x="-95.249992"
        y="359.83334"
        ry="0.79374999" />
     <rect
@@ -453,7 +453,7 @@
        id="rect272408"
        width="58.20834"
        height="74.083336"
-       x="-47.625"
+       x="-95.249992"
        y="280.45834"
        ry="0.79374999" />
     <rect
@@ -461,124 +461,124 @@
        id="rect272410"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="381"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="389.18567"
        id="text272414"><tspan
          sodipodi:role="line"
          id="tspan272412"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="389.18567">command2</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272416"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="365.125"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="372.8251"
        id="text272420"><tspan
          sodipodi:role="line"
          id="tspan272418"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="372.8251">prepare2</tspan></text>
     <rect
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272422"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="338.66666"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="346.85236"
        id="text272426"><tspan
          sodipodi:role="line"
          id="tspan272424"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="346.85236">command2</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272428"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="322.79166"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="330.49176"
        id="text272432"><tspan
          sodipodi:role="line"
          id="tspan272430"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="330.49176">prepare2</tspan></text>
     <rect
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272434"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="301.625"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="309.8107"
        id="text272438"><tspan
          sodipodi:role="line"
          id="tspan272436"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="309.8107">command2</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272440"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="285.75"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="293.4501"
        id="text272444"><tspan
          sodipodi:role="line"
          id="tspan272442"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="293.4501">prepare2</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.76603px;line-height:1;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#e35a00;fill-opacity:1;stroke-width:0.264583"
-       x="18.244862"
+       x="-29.380138"
        y="319.9415"
        id="text272448"><tspan
          sodipodi:role="line"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.76603px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#e35a00;fill-opacity:1;stroke-width:0.264583"
-         x="18.244862"
+         x="-29.380138"
          y="319.9415"
          id="tspan272446">2 warmup runs</tspan></text>
     <text
@@ -587,135 +587,123 @@
        x="-16.304935"
        y="161.32399"
        id="text272452"
-       transform="translate(34.591878,257.76541)"><tspan
+       transform="translate(-13.033123,257.76541)"><tspan
          x="-16.304935"
          y="161.32399"
-         id="tspan14193">3 benchmark runs</tspan></text>
+         id="tspan1508">3 benchmark runs</tspan></text>
     <rect
        style="fill:#b3b3b3;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272454"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="264.58334"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="272.76901"
        id="text272458"><tspan
          sodipodi:role="line"
          id="tspan272456"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="272.76901">setup</tspan></text>
     <rect
        style="fill:#b3b3b3;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272460"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="476.25"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="484.43567"
        id="text272464"><tspan
          sodipodi:role="line"
          id="tspan272462"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="484.43567">cleanup</tspan></text>
     <rect
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272466"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="418.04166"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="426.22733"
        id="text272470"><tspan
          sodipodi:role="line"
          id="tspan272468"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="426.22733">command2</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272472"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="402.16666"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="409.86676"
        id="text272476"><tspan
          sodipodi:role="line"
          id="tspan272474"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="409.86676">prepare2</tspan></text>
     <rect
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272478"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="455.08331"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="463.26901"
        id="text272482"><tspan
          sodipodi:role="line"
          id="tspan272480"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';fill:#ffffff;stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="463.26901">command2</tspan></text>
     <rect
        style="fill:#ececec;stroke:#000000;stroke-width:0.529167;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0.80126;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect272484"
        width="47.625"
        height="10.583333"
-       x="-42.333332"
+       x="-89.958328"
        y="439.20834"
        ry="0.79374999" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;line-height:0;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-       x="-40.49472"
+       x="-88.119713"
        y="446.90845"
        id="text272488"><tspan
          sodipodi:role="line"
          id="tspan272486"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.81944px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';stroke-width:0.173299"
-         x="-40.49472"
+         x="-88.119713"
          y="446.90845">prepare2</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:10.5833px;line-height:1.2;font-family:Audiowide;-inkscape-font-specification:Audiowide;white-space:pre;inline-size:199.93;stroke-width:0.264583"
-       x="-79.596779"
-       y="-115.14695"
-       id="text283737"
-       transform="matrix(1.7031443,0,0,1.7031443,-192.73007,228.6586)"><tspan
-         x="-79.596779"
-         y="-115.14695"
-         id="tspan14197"><tspan
-           style="font-weight:bold;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI Bold'"
-           id="tspan14195">benchmark execution order</tspan></tspan></text>
   </g>
 </svg>
