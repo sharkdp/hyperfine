@@ -24,7 +24,7 @@ A command-line benchmarking tool.
 
 ## Usage
 
-### Basic benchmark
+### Basic benchmarks
 
 To run a benchmark, you can simply call `hyperfine <command>...`. The argument(s) can be any
 shell command. For example:
@@ -33,19 +33,24 @@ hyperfine 'sleep 0.3'
 ```
 
 Hyperfine will automatically determine the number of runs to perform for each command. By default,
-it will perform *at least* 10 benchmarking runs. To change this, you can use the `-m`/`--min-runs`
-option:
+it will perform *at least* 10 benchmarking runs and measure for at least 3 seconds. To change this,
+you can use the `-r`/`--runs` option:
 ``` bash
-hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
+hyperfine --runs 5 'sleep 0.3'
+```
+
+If you want to compare the runtimes of different programs, you can pass multiple commands:
+``` bash
+hyperfine 'hexdump file' 'xxd file'
 ```
 
 ### Warmup runs and preparation commands
 
-If the program execution time is limited by disk I/O, the benchmarking results can be heavily
-influenced by disk caches and whether they are cold or warm.
+For programs that perform a lot of disk I/O, the benchmarking results can be heavily influenced
+by disk caches and whether they are cold or warm.
 
-If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to perform
-a certain number of program executions before the actual benchmark:
+If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to
+perform a certain number of program executions before the actual benchmark:
 ``` bash
 hyperfine --warmup 3 'grep -R TODO *'
 ```
@@ -56,7 +61,7 @@ on Linux, you can run
 ``` bash
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 ```
-To use this specific command with Hyperfine, call `sudo -v` to temporarily gain sudo permissions
+To use this specific command with hyperfine, call `sudo -v` to temporarily gain sudo permissions
 and then call:
 ``` bash
 hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
@@ -64,7 +69,7 @@ hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R 
 
 ### Parameterized benchmarks
 
-If you want to run a benchmark where only a single parameter is varied (say, the number of
+If you want to run a series of benchmarks where a single parameter is varied (say, the number of
 threads), you can use the `-P`/`--parameter-scan` option and call:
 ``` bash
 hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num_threads}'
@@ -75,6 +80,33 @@ to control the step size:
 hyperfine --parameter-scan delay 0.3 0.7 -D 0.2 'sleep {delay}'
 ```
 This runs `sleep 0.3`, `sleep 0.5` and `sleep 0.7`.
+
+For non-numeric parameters, you can also supply a list of values with the `-L`/`--parameter-list`
+option:
+```
+hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
+```
+
+### Intermediate shell
+
+By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).
+If you want to use a different shell, you can use the `-S, --shell <SHELL>` option:
+``` bash
+hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
+```
+
+Note that hyperfine always *corrects for the shell spawning time*. To do this, it performs a calibration
+procedure where it runs the shell with an empty command (multiple times), to measure the startup time
+of the shell. It will then subtract this time from the total to show the actual time used by the command
+in question.
+
+If you want to run a benchmark *without an intermediate shell*, you can use the `-N` or `--shell=none`
+option. This is helpful for very fast commands (< 5 ms) where the shell startup overhead correction would
+produce a significant amount of noise. Note that you can not use shell syntax like `*` or `~` in this case.
+```
+hyperfine -N 'grep TODO /home/user'
+```
+
 
 ### Shell functions and aliases
 
