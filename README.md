@@ -158,8 +158,7 @@ multiple benchmarks:
 ### Detailed benchmark flowchart
 
 The following chart explains the execution order of various timing runs when using options
-like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`. Note that
-only the black command executions are actually timed.
+like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`:
 
 ![](doc/execution-order.png)
 
