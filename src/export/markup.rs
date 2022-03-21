@@ -1,7 +1,7 @@
 use crate::benchmark::benchmark_result::BenchmarkResult;
+use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
-use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 
 #[derive(Clone)]
 pub enum MarkupType {
@@ -9,19 +9,41 @@ pub enum MarkupType {
     Markdown,
 }
 
-pub fn markup_table_data(kind: &MarkupType, data: &Vec<String>) -> String {
+pub fn markup_table(kind: &MarkupType, data: &[Vec<String>]) -> String {
+    let head: &Vec<String> = data.first().unwrap();
+    let tail: &[Vec<String>] = &data[1..];
+
+    // emit header
+    let mut table = markup_table_data(&kind, head);
+
+    // emit horizontal line
+    table.push_str(&markup_table_line(&kind, head.len()));
+
+    // emit data rows
+    for row in tail {
+        table.push_str(&markup_table_data(&kind, row))
+    }
+
+    return table;
+}
+
+fn markup_table_data(kind: &MarkupType, data: &Vec<String>) -> String {
     return match kind {
         MarkupType::Markdown => format!("| {} |\n", data.join(" | ")),
     };
 }
 
-pub fn markup_table_line(kind: &MarkupType, size: usize) -> String {
+fn markup_table_line(kind: &MarkupType, size: usize) -> String {
     return match kind {
         MarkupType::Markdown => format!("|:---|{}\n", "---:|".repeat(size - 1)),
     };
 }
 
-pub fn markup_results(kind: &MarkupType, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> Vec<Vec<String>> {
+pub fn markup_results(
+    kind: &MarkupType,
+    entries: &[BenchmarkResultWithRelativeSpeed],
+    unit: Unit,
+) -> Vec<Vec<String>> {
     // prepare table header strings
     let notation = format!("[{}]", unit.short_name());
     let mut data: Vec<Vec<_>> = vec![vec![
@@ -55,7 +77,7 @@ pub fn markup_results(kind: &MarkupType, entries: &[BenchmarkResultWithRelativeS
         // prepare table row entries
         data.push(vec![
             match kind {
-                MarkupType::Markdown => format!( "`{}`", cmd_str ),
+                MarkupType::Markdown => format!("`{}`", cmd_str),
             },
             format!("{}{}", mean_str, stddev_str),
             format!("{}", min_str),
@@ -67,7 +89,7 @@ pub fn markup_results(kind: &MarkupType, entries: &[BenchmarkResultWithRelativeS
     return data;
 }
 
-pub fn markup_results_unit(results: &[BenchmarkResult], unit: Option<Unit>) -> Unit {
+pub fn markup_unit(results: &[BenchmarkResult], unit: Option<Unit>) -> Unit {
     return if let Some(unit) = unit {
         // Use the given unit for all entries.
         unit
@@ -106,7 +128,7 @@ fn test_markup_table_line_markdown() {
 
 /// Check unit resolving for timing results and given unit 's'
 #[test]
-fn test_markup_table_results_unit_given_s() {
+fn test_markup_table_unit_given_s() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -138,7 +160,7 @@ fn test_markup_table_results_unit_given_s() {
     ];
     let unit = Some(Unit::Second);
 
-    let markup_actual = markup_results_unit(&results, unit);
+    let markup_actual = markup_unit(&results, unit);
     let markup_expected = Unit::Second;
 
     assert_eq!(markup_expected, markup_actual);
@@ -146,7 +168,7 @@ fn test_markup_table_results_unit_given_s() {
 
 /// Check unit resolving for timing results and given unit 'ms'
 #[test]
-fn test_markup_table_results_unit_given_ms() {
+fn test_markup_table_unit_given_ms() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -178,7 +200,7 @@ fn test_markup_table_results_unit_given_ms() {
     ];
     let unit = Some(Unit::MilliSecond);
 
-    let markup_actual = markup_results_unit(&results, unit);
+    let markup_actual = markup_unit(&results, unit);
     let markup_expected = Unit::MilliSecond;
 
     assert_eq!(markup_expected, markup_actual);
@@ -186,7 +208,7 @@ fn test_markup_table_results_unit_given_ms() {
 
 /// Check unit resolving for timing results using the first result entry as 's'
 #[test]
-fn test_markup_table_results_unit_first_s() {
+fn test_markup_table_unit_first_s() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -218,7 +240,7 @@ fn test_markup_table_results_unit_first_s() {
     ];
     let unit = None;
 
-    let markup_actual = markup_results_unit(&results, unit);
+    let markup_actual = markup_unit(&results, unit);
     let markup_expected = Unit::Second;
 
     assert_eq!(markup_expected, markup_actual);
@@ -226,7 +248,7 @@ fn test_markup_table_results_unit_first_s() {
 
 /// Check unit resolving for timing results using the first result entry as 'ms'
 #[test]
-fn test_markup_table_results_unit_first_ms() {
+fn test_markup_table_unit_first_ms() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -258,7 +280,7 @@ fn test_markup_table_results_unit_first_ms() {
     ];
     let unit = None;
 
-    let markup_actual = markup_results_unit(&results, unit);
+    let markup_actual = markup_unit(&results, unit);
     let markup_expected = Unit::MilliSecond;
 
     assert_eq!(markup_expected, markup_actual);
@@ -266,11 +288,11 @@ fn test_markup_table_results_unit_first_ms() {
 
 /// Check unit resolving for not timing results and no given unit defaulting to 's'
 #[test]
-fn test_markup_table_results_unit_default_s() {
+fn test_markup_table_unit_default_s() {
     let results: Vec<BenchmarkResult> = vec![];
     let unit = None;
 
-    let markup_actual = markup_results_unit(&results, unit);
+    let markup_actual = markup_unit(&results, unit);
     let markup_expected = Unit::Second;
 
     assert_eq!(markup_expected, markup_actual);

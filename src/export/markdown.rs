@@ -1,11 +1,10 @@
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::benchmark::relative_speed;
-use crate::export::markup::markup_results_unit;
-use crate::export::markup::markup_table_data;
-use crate::export::markup::markup_table_line;
-use crate::export::markup::MarkupType;
 use crate::export::markup::markup_results;
+use crate::export::markup::markup_table;
+use crate::export::markup::markup_unit;
+use crate::export::markup::MarkupType;
 use crate::util::units::Unit;
 
 use anyhow::{anyhow, Result};
@@ -15,8 +14,6 @@ pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
-        let unit = markup_results_unit(results, unit);
-
         let entries = relative_speed::compute(results);
         if entries.is_none() {
             return Err(anyhow!(
@@ -25,27 +22,15 @@ impl Exporter for MarkdownExporter {
         }
 
         let kind = MarkupType::Markdown;
-        let data = markup_results( &kind, &entries.unwrap(), unit );
-        let head: &Vec<String> = data.first().unwrap();
-        let tail: &[Vec<String>] = &data[1..];
-
-        // emit header
-        let mut table = markup_table_data(&kind, head);
-
-        // emit horizontal line
-        table.push_str(&markup_table_line(&kind, head.len()));
-
-        // emit data rows
-        for row in tail {
-            table.push_str(&markup_table_data(&kind, row))
-        }
-
+        let unit = markup_unit(results, unit);
+        let data = markup_results(&kind, &entries.unwrap(), unit);
+        let table = markup_table(&kind, &data);
         Ok(table.as_bytes().to_vec())
     }
 }
 
 /// Test helper function to create unit-based header and horizontal line
-/// independently from the markup functionality.
+/// independently from the markup functionality for Markdown.
 #[cfg(test)]
 fn test_table_header(unit_short_name: String) -> String {
     format!(
