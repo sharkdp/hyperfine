@@ -1,6 +1,10 @@
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
-use crate::benchmark::relative_speed::{self, BenchmarkResultWithRelativeSpeed};
+use crate::benchmark::relative_speed;
+use crate::export::markup::markup_results_unit;
+use crate::export::markup::markup_table_data;
+use crate::export::markup::markup_table_line;
+use crate::export::markup::MarkupType;
 use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 
@@ -11,76 +15,82 @@ pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
-        let unit = if let Some(unit) = unit {
-            // Use the given unit for all entries.
-            unit
-        } else if let Some(first_result) = results.first() {
-            // Use the first BenchmarkResult entry to determine the unit for all entries.
-            format_duration_value(first_result.mean, None).1
-        } else {
-            // Default to `Second`.
-            Unit::Second
-        };
+        let unit = markup_results_unit(results, unit);
 
-        if let Some(annotated_results) = relative_speed::compute(results) {
-            let mut destination = start_table(unit);
-
-            for result in annotated_results {
-                add_table_row(&mut destination, &result, unit);
-            }
-
-            Ok(destination)
-        } else {
-            Err(anyhow!(
+        let entries = relative_speed::compute(results);
+        if entries.is_none() {
+            return Err(anyhow!(
                 "Relative speed comparison is not available for Markdown export."
-            ))
+            ));
         }
+
+        // prepare table header strings
+        let notation = format!("[{}]", unit.short_name());
+        let mut data: Vec<Vec<_>> = vec![vec![
+            format!("Command"),
+            format!("Mean {}", notation),
+            format!("Min {}", notation),
+            format!("Max {}", notation),
+            format!("Relative"),
+        ]];
+
+        for entry in entries.unwrap() {
+            let measurement = &entry.result;
+            // prepare data row strings
+            let cmd_str = measurement.command.replace("|", "\\|");
+            let mean_str = format_duration_value(measurement.mean, Some(unit)).0;
+            let stddev_str = if let Some(stddev) = measurement.stddev {
+                format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
+            } else {
+                "".into()
+            };
+            let min_str = format_duration_value(measurement.min, Some(unit)).0;
+            let max_str = format_duration_value(measurement.max, Some(unit)).0;
+            let rel_str = format!("{:.2}", entry.relative_speed);
+            let rel_stddev_str = if entry.is_fastest {
+                "".into()
+            } else if let Some(stddev) = entry.relative_speed_stddev {
+                format!(" ± {:.2}", stddev)
+            } else {
+                "".into()
+            };
+            // prepare table row entries
+            data.push(vec![
+                format!("`{}`", cmd_str),
+                format!("{}{}", mean_str, stddev_str),
+                format!("{}", min_str),
+                format!("{}", max_str),
+                format!("{}{}", rel_str, rel_stddev_str),
+            ])
+        }
+
+        let head: &Vec<String> = data.first().unwrap();
+        let tail: &[Vec<String>] = &data[1..];
+        let kind = MarkupType::Markdown;
+
+        // emit header
+        let mut table = markup_table_data(&kind, head);
+
+        // emit horizontal line
+        table.push_str(&markup_table_line(&kind, head.len()));
+
+        // emit data rows
+        for row in tail {
+            table.push_str(&markup_table_data(&kind, row))
+        }
+
+        Ok(table.as_bytes().to_vec())
     }
 }
 
-fn table_header(unit_short_name: String) -> String {
+/// Test helper function to create unit-based header and horizontal line
+/// independently from the markup functionality.
+#[cfg(test)]
+fn test_table_header(unit_short_name: String) -> String {
     format!(
         "| Command | Mean [{unit}] | Min [{unit}] | Max [{unit}] | Relative |\n|:---|---:|---:|---:|---:|\n",
         unit = unit_short_name
     )
-}
-
-fn start_table(unit: Unit) -> Vec<u8> {
-    table_header(unit.short_name()).bytes().collect()
-}
-
-fn add_table_row(dest: &mut Vec<u8>, entry: &BenchmarkResultWithRelativeSpeed, unit: Unit) {
-    let result = &entry.result;
-    let mean_str = format_duration_value(result.mean, Some(unit)).0;
-    let stddev_str = if let Some(stddev) = result.stddev {
-        format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
-    } else {
-        "".into()
-    };
-    let min_str = format_duration_value(result.min, Some(unit)).0;
-    let max_str = format_duration_value(result.max, Some(unit)).0;
-    let rel_str = format!("{:.2}", entry.relative_speed);
-    let rel_stddev_str = if entry.is_fastest {
-        "".into()
-    } else if let Some(stddev) = entry.relative_speed_stddev {
-        format!(" ± {:.2}", stddev)
-    } else {
-        "".into()
-    };
-
-    dest.extend(
-        format!(
-            "| `{command}` | {mean}{stddev} | {min} | {max} | {rel}{rel_stddev} |\n",
-            command = result.command.replace("|", "\\|"),
-            mean = mean_str,
-            stddev = stddev_str,
-            min = min_str,
-            max = max_str,
-            rel = rel_str,
-            rel_stddev = rel_stddev_str,
-        )
-        .as_bytes(),
-    );
 }
 
 /// Ensure the markdown output includes the table header and the multiple
@@ -130,7 +140,7 @@ fn test_markdown_format_ms() {
 | `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
 | `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 ± 0.29 |
 ",
-        table_header("ms".to_string())
+        test_table_header("ms".to_string())
     );
 
     assert_eq!(formatted_expected, formatted);
@@ -179,7 +189,7 @@ fn test_markdown_format_s() {
 | `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
 | `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
 ",
-        table_header("s".to_string())
+        test_table_header("s".to_string())
     );
 
     assert_eq!(formatted_expected, formatted);
@@ -232,7 +242,7 @@ fn test_markdown_format_time_unit_s() {
 | `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
 | `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
 ",
-        table_header("s".to_string())
+        test_table_header("s".to_string())
     );
 
     assert_eq!(formatted_expected, formatted);
@@ -286,7 +296,7 @@ fn test_markdown_format_time_unit_ms() {
 | `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 ± 0.29 |
 | `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
 ",
-        table_header("ms".to_string())
+        test_table_header("ms".to_string())
     );
 
     assert_eq!(formatted_expected, formatted);
