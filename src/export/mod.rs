@@ -13,6 +13,7 @@ use self::csv::CsvExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 use self::orgmode::OrgmodeExporter;
+use self::orgmode::OrgmodeRunsExporter;
 
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::util::units::Unit;
@@ -37,6 +38,7 @@ pub enum ExportType {
 
     /// Emacs org-mode tables
     Orgmode,
+    OrgmodeRuns,
 }
 
 /// Interface for different exporters.
@@ -73,6 +75,7 @@ impl ExportManager {
             add_exporter("export-csv", ExportType::Csv)?;
             add_exporter("export-markdown", ExportType::Markdown)?;
             add_exporter("export-orgmode", ExportType::Orgmode)?;
+            add_exporter("export-orgmode-runs", ExportType::OrgmodeRuns)?;
         }
         Ok(export_manager)
     }
@@ -88,6 +91,7 @@ impl ExportManager {
             ExportType::Json => Box::new(JsonExporter::default()),
             ExportType::Markdown => Box::new(MarkdownExporter::default()),
             ExportType::Orgmode => Box::new(OrgmodeExporter::default()),
+            ExportType::OrgmodeRuns => Box::new(OrgmodeRunsExporter::default()),
         };
         self.exporters.push(ExporterWithFilename {
             exporter,

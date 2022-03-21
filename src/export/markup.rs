@@ -67,6 +67,83 @@ pub trait MarkupExporter {
         table
     }
 
+    fn table_runs(&self, entries: &[BenchmarkResult], unit: Unit) -> String {
+        // prepare table header strings
+        let notation = format!("[{}]", unit.short_name());
+
+        // emit header
+        let mut table = self.table_row(&[
+            "Command",
+            "Sample",
+            &format!("Time {}", notation),
+            "Run",
+            "Parameters",
+        ]);
+
+        // emit horizontal line
+        table.push_str(&self.table_divider(&[
+            Alignment::Left,
+            Alignment::Right,
+            Alignment::Right,
+            Alignment::Right,
+            Alignment::Right,
+        ]));
+
+        let mut sample = 0;
+        for measurement in entries {
+            // prepare data row strings
+            let cmd_str = measurement.command.replace('|', "\\|");
+
+            let no_times = vec![-1_f64];
+            let times = if let Some(t) = &measurement.times {
+                t
+            } else {
+                &no_times
+            };
+
+            let mut params: Vec<String> = vec![];
+            let parameters = &measurement.parameters;
+            if !parameters.is_empty() {
+                for (k, v) in parameters {
+                    params.push(format!("{}={}", k, v));
+                }
+            };
+
+            for (index, time) in times.iter().enumerate() {
+                sample += 1;
+                let sample_str = format!("{}", sample);
+                let time_str = if *time < (0 as f64) {
+                    "-".to_string()
+                } else {
+                    format!("{:.9}", time)
+                };
+
+                let status_str = if let Some(exit_code) = measurement.exit_codes[index] {
+                    if exit_code == 0 {
+                        "ok".to_string()
+                    } else {
+                        "fail".to_string()
+                    }
+                } else {
+                    "-".to_string()
+                };
+
+                let params_str = params.join(", ");
+
+                // prepare table row entries
+                let data: [&str; 5] = [
+                    &self.command(&cmd_str),
+                    &sample_str,
+                    &time_str,
+                    &status_str,
+                    if !params.is_empty() { &params_str } else { "-" },
+                ];
+                table.push_str(&self.table_row(&data))
+            }
+        }
+
+        table
+    }
     fn table_row(&self, cells: &[&str]) -> String;
 
     fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String;
