@@ -1,6 +1,7 @@
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
+use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 
 #[derive(Clone)]
 pub enum MarkupType {
@@ -18,6 +19,52 @@ pub fn markup_table_line(kind: &MarkupType, size: usize) -> String {
     return match kind {
         MarkupType::Markdown => format!("|:---|{}\n", "---:|".repeat(size - 1)),
     };
+}
+
+pub fn markup_results(kind: &MarkupType, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> Vec<Vec<String>> {
+    // prepare table header strings
+    let notation = format!("[{}]", unit.short_name());
+    let mut data: Vec<Vec<_>> = vec![vec![
+        format!("Command"),
+        format!("Mean {}", notation),
+        format!("Min {}", notation),
+        format!("Max {}", notation),
+        format!("Relative"),
+    ]];
+
+    for entry in entries {
+        let measurement = &entry.result;
+        // prepare data row strings
+        let cmd_str = measurement.command.replace("|", "\\|");
+        let mean_str = format_duration_value(measurement.mean, Some(unit)).0;
+        let stddev_str = if let Some(stddev) = measurement.stddev {
+            format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
+        } else {
+            "".into()
+        };
+        let min_str = format_duration_value(measurement.min, Some(unit)).0;
+        let max_str = format_duration_value(measurement.max, Some(unit)).0;
+        let rel_str = format!("{:.2}", entry.relative_speed);
+        let rel_stddev_str = if entry.is_fastest {
+            "".into()
+        } else if let Some(stddev) = entry.relative_speed_stddev {
+            format!(" ± {:.2}", stddev)
+        } else {
+            "".into()
+        };
+        // prepare table row entries
+        data.push(vec![
+            match kind {
+                MarkupType::Markdown => format!( "`{}`", cmd_str ),
+            },
+            format!("{}{}", mean_str, stddev_str),
+            format!("{}", min_str),
+            format!("{}", max_str),
+            format!("{}{}", rel_str, rel_stddev_str),
+        ])
+    }
+
+    return data;
 }
 
 pub fn markup_results_unit(results: &[BenchmarkResult], unit: Option<Unit>) -> Unit {
