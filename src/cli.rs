@@ -242,6 +242,13 @@ fn build_command() -> Command<'static> {
                 .help("Export the timing summary statistics as a Markdown table to the given FILE."),
         )
         .arg(
+            Arg::new("export-orgmode")
+                .long("export-orgmode")
+                .takes_value(true)
+                .value_name("FILE")
+                .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE."),
+        )
+        .arg(
             Arg::new("show-output")
                 .long("show-output")
                 .conflicts_with("style")
