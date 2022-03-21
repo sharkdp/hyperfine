@@ -12,6 +12,7 @@ use self::asciidoc::AsciidocExporter;
 use self::csv::CsvExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
+use self::markdown::MarkdownRunsExporter;
 use self::orgmode::OrgmodeExporter;
 use self::orgmode::OrgmodeRunsExporter;
 
@@ -33,8 +34,9 @@ pub enum ExportType {
     /// JSON format
     Json,
 
-    /// Markdown table
+    /// Markdown tables
     Markdown,
+    MarkdownRuns,
 
     /// Emacs org-mode tables
     Orgmode,
@@ -74,6 +76,7 @@ impl ExportManager {
             add_exporter("export-json", ExportType::Json)?;
             add_exporter("export-csv", ExportType::Csv)?;
             add_exporter("export-markdown", ExportType::Markdown)?;
+            add_exporter("export-markdown-runs", ExportType::MarkdownRuns)?;
             add_exporter("export-orgmode", ExportType::Orgmode)?;
             add_exporter("export-orgmode-runs", ExportType::OrgmodeRuns)?;
         }
@@ -90,6 +93,7 @@ impl ExportManager {
             ExportType::Csv => Box::new(CsvExporter::default()),
             ExportType::Json => Box::new(JsonExporter::default()),
             ExportType::Markdown => Box::new(MarkdownExporter::default()),
+            ExportType::MarkdownRuns => Box::new(MarkdownRunsExporter::default()),
             ExportType::Orgmode => Box::new(OrgmodeExporter::default()),
             ExportType::OrgmodeRuns => Box::new(OrgmodeRunsExporter::default()),
         };

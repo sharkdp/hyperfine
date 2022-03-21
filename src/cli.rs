@@ -242,6 +242,13 @@ fn build_command() -> Command<'static> {
                 .help("Export the timing summary statistics as a Markdown table to the given FILE."),
         )
         .arg(
+            Arg::new("export-markdown-runs")
+                .long("export-markdown-runs")
+                .takes_value(true)
+                .value_name("FILE")
+                .help("Export the timings of individual runs as a Markdown table to the given FILE."),
+        )
+        .arg(
             Arg::new("export-orgmode")
                 .long("export-orgmode")
                 .takes_value(true)
