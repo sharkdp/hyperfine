@@ -1,3 +1,4 @@
+use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::output::format::format_duration_value;
@@ -144,6 +145,7 @@ pub trait MarkupExporter {
 
         table
     }
+
     fn table_row(&self, cells: &[&str]) -> String;
 
     fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String;

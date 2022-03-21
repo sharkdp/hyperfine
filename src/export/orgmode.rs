@@ -35,6 +35,19 @@ impl Exporter for OrgmodeRunsExporter {
     }
 }
 
+#[derive(Default)]
+pub struct OrgmodeRunsExporter {}
+
+impl Exporter for OrgmodeRunsExporter {
+    fn serialize(&self, results: &[BenchmarkResult], _unit: Option<Unit>) -> Result<Vec<u8>> {
+        let unit = Unit::Second;
+
+        let formatter = OrgmodeFormatter::default();
+        let table = formatter.table_runs(results, unit);
+        Ok(table.as_bytes().to_vec())
+    }
+}
+
 /// Check Emacs org-mode data row formatting
 #[test]
 fn test_orgmode_formatter_table_data() {
