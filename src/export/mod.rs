@@ -5,6 +5,7 @@ mod asciidoc;
 mod csv;
 mod json;
 mod markdown;
+mod markup;
 
 use self::asciidoc::AsciidocExporter;
 use self::csv::CsvExporter;
