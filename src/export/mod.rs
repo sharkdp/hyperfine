@@ -13,6 +13,7 @@ use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 
 use crate::benchmark::benchmark_result::BenchmarkResult;
+use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 
 use anyhow::{Context, Result};
@@ -38,6 +39,19 @@ pub enum ExportType {
 trait Exporter {
     /// Export the given entries in the serialized form.
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>>;
+
+    fn unit(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Unit {
+        return if let Some(unit) = unit {
+            // Use the given unit for all entries.
+            unit
+        } else if let Some(first_result) = results.first() {
+            // Use the first BenchmarkResult entry to determine the unit for all entries.
+            format_duration_value(first_result.mean, None).1
+        } else {
+            // Default to `Second`.
+            Unit::Second
+        };
+    }
 }
 
 struct ExporterWithFilename {
@@ -105,4 +119,196 @@ fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
     let mut file = OpenOptions::new().write(true).open(filename)?;
     file.write_all(content)
         .with_context(|| format!("Failed to export results to '{}'", filename))
+}
+
+#[cfg(test)]
+#[derive(Default)]
+struct TestExporter;
+
+#[cfg(test)]
+impl Exporter for TestExporter {
+    fn serialize(&self, _results: &[BenchmarkResult], _unit: Option<Unit>) -> Result<Vec<u8>> {
+        assert_eq!(
+            "",
+            "This 'Exporter' trait implementation shall only be used to test the 'unit' function!"
+        );
+        Ok(vec![])
+    }
+}
+
+/// Check unit resolving for timing results and given unit 's'
+#[test]
+fn test_markup_table_unit_given_s() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = Some(Unit::Second);
+
+    let exporter = TestExporter::default();
+    let markup_actual = exporter.unit(&results, unit);
+    let markup_expected = Unit::Second;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for timing results and given unit 'ms'
+#[test]
+fn test_markup_table_unit_given_ms() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = Some(Unit::MilliSecond);
+
+    let exporter = TestExporter::default();
+    let markup_actual = exporter.unit(&results, unit);
+    let markup_expected = Unit::MilliSecond;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for timing results using the first result entry as 's'
+#[test]
+fn test_markup_table_unit_first_s() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = None;
+
+    let exporter = TestExporter::default();
+    let markup_actual = exporter.unit(&results, unit);
+    let markup_expected = Unit::Second;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for timing results using the first result entry as 'ms'
+#[test]
+fn test_markup_table_unit_first_ms() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = None;
+
+    let exporter = TestExporter::default();
+    let markup_actual = exporter.unit(&results, unit);
+    let markup_expected = Unit::MilliSecond;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for not timing results and no given unit defaulting to 's'
+#[test]
+fn test_markup_table_unit_default_s() {
+    let results: Vec<BenchmarkResult> = vec![];
+    let unit = None;
+
+    let exporter = TestExporter::default();
+    let markup_actual = exporter.unit(&results, unit);
+    let markup_expected = Unit::Second;
+
+    assert_eq!(markup_expected, markup_actual);
 }
