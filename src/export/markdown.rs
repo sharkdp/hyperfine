@@ -37,13 +37,7 @@ impl Exporter for MarkdownExporter {
         }
 
         let formatter = MarkdownFormatter::default();
-        let data_vvs = formatter.results(&entries.unwrap(), unit);
-        let data_vas: Vec<Vec<&str>> = data_vvs
-            .iter()
-            .map(|list| list.iter().map(AsRef::as_ref).collect::<Vec<&str>>())
-            .collect();
-        let data: Vec<&[&str]> = data_vas.iter().map(AsRef::as_ref).collect();
-        let table = formatter.table(&data);
+        let table = formatter.table_results(&entries.unwrap(), unit);
         Ok(table.as_bytes().to_vec())
     }
 }
