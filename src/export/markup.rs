@@ -3,44 +3,22 @@ use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 
 pub trait MarkupFormatter {
-    fn table(&self, data: &[&[&str]]) -> String {
-        let head: &[&str] = data.first().unwrap();
-        let tail = &data[1..];
+    fn table_results(&self, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> String {
+        // prepare table header strings
+        let notation = format!("[{}]", unit.short_name());
+        let head: [&str; 5] = [
+            "Command",
+            &format!("Mean {}", notation),
+            &format!("Min {}", notation),
+            &format!("Max {}", notation),
+            "Relative",
+        ];
 
         // emit header
-        let table = &mut self.table_data(head);
+        let mut table = self.table_data(&head);
 
         // emit horizontal line
         table.push_str(&self.table_line(head.len()));
-
-        // emit data rows
-        for row in tail {
-            table.push_str(&self.table_data(row))
-        }
-
-        table.to_string()
-    }
-
-    fn table_data(&self, data: &[&str]) -> String;
-
-    fn table_line(&self, size: usize) -> String;
-
-    fn command(&self, size: &str) -> String;
-
-    fn results(
-        &self,
-        entries: &[BenchmarkResultWithRelativeSpeed],
-        unit: Unit,
-    ) -> Vec<Vec<String>> {
-        // prepare table header strings
-        let notation = format!("[{}]", unit.short_name());
-        let mut data: Vec<Vec<_>> = vec![vec![
-            "Command".to_string(),
-            format!("Mean {}", notation),
-            format!("Min {}", notation),
-            format!("Max {}", notation),
-            "Relative".to_string(),
-        ]];
 
         for entry in entries {
             let measurement = &entry.result;
@@ -63,15 +41,22 @@ pub trait MarkupFormatter {
                 "".into()
             };
             // prepare table row entries
-            data.push(vec![
-                self.command(&cmd_str),
-                format!("{}{}", mean_str, stddev_str),
-                min_str,
-                max_str,
-                format!("{}{}", rel_str, rel_stddev_str),
-            ])
+            let data: [&str; 5] = [
+                &self.command(&cmd_str),
+                &format!("{}{}", mean_str, stddev_str),
+                &min_str,
+                &max_str,
+                &format!("{}{}", rel_str, rel_stddev_str),
+            ];
+            table.push_str(&self.table_data(&data))
         }
 
-        data
+        table
     }
+
+    fn table_data(&self, data: &[&str]) -> String;
+
+    fn table_line(&self, size: usize) -> String;
+
+    fn command(&self, size: &str) -> String;
 }
