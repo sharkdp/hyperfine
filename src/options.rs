@@ -162,8 +162,8 @@ pub struct Options {
     /// Command(s) to run before each timing run
     pub preparation_command: Option<Vec<String>>,
 
-    /// Command to run before each *batch* of timing runs, i.e. before each individual benchmark
-    pub setup_command: Option<String>,
+    /// Command(s) to run before each *batch* of timing runs, i.e. before each individual benchmark
+    pub setup_command: Option<Vec<String>>,
 
     /// Command to run after each *batch* of timing runs, i.e. after each individual benchmark
     pub cleanup_command: Option<String>,
@@ -241,7 +241,9 @@ impl Options {
             (None, None) => {}
         };
 
-        options.setup_command = matches.value_of("setup").map(String::from);
+        options.setup_command = matches
+            .values_of("setup")
+            .map(|values| values.map(String::from).collect::<Vec<String>>());
 
         options.preparation_command = matches
             .values_of("prepare")
@@ -314,6 +316,15 @@ impl Options {
                 preparation_command.len() <= 1
                     || commands.num_commands() == preparation_command.len(),
                 "The '--prepare' option has to be provided just once or N times, where N is the \
+             number of benchmark commands."
+            );
+        }
+
+        if let Some(setup_command) = &self.setup_command {
+            ensure!(
+                setup_command.len() <= 1
+                    || commands.num_commands() == setup_command.len(),
+                "The '--setup' option has to be provided just once or N times, where N is the \
              number of benchmark commands."
             );
         }

@@ -276,3 +276,20 @@ fn multiple_parameter_values() {
         .expect_output("command 3 b")
         .run();
 }
+
+#[test]
+fn multiple_setup_commands_are_executed_for_each_block() {
+    ExecutionOrderTest::new()
+        .arg("--runs=2")
+        .setup("setup 1")
+        .command("command 1")
+        .setup("setup 2")
+        .command("command 2")
+        .expect_output("setup 1")
+        .expect_output("command 1")
+        .expect_output("command 1")
+        .expect_output("setup 2")
+        .expect_output("command 2")
+        .expect_output("command 2")
+        .run();
+}

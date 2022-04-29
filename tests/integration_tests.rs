@@ -319,3 +319,28 @@ fn performs_all_benchmarks_in_parameter_scan() {
                 .and(predicate::str::contains("Benchmark 5: sleep 50").not()),
         );
 }
+
+#[test]
+fn fails_with_wrong_number_of_setup_options() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--setup=echo a")
+        .arg("--setup=echo b")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--setup=echo a")
+        .arg("--setup=echo b")
+        .arg("echo a")
+        .arg("echo b")
+        .arg("echo c")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The '--setup' option has to be provided",
+        ));
+}

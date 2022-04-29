@@ -73,6 +73,7 @@ fn build_command() -> Command<'static> {
                 .long("setup")
                 .short('s')
                 .takes_value(true)
+                .multiple_occurrences(true)
                 .number_of_values(1)
                 .value_name("CMD")
                 .help(
