@@ -322,8 +322,7 @@ impl Options {
 
         if let Some(setup_command) = &self.setup_command {
             ensure!(
-                setup_command.len() <= 1
-                    || commands.num_commands() == setup_command.len(),
+                setup_command.len() <= 1 || commands.num_commands() == setup_command.len(),
                 "The '--setup' option has to be provided just once or N times, where N is the \
              number of benchmark commands."
             );

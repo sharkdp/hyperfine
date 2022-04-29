@@ -147,8 +147,8 @@ impl<'a> Benchmark<'a> {
                 self.command.get_parameters().iter().cloned(),
             )
         });
-        
-        let run_setup_command = || {            
+
+        let run_setup_command = || {
             setup_command
                 .as_ref()
                 .map(|cmd| self.run_setup_command(cmd))
