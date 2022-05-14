@@ -260,6 +260,20 @@ fn build_command() -> Command<'static> {
                 ),
         )
         .arg(
+            Arg::new("output")
+                .long("output")
+                .conflicts_with("show-output")
+                .takes_value(true)
+                .value_name("WHERE")
+                .help(
+                    "Control where the output of the benchmark is redirected.\n\n  \
+                     null: Redirect output to /dev/null (the default).\n\n  \
+                     pipe: Feed the output through a pipe before discarding it.\n        \
+                     Useful if the benchmark special-cases /dev/null.\n\n  \
+                     <FILE>: Write the output to the given file.",
+                ),
+        )
+        .arg(
             Arg::new("command-name")
                 .long("command-name")
                 .short('n')

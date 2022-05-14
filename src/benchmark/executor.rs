@@ -36,10 +36,10 @@ pub trait Executor {
 fn run_command_and_measure_common(
     mut command: std::process::Command,
     command_failure_action: CmdFailureAction,
-    command_output_policy: CommandOutputPolicy,
+    command_output_policy: &CommandOutputPolicy,
     command_name: &str,
 ) -> Result<TimerResult> {
-    let (stdout, stderr) = command_output_policy.get_stdout_stderr();
+    let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
     command.stdin(Stdio::null()).stdout(stdout).stderr(stderr);
 
     command.env(
@@ -83,7 +83,7 @@ impl<'a> Executor for RawExecutor<'a> {
         let result = run_command_and_measure_common(
             command.get_command()?,
             command_failure_action.unwrap_or(self.options.command_failure_action),
-            self.options.command_output_policy,
+            &self.options.command_output_policy,
             &command.get_command_line(),
         )?;
 
@@ -136,7 +136,7 @@ impl<'a> Executor for ShellExecutor<'a> {
         let mut result = run_command_and_measure_common(
             command_builder,
             command_failure_action.unwrap_or(self.options.command_failure_action),
-            self.options.command_output_policy,
+            &self.options.command_output_policy,
             &command.get_command_line(),
         )?;
 
