@@ -1,5 +1,7 @@
+use std::fs::File;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::{cmp, fmt};
+use std::{cmp, fmt, io};
 
 use anyhow::ensure;
 use atty::Stream;
@@ -109,10 +111,16 @@ impl Default for RunBounds {
 }
 
 /// How to handle the output of benchmarked commands
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CommandOutputPolicy {
     /// Discard all output
     Discard,
+
+    /// Feed output through a pipe before discarding it
+    Pipe,
+
+    /// Redirect output to a file
+    File(PathBuf),
 
     /// Show command output on the terminal
     Forward,
@@ -125,11 +133,22 @@ impl Default for CommandOutputPolicy {
 }
 
 impl CommandOutputPolicy {
-    pub fn get_stdout_stderr(&self) -> (Stdio, Stdio) {
-        match self {
+    pub fn get_stdout_stderr(&self) -> io::Result<(Stdio, Stdio)> {
+        let streams = match self {
             CommandOutputPolicy::Discard => (Stdio::null(), Stdio::null()),
+
+            // Typically only stdout is performance-relevant, so just pipe that
+            CommandOutputPolicy::Pipe => (Stdio::piped(), Stdio::null()),
+
+            CommandOutputPolicy::File(path) => {
+                let file = File::create(&path)?;
+                (file.into(), Stdio::null())
+            }
+
             CommandOutputPolicy::Forward => (Stdio::inherit(), Stdio::inherit()),
-        }
+        };
+
+        Ok(streams)
     }
 }
 
@@ -251,6 +270,12 @@ impl Options {
 
         options.command_output_policy = if matches.is_present("show-output") {
             CommandOutputPolicy::Forward
+        } else if let Some(output) = matches.value_of("output") {
+            match output {
+                "null" => CommandOutputPolicy::Discard,
+                "pipe" => CommandOutputPolicy::Pipe,
+                path => CommandOutputPolicy::File(path.into()),
+            }
         } else {
             CommandOutputPolicy::Discard
         };
@@ -262,7 +287,7 @@ impl Options {
             Some("color") => OutputStyleOption::Color,
             Some("none") => OutputStyleOption::Disabled,
             _ => {
-                if options.command_output_policy == CommandOutputPolicy::Discard
+                if options.command_output_policy != CommandOutputPolicy::Forward
                     && atty::is(Stream::Stdout)
                 {
                     OutputStyleOption::Full

@@ -6,10 +6,20 @@ mod windows_timer;
 #[cfg(not(windows))]
 mod unix_timer;
 
+#[cfg(target_os = "linux")]
+use nix::fcntl::{splice, SpliceFFlags};
+#[cfg(target_os = "linux")]
+use std::fs::File;
+#[cfg(target_os = "linux")]
+use std::os::unix::io::AsRawFd;
+
+#[cfg(not(target_os = "linux"))]
+use std::io::Read;
+
 use crate::util::units::Second;
 use wall_clock_timer::WallClockTimer;
 
-use std::process::{Command, ExitStatus};
+use std::process::{ChildStdout, Command, ExitStatus};
 
 use anyhow::Result;
 
@@ -33,26 +43,58 @@ pub struct TimerResult {
     pub status: ExitStatus,
 }
 
+/// Discard the output of a child process.
+fn discard(output: ChildStdout) {
+    const CHUNK_SIZE: usize = 64 << 10;
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(file) = File::create("/dev/null") {
+            while let Ok(bytes) = splice(
+                output.as_raw_fd(),
+                None,
+                file.as_raw_fd(),
+                None,
+                CHUNK_SIZE,
+                SpliceFFlags::empty(),
+            ) {
+                if bytes == 0 {
+                    break;
+                }
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        let mut output = output;
+        let mut buf = [0; CHUNK_SIZE];
+        while let Ok(bytes) = output.read(&mut buf) {
+            if bytes == 0 {
+                break;
+            }
+        }
+    }
+}
+
 /// Execute the given command and return a timing summary
 pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     let wallclock_timer = WallClockTimer::start();
 
+    let mut child = command.spawn()?;
+    let output = child.stdout.take();
+
     #[cfg(not(windows))]
-    let ((time_user, time_system), status) = {
-        let cpu_timer = self::unix_timer::CPUTimer::start();
-        let status = command.status()?;
-        (cpu_timer.stop(), status)
-    };
-
+    let cpu_timer = self::unix_timer::CPUTimer::start();
     #[cfg(windows)]
-    let ((time_user, time_system), status) = {
-        let mut child = command.spawn()?;
-        let cpu_timer = self::windows_timer::CPUTimer::start_for_process(&child);
-        let status = child.wait()?;
+    let cpu_timer = self::windows_timer::CPUTimer::start_for_process(&child);
 
-        (cpu_timer.stop(), status)
-    };
+    if let Some(output) = output {
+        discard(output);
+    }
+    let status = child.wait()?;
 
+    let (time_user, time_system) = cpu_timer.stop();
     let time_real = wallclock_timer.stop();
 
     Ok(TimerResult {
