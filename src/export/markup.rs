@@ -1,8 +1,12 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
+use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 
-pub trait MarkupFormatter {
+use super::{determine_unit_from_results, Exporter};
+use anyhow::{anyhow, Result};
+
+pub trait MarkupExporter {
     fn table_results(&self, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> String {
         // prepare table header strings
         let notation = format!("[{}]", unit.short_name());
@@ -59,4 +63,19 @@ pub trait MarkupFormatter {
     fn table_line(&self, size: usize) -> String;
 
     fn command(&self, size: &str) -> String;
+}
+
+impl<T: MarkupExporter> Exporter for T {
+    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
+        let unit = unit.unwrap_or_else(|| determine_unit_from_results(&results));
+        let entries = relative_speed::compute(results);
+        if entries.is_none() {
+            return Err(anyhow!(
+                "Relative speed comparison is not available for markup exporter."
+            ));
+        }
+
+        let table = self.table_results(&entries.unwrap(), unit);
+        Ok(table.as_bytes().to_vec())
+    }
 }
