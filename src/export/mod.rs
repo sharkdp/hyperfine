@@ -19,17 +19,14 @@ use crate::util::units::Unit;
 use anyhow::{Context, Result};
 use clap::ArgMatches;
 
-pub fn determine_unit_from_results(results: &[BenchmarkResult], unit: Option<Unit>) -> Unit {
-    return if let Some(unit) = unit {
-        // Use the given unit for all entries.
-        unit
-    } else if let Some(first_result) = results.first() {
+pub fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
+    if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
         format_duration_value(first_result.mean, None).1
     } else {
         // Default to `Second`.
         Unit::Second
-    };
+    }
 }
 
 /// The desired form of exporter to use for a given file.
@@ -170,7 +167,7 @@ fn test_markup_table_unit_given_s() {
     ];
     let unit = Some(Unit::Second);
 
-    let markup_actual = determine_unit_from_results(&results, unit);
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
     let markup_expected = Unit::Second;
 
     assert_eq!(markup_expected, markup_actual);
@@ -210,7 +207,7 @@ fn test_markup_table_unit_given_ms() {
     ];
     let unit = Some(Unit::MilliSecond);
 
-    let markup_actual = determine_unit_from_results(&results, unit);
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
     let markup_expected = Unit::MilliSecond;
 
     assert_eq!(markup_expected, markup_actual);
@@ -250,7 +247,7 @@ fn test_markup_table_unit_first_s() {
     ];
     let unit = None;
 
-    let markup_actual = determine_unit_from_results(&results, unit);
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
     let markup_expected = Unit::Second;
 
     assert_eq!(markup_expected, markup_actual);
@@ -290,7 +287,7 @@ fn test_markup_table_unit_first_ms() {
     ];
     let unit = None;
 
-    let markup_actual = determine_unit_from_results(&results, unit);
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
     let markup_expected = Unit::MilliSecond;
 
     assert_eq!(markup_expected, markup_actual);
@@ -302,7 +299,7 @@ fn test_markup_table_unit_default_s() {
     let results: Vec<BenchmarkResult> = vec![];
     let unit = None;
 
-    let markup_actual = determine_unit_from_results(&results, unit);
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
     let markup_expected = Unit::Second;
 
     assert_eq!(markup_expected, markup_actual);
