@@ -3,7 +3,7 @@ use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 
-use super::{determine_unit_from_results, Exporter};
+use super::Exporter;
 use anyhow::{anyhow, Result};
 
 pub trait MarkupExporter {
@@ -65,6 +65,16 @@ pub trait MarkupExporter {
     fn command(&self, size: &str) -> String;
 }
 
+fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
+    if let Some(first_result) = results.first() {
+        // Use the first BenchmarkResult entry to determine the unit for all entries.
+        format_duration_value(first_result.mean, None).1
+    } else {
+        // Default to `Second`.
+        Unit::Second
+    }
+}
+
 impl<T: MarkupExporter> Exporter for T {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
         let unit = unit.unwrap_or_else(|| determine_unit_from_results(&results));
@@ -78,4 +88,176 @@ impl<T: MarkupExporter> Exporter for T {
         let table = self.table_results(&entries.unwrap(), unit);
         Ok(table.as_bytes().to_vec())
     }
+}
+
+/// Check unit resolving for timing results and given unit 's'
+#[test]
+fn test_determine_unit_from_results_unit_given_s() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = Some(Unit::Second);
+
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
+    let markup_expected = Unit::Second;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for timing results and given unit 'ms'
+#[test]
+fn test_determine_unit_from_results_unit_given_ms() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = Some(Unit::MilliSecond);
+
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
+    let markup_expected = Unit::MilliSecond;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for timing results using the first result entry as 's'
+#[test]
+fn test_determine_unit_from_results_unit_first_s() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = None;
+
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
+    let markup_expected = Unit::Second;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for timing results using the first result entry as 'ms'
+#[test]
+fn test_determine_unit_from_results_unit_first_ms() {
+    use std::collections::BTreeMap;
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+    let unit = None;
+
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
+    let markup_expected = Unit::MilliSecond;
+
+    assert_eq!(markup_expected, markup_actual);
+}
+
+/// Check unit resolving for not timing results and no given unit defaulting to 's'
+#[test]
+fn test_determine_unit_from_results_unit_default_s() {
+    let results: Vec<BenchmarkResult> = vec![];
+    let unit = None;
+
+    let markup_actual = unit.unwrap_or_else(|| determine_unit_from_results(&results));
+    let markup_expected = Unit::Second;
+
+    assert_eq!(markup_expected, markup_actual);
 }
