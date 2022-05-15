@@ -1,25 +1,20 @@
-use super::Exporter;
-use crate::benchmark::benchmark_result::BenchmarkResult;
-use crate::benchmark::relative_speed;
-use crate::export::markup::MarkupFormatter;
-use crate::util::units::Unit;
-
-use anyhow::{anyhow, Result};
+use super::markup::Alignment;
+use crate::export::markup::MarkupExporter;
 
 #[derive(Default)]
-pub struct OrgmodeFormatter;
+pub struct OrgmodeExporter {}
 
-impl MarkupFormatter for OrgmodeFormatter {
-    fn table_data(&self, data: &[&str]) -> String {
+impl MarkupExporter for OrgmodeExporter {
+    fn table_row(&self, cells: &[&str]) -> String {
         format!(
             "| {}  |  {} |\n",
-            data.first().unwrap(),
-            &data[1..].join(" |  ")
+            cells.first().unwrap(),
+            &cells[1..].join(" |  ")
         )
     }
 
-    fn table_line(&self, size: usize) -> String {
-        format!("|{}--|\n", "--+".repeat(size - 1))
+    fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String {
+        format!("|{}--|\n", "--+".repeat(cell_aligmnents.len() - 1))
     }
 
     fn command(&self, cmd: &str) -> String {
@@ -27,32 +22,12 @@ impl MarkupFormatter for OrgmodeFormatter {
     }
 }
 
-#[derive(Default)]
-pub struct OrgmodeExporter {}
-
-impl Exporter for OrgmodeExporter {
-    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
-        let unit = self.unit(results, unit);
-        let entries = relative_speed::compute(results);
-        if entries.is_none() {
-            return Err(anyhow!(
-                "Relative speed comparison is not available for Emacs org-mode export."
-            ));
-        }
-
-        let formatter = OrgmodeFormatter::default();
-        let table = formatter.table_results(&entries.unwrap(), unit);
-        Ok(table.as_bytes().to_vec())
-    }
-}
-
 /// Check Emacs org-mode data row formatting
 #[test]
 fn test_orgmode_formatter_table_data() {
-    let formatter = OrgmodeFormatter::default();
-    let data = vec!["a", "b", "c"];
+    let exporter = OrgmodeExporter::default();
 
-    let actual = formatter.table_data(&data);
+    let actual = exporter.table_row(&["a", "b", "c"]);
     let expect = "| a  |  b |  c |\n";
 
     assert_eq!(expect, actual);
@@ -61,10 +36,15 @@ fn test_orgmode_formatter_table_data() {
 /// Check Emacs org-mode horizontal line formatting
 #[test]
 fn test_orgmode_formatter_table_line() {
-    let formatter = OrgmodeFormatter::default();
-    let size = 5;
+    let exporter = OrgmodeExporter::default();
 
-    let actual = formatter.table_line(size);
+    let actual = exporter.table_divider(&[
+        Alignment::Left,
+        Alignment::Left,
+        Alignment::Left,
+        Alignment::Left,
+        Alignment::Left,
+    ]);
     let expect = "|--+--+--+--+--|\n";
 
     assert_eq!(expect, actual);
@@ -88,7 +68,10 @@ fn cfg_test_table_header(unit_short_name: String) -> String {
 /// the units for all entries when the time unit is not given.
 #[test]
 fn test_orgmode_format_ms() {
+    use super::Exporter;
+    use crate::benchmark::benchmark_result::BenchmarkResult;
     use std::collections::BTreeMap;
+
     let exporter = OrgmodeExporter::default();
 
     let results = vec![
@@ -136,7 +119,11 @@ fn test_orgmode_format_ms() {
 /// the units for all entries.
 #[test]
 fn test_orgmode_format_s() {
+    use super::Exporter;
+    use crate::benchmark::benchmark_result::BenchmarkResult;
+    use crate::util::units::Unit;
     use std::collections::BTreeMap;
+
     let exporter = OrgmodeExporter::default();
 
     let results = vec![
