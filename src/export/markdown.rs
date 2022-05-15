@@ -1,15 +1,9 @@
-use super::{determine_unit_from_results, Exporter};
-use crate::benchmark::benchmark_result::BenchmarkResult;
-use crate::benchmark::relative_speed;
-use crate::export::markup::MarkupFormatter;
-use crate::util::units::Unit;
-
-use anyhow::{anyhow, Result};
+use crate::export::markup::MarkupExporter;
 
 #[derive(Default)]
-pub struct MarkdownFormatter;
+pub struct MarkdownExporter {}
 
-impl MarkupFormatter for MarkdownFormatter {
+impl MarkupExporter for MarkdownExporter {
     fn table_data(&self, data: &[&str]) -> String {
         format!("| {} |\n", data.join(" | "))
     }
@@ -23,29 +17,10 @@ impl MarkupFormatter for MarkdownFormatter {
     }
 }
 
-#[derive(Default)]
-pub struct MarkdownExporter {}
-
-impl Exporter for MarkdownExporter {
-    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
-        let unit = unit.unwrap_or_else(|| determine_unit_from_results(&results));
-        let entries = relative_speed::compute(results);
-        if entries.is_none() {
-            return Err(anyhow!(
-                "Relative speed comparison is not available for Markdown export."
-            ));
-        }
-
-        let formatter = MarkdownFormatter::default();
-        let table = formatter.table_results(&entries.unwrap(), unit);
-        Ok(table.as_bytes().to_vec())
-    }
-}
-
 /// Check Markdown-based data row formatting
 #[test]
 fn test_markdown_formatter_table_data() {
-    let formatter = MarkdownFormatter::default();
+    let formatter = MarkdownExporter::default();
     let data = vec!["a", "b", "c"];
 
     let actual = formatter.table_data(&data);
@@ -57,7 +32,7 @@ fn test_markdown_formatter_table_data() {
 /// Check Markdown-based horizontal line formatting
 #[test]
 fn test_markdown_formatter_table_line() {
-    let formatter = MarkdownFormatter::default();
+    let formatter = MarkdownExporter::default();
     let size = 5;
 
     let actual = formatter.table_line(size);
@@ -84,6 +59,8 @@ fn cfg_test_table_header(unit_short_name: String) -> String {
 /// the units for all entries when the time unit is not given.
 #[test]
 fn test_markdown_format_ms() {
+    use super::Exporter;
+    use crate::benchmark::benchmark_result::BenchmarkResult;
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
@@ -132,6 +109,8 @@ fn test_markdown_format_ms() {
 /// the units for all entries when the time unit is not given.
 #[test]
 fn test_markdown_format_s() {
+    use super::Exporter;
+    use crate::benchmark::benchmark_result::BenchmarkResult;
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
@@ -179,6 +158,9 @@ fn test_markdown_format_s() {
 /// The given time unit (s) is used to set the units for all entries.
 #[test]
 fn test_markdown_format_time_unit_s() {
+    use super::Exporter;
+    use crate::benchmark::benchmark_result::BenchmarkResult;
+    use crate::util::units::Unit;
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
@@ -232,6 +214,9 @@ fn test_markdown_format_time_unit_s() {
 /// the units for all entries.
 #[test]
 fn test_markdown_format_time_unit_ms() {
+    use super::Exporter;
+    use crate::benchmark::benchmark_result::BenchmarkResult;
+    use crate::util::units::Unit;
     use std::collections::BTreeMap;
     let exporter = MarkdownExporter::default();
 
