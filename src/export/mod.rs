@@ -118,24 +118,9 @@ fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
         .with_context(|| format!("Failed to export results to '{}'", filename))
 }
 
-#[cfg(test)]
-#[derive(Default)]
-struct TestExporter;
-
-#[cfg(test)]
-impl Exporter for TestExporter {
-    fn serialize(&self, _results: &[BenchmarkResult], _unit: Option<Unit>) -> Result<Vec<u8>> {
-        assert_eq!(
-            "",
-            "This 'Exporter' trait implementation shall only be used to test the 'unit' function!"
-        );
-        Ok(vec![])
-    }
-}
-
 /// Check unit resolving for timing results and given unit 's'
 #[test]
-fn test_markup_table_unit_given_s() {
+fn test_determine_unit_from_results_unit_given_s() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -175,7 +160,7 @@ fn test_markup_table_unit_given_s() {
 
 /// Check unit resolving for timing results and given unit 'ms'
 #[test]
-fn test_markup_table_unit_given_ms() {
+fn test_determine_unit_from_results_unit_given_ms() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -215,7 +200,7 @@ fn test_markup_table_unit_given_ms() {
 
 /// Check unit resolving for timing results using the first result entry as 's'
 #[test]
-fn test_markup_table_unit_first_s() {
+fn test_determine_unit_from_results_unit_first_s() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -255,7 +240,7 @@ fn test_markup_table_unit_first_s() {
 
 /// Check unit resolving for timing results using the first result entry as 'ms'
 #[test]
-fn test_markup_table_unit_first_ms() {
+fn test_determine_unit_from_results_unit_first_ms() {
     use std::collections::BTreeMap;
     let results = vec![
         BenchmarkResult {
@@ -295,7 +280,7 @@ fn test_markup_table_unit_first_ms() {
 
 /// Check unit resolving for not timing results and no given unit defaulting to 's'
 #[test]
-fn test_markup_table_unit_default_s() {
+fn test_determine_unit_from_results_unit_default_s() {
     let results: Vec<BenchmarkResult> = vec![];
     let unit = None;
 
