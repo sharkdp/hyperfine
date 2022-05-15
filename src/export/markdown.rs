@@ -41,10 +41,8 @@ fn test_markdown_formatter_table_data() {
 fn test_markdown_formatter_table_divider() {
     let formatter = MarkdownExporter::default();
 
-    let actual = formatter.table_divider(&[Alignment::Left, Alignment::Right, Alignment::Left]);
-    let expect = "|:---|---:|:---|\n";
-
-    assert_eq!(expect, actual);
+    let divider = formatter.table_divider(&[Alignment::Left, Alignment::Right, Alignment::Left]);
+    assert_eq!(divider, "|:---|---:|:---|\n");
 }
 
 /// Test helper function to create unit-based header and horizontal line
