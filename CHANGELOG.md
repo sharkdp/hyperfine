@@ -2,6 +2,7 @@
 
 ## Features
 
+- Add Emacs org-mode as a new export format, see #491 (@ppaulweber)
 
 ## Changes
 
