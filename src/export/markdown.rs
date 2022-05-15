@@ -1,4 +1,4 @@
-use super::Exporter;
+use super::{determine_unit_from_results, Exporter};
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::benchmark::relative_speed;
 use crate::export::markup::MarkupFormatter;
@@ -28,7 +28,7 @@ pub struct MarkdownExporter {}
 
 impl Exporter for MarkdownExporter {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
-        let unit = self.unit(results, unit);
+        let unit = determine_unit_from_results(results, unit);
         let entries = relative_speed::compute(results);
         if entries.is_none() {
             return Err(anyhow!(
