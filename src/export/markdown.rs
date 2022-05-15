@@ -1,15 +1,26 @@
 use crate::export::markup::MarkupExporter;
 
+use super::markup::Alignment;
+
 #[derive(Default)]
 pub struct MarkdownExporter {}
 
 impl MarkupExporter for MarkdownExporter {
-    fn table_row(&self, data: &[&str]) -> String {
-        format!("| {} |\n", data.join(" | "))
+    fn table_row(&self, cells: &[&str]) -> String {
+        format!("| {} |\n", cells.join(" | "))
     }
 
-    fn table_line(&self, size: usize) -> String {
-        format!("|:---|{}\n", "---:|".repeat(size - 1))
+    fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String {
+        format!(
+            "|{}\n",
+            cell_aligmnents
+                .iter()
+                .map(|a| match a {
+                    Alignment::Left => ":---|",
+                    Alignment::Right => "---:|",
+                })
+                .collect::<String>()
+        )
     }
 
     fn command(&self, cmd: &str) -> String {
@@ -22,20 +33,16 @@ impl MarkupExporter for MarkdownExporter {
 fn test_markdown_formatter_table_data() {
     let formatter = MarkdownExporter::default();
 
-    let actual = formatter.table_row(&["a", "b", "c"]);
-    let expect = "| a | b | c |\n";
-
-    assert_eq!(expect, actual);
+    assert_eq!(formatter.table_row(&["a", "b", "c"]), "| a | b | c |\n");
 }
 
 /// Check Markdown-based horizontal line formatting
 #[test]
-fn test_markdown_formatter_table_line() {
+fn test_markdown_formatter_table_divider() {
     let formatter = MarkdownExporter::default();
-    let size = 5;
 
-    let actual = formatter.table_line(size);
-    let expect = "|:---|---:|---:|---:|---:|\n";
+    let actual = formatter.table_divider(&[Alignment::Left, Alignment::Right, Alignment::Left]);
+    let expect = "|:---|---:|:---|\n";
 
     assert_eq!(expect, actual);
 }
