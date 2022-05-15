@@ -6,23 +6,32 @@ use crate::util::units::Unit;
 use super::Exporter;
 use anyhow::{anyhow, Result};
 
+pub enum Alignment {
+    Left,
+    Right,
+}
 pub trait MarkupExporter {
     fn table_results(&self, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> String {
         // prepare table header strings
         let notation = format!("[{}]", unit.short_name());
-        let head: [&str; 5] = [
+
+        // emit header
+        let mut table = self.table_row(&[
             "Command",
             &format!("Mean {}", notation),
             &format!("Min {}", notation),
             &format!("Max {}", notation),
             "Relative",
-        ];
-
-        // emit header
-        let mut table = self.table_row(&head);
+        ]);
 
         // emit horizontal line
-        table.push_str(&self.table_line(head.len()));
+        table.push_str(&self.table_divider(&[
+            Alignment::Left,
+            Alignment::Right,
+            Alignment::Right,
+            Alignment::Right,
+            Alignment::Right,
+        ]));
 
         for entry in entries {
             let measurement = &entry.result;
@@ -58,9 +67,9 @@ pub trait MarkupExporter {
         table
     }
 
-    fn table_row(&self, data: &[&str]) -> String;
+    fn table_row(&self, cells: &[&str]) -> String;
 
-    fn table_line(&self, size: usize) -> String;
+    fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String;
 
     fn command(&self, size: &str) -> String;
 }
