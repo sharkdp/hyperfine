@@ -18,7 +18,6 @@ use crate::util::units::Unit;
 use anyhow::{Context, Result};
 use clap::ArgMatches;
 
-
 /// The desired form of exporter to use for a given file.
 #[derive(Clone)]
 pub enum ExportType {
