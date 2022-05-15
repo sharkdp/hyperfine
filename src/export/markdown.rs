@@ -4,7 +4,7 @@ use crate::export::markup::MarkupExporter;
 pub struct MarkdownExporter {}
 
 impl MarkupExporter for MarkdownExporter {
-    fn table_data(&self, data: &[&str]) -> String {
+    fn table_row(&self, data: &[&str]) -> String {
         format!("| {} |\n", data.join(" | "))
     }
 
@@ -21,9 +21,8 @@ impl MarkupExporter for MarkdownExporter {
 #[test]
 fn test_markdown_formatter_table_data() {
     let formatter = MarkdownExporter::default();
-    let data = vec!["a", "b", "c"];
 
-    let actual = formatter.table_data(&data);
+    let actual = formatter.table_row(&["a", "b", "c"]);
     let expect = "| a | b | c |\n";
 
     assert_eq!(expect, actual);

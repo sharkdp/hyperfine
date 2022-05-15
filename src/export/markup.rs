@@ -19,7 +19,7 @@ pub trait MarkupExporter {
         ];
 
         // emit header
-        let mut table = self.table_data(&head);
+        let mut table = self.table_row(&head);
 
         // emit horizontal line
         table.push_str(&self.table_line(head.len()));
@@ -44,21 +44,21 @@ pub trait MarkupExporter {
             } else {
                 "".into()
             };
+
             // prepare table row entries
-            let data: [&str; 5] = [
+            table.push_str(&self.table_row(&[
                 &self.command(&cmd_str),
                 &format!("{}{}", mean_str, stddev_str),
                 &min_str,
                 &max_str,
                 &format!("{}{}", rel_str, rel_stddev_str),
-            ];
-            table.push_str(&self.table_data(&data))
+            ]))
         }
 
         table
     }
 
-    fn table_data(&self, data: &[&str]) -> String;
+    fn table_row(&self, data: &[&str]) -> String;
 
     fn table_line(&self, size: usize) -> String;
 
