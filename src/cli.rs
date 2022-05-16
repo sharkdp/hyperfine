@@ -272,6 +272,7 @@ fn build_command() -> Command<'static> {
                      and apply certain optimizations. To avoid that, consider using \
                      '--output=pipe'.\n\n\
                      pipe: Feed the output through a pipe before discarding it.\n\n\
+                     inherit: Don't redirect the output at all (same as '--show-output').\n\n\
                      <FILE>: Write the output to the given file.",
                 ),
         )

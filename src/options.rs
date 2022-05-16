@@ -274,6 +274,7 @@ impl Options {
             match output {
                 "null" => CommandOutputPolicy::Discard,
                 "pipe" => CommandOutputPolicy::Pipe,
+                "inherit" => CommandOutputPolicy::Forward,
                 path => CommandOutputPolicy::File(path.into()),
             }
         } else {
