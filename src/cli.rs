@@ -266,10 +266,12 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("WHERE")
                 .help(
-                    "Control where the output of the benchmark is redirected.\n\n  \
-                     null: Redirect output to /dev/null (the default).\n\n  \
-                     pipe: Feed the output through a pipe before discarding it.\n        \
-                     Useful if the benchmark special-cases /dev/null.\n\n  \
+                    "Control where the output of the benchmark is redirected. <WHERE> can be:\n\n\
+                     null: Redirect output to /dev/null (the default). \
+                     Note that some programs like 'grep' detect when standard output is /dev/null \
+                     and apply certain optimizations. To avoid that, consider using \
+                     '--output=pipe'.\n\n\
+                     pipe: Feed the output through a pipe before discarding it.\n\n\
                      <FILE>: Write the output to the given file.",
                 ),
         )
