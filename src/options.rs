@@ -275,7 +275,13 @@ impl Options {
                 "null" => CommandOutputPolicy::Discard,
                 "pipe" => CommandOutputPolicy::Pipe,
                 "inherit" => CommandOutputPolicy::Forward,
-                path => CommandOutputPolicy::File(path.into()),
+                arg => {
+                    let path = PathBuf::from(arg);
+                    if path.components().count() <= 1 {
+                        return Err(OptionsError::UnknownOutputPolicy(arg.to_string()));
+                    }
+                    CommandOutputPolicy::File(path)
+                }
             }
         } else {
             CommandOutputPolicy::Discard
