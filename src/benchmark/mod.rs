@@ -288,7 +288,7 @@ impl<'a> Benchmark<'a> {
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
                     "abs".green().bold(),
                     mean_str.green().bold(),
-                    "        ".to_string(), // alignment
+                    "        ", // alignment
                     user_str.blue(),
                     system_str.blue()
                 );

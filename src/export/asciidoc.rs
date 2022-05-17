@@ -85,7 +85,7 @@ fn table_row(entry: &BenchmarkResultWithRelativeSpeed, unit: Unit) -> Vec<u8> {
          | {min} \n\
          | {max} \n\
          | {rel}{rel_stddev} \n",
-        command = result.command.replace("|", "\\|"),
+        command = result.command.replace('|', "\\|"),
         mean = mean_str,
         stddev = stddev_str,
         min = min_str,

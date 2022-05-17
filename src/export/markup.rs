@@ -86,7 +86,7 @@ fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
 
 impl<T: MarkupExporter> Exporter for T {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
-        let unit = unit.unwrap_or_else(|| determine_unit_from_results(&results));
+        let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
         let entries = relative_speed::compute(results);
         if entries.is_none() {
             return Err(anyhow!(
