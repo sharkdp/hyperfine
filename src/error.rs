@@ -49,6 +49,6 @@ pub enum OptionsError<'a> {
     EmptyShell,
     #[error("Failed to parse '--shell <command>' expression as command line: {0}")]
     ShellParseError(shell_words::ParseError),
-    #[error("Unknown output policy '{0}'. Use ./{0} to output to a file named {0}.")]
+    #[error("Unknown output policy '{0}'. Use './{0}' to output to a file named '{0}'.")]
     UnknownOutputPolicy(String),
 }

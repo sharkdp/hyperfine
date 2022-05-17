@@ -13,12 +13,10 @@ use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::os::unix::io::AsRawFd;
 
-#[cfg(not(target_os = "linux"))]
-use std::io::Read;
-
 use crate::util::units::Second;
 use wall_clock_timer::WallClockTimer;
 
+use std::io::Read;
 use std::process::{ChildStdout, Command, ExitStatus};
 
 use anyhow::Result;
@@ -65,14 +63,11 @@ fn discard(output: ChildStdout) {
         }
     }
 
-    #[cfg(not(target_os = "linux"))]
-    {
-        let mut output = output;
-        let mut buf = [0; CHUNK_SIZE];
-        while let Ok(bytes) = output.read(&mut buf) {
-            if bytes == 0 {
-                break;
-            }
+    let mut output = output;
+    let mut buf = [0; CHUNK_SIZE];
+    while let Ok(bytes) = output.read(&mut buf) {
+        if bytes == 0 {
+            break;
         }
     }
 }
@@ -81,17 +76,19 @@ fn discard(output: ChildStdout) {
 pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     let wallclock_timer = WallClockTimer::start();
 
-    let mut child = command.spawn()?;
-    let output = child.stdout.take();
-
     #[cfg(not(windows))]
     let cpu_timer = self::unix_timer::CPUTimer::start();
+
+    let mut child = command.spawn()?;
+
     #[cfg(windows)]
     let cpu_timer = self::windows_timer::CPUTimer::start_for_process(&child);
 
-    if let Some(output) = output {
+    if let Some(output) = child.stdout.take() {
+        // Handle CommandOutputPolicy::Pipe
         discard(output);
     }
+
     let status = child.wait()?;
 
     let (time_user, time_system) = cpu_timer.stop();
