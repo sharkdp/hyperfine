@@ -2,9 +2,9 @@ This folder contains scripts that can be used in combination with hyperfines `--
 
 ### Example:
 
-``` bash
-> hyperfine 'sleep 0.020' 'sleep 0.021' 'sleep 0.022' --export-json sleep.json
-> python plot_whisker.py sleep.json
+```bash
+hyperfine 'sleep 0.020' 'sleep 0.021' 'sleep 0.022' --export-json sleep.json
+python plot_whisker.py sleep.json
 ```
 
 ### Pre-requisites
