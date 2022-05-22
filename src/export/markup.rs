@@ -15,23 +15,29 @@ pub trait MarkupExporter {
         // prepare table header strings
         let notation = format!("[{}]", unit.short_name());
 
-        // emit header
-        let mut table = self.table_row(&[
-            "Command",
-            &format!("Mean {}", notation),
-            &format!("Min {}", notation),
-            &format!("Max {}", notation),
-            "Relative",
-        ]);
-
-        // emit horizontal line
-        table.push_str(&self.table_divider(&[
+        // prepare table cells alignment
+        let cells_alignment = [
             Alignment::Left,
             Alignment::Right,
             Alignment::Right,
             Alignment::Right,
             Alignment::Right,
+        ];
+
+        // emit table header format
+        let mut table = self.table_header(&cells_alignment);
+
+        // emit table header data
+        table.push_str(&self.table_row(&[
+            "Command",
+            &format!("Mean {}", notation),
+            &format!("Min {}", notation),
+            &format!("Max {}", notation),
+            "Relative",
         ]));
+
+        // emit horizontal line
+        table.push_str(&self.table_divider(&cells_alignment));
 
         for entry in entries {
             let measurement = &entry.result;
@@ -64,12 +70,23 @@ pub trait MarkupExporter {
             ]))
         }
 
+        // emit table footer format
+        table.push_str(&self.table_footer(&cells_alignment));
+
         table
     }
 
     fn table_row(&self, cells: &[&str]) -> String;
 
     fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String;
+
+    fn table_header(&self, _cell_aligmnents: &[Alignment]) -> String {
+        "".to_string()
+    }
+
+    fn table_footer(&self, _cell_aligmnents: &[Alignment]) -> String {
+        "".to_string()
+    }
 
     fn command(&self, size: &str) -> String;
 }
