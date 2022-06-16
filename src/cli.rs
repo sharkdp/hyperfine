@@ -210,9 +210,8 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("UNIT")
                 .possible_values(&["millisecond", "second"])
-                .help("Set the time unit to be used. Possible values: millisecond, second.\
-                       This option affects the standard output as well as AsciiDoc, Markdown and org-mode exports.\
-                       It does NOT affect JSON and CSV exports, which always use seconds."),
+                .help("Set the time unit to be used (default: second). Possible values: millisecond, second.\
+                       This option affects the standard output as well as all export formats except for CSV and JSON."),
         )
         .arg(
             Arg::new("export-asciidoc")
