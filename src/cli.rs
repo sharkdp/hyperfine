@@ -210,7 +210,8 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("UNIT")
                 .possible_values(&["millisecond", "second"])
-                .help("Set the time unit to be used (default: second). Possible values: millisecond, second.\
+                .help("Set the time unit to be used. Possible values: millisecond, second.\
+                       If the option is not given, the time unit is determined based on the results of the first benchmark.\ 
                        This option affects the standard output as well as all export formats except for CSV and JSON."),
         )
         .arg(
