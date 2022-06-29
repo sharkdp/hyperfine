@@ -210,8 +210,8 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("UNIT")
                 .possible_values(&["millisecond", "second"])
-                .help("Set the time unit to be used. Possible values: millisecond, second.\
-                       If the option is not given, the time unit is determined based on the results of the first benchmark.\
+                .help("Set the time unit to be used. Possible values: millisecond, second. \
+                       If the option is not given, the time unit is determined automatically. \
                        This option affects the standard output as well as all export formats except for CSV and JSON."),
         )
         .arg(
@@ -219,7 +219,7 @@ fn build_command() -> Command<'static> {
                 .long("export-asciidoc")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing summary statistics as an AsciiDoc table to the given FILE.\
+                .help("Export the timing summary statistics as an AsciiDoc table to the given FILE. \
                        The output time unit can be changed using the --time-unit option"),
         )
         .arg(
@@ -228,7 +228,7 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as CSV to the given FILE. If you need \
-                       the timing results for each individual run, use the JSON export format.\
+                       the timing results for each individual run, use the JSON export format. \
                        The output time unit is always seconds"),
         )
         .arg(
@@ -236,7 +236,7 @@ fn build_command() -> Command<'static> {
                 .long("export-json")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE.\
+                .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE. \
                        The output time unit is always seconds"),
         )
         .arg(
@@ -244,7 +244,7 @@ fn build_command() -> Command<'static> {
                 .long("export-markdown")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing summary statistics as a Markdown table to the given FILE.\
+                .help("Export the timing summary statistics as a Markdown table to the given FILE. \
                        The output time unit can be changed using the --time-unit option"),
         )
         .arg(
@@ -252,7 +252,7 @@ fn build_command() -> Command<'static> {
                 .long("export-orgmode")
                 .takes_value(true)
                 .value_name("FILE")
-                .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE.\
+                .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE. \
                        The output time unit can be changed using the --time-unit option"),
         )
         .arg(
