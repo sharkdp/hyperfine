@@ -220,7 +220,7 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as an AsciiDoc table to the given FILE. \
-                       The output time unit can be changed using the --time-unit option"),
+                       The output time unit can be changed using the --time-unit option."),
         )
         .arg(
             Arg::new("export-csv")
@@ -229,7 +229,7 @@ fn build_command() -> Command<'static> {
                 .value_name("FILE")
                 .help("Export the timing summary statistics as CSV to the given FILE. If you need \
                        the timing results for each individual run, use the JSON export format. \
-                       The output time unit is always seconds"),
+                       The output time unit is always seconds."),
         )
         .arg(
             Arg::new("export-json")
@@ -245,7 +245,7 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Markdown table to the given FILE. \
-                       The output time unit can be changed using the --time-unit option"),
+                       The output time unit can be changed using the --time-unit option."),
         )
         .arg(
             Arg::new("export-orgmode")
@@ -253,7 +253,7 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE. \
-                       The output time unit can be changed using the --time-unit option"),
+                       The output time unit can be changed using the --time-unit option."),
         )
         .arg(
             Arg::new("show-output")
@@ -298,7 +298,7 @@ fn build_command() -> Command<'static> {
             Arg::new("debug-mode")
             .long("debug-mode")
             .hide(true)
-            .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'")
+            .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
         )
 }
 
