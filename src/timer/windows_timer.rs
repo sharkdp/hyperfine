@@ -34,18 +34,20 @@ impl CPUTimer {
 
 /// Read CPU execution times
 fn get_cpu_times(handle: RawHandle) -> CPUTimes {
-    let (user_usec, system_usec) = unsafe {
-        let mut _ctime = mem::zeroed();
-        let mut _etime = mem::zeroed();
-        let mut kernel_time = mem::zeroed();
-        let mut user_time = mem::zeroed();
-        let res = GetProcessTimes(
-            handle as HANDLE,
-            &mut _ctime,
-            &mut _etime,
-            &mut kernel_time,
-            &mut user_time,
-        );
+    let (user_usec, system_usec) = {
+        let mut _ctime = unsafe { mem::zeroed() };
+        let mut _etime = unsafe { mem::zeroed() };
+        let mut kernel_time = unsafe { mem::zeroed() };
+        let mut user_time = unsafe { mem::zeroed() };
+        let res = unsafe {
+            GetProcessTimes(
+                handle as HANDLE,
+                &mut _ctime,
+                &mut _etime,
+                &mut kernel_time,
+                &mut user_time,
+            )
+        };
 
         // GetProcessTimes will exit with non-zero if success as per: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683223(v=vs.85).aspx
         if res != 0 {
