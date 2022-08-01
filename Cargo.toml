@@ -32,7 +32,7 @@ libc = "0.2"
 winapi = { version = "0.3", features = ["processthreadsapi", "minwindef", "winnt"] }
 
 [target.'cfg(target_os="linux")'.dependencies]
-nix = { version = "0.24.1", features = ["zerocopy"] }
+nix = { version = "0.24.2", features = ["zerocopy"] }
 
 [dependencies.clap]
 version = "3"
