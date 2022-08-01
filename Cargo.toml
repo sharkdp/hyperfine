@@ -17,7 +17,7 @@ windows_process_extensions_main_thread_handle = []
 
 [dependencies]
 colored = "2.0"
-indicatif = "0.16"
+indicatif = "0.17"
 statistical = "1.0"
 atty = "0.2"
 csv = "1.1"
