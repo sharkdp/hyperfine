@@ -1,3 +1,8 @@
+#![cfg_attr(
+    all(windows, feature = "windows_process_extensions_main_thread_handle"),
+    feature(windows_process_extensions_main_thread_handle)
+)]
+
 use std::env;
 
 use benchmark::scheduler::Scheduler;
