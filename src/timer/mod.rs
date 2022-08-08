@@ -21,6 +21,7 @@ use std::process::{ChildStdout, Command, ExitStatus};
 
 use anyhow::Result;
 
+#[cfg(not(windows))]
 #[derive(Debug, Copy, Clone)]
 struct CPUTimes {
     /// Total amount of time spent executing in user mode
@@ -74,15 +75,25 @@ fn discard(output: ChildStdout) {
 
 /// Execute the given command and return a timing summary
 pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
-    let wallclock_timer = WallClockTimer::start();
-
     #[cfg(not(windows))]
     let cpu_timer = self::unix_timer::CPUTimer::start();
 
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+
+        // Create a suspended process
+        command.creation_flags(4);
+    }
+
+    let wallclock_timer = WallClockTimer::start();
     let mut child = command.spawn()?;
 
     #[cfg(windows)]
-    let cpu_timer = self::windows_timer::CPUTimer::start_for_process(&child);
+    let cpu_timer = {
+        // SAFETY: We created a suspended process
+        unsafe { self::windows_timer::CPUTimer::start_suspended_process(&child) }
+    };
 
     if let Some(output) = child.stdout.take() {
         // Handle CommandOutputPolicy::Pipe
@@ -91,8 +102,8 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
 
     let status = child.wait()?;
 
-    let (time_user, time_system) = cpu_timer.stop();
     let time_real = wallclock_timer.stop();
+    let (time_user, time_system) = cpu_timer.stop();
 
     Ok(TimerResult {
         time_real,
