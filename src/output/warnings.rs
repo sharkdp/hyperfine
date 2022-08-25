@@ -27,7 +27,7 @@ impl fmt::Display for Warnings {
             Warnings::SlowInitialRun(t_first) => write!(
                 f,
                 "The first benchmarking run for this command was significantly slower than the \
-                 rest ({}). This could be caused by (filesystem) caches that were not filled until \
+                 rest ({}). This could be caused by caches that were not filled until \
                  after the first run. You should consider using the '--warmup' option to fill \
                  those caches before the actual benchmark. Alternatively, use the '--prepare' \
                  option to clear the caches before each timing run.",
@@ -35,9 +35,8 @@ impl fmt::Display for Warnings {
             ),
             Warnings::OutliersDetected => write!(
                 f,
-                "Statistical outliers were detected. Consider re-running this benchmark on a quiet \
-                 PC without any interferences from other programs. It might help to use the \
-                 '--warmup' or '--prepare' options."
+                "Statistical outliers were detected. Consider re-running this benchmark on a low-load \
+                 low-interference system. It might help to use the '--warmup' or '--prepare' options."
             ),
         }
     }
