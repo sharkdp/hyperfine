@@ -28,19 +28,19 @@ A command-line benchmarking tool.
 
 To run a benchmark, you can simply call `hyperfine <command>...`. The argument(s) can be any
 shell command. For example:
-``` bash
+```sh
 hyperfine 'sleep 0.3'
 ```
 
 Hyperfine will automatically determine the number of runs to perform for each command. By default,
 it will perform *at least* 10 benchmarking runs and measure for at least 3 seconds. To change this,
 you can use the `-r`/`--runs` option:
-``` bash
+```sh
 hyperfine --runs 5 'sleep 0.3'
 ```
 
 If you want to compare the runtimes of different programs, you can pass multiple commands:
-``` bash
+```sh
 hyperfine 'hexdump file' 'xxd file'
 ```
 
@@ -51,19 +51,19 @@ by disk caches and whether they are cold or warm.
 
 If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to
 perform a certain number of program executions before the actual benchmark:
-``` bash
+```sh
 hyperfine --warmup 3 'grep -R TODO *'
 ```
 
 Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
 option to run a special command before *each* timing run. For example, to clear harddisk caches
 on Linux, you can run
-``` bash
+```sh
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 ```
 To use this specific command with hyperfine, call `sudo -v` to temporarily gain sudo permissions
 and then call:
-``` bash
+```sh
 hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
 ```
 
@@ -71,12 +71,12 @@ hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R 
 
 If you want to run a series of benchmarks where a single parameter is varied (say, the number of
 threads), you can use the `-P`/`--parameter-scan` option and call:
-``` bash
+```sh
 hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num_threads}'
 ```
 This also works with decimal numbers. The `-D`/`--parameter-step-size` option can be used
 to control the step size:
-``` bash
+```sh
 hyperfine --parameter-scan delay 0.3 0.7 -D 0.2 'sleep {delay}'
 ```
 This runs `sleep 0.3`, `sleep 0.5` and `sleep 0.7`.
@@ -91,7 +91,7 @@ hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
 
 By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).
 If you want to use a different shell, you can use the `-S, --shell <SHELL>` option:
-``` bash
+```sh
 hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
 ```
 
@@ -110,22 +110,21 @@ hyperfine -N 'grep TODO /home/user'
 
 ### Shell functions and aliases
 
-If you are using bash, you can export shell functions to directly benchmark them with hyperfine:
-
-```
-$ my_function() { sleep 1; }
-$ export -f my_function
-$ hyperfine my_function
-```
-
-If you are using a different shell, or if you want to benchmark shell aliases, you may try to put
-them in a separate file:
+Bash supports passing functions through the environment:
 
 ```bash
-echo 'my_function() { sleep 1 }' > /tmp/my_function.sh
+my_function() { sleep 1; }
+export -f my_function
+hyperfine --shell=bash my_function
+```
+
+Otherwise, inline them into or source them from the benchmarked program:
+
+```sh
+hyperfine 'my_function() { sleep 1; }; my_function'
+
 echo 'alias my_alias="sleep 1"' > /tmp/my_alias.sh
-hyperfine 'source /tmp/my_function.sh; eval my_function'
-hyperfine 'source /tmp/my_alias.sh; eval my_alias'
+hyperfine '. /tmp/my_alias.sh; my_alias'
 ```
 
 ### Exporting results
@@ -133,7 +132,7 @@ hyperfine 'source /tmp/my_alias.sh; eval my_alias'
 Hyperfine has multiple options for exporting benchmark results to CSV, JSON, Markdown and other
 formats (see `--help` text for details).
 
-#### Markdown 
+#### Markdown
 
 You can use the `--export-markdown <file>` option to create tables like the following:
 
