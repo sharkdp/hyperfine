@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::{cmp, fmt, io};
+use std::{cmp, env, fmt, io};
 
 use anyhow::ensure;
 use atty::Stream;
@@ -298,6 +298,14 @@ impl Options {
                     || !atty::is(Stream::Stdout)
                 {
                     OutputStyleOption::Basic
+                } else if !(env::var_os("TERM")
+                    .map(|t| t != "unknown" && t != "dumb")
+                    .unwrap_or(false)
+                    && env::var_os("NO_COLOR")
+                        .map(|t| t.is_empty())
+                        .unwrap_or(true))
+                {
+                    OutputStyleOption::NoColor
                 } else {
                     OutputStyleOption::Full
                 }
