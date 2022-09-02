@@ -37,7 +37,7 @@ winapi = { version = "0.3", features = ["processthreadsapi", "minwindef", "winnt
 once_cell = "1.13"
 
 [target.'cfg(target_os="linux")'.dependencies]
-nix = { version = "0.24.2", features = ["zerocopy"] }
+nix = { version = "0.25.0", features = ["zerocopy"] }
 
 [dependencies.clap]
 version = "3"
