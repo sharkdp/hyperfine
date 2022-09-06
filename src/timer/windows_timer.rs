@@ -3,7 +3,6 @@
 
 use std::{mem, os::windows::io::AsRawHandle, process, ptr};
 
-use clap::__macro_refs::once_cell::sync::Lazy;
 use winapi::{
     shared::{ntdef::NTSTATUS, ntstatus::STATUS_SUCCESS},
     um::{
@@ -19,10 +18,14 @@ use winapi::{
 #[cfg(windows_process_extensions_main_thread_handle)]
 use winapi::shared::minwindef::DWORD;
 
+#[cfg(not(windows_process_extensions_main_thread_handle))]
+use once_cell::sync::Lazy;
+
 use crate::util::units::Second;
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 
+#[cfg(not(windows_process_extensions_main_thread_handle))]
 #[allow(non_upper_case_globals)]
 static NtResumeProcess: Lazy<unsafe extern "system" fn(ProcessHandle: HANDLE) -> NTSTATUS> =
     Lazy::new(|| {
@@ -57,7 +60,7 @@ impl CPUTimer {
         {
             // SAFETY: The main thread handle is valid
             let ret = unsafe { ResumeThread(child.main_thread_handle().as_raw_handle()) };
-            assert!(ret != -1 as DWORD, "NtResumeProcess failed");
+            assert!(ret != -1 as DWORD, "ResumeThread failed");
         }
 
         #[cfg(not(windows_process_extensions_main_thread_handle))]
