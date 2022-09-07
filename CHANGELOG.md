@@ -8,8 +8,11 @@
 
 ## Bugfixes
 
+- Fix user and kernel times on Windows, see #368 and #538 (@clemenswasser)
 
 ## Other
+
+- Improve `--help` texts of `--export-*` options, see #506 and #522 (@Engineer-of-Efficiency)
 
 
 ## Packaging
