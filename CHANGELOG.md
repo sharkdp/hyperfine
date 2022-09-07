@@ -2,6 +2,7 @@
 
 ## Features
 
+- Disable colorized output in case of `TERM=dumb` or `NO_COLOR=1`, see #542 and #555 (@nabijaczleweli)
 
 ## Changes
 
