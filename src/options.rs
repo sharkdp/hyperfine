@@ -298,12 +298,12 @@ impl Options {
                     || !atty::is(Stream::Stdout)
                 {
                     OutputStyleOption::Basic
-                } else if !(env::var_os("TERM")
-                    .map(|t| t != "unknown" && t != "dumb")
-                    .unwrap_or(false)
-                    && env::var_os("NO_COLOR")
-                        .map(|t| t.is_empty())
-                        .unwrap_or(true))
+                } else if env::var_os("TERM")
+                    .map(|t| t == "unknown" || t == "dumb")
+                    .unwrap_or(true)
+                    || env::var_os("NO_COLOR")
+                        .map(|t| !t.is_empty())
+                        .unwrap_or(false)
                 {
                     OutputStyleOption::NoColor
                 } else {
