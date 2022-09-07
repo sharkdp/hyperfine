@@ -226,7 +226,7 @@ impl Options {
                 .value_of(param)
                 .map(|n| {
                     n.parse::<u64>()
-                        .map_err(|e| OptionsError::NumericParsingError(param, e))
+                        .map_err(|e| OptionsError::IntParsingError(param, e))
                 })
                 .transpose()
         };
@@ -344,6 +344,12 @@ impl Options {
             Some("second") => Some(Unit::Second),
             _ => None,
         };
+
+        if let Some(time) = matches.value_of("min-benchmarking-time") {
+            options.min_benchmarking_time = time
+                .parse::<f64>()
+                .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;
+        }
 
         Ok(options)
     }
