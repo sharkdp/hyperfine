@@ -9,7 +9,7 @@ pub enum ParameterValue {
     Numeric(Number),
 }
 
-impl<'a> ToString for ParameterValue {
+impl ToString for ParameterValue {
     fn to_string(&self) -> String {
         match self {
             ParameterValue::Text(ref value) => value.clone(),

@@ -67,7 +67,7 @@ impl Shell {
 }
 
 /// Action to take when an executed command fails.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CmdFailureAction {
     /// Exit with an error message
     RaiseError,
@@ -77,7 +77,7 @@ pub enum CmdFailureAction {
 }
 
 /// Output style type option
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputStyleOption {
     /// Do not output with colors or any special formatting
     Basic,
@@ -111,7 +111,7 @@ impl Default for RunBounds {
 }
 
 /// How to handle the output of benchmarked commands
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CommandOutputPolicy {
     /// Redirect output to the null device
     Null,

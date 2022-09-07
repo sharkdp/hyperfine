@@ -18,7 +18,7 @@ pub struct JsonExporter {}
 impl Exporter for JsonExporter {
     fn serialize(&self, results: &[BenchmarkResult], _unit: Option<Unit>) -> Result<Vec<u8>> {
         let mut output = to_vec_pretty(&HyperfineSummary { results });
-        for content in output.iter_mut() {
+        if let Ok(ref mut content) = output {
             content.push(b'\n');
         }
 

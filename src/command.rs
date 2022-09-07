@@ -179,7 +179,7 @@ impl<'a> Commands<'a> {
             'outer: loop {
                 let name = command_names
                     .get(i)
-                    .or_else(|| command_names.get(0))
+                    .or_else(|| command_names.first())
                     .copied();
                 i += 1;
 
@@ -271,7 +271,7 @@ impl<'a> Commands<'a> {
             for cmd in &command_strings {
                 let name = command_names
                     .get(i)
-                    .or_else(|| command_names.get(0))
+                    .or_else(|| command_names.first())
                     .copied();
                 commands.push(Command::new_parametrized(
                     name,
