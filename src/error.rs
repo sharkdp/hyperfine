@@ -1,4 +1,4 @@
-use std::num::{self, ParseIntError};
+use std::num::{self, ParseFloatError, ParseIntError};
 
 use rust_decimal::Error as DecimalError;
 use thiserror::Error;
@@ -43,8 +43,10 @@ pub enum OptionsError<'a> {
     TooManyCommandNames(usize),
     #[error("'--command-name' has been specified {0} times. It has to appear exactly once, or exactly {1} times (number of benchmarks)")]
     UnexpectedCommandNameCount(usize, usize),
-    #[error("Could not read numeric argument to '--{0}': {1}")]
-    NumericParsingError(&'a str, ParseIntError),
+    #[error("Could not read numeric integer argument to '--{0}': {1}")]
+    IntParsingError(&'a str, ParseIntError),
+    #[error("Could not read numeric floating point argument to '--{0}': {1}")]
+    FloatParsingError(&'a str, ParseFloatError),
     #[error("An empty command has been specified for the '--shell <command>' option")]
     EmptyShell,
     #[error("Failed to parse '--shell <command>' expression as command line: {0}")]

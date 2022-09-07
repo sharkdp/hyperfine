@@ -294,6 +294,17 @@ fn build_command() -> Command<'static> {
                 .help("Give a meaningful name to a command. This can be specified multiple times \
                        if several commands are benchmarked."),
         )
+        // This option is hidden for now, as it is not yet clear yet if we want to 'stabilize' this,
+        // see discussion in https://github.com/sharkdp/hyperfine/issues/527
+        .arg(
+            Arg::new("min-benchmarking-time")
+            .long("min-benchmarking-time")
+            .takes_value(true)
+            .hide(true)
+            .help("Set the minimum time (in seconds) to run benchmarks. Note that the number of \
+                   benchmark runs is additionally influenced by the `--min-runs`, `--max-runs`, and \
+                   `--runs` option.")
+        )
         .arg(
             Arg::new("debug-mode")
             .long("debug-mode")
