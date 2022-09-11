@@ -110,6 +110,36 @@ impl Default for RunBounds {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommandInputPolicy {
+    /// Redirect from the null device
+    Null,
+
+    /// Redirect input from a file
+    File(PathBuf),
+}
+
+impl Default for CommandInputPolicy {
+    fn default() -> Self {
+        CommandInputPolicy::Null
+    }
+}
+
+impl CommandInputPolicy {
+    pub fn get_stdin(&self) -> io::Result<Stdio> {
+        let stream: Stdio = match self {
+            CommandInputPolicy::Null => Stdio::null(),
+
+            CommandInputPolicy::File(path) => {
+                let file: File = File::open(&path)?;
+                Stdio::from(file)
+            }
+        };
+
+        Ok(stream)
+    }
+}
+
 /// How to handle the output of benchmarked commands
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CommandOutputPolicy {
@@ -196,8 +226,12 @@ pub struct Options {
     /// What to do with the output of the benchmarked command
     pub command_output_policy: CommandOutputPolicy,
 
-    /// Which time unit to use when displaying resuls
+    /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// Where input to the benchmarked command comes from
+    pub command_input_policy: CommandInputPolicy,
+
 }
 
 impl Default for Options {
@@ -214,6 +248,7 @@ impl Default for Options {
             executor_kind: ExecutorKind::default(),
             command_output_policy: CommandOutputPolicy::Null,
             time_unit: None,
+            command_input_policy: CommandInputPolicy::Null,
         }
     }
 }
@@ -350,6 +385,16 @@ impl Options {
                 .parse::<f64>()
                 .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;
         }
+
+        options.command_input_policy = if let Some(path_str) = matches.value_of("stdin-data") {
+            let path = PathBuf::from(path_str);
+            if !path.exists() {
+                return Err(OptionsError::StdinDataFileDoesNotExist(path_str.to_string()))
+            }
+            CommandInputPolicy::File(path)
+        } else {
+            CommandInputPolicy::Null
+        };
 
         Ok(options)
     }

@@ -311,6 +311,14 @@ fn build_command() -> Command<'static> {
             .hide(true)
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
         )
+        .arg(
+            Arg::new("stdin-data")
+                .long("stdin-data")
+                .takes_value(true)
+                .number_of_values(1)
+                .value_name("FILE")
+                .help("Path to file containing stdin data to provide to the command"),
+        )
 }
 
 #[test]
