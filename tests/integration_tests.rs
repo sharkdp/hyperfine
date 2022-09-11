@@ -216,7 +216,7 @@ fn runs_commands_using_user_defined_shell() {
 }
 
 #[test]
-fn can_pass_file_data_to_command_via_stdin(){
+fn can_pass_file_data_to_command_via_stdin() {
     hyperfine()
         .arg("--runs=1")
         .arg("--stdin-data=example_stdin_data")
@@ -224,13 +224,13 @@ fn can_pass_file_data_to_command_via_stdin(){
         .arg("cat")
         .assert()
         .success()
-        .stdout(
-            predicate::str::contains("This data is passed to the command via stdin")
-        );
+        .stdout(predicate::str::contains(
+            "This data is passed to the command via stdin",
+        ));
 }
 
 #[test]
-fn fails_if_invalid_stdin_data_file_provided(){
+fn fails_if_invalid_stdin_data_file_provided() {
     hyperfine()
         .arg("--runs=1")
         .arg("--stdin-data=example_stdin_data_invalid")
@@ -238,9 +238,9 @@ fn fails_if_invalid_stdin_data_file_provided(){
         .arg("cat")
         .assert()
         .failure()
-        .stderr(
-            predicate::str::contains("File containing stdin data 'example_stdin_data_invalid' does not exist")
-        );
+        .stderr(predicate::str::contains(
+            "File containing stdin data 'example_stdin_data_invalid' does not exist",
+        ));
 }
 
 #[test]

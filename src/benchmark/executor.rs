@@ -1,7 +1,9 @@
 use std::process::{ExitStatus, Stdio};
 
 use crate::command::Command;
-use crate::options::{CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell};
+use crate::options::{
+    CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
+};
 use crate::output::progress_bar::get_progress_bar;
 use crate::timer::{execute_and_measure, TimerResult};
 use crate::util::randomized_environment_offset;

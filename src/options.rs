@@ -231,7 +231,6 @@ pub struct Options {
 
     /// Where input to the benchmarked command comes from
     pub command_input_policy: CommandInputPolicy,
-
 }
 
 impl Default for Options {
@@ -389,7 +388,9 @@ impl Options {
         options.command_input_policy = if let Some(path_str) = matches.value_of("stdin-data") {
             let path = PathBuf::from(path_str);
             if !path.exists() {
-                return Err(OptionsError::StdinDataFileDoesNotExist(path_str.to_string()))
+                return Err(OptionsError::StdinDataFileDoesNotExist(
+                    path_str.to_string(),
+                ));
             }
             CommandInputPolicy::File(path)
         } else {
