@@ -283,6 +283,24 @@ The name *hyperfine* was chosen in reference to the hyperfine levels of caesium 
 [definition of our base unit of time](https://en.wikipedia.org/wiki/Second#History_of_definition)
 — the second.
 
+## Citing hyperfine
+
+sharkdp, hyperfine, (2022), GitHub repository, https://github.com/sharkdp/hyperfine
+
+Or, as a bibtex entry for hyperfine `v1.15.0`:
+
+```
+@misc{sharkdp,
+  author = {sharkdp},
+  title = {hyperfine},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/sharkdp/hyperfine/}},
+  commit = {c7e56942f7d32e8bacab055c743bc0d3f17680b1}
+}
+```
+
 ## License
 
 `hyperfine` is dual-licensed under the terms of the MIT License and the Apache License 2.0.
