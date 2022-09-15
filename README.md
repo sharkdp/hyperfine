@@ -307,8 +307,8 @@ date-released: '2022-09-07'
 Or, as a bibtex entry for hyperfine `v1.15.0`:
 
 ```
-@misc{hyperfine-david-peter,
-  author = {David, Peter},
+@misc{hyperfine-peter-david,
+  author = {Peter, David},
   title = {hyperfine},
   year = {2022},
   publisher = {GitHub},
