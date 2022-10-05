@@ -483,7 +483,7 @@ fn test_parameter_scan_commands_decimal() {
 }
 
 #[test]
-fn test_parameterr_scan_commands_names() {
+fn test_parameter_scan_commands_names() {
     let commands = Commands::build_parameter_scan_commands(
         "val",
         1i32,
