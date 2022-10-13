@@ -285,38 +285,8 @@ The name *hyperfine* was chosen in reference to the hyperfine levels of caesium 
 
 ## Citing hyperfine
 
-cff-version: 1.2.0
-title: hyperfine
-message: >-
-  If you use this software in scientific
-  publications, please consider citing it using the
-  metadata from this file.
-type: software
-authors:
-  - given-names: David
-    family-names: Peter
-    email: mail@david-peter.de
-    orcid: 'https://orcid.org/0000-0001-7950-9915'
-repository-code: 'https://github.com/sharkdp/hyperfine'
-abstract: A command-line benchmarking tool.
-license: MIT
-version: 1.15.0
-date-released: '2022-09-07'
-
-
-Or, as a bibtex entry for hyperfine `v1.15.0`:
-
-```
-@misc{hyperfine-peter-david,
-  author = {Peter, David},
-  title = {hyperfine},
-  year = {2022},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/sharkdp/hyperfine/}},
-  commit = {c7e56942f7d32e8bacab055c743bc0d3f17680b1}
-}
-```
+Thank you for considering to cite hyperfine in your research work. Please see the information
+in the sidebar on how to properly cite hyperfine.
 
 ## License
 
