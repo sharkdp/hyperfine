@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+title: hyperfine
+message: >-
+  If you use this software in scientific
+  publications, please consider citing it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: David
+    family-names: Peter
+    email: mail@david-peter.de
+    orcid: 'https://orcid.org/0000-0001-7950-9915'
+repository-code: 'https://github.com/sharkdp/hyperfine'
+abstract: A command-line benchmarking tool.
+license: MIT
+version: 1.15.0
+date-released: '2022-09-07'
