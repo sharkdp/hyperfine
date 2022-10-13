@@ -110,7 +110,7 @@ hyperfine -N 'grep TODO /home/user'
 
 ### Shell functions and aliases
 
-Bash supports passing functions through the environment:
+If you are using bash, you can export shell functions to directly benchmark them with hyperfine:
 
 ```bash
 my_function() { sleep 1; }
