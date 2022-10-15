@@ -112,10 +112,10 @@ impl Default for RunBounds {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum CommandInputPolicy {
-    /// Redirect from the null device
+    /// Read from the null device
     Null,
 
-    /// Redirect input from a file
+    /// Read input from a file
     File(PathBuf),
 }
 
