@@ -223,14 +223,14 @@ pub struct Options {
     /// Determines how we run commands
     pub executor_kind: ExecutorKind,
 
+    /// Where input to the benchmarked command comes from
+    pub command_input_policy: CommandInputPolicy,
+
     /// What to do with the output of the benchmarked command
     pub command_output_policy: CommandOutputPolicy,
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
-
-    /// Where input to the benchmarked command comes from
-    pub command_input_policy: CommandInputPolicy,
 }
 
 impl Default for Options {
@@ -385,7 +385,7 @@ impl Options {
                 .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;
         }
 
-        options.command_input_policy = if let Some(path_str) = matches.value_of("stdin-data") {
+        options.command_input_policy = if let Some(path_str) = matches.value_of("input") {
             let path = PathBuf::from(path_str);
             if !path.exists() {
                 return Err(OptionsError::StdinDataFileDoesNotExist(
