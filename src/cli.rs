@@ -313,12 +313,14 @@ fn build_command() -> Command {
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
         )
         .arg(
-            Arg::new("stdin-data")
-                .long("stdin-data")
+            Arg::new("input")
+                .long("input")
                 .takes_value(true)
                 .number_of_values(1)
-                .value_name("FILE")
-                .help("Path to file containing stdin data to provide to the command"),
+                .value_name("FROM")
+                .help("Control where the input of the benchmark comes from. <FROM> can be: \
+                       null: Read from /edv/null (the default).
+                       <FILE>: Read the input from the given file"),
         )
 }
 

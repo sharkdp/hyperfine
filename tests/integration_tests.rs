@@ -219,7 +219,7 @@ fn runs_commands_using_user_defined_shell() {
 fn can_pass_file_data_to_command_via_stdin() {
     hyperfine()
         .arg("--runs=1")
-        .arg("--stdin-data=example_stdin_data")
+        .arg("--input=example_stdin_data")
         .arg("--show-output")
         .arg("cat")
         .assert()
@@ -233,7 +233,7 @@ fn can_pass_file_data_to_command_via_stdin() {
 fn fails_if_invalid_stdin_data_file_provided() {
     hyperfine()
         .arg("--runs=1")
-        .arg("--stdin-data=example_stdin_data_invalid")
+        .arg("--input=example_stdin_data_invalid")
         .arg("--show-output")
         .arg("cat")
         .assert()

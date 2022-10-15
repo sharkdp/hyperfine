@@ -1,4 +1,4 @@
-use std::process::{ExitStatus, Stdio};
+use std::process::ExitStatus;
 
 use crate::command::Command;
 use crate::options::{
