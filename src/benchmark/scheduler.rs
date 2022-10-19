@@ -89,13 +89,14 @@ impl<'a> Scheduler<'a> {
             for item in others {
                 let comparator = if item.is_faster { "faster" } else { "slower" };
                 println!(
-                    "{}{} times {comparator} than '{}'", // slower than?????
+                    "{}{} times {} than '{}'",
                     format!("{:8.2}", item.relative_speed).bold().green(),
                     if let Some(stddev) = item.relative_speed_stddev {
                         format!(" ± {}", format!("{:.2}", stddev).green())
                     } else {
                         "".into()
                     },
+                    comparator,
                     &item.result.command.magenta()
                 );
             }
