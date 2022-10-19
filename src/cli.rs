@@ -69,6 +69,15 @@ fn build_command() -> Command<'static> {
                        hyperfine automatically determines the number of runs."),
         )
         .arg(
+            Arg::new("reference")
+                .long("reference")
+                .short('R')
+                .takes_value(true)
+                .number_of_values(1)
+                .value_name("CMD")
+                .help("The reference command to measure the results against."),
+        )
+        .arg(
             Arg::new("setup")
                 .long("setup")
                 .short('s')

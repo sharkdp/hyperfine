@@ -4,7 +4,7 @@ use super::benchmark_result::BenchmarkResult;
 use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
 
-use crate::command::Commands;
+use crate::command::{Command, Commands};
 use crate::export::ExportManager;
 use crate::options::{ExecutorKind, Options, OutputStyleOption};
 
@@ -40,7 +40,12 @@ impl<'a> Scheduler<'a> {
 
         executor.calibrate()?;
 
-        for (number, cmd) in self.commands.iter().enumerate() {
+        let reference = self
+            .options
+            .reference_command
+            .as_ref()
+            .map(|cmd| Command::new(None, &cmd));
+        for (number, cmd) in reference.iter().chain(self.commands.iter()).enumerate() {
             self.results
                 .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
 
@@ -62,18 +67,29 @@ impl<'a> Scheduler<'a> {
             return;
         }
 
-        if let Some(mut annotated_results) = relative_speed::compute(&self.results) {
-            annotated_results.sort_by(|l, r| relative_speed::compare_mean_time(l.result, r.result));
+        let reference = self
+            .options
+            .reference_command
+            .as_ref()
+            .map(|_| &self.results[0])
+            .unwrap_or_else(|| relative_speed::fastest(&self.results));
 
-            let fastest = &annotated_results[0];
+        if let Some(mut annotated_results) = relative_speed::compute(reference, &self.results) {
+            if self.options.reference_command.is_none() {
+                annotated_results
+                    .sort_by(|l, r| relative_speed::compare_mean_time(l.result, r.result));
+            }
+
+            let reference = &annotated_results[0];
             let others = &annotated_results[1..];
 
             println!("{}", "Summary".bold());
-            println!("  '{}' ran", fastest.result.command.cyan());
+            println!("  '{}' ran", reference.result.command.cyan());
 
             for item in others {
+                let comparator = if item.is_faster { "faster" } else { "slower" };
                 println!(
-                    "{}{} times faster than '{}'",
+                    "{}{} times {comparator} than '{}'", // slower than?????
                     format!("{:8.2}", item.relative_speed).bold().green(),
                     if let Some(stddev) = item.relative_speed_stddev {
                         format!(" ± {}", format!("{:.2}", stddev).green())

@@ -52,7 +52,7 @@ pub trait MarkupExporter {
             let min_str = format_duration_value(measurement.min, Some(unit)).0;
             let max_str = format_duration_value(measurement.max, Some(unit)).0;
             let rel_str = format!("{:.2}", entry.relative_speed);
-            let rel_stddev_str = if entry.is_fastest {
+            let rel_stddev_str = if entry.is_reference {
                 "".into()
             } else if let Some(stddev) = entry.relative_speed_stddev {
                 format!(" ± {:.2}", stddev)
@@ -104,7 +104,7 @@ fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
 impl<T: MarkupExporter> Exporter for T {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
         let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
-        let entries = relative_speed::compute(results);
+        let entries = relative_speed::compute(relative_speed::fastest(results), results);
         if entries.is_none() {
             return Err(anyhow!(
                 "Relative speed comparison is not available for markup exporter."

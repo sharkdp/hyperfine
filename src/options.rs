@@ -178,6 +178,9 @@ pub struct Options {
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
 
+    /// Command to run before each *batch* of timing runs, i.e. before each individual benchmark
+    pub reference_command: Option<String>,
+
     /// Command(s) to run before each timing run
     pub preparation_command: Option<Vec<String>>,
 
@@ -207,6 +210,7 @@ impl Default for Options {
             warmup_count: 0,
             min_benchmarking_time: 3.0,
             command_failure_action: CmdFailureAction::RaiseError,
+            reference_command: None,
             preparation_command: None,
             setup_command: None,
             cleanup_command: None,
@@ -259,6 +263,8 @@ impl Options {
             }
             (None, None) => {}
         };
+
+        options.reference_command = matches.value_of("reference").map(String::from);
 
         options.setup_command = matches.value_of("setup").map(String::from);
 
