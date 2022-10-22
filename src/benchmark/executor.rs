@@ -130,7 +130,13 @@ impl<'a> Executor for ShellExecutor<'a> {
     ) -> Result<(TimingResult, ExitStatus)> {
         let mut command_builder = self.shell.command();
         command_builder
-            .arg(if cfg!(windows) { "/C" } else { "-c" })
+            .arg(
+                if cfg!(windows) && *self.shell == Shell::Default("cmd.exe") {
+                    "/C"
+                } else {
+                    "-c"
+                },
+            )
             .arg(command.get_command_line());
 
         let mut result = run_command_and_measure_common(

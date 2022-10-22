@@ -20,7 +20,7 @@ pub const DEFAULT_SHELL: &str = "sh";
 pub const DEFAULT_SHELL: &str = "cmd.exe";
 
 /// Shell to use for executing benchmarked commands
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Shell {
     /// Default shell command
     Default(&'static str),
