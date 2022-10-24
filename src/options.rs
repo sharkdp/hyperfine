@@ -300,7 +300,7 @@ impl Options {
                     OutputStyleOption::Basic
                 } else if env::var_os("TERM")
                     .map(|t| t == "unknown" || t == "dumb")
-                    .unwrap_or(true)
+                    .unwrap_or(!cfg!(target_os = "windows"))
                     || env::var_os("NO_COLOR")
                         .map(|t| !t.is_empty())
                         .unwrap_or(false)
