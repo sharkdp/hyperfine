@@ -122,7 +122,7 @@ impl<'a> Commands<'a> {
         let command_strings = matches.values_of("command").unwrap();
 
         if let Some(args) = matches.values_of("parameter-scan") {
-            let step_size = matches.value_of("parameter-step-size");
+            let step_size = matches.get_one::<String>("parameter-step-size").map(|s| s.as_str());
             Ok(Self(Self::get_parameter_scan_commands(
                 command_names,
                 command_strings,

@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 
-use clap::{crate_version, AppSettings, Arg, ArgMatches, Command};
+use clap::{crate_version, AppSettings, Arg, ArgMatches, Command, builder::NonEmptyStringValueParser, ArgAction};
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
@@ -28,8 +28,9 @@ fn build_command() -> Command<'static> {
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
                 .required(true)
+                .action(ArgAction::StoreValue)
                 .multiple_occurrences(true)
-                .forbid_empty_values(true),
+                .value_parser(NonEmptyStringValueParser::new()),
         )
         .arg(
             Arg::new("warmup")
@@ -37,6 +38,7 @@ fn build_command() -> Command<'static> {
                 .short('w')
                 .takes_value(true)
                 .value_name("NUM")
+                .action(ArgAction::StoreValue)
                 .help(
                     "Perform NUM warmup runs before the actual benchmark. This can be used \
                      to fill (disk) caches for I/O-heavy programs.",
@@ -47,6 +49,7 @@ fn build_command() -> Command<'static> {
                 .long("min-runs")
                 .short('m')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("NUM")
                 .help("Perform at least NUM runs for each command (default: 10)."),
         )
@@ -55,6 +58,7 @@ fn build_command() -> Command<'static> {
                 .long("max-runs")
                 .short('M')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("NUM")
                 .help("Perform at most NUM runs for each command. By default, there is no limit."),
         )
@@ -64,6 +68,7 @@ fn build_command() -> Command<'static> {
                 .conflicts_with_all(&["max-runs", "min-runs"])
                 .short('r')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("NUM")
                 .help("Perform exactly NUM runs for each command. If this option is not specified, \
                        hyperfine automatically determines the number of runs."),
@@ -73,6 +78,7 @@ fn build_command() -> Command<'static> {
                 .long("setup")
                 .short('s')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .number_of_values(1)
                 .value_name("CMD")
                 .help(
@@ -87,6 +93,7 @@ fn build_command() -> Command<'static> {
                 .long("prepare")
                 .short('p')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .multiple_occurrences(true)
                 .number_of_values(1)
                 .value_name("CMD")
@@ -102,6 +109,7 @@ fn build_command() -> Command<'static> {
             Arg::new("cleanup")
                 .long("cleanup")
                 .short('c')
+                .action(ArgAction::StoreValue)
                 .takes_value(true)
                 .value_name("CMD")
                 .help(
@@ -116,6 +124,7 @@ fn build_command() -> Command<'static> {
                 .long("parameter-scan")
                 .short('P')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "MIN", "MAX"])
                 .help(
@@ -134,6 +143,7 @@ fn build_command() -> Command<'static> {
                 .long("parameter-step-size")
                 .short('D')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_names(&["DELTA"])
                 .requires("parameter-scan")
                 .help(
@@ -148,6 +158,7 @@ fn build_command() -> Command<'static> {
                 .long("parameter-list")
                 .short('L')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .multiple_occurrences(true)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "VALUES"])
@@ -165,8 +176,9 @@ fn build_command() -> Command<'static> {
             Arg::new("style")
                 .long("style")
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("TYPE")
-                .possible_values(&["auto", "basic", "full", "nocolor", "color", "none"])
+                .value_parser(["auto", "basic", "full", "nocolor", "color", "none"])
                 .help(
                     "Set output style type (default: auto). Set this to 'basic' to disable output \
                      coloring and interactive elements. Set it to 'full' to enable all effects \
@@ -181,6 +193,7 @@ fn build_command() -> Command<'static> {
                 .long("shell")
                 .short('S')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("SHELL")
                 .overrides_with("shell")
                 .help("Set the shell to use for executing benchmarked commands. This can be the \
@@ -194,12 +207,14 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("no-shell")
                 .short('N')
+                .action(ArgAction::IncOccurrence)
                 .conflicts_with_all(&["shell", "debug-mode"])
                 .help("An alias for '--shell=none'.")
         )
         .arg(
             Arg::new("ignore-failure")
                 .long("ignore-failure")
+                .action(ArgAction::IncOccurrence)
                 .short('i')
                 .help("Ignore non-zero exit codes of the benchmarked programs."),
         )
@@ -207,9 +222,10 @@ fn build_command() -> Command<'static> {
             Arg::new("time-unit")
                 .long("time-unit")
                 .short('u')
+                .action(ArgAction::StoreValue)
                 .takes_value(true)
                 .value_name("UNIT")
-                .possible_values(&["millisecond", "second"])
+                .value_parser(["millisecond", "second"])
                 .help("Set the time unit to be used. Possible values: millisecond, second. \
                        If the option is not given, the time unit is determined automatically. \
                        This option affects the standard output as well as all export formats except for CSV and JSON."),
@@ -217,6 +233,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-asciidoc")
                 .long("export-asciidoc")
+                .action(ArgAction::StoreValue)
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as an AsciiDoc table to the given FILE. \
@@ -225,6 +242,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-csv")
                 .long("export-csv")
+                .action(ArgAction::StoreValue)
                 .takes_value(true)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as CSV to the given FILE. If you need \
@@ -234,7 +252,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-json")
                 .long("export-json")
-                .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("FILE")
                 .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE. \
                        The output time unit is always seconds"),
@@ -243,6 +261,7 @@ fn build_command() -> Command<'static> {
             Arg::new("export-markdown")
                 .long("export-markdown")
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Markdown table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -251,6 +270,7 @@ fn build_command() -> Command<'static> {
             Arg::new("export-orgmode")
                 .long("export-orgmode")
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -258,6 +278,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("show-output")
                 .long("show-output")
+                .action(ArgAction::SetTrue)
                 .conflicts_with("style")
                 .help(
                     "Print the stdout and stderr of the benchmark instead of suppressing it. \
@@ -271,6 +292,7 @@ fn build_command() -> Command<'static> {
                 .long("output")
                 .conflicts_with("show-output")
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .value_name("WHERE")
                 .help(
                     "Control where the output of the benchmark is redirected. <WHERE> can be:\n\n\
@@ -288,6 +310,7 @@ fn build_command() -> Command<'static> {
                 .long("command-name")
                 .short('n')
                 .takes_value(true)
+                .action(ArgAction::StoreValue)
                 .multiple_occurrences(true)
                 .number_of_values(1)
                 .value_name("NAME")
@@ -300,6 +323,7 @@ fn build_command() -> Command<'static> {
             Arg::new("min-benchmarking-time")
             .long("min-benchmarking-time")
             .takes_value(true)
+            .action(ArgAction::StoreValue)
             .hide(true)
             .help("Set the minimum time (in seconds) to run benchmarks. Note that the number of \
                    benchmark runs is additionally influenced by the `--min-runs`, `--max-runs`, and \
@@ -308,6 +332,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("debug-mode")
             .long("debug-mode")
+            .action(ArgAction::IncOccurrence)
             .hide(true)
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
         )
