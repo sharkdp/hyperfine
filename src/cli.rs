@@ -36,9 +36,8 @@ fn build_command() -> Command<'static> {
             Arg::new("warmup")
                 .long("warmup")
                 .short('w')
-                .takes_value(true)
                 .value_name("NUM")
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .help(
                     "Perform NUM warmup runs before the actual benchmark. This can be used \
                      to fill (disk) caches for I/O-heavy programs.",
@@ -48,8 +47,7 @@ fn build_command() -> Command<'static> {
             Arg::new("min-runs")
                 .long("min-runs")
                 .short('m')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("NUM")
                 .help("Perform at least NUM runs for each command (default: 10)."),
         )
@@ -57,8 +55,7 @@ fn build_command() -> Command<'static> {
             Arg::new("max-runs")
                 .long("max-runs")
                 .short('M')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("NUM")
                 .help("Perform at most NUM runs for each command. By default, there is no limit."),
         )
@@ -67,8 +64,7 @@ fn build_command() -> Command<'static> {
                 .long("runs")
                 .conflicts_with_all(&["max-runs", "min-runs"])
                 .short('r')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("NUM")
                 .help("Perform exactly NUM runs for each command. If this option is not specified, \
                        hyperfine automatically determines the number of runs."),
@@ -77,9 +73,7 @@ fn build_command() -> Command<'static> {
             Arg::new("setup")
                 .long("setup")
                 .short('s')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
-                .number_of_values(1)
+                .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
                     "Execute CMD before each set of timing runs. This is useful for \
@@ -92,9 +86,7 @@ fn build_command() -> Command<'static> {
             Arg::new("prepare")
                 .long("prepare")
                 .short('p')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
-                .multiple_occurrences(true)
+                .action(ArgAction::Append)
                 .number_of_values(1)
                 .value_name("CMD")
                 .help(
@@ -109,8 +101,7 @@ fn build_command() -> Command<'static> {
             Arg::new("cleanup")
                 .long("cleanup")
                 .short('c')
-                .action(ArgAction::StoreValue)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
                     "Execute CMD after the completion of all benchmarking \
@@ -123,8 +114,7 @@ fn build_command() -> Command<'static> {
             Arg::new("parameter-scan")
                 .long("parameter-scan")
                 .short('P')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "MIN", "MAX"])
                 .help(
@@ -142,8 +132,7 @@ fn build_command() -> Command<'static> {
             Arg::new("parameter-step-size")
                 .long("parameter-step-size")
                 .short('D')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_names(&["DELTA"])
                 .requires("parameter-scan")
                 .help(
@@ -157,9 +146,7 @@ fn build_command() -> Command<'static> {
             Arg::new("parameter-list")
                 .long("parameter-list")
                 .short('L')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
-                .multiple_occurrences(true)
+                .action(ArgAction::Append)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "VALUES"])
                 .conflicts_with_all(&["parameter-scan", "parameter-step-size"])
@@ -175,8 +162,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("style")
                 .long("style")
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("TYPE")
                 .value_parser(["auto", "basic", "full", "nocolor", "color", "none"])
                 .help(
@@ -192,8 +178,7 @@ fn build_command() -> Command<'static> {
             Arg::new("shell")
                 .long("shell")
                 .short('S')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("SHELL")
                 .overrides_with("shell")
                 .help("Set the shell to use for executing benchmarked commands. This can be the \
@@ -207,14 +192,14 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("no-shell")
                 .short('N')
-                .action(ArgAction::IncOccurrence)
+                .action(ArgAction::SetTrue)
                 .conflicts_with_all(&["shell", "debug-mode"])
                 .help("An alias for '--shell=none'.")
         )
         .arg(
             Arg::new("ignore-failure")
                 .long("ignore-failure")
-                .action(ArgAction::IncOccurrence)
+                .action(ArgAction::SetTrue)
                 .short('i')
                 .help("Ignore non-zero exit codes of the benchmarked programs."),
         )
@@ -222,8 +207,7 @@ fn build_command() -> Command<'static> {
             Arg::new("time-unit")
                 .long("time-unit")
                 .short('u')
-                .action(ArgAction::StoreValue)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("UNIT")
                 .value_parser(["millisecond", "second"])
                 .help("Set the time unit to be used. Possible values: millisecond, second. \
@@ -233,8 +217,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-asciidoc")
                 .long("export-asciidoc")
-                .action(ArgAction::StoreValue)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as an AsciiDoc table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -242,8 +225,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-csv")
                 .long("export-csv")
-                .action(ArgAction::StoreValue)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as CSV to the given FILE. If you need \
                        the timing results for each individual run, use the JSON export format. \
@@ -252,7 +234,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-json")
                 .long("export-json")
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE. \
                        The output time unit is always seconds"),
@@ -260,8 +242,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-markdown")
                 .long("export-markdown")
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Markdown table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -269,8 +250,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-orgmode")
                 .long("export-orgmode")
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -291,8 +271,7 @@ fn build_command() -> Command<'static> {
             Arg::new("output")
                 .long("output")
                 .conflicts_with("show-output")
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
+                .action(ArgAction::Set)
                 .value_name("WHERE")
                 .help(
                     "Control where the output of the benchmark is redirected. <WHERE> can be:\n\n\
@@ -309,9 +288,7 @@ fn build_command() -> Command<'static> {
             Arg::new("command-name")
                 .long("command-name")
                 .short('n')
-                .takes_value(true)
-                .action(ArgAction::StoreValue)
-                .multiple_occurrences(true)
+                .action(ArgAction::Append)
                 .number_of_values(1)
                 .value_name("NAME")
                 .help("Give a meaningful name to a command. This can be specified multiple times \
@@ -322,8 +299,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("min-benchmarking-time")
             .long("min-benchmarking-time")
-            .takes_value(true)
-            .action(ArgAction::StoreValue)
+            .action(ArgAction::Set)
             .hide(true)
             .help("Set the minimum time (in seconds) to run benchmarks. Note that the number of \
                    benchmark runs is additionally influenced by the `--min-runs`, `--max-runs`, and \
@@ -332,7 +308,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("debug-mode")
             .long("debug-mode")
-            .action(ArgAction::IncOccurrence)
+            .action(ArgAction::SetTrue)
             .hide(true)
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
         )
