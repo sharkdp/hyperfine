@@ -268,7 +268,7 @@ impl Options {
 
         options.cleanup_command = matches.get_one::<String>("cleanup").map(String::from);
 
-        options.command_output_policy = if matches.contains_id("show-output") {
+        options.command_output_policy = if matches.get_flag("show-output") {
             CommandOutputPolicy::Inherit
         } else if let Some(output) = matches.get_one::<String>("output").map(|s| s.as_str()) {
             match output {
@@ -322,10 +322,10 @@ impl Options {
             OutputStyleOption::Disabled => {}
         };
 
-        options.executor_kind = if matches.contains_id("no-shell") {
+        options.executor_kind = if matches.get_flag("no-shell") {
             ExecutorKind::Raw
         } else {
-            match (matches.contains_id("debug-mode"), matches.get_one::<String>("shell")) {
+            match (matches.get_flag("debug-mode"), matches.get_one::<String>("shell")) {
                 (false, Some(shell)) if shell == "default" => ExecutorKind::Shell(Shell::default()),
                 (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
                 (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
@@ -335,7 +335,7 @@ impl Options {
             }
         };
 
-        if matches.contains_id("ignore-failure") {
+        if matches.get_flag("ignore-failure") {
             options.command_failure_action = CmdFailureAction::Ignore;
         }
 
