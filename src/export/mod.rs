@@ -63,7 +63,7 @@ impl ExportManager {
         let mut export_manager = Self::default();
         {
             let mut add_exporter = |flag, exporttype| -> Result<()> {
-                if let Some(filename) = matches.value_of(flag) {
+                if let Some(filename) = matches.get_one::<String>(flag) {
                     export_manager.add_exporter(exporttype, filename)?;
                 }
                 Ok(())
