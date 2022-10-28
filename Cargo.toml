@@ -42,9 +42,9 @@ once_cell = "1.14"
 nix = { version = "0.25.0", features = ["zerocopy"] }
 
 [dependencies.clap]
-version = "3"
+version = "4.0.18"
 default-features = false
-features = ["suggestions", "color", "wrap_help", "cargo"]
+features = ["suggestions", "color", "wrap_help", "cargo", "help", "usage", "error-context"]
 
 [dev-dependencies]
 approx = "0.5"
@@ -53,9 +53,9 @@ predicates = "2.1"
 tempfile = "3.3"
 
 [build-dependencies]
-clap = "3"
+clap = "4.0.18"
 atty = "0.2"
-clap_complete = "3"
+clap_complete = "4.0.3"
 
 [profile.release]
 lto = true
