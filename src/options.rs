@@ -325,7 +325,10 @@ impl Options {
         options.executor_kind = if matches.get_flag("no-shell") {
             ExecutorKind::Raw
         } else {
-            match (matches.get_flag("debug-mode"), matches.get_one::<String>("shell")) {
+            match (
+                matches.get_flag("debug-mode"),
+                matches.get_one::<String>("shell"),
+            ) {
                 (false, Some(shell)) if shell == "default" => ExecutorKind::Shell(Shell::default()),
                 (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
                 (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),

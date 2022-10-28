@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-use clap::{ArgMatches, parser::ValuesRef};
+use clap::{parser::ValuesRef, ArgMatches};
 
 use crate::parameter::tokenize::tokenize;
 use crate::parameter::ParameterValue;
@@ -118,10 +118,16 @@ pub struct Commands<'a>(Vec<Command<'a>>);
 impl<'a> Commands<'a> {
     pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands> {
         let command_names = matches.get_many::<String>("command-name");
-        let command_strings = matches.get_many::<String>("command").unwrap_or_default().map(|v| v.as_str()).collect::<Vec<_>>();
+        let command_strings = matches
+            .get_many::<String>("command")
+            .unwrap_or_default()
+            .map(|v| v.as_str())
+            .collect::<Vec<_>>();
 
         if let Some(args) = matches.get_many::<String>("parameter-scan") {
-            let step_size = matches.get_one::<String>("parameter-step-size").map(|s| s.as_str());
+            let step_size = matches
+                .get_one::<String>("parameter-step-size")
+                .map(|s| s.as_str());
             Ok(Self(Self::get_parameter_scan_commands(
                 command_names,
                 command_strings,
@@ -129,7 +135,9 @@ impl<'a> Commands<'a> {
                 step_size,
             )?))
         } else if let Some(args) = matches.get_many::<String>("parameter-list") {
-            let command_names = command_names.map_or(vec![], |names| names.map(|v| v.as_str()).collect::<Vec<_>>());
+            let command_names = command_names.map_or(vec![], |names| {
+                names.map(|v| v.as_str()).collect::<Vec<_>>()
+            });
             let args: Vec<_> = args.map(|v| v.as_str()).collect::<Vec<_>>();
             let param_names_and_values: Vec<(&str, Vec<String>)> = args
                 .chunks_exact(2)
@@ -207,7 +215,9 @@ impl<'a> Commands<'a> {
 
             Ok(Self(commands))
         } else {
-            let command_names = command_names.map_or(vec![], |names| names.map(|v| v.as_str()).collect::<Vec<_>>());
+            let command_names = command_names.map_or(vec![], |names| {
+                names.map(|v| v.as_str()).collect::<Vec<_>>()
+            });
             if command_names.len() > command_strings.len() {
                 return Err(OptionsError::TooManyCommandNames(command_strings.len()).into());
             }
@@ -288,7 +298,9 @@ impl<'a> Commands<'a> {
         mut vals: ValuesRef<'b, String>,
         step: Option<&str>,
     ) -> Result<Vec<Command<'b>>, ParameterScanError> {
-        let command_names = command_names.map_or(vec![], |names| names.map(|v| v.as_str()).collect::<Vec<_>>());
+        let command_names = command_names.map_or(vec![], |names| {
+            names.map(|v| v.as_str()).collect::<Vec<_>>()
+        });
         let command_strings = command_strings;
         let param_name = vals.next().unwrap().as_str();
         let param_min = vals.next().unwrap().as_str();

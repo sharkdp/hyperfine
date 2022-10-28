@@ -1,6 +1,8 @@
 use std::ffi::OsString;
 
-use clap::{crate_version, Arg, ArgMatches, Command, builder::NonEmptyStringValueParser, ArgAction};
+use clap::{
+    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
+};
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
