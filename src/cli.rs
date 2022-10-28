@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 
-use clap::{crate_version, AppSettings, Arg, ArgMatches, Command, builder::NonEmptyStringValueParser, ArgAction};
+use clap::{crate_version, Arg, ArgMatches, Command, builder::NonEmptyStringValueParser, ArgAction};
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
@@ -12,10 +12,9 @@ where
 }
 
 /// Build the clap command for parsing command line arguments
-fn build_command() -> Command<'static> {
+fn build_command() -> Command {
     Command::new("hyperfine")
         .version(crate_version!())
-        .setting(AppSettings::DeriveDisplayOrder)
         .next_line_help(true)
         .hide_possible_values(true)
         .max_term_width(90)
@@ -28,8 +27,7 @@ fn build_command() -> Command<'static> {
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
                 .required(true)
-                .action(ArgAction::StoreValue)
-                .multiple_occurrences(true)
+                .action(ArgAction::Append)
                 .value_parser(NonEmptyStringValueParser::new()),
         )
         .arg(
@@ -87,7 +85,7 @@ fn build_command() -> Command<'static> {
                 .long("prepare")
                 .short('p')
                 .action(ArgAction::Append)
-                .number_of_values(1)
+                .num_args(1)
                 .value_name("CMD")
                 .help(
                     "Execute CMD before each timing run. This is useful for \
@@ -289,7 +287,7 @@ fn build_command() -> Command<'static> {
                 .long("command-name")
                 .short('n')
                 .action(ArgAction::Append)
-                .number_of_values(1)
+                .num_args(1)
                 .value_name("NAME")
                 .help("Give a meaningful name to a command. This can be specified multiple times \
                        if several commands are benchmarked."),

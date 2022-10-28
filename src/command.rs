@@ -10,13 +10,12 @@ use crate::{
     },
 };
 
-use clap::ArgMatches;
+use clap::{ArgMatches, parser::ValuesRef};
 
 use crate::parameter::tokenize::tokenize;
 use crate::parameter::ParameterValue;
 
 use anyhow::{bail, Context, Result};
-use clap::Values;
 use rust_decimal::Decimal;
 
 /// A command that should be benchmarked.
@@ -118,10 +117,10 @@ pub struct Commands<'a>(Vec<Command<'a>>);
 
 impl<'a> Commands<'a> {
     pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands> {
-        let command_names = matches.values_of("command-name");
-        let command_strings = matches.values_of("command").unwrap();
+        let command_names = matches.get_many::<String>("command-name");
+        let command_strings = matches.get_many::<String>("command").unwrap_or_default().map(|v| v.as_str()).collect::<Vec<_>>();
 
-        if let Some(args) = matches.values_of("parameter-scan") {
+        if let Some(args) = matches.get_many::<String>("parameter-scan") {
             let step_size = matches.get_one::<String>("parameter-step-size").map(|s| s.as_str());
             Ok(Self(Self::get_parameter_scan_commands(
                 command_names,
@@ -129,10 +128,9 @@ impl<'a> Commands<'a> {
                 args,
                 step_size,
             )?))
-        } else if let Some(args) = matches.values_of("parameter-list") {
-            let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
-
-            let args: Vec<_> = args.collect();
+        } else if let Some(args) = matches.get_many::<String>("parameter-list") {
+            let command_names = command_names.map_or(vec![], |names| names.map(|v| v.as_str()).collect::<Vec<_>>());
+            let args: Vec<_> = args.map(|v| v.as_str()).collect::<Vec<_>>();
             let param_names_and_values: Vec<(&str, Vec<String>)> = args
                 .chunks_exact(2)
                 .map(|pair| {
@@ -148,7 +146,7 @@ impl<'a> Commands<'a> {
                     bail!("Duplicate parameter names: {}", &duplicates.join(", "));
                 }
             }
-            let command_list = command_strings.collect::<Vec<&str>>();
+            let command_list = command_strings;
 
             let dimensions: Vec<usize> = std::iter::once(command_list.len())
                 .chain(
@@ -209,12 +207,12 @@ impl<'a> Commands<'a> {
 
             Ok(Self(commands))
         } else {
-            let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
+            let command_names = command_names.map_or(vec![], |names| names.map(|v| v.as_str()).collect::<Vec<_>>());
             if command_names.len() > command_strings.len() {
                 return Err(OptionsError::TooManyCommandNames(command_strings.len()).into());
             }
 
-            let command_list = command_strings.collect::<Vec<&str>>();
+            let command_list = command_strings;
             let mut commands = Vec::with_capacity(command_list.len());
             for (i, s) in command_list.iter().enumerate() {
                 commands.push(Command::new(command_names.get(i).copied(), s));
@@ -285,16 +283,16 @@ impl<'a> Commands<'a> {
     }
 
     fn get_parameter_scan_commands<'b>(
-        command_names: Option<Values<'b>>,
-        command_strings: Values<'b>,
-        mut vals: clap::Values<'b>,
+        command_names: Option<ValuesRef<'b, String>>,
+        command_strings: Vec<&'b str>,
+        mut vals: ValuesRef<'b, String>,
         step: Option<&str>,
     ) -> Result<Vec<Command<'b>>, ParameterScanError> {
-        let command_names = command_names.map_or(vec![], |names| names.collect::<Vec<&str>>());
-        let command_strings = command_strings.collect::<Vec<&str>>();
-        let param_name = vals.next().unwrap();
-        let param_min = vals.next().unwrap();
-        let param_max = vals.next().unwrap();
+        let command_names = command_names.map_or(vec![], |names| names.map(|v| v.as_str()).collect::<Vec<_>>());
+        let command_strings = command_strings;
+        let param_name = vals.next().unwrap().as_str();
+        let param_min = vals.next().unwrap().as_str();
+        let param_max = vals.next().unwrap().as_str();
 
         // attempt to parse as integers
         if let (Ok(param_min), Ok(param_max), Ok(step)) = (
