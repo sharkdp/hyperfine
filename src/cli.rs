@@ -17,8 +17,8 @@ fn build_command() -> Command {
         .version(crate_version!())
         .next_line_help(true)
         .hide_possible_values(true)
-        .max_term_width(90)
         .about("A command-line benchmarking tool.")
+        .help_expected(true)
         .arg(
             Arg::new("command")
                 .help("The command to benchmark. This can be the name of an executable, a command \
