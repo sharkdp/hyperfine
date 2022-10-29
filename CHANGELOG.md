@@ -8,6 +8,9 @@
 
 ## Bugfixes
 
+- Fix uncolored output on Windows if `TERM` is not set, see #583 (@nabijaczleweli)
+- On Windows, only run `cmd.exe` with the `/C` option. Use `-c` for all other shells.
+  See #568 and #582 (@FilipAndersson245)
 
 ## Other
 
