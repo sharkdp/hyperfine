@@ -221,9 +221,8 @@ impl<'a> Commands<'a> {
                 return Err(OptionsError::TooManyCommandNames(command_strings.len()).into());
             }
 
-            let command_list = command_strings;
-            let mut commands = Vec::with_capacity(command_list.len());
-            for (i, s) in command_list.iter().enumerate() {
+            let mut commands = Vec::with_capacity(command_strings.len());
+            for (i, s) in command_strings.iter().enumerate() {
                 commands.push(Command::new(command_names.get(i).copied(), s));
             }
             Ok(Self(commands))
