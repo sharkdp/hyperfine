@@ -8,6 +8,7 @@ name = "hyperfine"
 readme = "README.md"
 repository = "https://github.com/sharkdp/hyperfine"
 version = "1.15.0"
+rust-version = "1.60.0"
 edition = "2018"
 build = "build.rs"
 
