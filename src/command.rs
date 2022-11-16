@@ -154,9 +154,8 @@ impl<'a> Commands<'a> {
                     bail!("Duplicate parameter names: {}", &duplicates.join(", "));
                 }
             }
-            let command_list = command_strings;
 
-            let dimensions: Vec<usize> = std::iter::once(command_list.len())
+            let dimensions: Vec<usize> = std::iter::once(command_strings.len())
                 .chain(
                     param_names_and_values
                         .iter()
@@ -197,7 +196,7 @@ impl<'a> Commands<'a> {
                     .collect();
                 commands.push(Command::new_parametrized(
                     name,
-                    command_list[*command_index],
+                    command_strings[*command_index],
                     parameters,
                 ));
 
