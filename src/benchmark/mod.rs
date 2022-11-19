@@ -10,7 +10,9 @@ use crate::command::Command;
 use crate::options::{CmdFailureAction, ExecutorKind, Options, OutputStyleOption};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
-use crate::output::progress_bar::get_progress_bar;
+use crate::output::progress_bar::{
+    get_progress_bar, replace_message_template, reset_progress_template,
+};
 use crate::output::warnings::Warnings;
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
@@ -175,11 +177,13 @@ impl<'a> Benchmark<'a> {
 
         // Set up progress bar (and spinner for initial measurement)
         let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
-            Some(get_progress_bar(
+            let temp_bar = get_progress_bar(
                 self.options.run_bounds.min,
-                "Initial time measurement",
+                "Initial time measurement:",
                 self.options.output_style,
-            ))
+            );
+            let template = format!("{{msg}} {{elapsed:<{}}}", 30 - temp_bar.message().len() - 1,);
+            Some(replace_message_template(temp_bar, &template))
         } else {
             None
         };
@@ -219,6 +223,7 @@ impl<'a> Benchmark<'a> {
         all_succeeded = all_succeeded && success;
 
         // Re-configure the progress bar
+        let progress_bar = progress_bar.map(reset_progress_template);
         if let Some(bar) = progress_bar.as_ref() {
             bar.set_length(count)
         }
