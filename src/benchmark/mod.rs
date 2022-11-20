@@ -11,7 +11,7 @@ use crate::options::{CmdFailureAction, ExecutorKind, Options, OutputStyleOption}
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
-use crate::output::warnings::Warnings;
+use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
@@ -333,10 +333,25 @@ impl<'a> Benchmark<'a> {
 
         // Run outlier detection
         let scores = modified_zscores(&times_real);
+
+        let outlier_warning_options = OutlierWarningOptions {
+            warmup_in_use: self.options.warmup_count > 0,
+            prepare_in_use: self
+                .options
+                .preparation_command
+                .as_ref()
+                .map(|v| v.len())
+                .unwrap_or(0)
+                > 0,
+        };
+
         if scores[0] > OUTLIER_THRESHOLD {
-            warnings.push(Warnings::SlowInitialRun(times_real[0]));
+            warnings.push(Warnings::SlowInitialRun(
+                times_real[0],
+                outlier_warning_options,
+            ));
         } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
-            warnings.push(Warnings::OutliersDetected);
+            warnings.push(Warnings::OutliersDetected(outlier_warning_options));
         }
 
         if !warnings.is_empty() {

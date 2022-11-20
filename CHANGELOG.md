@@ -5,6 +5,8 @@
 
 ## Changes
 
+- Improve hints for outlier warnings if `--warmup` or `--prepare` are in use already,
+  see #570 (@sharkdp)
 
 ## Bugfixes
 
