@@ -37,7 +37,7 @@ libc = "0.2"
 winapi = { version = "0.3", features = ["processthreadsapi", "minwindef", "winnt", "jobapi2", "tlhelp32"] }
 
 [target.'cfg(all(windows, not(windows_process_extensions_main_thread_handle)))'.dependencies]
-once_cell = "1.14"
+once_cell = "1.16"
 
 [target.'cfg(target_os="linux")'.dependencies]
 nix = { version = "0.25.0", features = ["zerocopy"] }
