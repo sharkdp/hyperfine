@@ -50,7 +50,7 @@ fn test_markdown_formatter_table_divider() {
 #[cfg(test)]
 fn cfg_test_table_header(unit_short_name: String) -> String {
     format!(
-        "| Command | Mean [{unit}] | Min [{unit}] | Max [{unit}] | Relative |\n|:---|---:|---:|---:|---:|\n",
+        "| Command | Mean [{unit}] | Min [{unit}] | Max [{unit}] | User [{unit}] | System [{unit}] | Relative |\n|:---|---:|---:|---:|---:|---:|---:|\n",
         unit = unit_short_name
     )
 }
@@ -100,8 +100,8 @@ fn test_markdown_format_ms() {
     let actual = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
     let expect = format!(
         "{}\
-| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
-| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 ± 0.29 |
+| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 0.9 | 1.1 | 1.00 |
+| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 0.9 | 1.2 | 18.97 ± 0.29 |
 ",
         cfg_test_table_header("ms".to_string())
     );
@@ -150,8 +150,8 @@ fn test_markdown_format_s() {
     let actual = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
     let expect = format!(
         "{}\
-| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
-| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
+| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 0.001 | 0.001 | 18.97 ± 0.29 |
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 0.001 | 0.001 | 1.00 |
 ",
         cfg_test_table_header("s".to_string())
     );
@@ -205,8 +205,8 @@ fn test_markdown_format_time_unit_s() {
     .unwrap();
     let expect = format!(
         "{}\
-| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
-| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 0.001 | 0.001 | 1.00 |
+| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 0.001 | 0.001 | 18.97 ± 0.29 |
 ",
         cfg_test_table_header("s".to_string())
     );
@@ -261,8 +261,8 @@ fn test_markdown_format_time_unit_ms() {
     .unwrap();
     let expect = format!(
         "{}\
-| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 ± 0.29 |
-| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
+| `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 0.9 | 1.2 | 18.97 ± 0.29 |
+| `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 0.9 | 1.1 | 1.00 |
 ",
         cfg_test_table_header("ms".to_string())
     );

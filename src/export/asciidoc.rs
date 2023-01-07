@@ -71,7 +71,7 @@ fn test_asciidoc_exporter_table_header() {
 #[cfg(test)]
 fn cfg_test_table_header(unit_short_name: &str) -> String {
     format!(
-        "[cols=\"<,>,>,>,>\"]\n|===\n| Command \n| Mean [{unit}] \n| Min [{unit}] \n| Max [{unit}] \n| Relative \n",
+        "[cols=\"<,>,>,>,>,>,>\"]\n|===\n| Command \n| Mean [{unit}] \n| Min [{unit}] \n| Max [{unit}] \n| User [{unit}] \n| System [{unit}] \n| Relative \n",
         unit = unit_short_name
     )
 }
@@ -138,12 +138,16 @@ fn test_asciidoc_format_s() {
 | 1.000 ± 2.000 
 | 5.000 
 | 6.000 
+| 3.000 
+| 4.000 
 | 1.00 
 
 | `FOO=1 BAR=7 command \\| 2` 
 | 11.000 ± 12.000 
 | 15.000 
 | 16.000 
+| 13.000 
+| 14.000 
 | 11.00 ± 25.06 
 |===
 ",
@@ -211,12 +215,16 @@ fn test_asciidoc_format_ms() {
 | 11.0 ± 12.0 
 | 15.0 
 | 16.0 
+| 13.0 
+| 14.0 
 | 1.00 
 
 | `FOO=1 BAR=2 command \\| 1` 
 | 1000.0 ± 2000.0 
 | 5000.0 
 | 6000.0 
+| 3000.0 
+| 4000.0 
 | 90.91 ± 207.11 
 |===
 ",
