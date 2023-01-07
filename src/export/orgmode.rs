@@ -159,8 +159,8 @@ fn test_orgmode_format_s() {
         String::from_utf8(exporter.serialize(&results, Some(Unit::Second)).unwrap()).unwrap();
     let expect = format!(
         "{}\
-| =sleep 2=  |  2.005 ± 0.002 |  2.002 |  2.008 |  18.97 ± 0.29 |
 | =sleep 0.1=  |  0.106 ± 0.002 |  0.102 |  0.108 |  1.00 |
+| =sleep 2=  |  2.005 ± 0.002 |  2.002 |  2.008 |  18.97 ± 0.29 |
 ",
         cfg_test_table_header("s".to_string())
     );

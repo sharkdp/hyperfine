@@ -25,33 +25,33 @@ pub fn compute(results: &[BenchmarkResult]) -> Option<Vec<BenchmarkResultWithRel
         return None;
     }
 
-    Some(
-        results
-            .iter()
-            .map(|result| {
-                let ratio = result.mean / fastest.mean;
+    let mut results = results
+        .iter()
+        .map(|result| {
+            let ratio = result.mean / fastest.mean;
 
-                // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
-                // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-                let ratio_stddev = match (result.stddev, fastest.stddev) {
-                    (Some(result_stddev), Some(fastest_stddev)) => Some(
-                        ratio
-                            * ((result_stddev / result.mean).powi(2)
-                                + (fastest_stddev / fastest.mean).powi(2))
-                            .sqrt(),
-                    ),
-                    _ => None,
-                };
+            // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
+            // Covariance asssumed to be 0, i.e. variables are assumed to be independent
+            let ratio_stddev = match (result.stddev, fastest.stddev) {
+                (Some(result_stddev), Some(fastest_stddev)) => Some(
+                    ratio
+                        * ((result_stddev / result.mean).powi(2)
+                            + (fastest_stddev / fastest.mean).powi(2))
+                        .sqrt(),
+                ),
+                _ => None,
+            };
 
-                BenchmarkResultWithRelativeSpeed {
-                    result,
-                    relative_speed: ratio,
-                    relative_speed_stddev: ratio_stddev,
-                    is_fastest: result == fastest,
-                }
-            })
-            .collect(),
-    )
+            BenchmarkResultWithRelativeSpeed {
+                result,
+                relative_speed: ratio,
+                relative_speed_stddev: ratio_stddev,
+                is_fastest: result == fastest,
+            }
+        })
+        .collect::<Vec<_>>();
+    results.sort_unstable_by(|l, r| compare_mean_time(l.result, r.result));
+    Some(results)
 }
 
 #[cfg(test)]
@@ -85,8 +85,8 @@ fn test_compute_relative_speed() {
 
     let annotated_results = compute(&results).unwrap();
 
-    assert_relative_eq!(1.5, annotated_results[0].relative_speed);
-    assert_relative_eq!(1.0, annotated_results[1].relative_speed);
+    assert_relative_eq!(1.0, annotated_results[0].relative_speed);
+    assert_relative_eq!(1.5, annotated_results[1].relative_speed);
     assert_relative_eq!(2.5, annotated_results[2].relative_speed);
 }
 
