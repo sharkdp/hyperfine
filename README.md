@@ -262,7 +262,7 @@ conda install -c conda-forge hyperfine
 
 Hyperfine can be installed from source via [cargo](https://doc.rust-lang.org/cargo/):
 ```
-cargo install hyperfine
+cargo install --locked hyperfine
 ```
 
 Make sure that you use Rust 1.60 or higher.
