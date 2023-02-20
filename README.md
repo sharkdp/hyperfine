@@ -273,7 +273,7 @@ Download the corresponding archive from the [Release page](https://github.com/sh
 
 ## Alternative tools
 
-Hyperfine is inspired by [bench](https://github.com/Gabriel439/bench).
+Hyperfine is inspired by [bench](https://github.com/Gabriella439/bench).
 
 ## Integration with other tools
 
