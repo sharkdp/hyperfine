@@ -251,6 +251,19 @@ pkg install hyperfine
 doas pkg_add hyperfine
 ```
 
+### On Windows
+
+Hyperfine can be installed via [Chocolatey](https://community.chocolatey.org/packages/hyperfine), [Scoop](https://scoop.sh/#/apps?q=hyperfine&s=0&d=1&o=true&id=8f7c10f75ecf5f9e42a862c615257328e2f70f61), or [Winget](https://github.com/microsoft/winget-pkgs/tree/master/manifests/s/sharkdp/hyperfine):
+```
+choco install hyperfine
+```
+```
+scoop install hyperfine
+```
+```
+winget install hyperfine
+```
+
 ### With conda
 
 Hyperfine can be installed via [`conda`](https://conda.io/en/latest/) from the [`conda-forge`](https://anaconda.org/conda-forge/hyperfine) channel:
