@@ -1,3 +1,4 @@
+use std::env;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 
@@ -89,9 +90,19 @@ impl ExportManager {
             ExportType::Markdown => Box::new(MarkdownExporter::default()),
             ExportType::Orgmode => Box::new(OrgmodeExporter::default()),
         };
+
         self.exporters.push(ExporterWithFilename {
             exporter,
-            filename: filename.to_string(),
+            filename:
+            if filename == "-" {
+                if env::consts::OS == "windows" {
+                    "con:".to_string()
+                } else {
+                    "/dev/stdout".to_string()
+                }
+            } else {
+                filename.to_string()
+            },
         });
 
         Ok(())
