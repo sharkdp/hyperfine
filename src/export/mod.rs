@@ -93,8 +93,7 @@ impl ExportManager {
 
         self.exporters.push(ExporterWithFilename {
             exporter,
-            filename:
-            if filename == "-" {
+            filename: if filename == "-" {
                 if env::consts::OS == "windows" {
                     "con:".to_string()
                 } else {
