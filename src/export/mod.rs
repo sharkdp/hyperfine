@@ -94,7 +94,7 @@ impl ExportManager {
         self.exporters.push(ExporterWithFilename {
             exporter,
             filename: if filename == "-" {
-                if env::consts::OS == "windows" {
+                if cfg!(windows) {
                     "con:".to_string()
                 } else {
                     "/dev/stdout".to_string()
