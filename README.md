@@ -170,8 +170,8 @@ like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`:
 Download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases)
 and install it via `dpkg`:
 ```
-wget https://github.com/sharkdp/hyperfine/releases/download/v1.15.0/hyperfine_1.15.0_amd64.deb
-sudo dpkg -i hyperfine_1.15.0_amd64.deb
+wget https://github.com/sharkdp/hyperfine/releases/download/v1.16.0/hyperfine_1.16.0_amd64.deb
+sudo dpkg -i hyperfine_1.16.0_amd64.deb
 ```
 
 ### On Fedora
