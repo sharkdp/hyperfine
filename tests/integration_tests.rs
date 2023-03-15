@@ -231,13 +231,13 @@ fn can_pass_input_to_command_from_a_file() {
 fn fails_if_invalid_stdin_data_file_provided() {
     hyperfine()
         .arg("--runs=1")
-        .arg("--input=example_stdin_data_invalid")
+        .arg("--input=example_non_existent_file.txt")
         .arg("--show-output")
         .arg("cat")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            "File containing stdin data 'example_stdin_data_invalid' does not exist",
+            "The file 'example_non_existent_file.txt' specified as '--input' does not exist",
         ));
 }
 
