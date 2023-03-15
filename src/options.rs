@@ -388,7 +388,7 @@ impl Options {
                 .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;
         }
 
-        options.command_input_policy = if let Some(path_str) = matches.value_of("input") {
+        options.command_input_policy = if let Some(path_str) = matches.get_one::<String>("input") {
             let path = PathBuf::from(path_str);
             if !path.exists() {
                 return Err(OptionsError::StdinDataFileDoesNotExist(

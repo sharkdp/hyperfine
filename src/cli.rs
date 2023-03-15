@@ -293,7 +293,7 @@ fn build_command() -> Command {
         .arg(
             Arg::new("input")
                 .long("input")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .number_of_values(1)
                 .value_name("WHERE")
                 .help("Control where the input of the benchmark comes from.\n\
