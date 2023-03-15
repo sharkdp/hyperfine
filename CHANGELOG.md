@@ -2,6 +2,7 @@
 
 ## Features
 
+- Added new `--input` option, see #541 and #563 (@snease)
 
 ## Changes
 
