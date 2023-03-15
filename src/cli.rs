@@ -273,15 +273,35 @@ fn build_command() -> Command<'static> {
                 .takes_value(true)
                 .value_name("WHERE")
                 .help(
-                    "Control where the output of the benchmark is redirected. <WHERE> can be:\n\n\
-                     null: Redirect output to /dev/null (the default). \
-                     Note that some programs like 'grep' detect when standard output is /dev/null \
-                     and apply certain optimizations. To avoid that, consider using \
-                     '--output=pipe'.\n\n\
-                     pipe: Feed the output through a pipe before discarding it.\n\n\
-                     inherit: Don't redirect the output at all (same as '--show-output').\n\n\
-                     <FILE>: Write the output to the given file.",
+                    "Control where the output of the benchmark is redirected. Note \
+                     that some programs like 'grep' detect when standard output is \
+                     /dev/null and apply certain optimizations. To avoid that, consider \
+                     using '--output=pipe'.\n\
+                     \n\
+                     <WHERE> can be:\n\
+                     \n  \
+                       null:     Redirect output to /dev/null (the default).\n\
+                     \n  \
+                       pipe:     Feed the output through a pipe before discarding it.\n\
+                     \n  \
+                       inherit:  Don't redirect the output at all (same as '--show-output').\n\
+                     \n  \
+                       <FILE>:   Write the output to the given file.",
                 ),
+        )
+        .arg(
+            Arg::new("input")
+                .long("input")
+                .takes_value(true)
+                .number_of_values(1)
+                .value_name("WHERE")
+                .help("Control where the input of the benchmark comes from.\n\
+                       \n\
+                       <WHERE> can be:\n\
+                       \n  \
+                         null:     Read from /dev/null (the default).\n\
+                       \n  \
+                         <FILE>:   Read the input from the given file."),
         )
         .arg(
             Arg::new("command-name")
@@ -310,16 +330,6 @@ fn build_command() -> Command<'static> {
             .long("debug-mode")
             .hide(true)
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
-        )
-        .arg(
-            Arg::new("input")
-                .long("input")
-                .takes_value(true)
-                .number_of_values(1)
-                .value_name("FROM")
-                .help("Control where the input of the benchmark comes from. <FROM> can be: \
-                       null: Read from /edv/null (the default).
-                       <FILE>: Read the input from the given file"),
         )
 }
 
