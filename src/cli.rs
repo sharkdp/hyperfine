@@ -21,6 +21,7 @@ fn build_command() -> Command {
         .hide_possible_values(true)
         .about("A command-line benchmarking tool.")
         .help_expected(true)
+        .term_width(100)
         .arg(
             Arg::new("command")
                 .help("The command to benchmark. This can be the name of an executable, a command \
@@ -294,7 +295,7 @@ fn build_command() -> Command {
             Arg::new("input")
                 .long("input")
                 .action(ArgAction::Set)
-                .number_of_values(1)
+                .num_args(1)
                 .value_name("WHERE")
                 .help("Control where the input of the benchmark comes from.\n\
                        \n\
