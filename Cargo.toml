@@ -8,10 +8,9 @@ name = "hyperfine"
 readme = "README.md"
 repository = "https://github.com/sharkdp/hyperfine"
 version = "1.16.0"
-rust-version = "1.60.0"
 edition = "2018"
 build = "build.rs"
-rust-version = "1.62"
+rust-version = "1.62.0"
 
 [features]
 # Use the nightly feature windows_process_extensions_main_thread_handle
