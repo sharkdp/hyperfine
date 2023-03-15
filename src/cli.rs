@@ -1,6 +1,8 @@
 use std::ffi::OsString;
 
-use clap::{crate_version, AppSettings, Arg, ArgMatches, Command};
+use clap::{
+    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
+};
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
@@ -12,14 +14,13 @@ where
 }
 
 /// Build the clap command for parsing command line arguments
-fn build_command() -> Command<'static> {
+fn build_command() -> Command {
     Command::new("hyperfine")
         .version(crate_version!())
-        .setting(AppSettings::DeriveDisplayOrder)
         .next_line_help(true)
         .hide_possible_values(true)
-        .max_term_width(90)
         .about("A command-line benchmarking tool.")
+        .help_expected(true)
         .arg(
             Arg::new("command")
                 .help("The command to benchmark. This can be the name of an executable, a command \
@@ -28,15 +29,15 @@ fn build_command() -> Command<'static> {
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
                 .required(true)
-                .multiple_occurrences(true)
-                .forbid_empty_values(true),
+                .action(ArgAction::Append)
+                .value_parser(NonEmptyStringValueParser::new()),
         )
         .arg(
             Arg::new("warmup")
                 .long("warmup")
                 .short('w')
-                .takes_value(true)
                 .value_name("NUM")
+                .action(ArgAction::Set)
                 .help(
                     "Perform NUM warmup runs before the actual benchmark. This can be used \
                      to fill (disk) caches for I/O-heavy programs.",
@@ -46,7 +47,7 @@ fn build_command() -> Command<'static> {
             Arg::new("min-runs")
                 .long("min-runs")
                 .short('m')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("NUM")
                 .help("Perform at least NUM runs for each command (default: 10)."),
         )
@@ -54,7 +55,7 @@ fn build_command() -> Command<'static> {
             Arg::new("max-runs")
                 .long("max-runs")
                 .short('M')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("NUM")
                 .help("Perform at most NUM runs for each command. By default, there is no limit."),
         )
@@ -63,7 +64,7 @@ fn build_command() -> Command<'static> {
                 .long("runs")
                 .conflicts_with_all(&["max-runs", "min-runs"])
                 .short('r')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("NUM")
                 .help("Perform exactly NUM runs for each command. If this option is not specified, \
                        hyperfine automatically determines the number of runs."),
@@ -72,8 +73,7 @@ fn build_command() -> Command<'static> {
             Arg::new("setup")
                 .long("setup")
                 .short('s')
-                .takes_value(true)
-                .number_of_values(1)
+                .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
                     "Execute CMD before each set of timing runs. This is useful for \
@@ -86,9 +86,8 @@ fn build_command() -> Command<'static> {
             Arg::new("prepare")
                 .long("prepare")
                 .short('p')
-                .takes_value(true)
-                .multiple_occurrences(true)
-                .number_of_values(1)
+                .action(ArgAction::Append)
+                .num_args(1)
                 .value_name("CMD")
                 .help(
                     "Execute CMD before each timing run. This is useful for \
@@ -102,7 +101,7 @@ fn build_command() -> Command<'static> {
             Arg::new("cleanup")
                 .long("cleanup")
                 .short('c')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
                     "Execute CMD after the completion of all benchmarking \
@@ -115,7 +114,7 @@ fn build_command() -> Command<'static> {
             Arg::new("parameter-scan")
                 .long("parameter-scan")
                 .short('P')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "MIN", "MAX"])
                 .help(
@@ -133,7 +132,7 @@ fn build_command() -> Command<'static> {
             Arg::new("parameter-step-size")
                 .long("parameter-step-size")
                 .short('D')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_names(&["DELTA"])
                 .requires("parameter-scan")
                 .help(
@@ -147,8 +146,7 @@ fn build_command() -> Command<'static> {
             Arg::new("parameter-list")
                 .long("parameter-list")
                 .short('L')
-                .takes_value(true)
-                .multiple_occurrences(true)
+                .action(ArgAction::Append)
                 .allow_hyphen_values(true)
                 .value_names(&["VAR", "VALUES"])
                 .conflicts_with_all(&["parameter-scan", "parameter-step-size"])
@@ -164,9 +162,9 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("style")
                 .long("style")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("TYPE")
-                .possible_values(&["auto", "basic", "full", "nocolor", "color", "none"])
+                .value_parser(["auto", "basic", "full", "nocolor", "color", "none"])
                 .help(
                     "Set output style type (default: auto). Set this to 'basic' to disable output \
                      coloring and interactive elements. Set it to 'full' to enable all effects \
@@ -180,7 +178,7 @@ fn build_command() -> Command<'static> {
             Arg::new("shell")
                 .long("shell")
                 .short('S')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("SHELL")
                 .overrides_with("shell")
                 .help("Set the shell to use for executing benchmarked commands. This can be the \
@@ -194,12 +192,14 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("no-shell")
                 .short('N')
+                .action(ArgAction::SetTrue)
                 .conflicts_with_all(&["shell", "debug-mode"])
                 .help("An alias for '--shell=none'.")
         )
         .arg(
             Arg::new("ignore-failure")
                 .long("ignore-failure")
+                .action(ArgAction::SetTrue)
                 .short('i')
                 .help("Ignore non-zero exit codes of the benchmarked programs."),
         )
@@ -207,9 +207,9 @@ fn build_command() -> Command<'static> {
             Arg::new("time-unit")
                 .long("time-unit")
                 .short('u')
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("UNIT")
-                .possible_values(&["millisecond", "second"])
+                .value_parser(["millisecond", "second"])
                 .help("Set the time unit to be used. Possible values: millisecond, second. \
                        If the option is not given, the time unit is determined automatically. \
                        This option affects the standard output as well as all export formats except for CSV and JSON."),
@@ -217,7 +217,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-asciidoc")
                 .long("export-asciidoc")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as an AsciiDoc table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -225,7 +225,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-csv")
                 .long("export-csv")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as CSV to the given FILE. If you need \
                        the timing results for each individual run, use the JSON export format. \
@@ -234,7 +234,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-json")
                 .long("export-json")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE. \
                        The output time unit is always seconds"),
@@ -242,7 +242,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-markdown")
                 .long("export-markdown")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Markdown table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -250,7 +250,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("export-orgmode")
                 .long("export-orgmode")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("FILE")
                 .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
@@ -258,6 +258,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("show-output")
                 .long("show-output")
+                .action(ArgAction::SetTrue)
                 .conflicts_with("style")
                 .help(
                     "Print the stdout and stderr of the benchmark instead of suppressing it. \
@@ -270,7 +271,7 @@ fn build_command() -> Command<'static> {
             Arg::new("output")
                 .long("output")
                 .conflicts_with("show-output")
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .value_name("WHERE")
                 .help(
                     "Control where the output of the benchmark is redirected. Note \
@@ -307,9 +308,8 @@ fn build_command() -> Command<'static> {
             Arg::new("command-name")
                 .long("command-name")
                 .short('n')
-                .takes_value(true)
-                .multiple_occurrences(true)
-                .number_of_values(1)
+                .action(ArgAction::Append)
+                .num_args(1)
                 .value_name("NAME")
                 .help("Give a meaningful name to a command. This can be specified multiple times \
                        if several commands are benchmarked."),
@@ -319,7 +319,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("min-benchmarking-time")
             .long("min-benchmarking-time")
-            .takes_value(true)
+            .action(ArgAction::Set)
             .hide(true)
             .help("Set the minimum time (in seconds) to run benchmarks. Note that the number of \
                    benchmark runs is additionally influenced by the `--min-runs`, `--max-runs`, and \
@@ -328,6 +328,7 @@ fn build_command() -> Command<'static> {
         .arg(
             Arg::new("debug-mode")
             .long("debug-mode")
+            .action(ArgAction::SetTrue)
             .hide(true)
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
         )

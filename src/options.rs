@@ -20,7 +20,7 @@ pub const DEFAULT_SHELL: &str = "sh";
 pub const DEFAULT_SHELL: &str = "cmd.exe";
 
 /// Shell to use for executing benchmarked commands
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Shell {
     /// Default shell command
     Default(&'static str),
@@ -257,7 +257,7 @@ impl Options {
         let mut options = Self::default();
         let param_to_u64 = |param| {
             matches
-                .value_of(param)
+                .get_one::<String>(param)
                 .map(|n| {
                     n.parse::<u64>()
                         .map_err(|e| OptionsError::IntParsingError(param, e))
@@ -294,17 +294,17 @@ impl Options {
             (None, None) => {}
         };
 
-        options.setup_command = matches.value_of("setup").map(String::from);
+        options.setup_command = matches.get_one::<String>("setup").map(String::from);
 
         options.preparation_command = matches
-            .values_of("prepare")
+            .get_many::<String>("prepare")
             .map(|values| values.map(String::from).collect::<Vec<String>>());
 
-        options.cleanup_command = matches.value_of("cleanup").map(String::from);
+        options.cleanup_command = matches.get_one::<String>("cleanup").map(String::from);
 
-        options.command_output_policy = if matches.is_present("show-output") {
+        options.command_output_policy = if matches.get_flag("show-output") {
             CommandOutputPolicy::Inherit
-        } else if let Some(output) = matches.value_of("output") {
+        } else if let Some(output) = matches.get_one::<String>("output").map(|s| s.as_str()) {
             match output {
                 "null" => CommandOutputPolicy::Null,
                 "pipe" => CommandOutputPolicy::Pipe,
@@ -321,7 +321,7 @@ impl Options {
             CommandOutputPolicy::Null
         };
 
-        options.output_style = match matches.value_of("style") {
+        options.output_style = match matches.get_one::<String>("style").map(|s| s.as_str()) {
             Some("full") => OutputStyleOption::Full,
             Some("basic") => OutputStyleOption::Basic,
             Some("nocolor") => OutputStyleOption::NoColor,
@@ -334,7 +334,7 @@ impl Options {
                     OutputStyleOption::Basic
                 } else if env::var_os("TERM")
                     .map(|t| t == "unknown" || t == "dumb")
-                    .unwrap_or(true)
+                    .unwrap_or(!cfg!(target_os = "windows"))
                     || env::var_os("NO_COLOR")
                         .map(|t| !t.is_empty())
                         .unwrap_or(false)
@@ -356,10 +356,13 @@ impl Options {
             OutputStyleOption::Disabled => {}
         };
 
-        options.executor_kind = if matches.is_present("no-shell") {
+        options.executor_kind = if matches.get_flag("no-shell") {
             ExecutorKind::Raw
         } else {
-            match (matches.is_present("debug-mode"), matches.value_of("shell")) {
+            match (
+                matches.get_flag("debug-mode"),
+                matches.get_one::<String>("shell"),
+            ) {
                 (false, Some(shell)) if shell == "default" => ExecutorKind::Shell(Shell::default()),
                 (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
                 (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
@@ -369,17 +372,17 @@ impl Options {
             }
         };
 
-        if matches.is_present("ignore-failure") {
+        if matches.get_flag("ignore-failure") {
             options.command_failure_action = CmdFailureAction::Ignore;
         }
 
-        options.time_unit = match matches.value_of("time-unit") {
+        options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {
             Some("millisecond") => Some(Unit::MilliSecond),
             Some("second") => Some(Unit::Second),
             _ => None,
         };
 
-        if let Some(time) = matches.value_of("min-benchmarking-time") {
+        if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
             options.min_benchmarking_time = time
                 .parse::<f64>()
                 .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;

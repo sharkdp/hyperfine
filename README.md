@@ -28,19 +28,19 @@ A command-line benchmarking tool.
 
 To run a benchmark, you can simply call `hyperfine <command>...`. The argument(s) can be any
 shell command. For example:
-``` bash
+```sh
 hyperfine 'sleep 0.3'
 ```
 
 Hyperfine will automatically determine the number of runs to perform for each command. By default,
 it will perform *at least* 10 benchmarking runs and measure for at least 3 seconds. To change this,
 you can use the `-r`/`--runs` option:
-``` bash
+```sh
 hyperfine --runs 5 'sleep 0.3'
 ```
 
 If you want to compare the runtimes of different programs, you can pass multiple commands:
-``` bash
+```sh
 hyperfine 'hexdump file' 'xxd file'
 ```
 
@@ -51,19 +51,19 @@ by disk caches and whether they are cold or warm.
 
 If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to
 perform a certain number of program executions before the actual benchmark:
-``` bash
+```sh
 hyperfine --warmup 3 'grep -R TODO *'
 ```
 
 Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
 option to run a special command before *each* timing run. For example, to clear harddisk caches
 on Linux, you can run
-``` bash
+```sh
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 ```
 To use this specific command with hyperfine, call `sudo -v` to temporarily gain sudo permissions
 and then call:
-``` bash
+```sh
 hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
 ```
 
@@ -71,12 +71,12 @@ hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R 
 
 If you want to run a series of benchmarks where a single parameter is varied (say, the number of
 threads), you can use the `-P`/`--parameter-scan` option and call:
-``` bash
+```sh
 hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num_threads}'
 ```
 This also works with decimal numbers. The `-D`/`--parameter-step-size` option can be used
 to control the step size:
-``` bash
+```sh
 hyperfine --parameter-scan delay 0.3 0.7 -D 0.2 'sleep {delay}'
 ```
 This runs `sleep 0.3`, `sleep 0.5` and `sleep 0.7`.
@@ -91,7 +91,7 @@ hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
 
 By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).
 If you want to use a different shell, you can use the `-S, --shell <SHELL>` option:
-``` bash
+```sh
 hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
 ```
 
@@ -102,7 +102,7 @@ in question.
 
 If you want to run a benchmark *without an intermediate shell*, you can use the `-N` or `--shell=none`
 option. This is helpful for very fast commands (< 5 ms) where the shell startup overhead correction would
-produce a significant amount of noise. Note that you can not use shell syntax like `*` or `~` in this case.
+produce a significant amount of noise. Note that you cannot use shell syntax like `*` or `~` in this case.
 ```
 hyperfine -N 'grep TODO /home/user'
 ```
@@ -112,20 +112,19 @@ hyperfine -N 'grep TODO /home/user'
 
 If you are using bash, you can export shell functions to directly benchmark them with hyperfine:
 
-```
-$ my_function() { sleep 1; }
-$ export -f my_function
-$ hyperfine my_function
-```
-
-If you are using a different shell, or if you want to benchmark shell aliases, you may try to put
-them in a separate file:
-
 ```bash
-echo 'my_function() { sleep 1 }' > /tmp/my_function.sh
+my_function() { sleep 1; }
+export -f my_function
+hyperfine --shell=bash my_function
+```
+
+Otherwise, inline them into or source them from the benchmarked program:
+
+```sh
+hyperfine 'my_function() { sleep 1; }; my_function'
+
 echo 'alias my_alias="sleep 1"' > /tmp/my_alias.sh
-hyperfine 'source /tmp/my_function.sh; eval my_function'
-hyperfine 'source /tmp/my_alias.sh; eval my_alias'
+hyperfine '. /tmp/my_alias.sh; my_alias'
 ```
 
 ### Exporting results
@@ -133,7 +132,7 @@ hyperfine 'source /tmp/my_alias.sh; eval my_alias'
 Hyperfine has multiple options for exporting benchmark results to CSV, JSON, Markdown and other
 formats (see `--help` text for details).
 
-#### Markdown 
+#### Markdown
 
 You can use the `--export-markdown <file>` option to create tables like the following:
 
@@ -197,6 +196,13 @@ On Arch Linux, hyperfine can be installed [from the official repositories](https
 pacman -S hyperfine
 ```
 
+### On Debian Linux
+
+On Debian Linux, hyperfine can be installed [from the testing repositories](https://packages.debian.org/testing/main/hyperfine)
+```
+apt install hyperfine
+```
+
 ### On Funtoo Linux
 
 On Funtoo Linux, hyperfine can be installed [from core-kit](https://github.com/funtoo/core-kit/tree/1.4-release/app-benchmarks/hyperfine):
@@ -245,6 +251,19 @@ pkg install hyperfine
 doas pkg_add hyperfine
 ```
 
+### On Windows
+
+Hyperfine can be installed via [Chocolatey](https://community.chocolatey.org/packages/hyperfine), [Scoop](https://scoop.sh/#/apps?q=hyperfine&s=0&d=1&o=true&id=8f7c10f75ecf5f9e42a862c615257328e2f70f61), or [Winget](https://github.com/microsoft/winget-pkgs/tree/master/manifests/s/sharkdp/hyperfine):
+```
+choco install hyperfine
+```
+```
+scoop install hyperfine
+```
+```
+winget install hyperfine
+```
+
 ### With conda
 
 Hyperfine can be installed via [`conda`](https://conda.io/en/latest/) from the [`conda-forge`](https://anaconda.org/conda-forge/hyperfine) channel:
@@ -256,10 +275,10 @@ conda install -c conda-forge hyperfine
 
 Hyperfine can be installed from source via [cargo](https://doc.rust-lang.org/cargo/):
 ```
-cargo install hyperfine
+cargo install --locked hyperfine
 ```
 
-Make sure that you use Rust 1.57 or higher.
+Make sure that you use Rust 1.60 or higher.
 
 ### From binaries (Linux, macOS, Windows)
 
@@ -267,7 +286,7 @@ Download the corresponding archive from the [Release page](https://github.com/sh
 
 ## Alternative tools
 
-Hyperfine is inspired by [bench](https://github.com/Gabriel439/bench).
+Hyperfine is inspired by [bench](https://github.com/Gabriella439/bench).
 
 ## Integration with other tools
 
@@ -282,6 +301,11 @@ in this repository for a set of tools to work with `hyperfine` benchmark results
 The name *hyperfine* was chosen in reference to the hyperfine levels of caesium 133 which play a crucial role in the
 [definition of our base unit of time](https://en.wikipedia.org/wiki/Second#History_of_definition)
 — the second.
+
+## Citing hyperfine
+
+Thank you for considering to cite hyperfine in your research work. Please see the information
+in the sidebar on how to properly cite hyperfine.
 
 ## License
 
