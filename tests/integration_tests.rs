@@ -216,17 +216,15 @@ fn runs_commands_using_user_defined_shell() {
 }
 
 #[test]
-fn can_pass_file_data_to_command_via_stdin() {
+fn can_pass_input_to_command_from_a_file() {
     hyperfine()
         .arg("--runs=1")
-        .arg("--input=example_stdin_data")
+        .arg("--input=example_input_file.txt")
         .arg("--show-output")
         .arg("cat")
         .assert()
         .success()
-        .stdout(predicate::str::contains(
-            "This data is passed to the command via stdin",
-        ));
+        .stdout(predicate::str::contains("This text is part of a file"));
 }
 
 #[test]
