@@ -53,6 +53,6 @@ pub enum OptionsError<'a> {
     ShellParseError(shell_words::ParseError),
     #[error("Unknown output policy '{0}'. Use './{0}' to output to a file named '{0}'.")]
     UnknownOutputPolicy(String),
-    #[error("File containing stdin data '{0}' does not exist")]
+    #[error("The file '{0}' specified as '--input' does not exist")]
     StdinDataFileDoesNotExist(String),
 }
