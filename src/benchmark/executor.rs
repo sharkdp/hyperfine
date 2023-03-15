@@ -42,8 +42,8 @@ fn run_command_and_measure_common(
     command_output_policy: &CommandOutputPolicy,
     command_name: &str,
 ) -> Result<TimerResult> {
-    let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
     let stdin = command_input_policy.get_stdin()?;
+    let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
     command.stdin(stdin).stdout(stdout).stderr(stderr);
 
     command.env(
