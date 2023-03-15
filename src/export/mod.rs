@@ -80,11 +80,11 @@ impl ExportManager {
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) -> Result<()> {
         let exporter: Box<dyn Exporter> = match export_type {
-            ExportType::Asciidoc => Box::new(AsciidocExporter::default()),
-            ExportType::Csv => Box::new(CsvExporter::default()),
-            ExportType::Json => Box::new(JsonExporter::default()),
-            ExportType::Markdown => Box::new(MarkdownExporter::default()),
-            ExportType::Orgmode => Box::new(OrgmodeExporter::default()),
+            ExportType::Asciidoc => Box::<AsciidocExporter>::default(),
+            ExportType::Csv => Box::<CsvExporter>::default(),
+            ExportType::Json => Box::<JsonExporter>::default(),
+            ExportType::Markdown => Box::<MarkdownExporter>::default(),
+            ExportType::Orgmode => Box::<OrgmodeExporter>::default(),
         };
 
         self.exporters.push(ExporterWithFilename {
