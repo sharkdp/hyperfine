@@ -110,19 +110,14 @@ impl Default for RunBounds {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub enum CommandInputPolicy {
     /// Read from the null device
+    #[default]
     Null,
 
     /// Read input from a file
     File(PathBuf),
-}
-
-impl Default for CommandInputPolicy {
-    fn default() -> Self {
-        CommandInputPolicy::Null
-    }
 }
 
 impl CommandInputPolicy {
@@ -141,9 +136,10 @@ impl CommandInputPolicy {
 }
 
 /// How to handle the output of benchmarked commands
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum CommandOutputPolicy {
     /// Redirect output to the null device
+    #[default]
     Null,
 
     /// Feed output through a pipe before discarding it
@@ -154,12 +150,6 @@ pub enum CommandOutputPolicy {
 
     /// Show command output on the terminal
     Inherit,
-}
-
-impl Default for CommandOutputPolicy {
-    fn default() -> Self {
-        CommandOutputPolicy::Null
-    }
 }
 
 impl CommandOutputPolicy {
