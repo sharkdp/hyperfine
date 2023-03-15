@@ -13,33 +13,22 @@ on:
       - '*'
 
 jobs:
-  ensure_cargo_fmt:
-    name: Ensure 'cargo fmt' has been run
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: dtolnay/rust-toolchain@stable
-      with:
-        components: rustfmt
-    - uses: actions/checkout@v3
-    - run: cargo fmt -- --check
-    - name: Ensure MSRV is set in `clippy.toml`
-      run: grep "^msrv = \"${{ env.MIN_SUPPORTED_RUST_VERSION }}\"\$" clippy.toml
-
   min_version:
     name: Minimum supported rust version
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout source code
       uses: actions/checkout@v3
-
     - name: Get the MSRV from the package metadata
       id: msrv
-      run: cargo metadata --no-deps --format-version 1 | jq -r '"version=" + (.packages[] | select(.name = "bat").rust_version)' >> $GITHUB_OUTPUT
+      run: cargo metadata --no-deps --format-version 1 | jq -r '"version=" + (.packages[] | select(.name = "hyperfine").rust_version)' >> $GITHUB_OUTPUT
     - name: Install rust toolchain (v${{ steps.msrv.outputs.version }})
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ steps.msrv.outputs.version }}
-        components: clippy
+        components: clippy, rustfmt
+    - name: Run cargo fmt
+      run: cargo fmt -- --check
     - name: Run clippy (on minimum supported rust version to prevent warnings we can't fix)
       run: cargo clippy --locked --all-targets ${{ env.MSRV_FEATURES }}
     - name: Run tests
