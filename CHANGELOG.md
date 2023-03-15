@@ -2,7 +2,27 @@
 
 ## Features
 
+
+
+## Changes
+
+
+
+## Bugfixes
+
+
+
+## Other
+
+
+
+# v1.16.0
+
+## Features
+
 - Added new `--input` option, see #541 and #563 (@snease)
+- Added possibility to specify `-` as the filename in the
+  `--export-*` options, see #615 and #623 (@humblepenguinn)
 
 ## Changes
 
@@ -17,10 +37,8 @@
 
 ## Other
 
-
-## Packaging
-
-
+- Thanks to @berombau for working on dependency upgrades, see #584
+- Fixed installationm on Windows, see #595 and #596 (@AntoniosBarotsis)
 
 
 # v1.15.0
