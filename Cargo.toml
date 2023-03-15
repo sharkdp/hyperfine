@@ -43,7 +43,7 @@ once_cell = "1.17"
 nix = { version = "0.26.2", features = ["zerocopy"] }
 
 [dependencies.clap]
-version = "4.0.18"
+version = "4"
 default-features = false
 features = ["suggestions", "color", "wrap_help", "cargo", "help", "usage", "error-context"]
 
