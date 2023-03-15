@@ -79,9 +79,6 @@ impl ExportManager {
 
     /// Add an additional exporter to the ExportManager
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) -> Result<()> {
-        let _ = File::create(filename)
-            .with_context(|| format!("Could not create export file '{}'", filename))?;
-
         let exporter: Box<dyn Exporter> = match export_type {
             ExportType::Asciidoc => Box::new(AsciidocExporter::default()),
             ExportType::Csv => Box::new(CsvExporter::default()),
@@ -99,6 +96,8 @@ impl ExportManager {
                     "/dev/stdout".to_string()
                 }
             } else {
+                let _ = File::create(filename)
+                    .with_context(|| format!("Could not create export file '{}'", filename))?;
                 filename.to_string()
             },
         });
