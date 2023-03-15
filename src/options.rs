@@ -131,7 +131,7 @@ impl CommandInputPolicy {
             CommandInputPolicy::Null => Stdio::null(),
 
             CommandInputPolicy::File(path) => {
-                let file: File = File::open(&path)?;
+                let file: File = File::open(path)?;
                 Stdio::from(file)
             }
         };
@@ -171,7 +171,7 @@ impl CommandOutputPolicy {
             CommandOutputPolicy::Pipe => (Stdio::piped(), Stdio::null()),
 
             CommandOutputPolicy::File(path) => {
-                let file = File::create(&path)?;
+                let file = File::create(path)?;
                 (file.into(), Stdio::null())
             }
 

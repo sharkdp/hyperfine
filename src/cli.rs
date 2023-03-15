@@ -62,7 +62,7 @@ fn build_command() -> Command {
         .arg(
             Arg::new("runs")
                 .long("runs")
-                .conflicts_with_all(&["max-runs", "min-runs"])
+                .conflicts_with_all(["max-runs", "min-runs"])
                 .short('r')
                 .action(ArgAction::Set)
                 .value_name("NUM")
@@ -116,7 +116,7 @@ fn build_command() -> Command {
                 .short('P')
                 .action(ArgAction::Set)
                 .allow_hyphen_values(true)
-                .value_names(&["VAR", "MIN", "MAX"])
+                .value_names(["VAR", "MIN", "MAX"])
                 .help(
                     "Perform benchmark runs for each value in the range MIN..MAX. Replaces the \
                      string '{VAR}' in each command by the current parameter value.\n\n  \
@@ -133,7 +133,7 @@ fn build_command() -> Command {
                 .long("parameter-step-size")
                 .short('D')
                 .action(ArgAction::Set)
-                .value_names(&["DELTA"])
+                .value_names(["DELTA"])
                 .requires("parameter-scan")
                 .help(
                     "This argument requires --parameter-scan to be specified as well. \
@@ -148,8 +148,8 @@ fn build_command() -> Command {
                 .short('L')
                 .action(ArgAction::Append)
                 .allow_hyphen_values(true)
-                .value_names(&["VAR", "VALUES"])
-                .conflicts_with_all(&["parameter-scan", "parameter-step-size"])
+                .value_names(["VAR", "VALUES"])
+                .conflicts_with_all(["parameter-scan", "parameter-step-size"])
                 .help(
                     "Perform benchmark runs for each value in the comma-separated list VALUES. \
                      Replaces the string '{VAR}' in each command by the current parameter value\
@@ -193,7 +193,7 @@ fn build_command() -> Command {
             Arg::new("no-shell")
                 .short('N')
                 .action(ArgAction::SetTrue)
-                .conflicts_with_all(&["shell", "debug-mode"])
+                .conflicts_with_all(["shell", "debug-mode"])
                 .help("An alias for '--shell=none'.")
         )
         .arg(
