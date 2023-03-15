@@ -13,5 +13,5 @@ authors:
 repository-code: 'https://github.com/sharkdp/hyperfine'
 abstract: A command-line benchmarking tool.
 license: MIT
-version: 1.15.0
-date-released: '2022-09-07'
+version: 1.16.0
+date-released: '2023-03-15'
