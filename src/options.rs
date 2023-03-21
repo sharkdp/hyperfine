@@ -379,13 +379,17 @@ impl Options {
         }
 
         options.command_input_policy = if let Some(path_str) = matches.get_one::<String>("input") {
-            let path = PathBuf::from(path_str);
-            if !path.exists() {
-                return Err(OptionsError::StdinDataFileDoesNotExist(
-                    path_str.to_string(),
-                ));
+            if path_str == "null" {
+                CommandInputPolicy::Null
+            } else {
+                let path = PathBuf::from(path_str);
+                if !path.exists() {
+                    return Err(OptionsError::StdinDataFileDoesNotExist(
+                        path_str.to_string(),
+                    ));
+                }
+                CommandInputPolicy::File(path)
             }
-            CommandInputPolicy::File(path)
         } else {
             CommandInputPolicy::Null
         };

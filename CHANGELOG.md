@@ -15,6 +15,13 @@
 ## Other
 
 
+# v1.16.1
+
+## Bugfixes
+
+- Fix line-wrapping of `--help` text (@sharkdp)
+- Fix `--input=null` (@sharkdp)
+
 
 # v1.16.0
 
