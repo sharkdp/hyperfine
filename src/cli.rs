@@ -21,7 +21,7 @@ fn build_command() -> Command {
         .hide_possible_values(true)
         .about("A command-line benchmarking tool.")
         .help_expected(true)
-        .term_width(100)
+        .max_term_width(80)
         .arg(
             Arg::new("command")
                 .help("The command to benchmark. This can be the name of an executable, a command \
