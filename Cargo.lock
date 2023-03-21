@@ -405,7 +405,7 @@ checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
 
 [[package]]
 name = "hyperfine"
-version = "1.16.0"
+version = "1.16.1"
 dependencies = [
  "anyhow",
  "approx",
