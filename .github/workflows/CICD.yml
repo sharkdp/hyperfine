@@ -2,6 +2,7 @@ name: CICD
 
 env:
   CICD_INTERMEDIATES_DIR: "_cicd-intermediates"
+  MSRV_FEATURES: ""
 
 on:
   workflow_dispatch:
@@ -13,30 +14,58 @@ on:
       - '*'
 
 jobs:
+  crate_metadata:
+    name: Extract crate metadata
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Extract crate information
+      id: crate_metadata
+      run: |
+        cargo metadata --no-deps --format-version 1 | jq -r '"name=" + .packages[0].name' | tee -a $GITHUB_OUTPUT
+        cargo metadata --no-deps --format-version 1 | jq -r '"version=" + .packages[0].version' | tee -a $GITHUB_OUTPUT
+        cargo metadata --no-deps --format-version 1 | jq -r '"maintainer=" + .packages[0].authors[0]' | tee -a $GITHUB_OUTPUT
+        cargo metadata --no-deps --format-version 1 | jq -r '"homepage=" + .packages[0].homepage' | tee -a $GITHUB_OUTPUT
+        cargo metadata --no-deps --format-version 1 | jq -r '"msrv=" + .packages[0].rust_version' | tee -a $GITHUB_OUTPUT
+    outputs:
+      name: ${{ steps.crate_metadata.outputs.name }}
+      version: ${{ steps.crate_metadata.outputs.version }}
+      maintainer: ${{ steps.crate_metadata.outputs.maintainer }}
+      homepage: ${{ steps.crate_metadata.outputs.homepage }}
+      msrv: ${{ steps.crate_metadata.outputs.msrv }}
+
+  ensure_cargo_fmt:
+    name: Ensure 'cargo fmt' has been run
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - uses: actions/checkout@v3
+    - run: cargo fmt -- --check
+
   min_version:
     name: Minimum supported rust version
     runs-on: ubuntu-20.04
+    needs: crate_metadata
     steps:
     - name: Checkout source code
       uses: actions/checkout@v3
-    - name: Get the MSRV from the package metadata
-      id: msrv
-      run: cargo metadata --no-deps --format-version 1 | jq -r '"version=" + (.packages[] | select(.name = "hyperfine").rust_version)' >> $GITHUB_OUTPUT
-    - name: Install rust toolchain (v${{ steps.msrv.outputs.version }})
+
+    - name: Install rust toolchain (v${{ needs.crate_metadata.outputs.msrv }})
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: ${{ steps.msrv.outputs.version }}
-        components: clippy, rustfmt
-    - name: Run cargo fmt
-      run: cargo fmt -- --check
+        toolchain: ${{ needs.crate_metadata.outputs.msrv }}
+        components: clippy
     - name: Run clippy (on minimum supported rust version to prevent warnings we can't fix)
       run: cargo clippy --locked --all-targets ${{ env.MSRV_FEATURES }}
     - name: Run tests
       run: cargo test --locked ${{ env.MSRV_FEATURES }}
 
   build:
-    name: ${{ matrix.job.os }} (${{ matrix.job.target }})
+    name: ${{ matrix.job.target }} (${{ matrix.job.os }})
     runs-on: ${{ matrix.job.os }}
+    needs: crate_metadata
     strategy:
       fail-fast: false
       matrix:
@@ -65,14 +94,6 @@ jobs:
           arm-unknown-linux-*) sudo apt-get -y update ; sudo apt-get -y install gcc-arm-linux-gnueabihf ;;
           aarch64-unknown-linux-gnu) sudo apt-get -y update ; sudo apt-get -y install gcc-aarch64-linux-gnu ;;
         esac
-
-    - name: Extract crate information
-      shell: bash
-      run: |
-        echo "PROJECT_NAME=hyperfine" >> $GITHUB_ENV
-        echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> $GITHUB_ENV
-        echo "PROJECT_MAINTAINER=$(sed -n 's/^authors = \["\(.*\)"\]/\1/p' Cargo.toml)" >> $GITHUB_ENV
-        echo "PROJECT_HOMEPAGE=$(sed -n 's/^homepage = "\(.*\)"/\1/p' Cargo.toml)" >> $GITHUB_ENV
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -104,8 +125,8 @@ jobs:
       shell: bash
       run: $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
 
-    - name: Strip debug information from executable
-      id: strip
+    - name: Set binary name & path
+      id: bin
       shell: bash
       run: |
         # Figure out suffix of binary
@@ -114,29 +135,11 @@ jobs:
           *-pc-windows-*) EXE_suffix=".exe" ;;
         esac;
 
-        # Figure out what strip tool to use if any
-        STRIP="strip"
-        case ${{ matrix.job.target }} in
-          arm-unknown-linux-*) STRIP="arm-linux-gnueabihf-strip" ;;
-          aarch64-unknown-linux-gnu) STRIP="aarch64-linux-gnu-strip" ;;
-          *-pc-windows-msvc) STRIP="" ;;
-        esac;
-
         # Setup paths
-        BIN_DIR="${{ env.CICD_INTERMEDIATES_DIR }}/stripped-release-bin/"
-        mkdir -p "${BIN_DIR}"
-        BIN_NAME="${{ env.PROJECT_NAME }}${EXE_suffix}"
-        BIN_PATH="${BIN_DIR}/${BIN_NAME}"
+        BIN_NAME="${{ needs.crate_metadata.outputs.name }}${EXE_suffix}"
+        BIN_PATH="target/${{ matrix.job.target }}/release/${BIN_NAME}"
 
-        # Copy the release build binary to the result location
-        cp "target/${{ matrix.job.target }}/release/${BIN_NAME}" "${BIN_DIR}"
-
-        # Also strip if possible
-        if [ -n "${STRIP}" ]; then
-          "${STRIP}" "${BIN_PATH}"
-        fi
-
-        # Let subsequent steps know where to find the (stripped) bin
+        # Let subsequent steps know where to find the binary
         echo "BIN_PATH=${BIN_PATH}" >> $GITHUB_OUTPUT
         echo "BIN_NAME=${BIN_NAME}" >> $GITHUB_OUTPUT
 
@@ -146,7 +149,7 @@ jobs:
       run: |
         # test only library unit tests and binary for arm-type targets
         unset CARGO_TEST_OPTIONS
-        unset CARGO_TEST_OPTIONS ; case ${{ matrix.job.target }} in arm-* | aarch64-*) CARGO_TEST_OPTIONS="--bin ${PROJECT_NAME}" ;; esac;
+        unset CARGO_TEST_OPTIONS ; case ${{ matrix.job.target }} in arm-* | aarch64-*) CARGO_TEST_OPTIONS="--bin ${{ needs.crate_metadata.outputs.name }}" ;; esac;
         echo "CARGO_TEST_OPTIONS=${CARGO_TEST_OPTIONS}" >> $GITHUB_OUTPUT
 
     - name: Run tests
@@ -158,7 +161,7 @@ jobs:
       shell: bash
       run: |
         PKG_suffix=".tar.gz" ; case ${{ matrix.job.target }} in *-pc-windows-*) PKG_suffix=".zip" ;; esac;
-        PKG_BASENAME=${PROJECT_NAME}-v${PROJECT_VERSION}-${{ matrix.job.target }}
+        PKG_BASENAME=${{ needs.crate_metadata.outputs.name }}-v${{ needs.crate_metadata.outputs.version }}-${{ matrix.job.target }}
         PKG_NAME=${PKG_BASENAME}${PKG_suffix}
         echo "PKG_NAME=${PKG_NAME}" >> $GITHUB_OUTPUT
 
@@ -168,19 +171,19 @@ jobs:
         mkdir -p "${ARCHIVE_DIR}/autocomplete"
 
         # Binary
-        cp "${{ steps.strip.outputs.BIN_PATH }}" "$ARCHIVE_DIR"
-
-        # Man page
-        cp 'doc/${{ env.PROJECT_NAME }}.1' "$ARCHIVE_DIR"
+        cp "${{ steps.bin.outputs.BIN_PATH }}" "$ARCHIVE_DIR"
 
         # README, LICENSE and CHANGELOG files
         cp "README.md" "LICENSE-MIT" "LICENSE-APACHE" "CHANGELOG.md" "$ARCHIVE_DIR"
 
+        # Man page
+        cp 'doc/${{ needs.crate_metadata.outputs.name }}.1' "$ARCHIVE_DIR"
+
         # Autocompletion files
-        cp 'target/${{ matrix.job.target }}/release/build/${{ env.PROJECT_NAME }}'*/out/'${{ env.PROJECT_NAME }}.bash' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ env.PROJECT_NAME }}'*/out/'${{ env.PROJECT_NAME }}.fish' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ env.PROJECT_NAME }}'*/out/'_${{ env.PROJECT_NAME }}.ps1' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ env.PROJECT_NAME }}'*/out/'_${{ env.PROJECT_NAME }}' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.bash' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.fish' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}.ps1' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}' "$ARCHIVE_DIR/autocomplete/"
 
         # base compressed package
         pushd "${PKG_STAGING}/" >/dev/null
@@ -203,10 +206,10 @@ jobs:
         DPKG_DIR="${DPKG_STAGING}/dpkg"
         mkdir -p "${DPKG_DIR}"
 
-        DPKG_BASENAME=${PROJECT_NAME}
-        DPKG_CONFLICTS=${PROJECT_NAME}-musl
-        case ${{ matrix.job.target }} in *-musl) DPKG_BASENAME=${PROJECT_NAME}-musl ; DPKG_CONFLICTS=${PROJECT_NAME} ;; esac;
-        DPKG_VERSION=${PROJECT_VERSION}
+        DPKG_BASENAME=${{ needs.crate_metadata.outputs.name }}
+        DPKG_CONFLICTS=${{ needs.crate_metadata.outputs.name }}-musl
+        case ${{ matrix.job.target }} in *-musl) DPKG_BASENAME=${{ needs.crate_metadata.outputs.name }}-musl ; DPKG_CONFLICTS=${{ needs.crate_metadata.outputs.name }} ;; esac;
+        DPKG_VERSION=${{ needs.crate_metadata.outputs.version }}
 
         unset DPKG_ARCH
         case ${{ matrix.job.target }} in
@@ -221,16 +224,16 @@ jobs:
         echo "DPKG_NAME=${DPKG_NAME}" >> $GITHUB_OUTPUT
 
         # Binary
-        install -Dm755 "${{ steps.strip.outputs.BIN_PATH }}" "${DPKG_DIR}/usr/bin/${{ steps.strip.outputs.BIN_NAME }}"
+        install -Dm755 "${{ steps.bin.outputs.BIN_PATH }}" "${DPKG_DIR}/usr/bin/${{ steps.bin.outputs.BIN_NAME }}"
 
         # Man page
-        install -Dm644 'doc/${{ env.PROJECT_NAME }}.1' "${DPKG_DIR}/usr/share/man/man1/${{ env.PROJECT_NAME }}.1"
-        gzip -n --best "${DPKG_DIR}/usr/share/man/man1/${{ env.PROJECT_NAME }}.1"
+        install -Dm644 'doc/${{ needs.crate_metadata.outputs.name }}.1' "${DPKG_DIR}/usr/share/man/man1/${{ needs.crate_metadata.outputs.name }}.1"
+        gzip -n --best "${DPKG_DIR}/usr/share/man/man1/${{ needs.crate_metadata.outputs.name }}.1"
 
         # Autocompletion files
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ env.PROJECT_NAME }}'*/out/'${{ env.PROJECT_NAME }}.bash' "${DPKG_DIR}/usr/share/bash-completion/completions/${{ env.PROJECT_NAME }}"
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ env.PROJECT_NAME }}'*/out/'${{ env.PROJECT_NAME }}.fish' "${DPKG_DIR}/usr/share/fish/vendor_completions.d/${{ env.PROJECT_NAME }}.fish"
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ env.PROJECT_NAME }}'*/out/'_${{ env.PROJECT_NAME }}' "${DPKG_DIR}/usr/share/zsh/vendor-completions/_${{ env.PROJECT_NAME }}"
+        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.bash' "${DPKG_DIR}/usr/share/bash-completion/completions/${{ needs.crate_metadata.outputs.name }}"
+        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.fish' "${DPKG_DIR}/usr/share/fish/vendor_completions.d/${{ needs.crate_metadata.outputs.name }}.fish"
+        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}' "${DPKG_DIR}/usr/share/zsh/vendor-completions/_${{ needs.crate_metadata.outputs.name }}"
 
         # README and LICENSE
         install -Dm644 "README.md" "${DPKG_DIR}/usr/share/doc/${DPKG_BASENAME}/README.md"
@@ -241,12 +244,12 @@ jobs:
 
         cat > "${DPKG_DIR}/usr/share/doc/${DPKG_BASENAME}/copyright" <<EOF
         Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-        Upstream-Name: ${{ env.PROJECT_NAME }}
-        Source: ${{ env.PROJECT_HOMEPAGE }}
+        Upstream-Name: ${{ needs.crate_metadata.outputs.name }}
+        Source: ${{ needs.crate_metadata.outputs.homepage }}
 
         Files: *
-        Copyright: ${{ env.PROJECT_MAINTAINER }}
-        Copyright: $COPYRIGHT_YEARS ${{ env.PROJECT_MAINTAINER }}
+        Copyright: ${{ needs.crate_metadata.outputs.maintainer }}
+        Copyright: $COPYRIGHT_YEARS ${{ needs.crate_metadata.outputs.maintainer }}
         License: Apache-2.0 or MIT
 
         License: Apache-2.0
@@ -287,10 +290,10 @@ jobs:
         Version: ${DPKG_VERSION}
         Section: utils
         Priority: optional
-        Maintainer: ${{ env.PROJECT_MAINTAINER }}
-        Homepage: ${{ env.PROJECT_HOMEPAGE }}
+        Maintainer: ${{ needs.crate_metadata.outputs.maintainer }}
+        Homepage: ${{ needs.crate_metadata.outputs.homepage }}
         Architecture: ${DPKG_ARCH}
-        Provides: ${{ env.PROJECT_NAME }}
+        Provides: ${{ needs.crate_metadata.outputs.name }}
         Conflicts: ${DPKG_CONFLICTS}
         Description: A command-line benchmarking tool
         EOF
