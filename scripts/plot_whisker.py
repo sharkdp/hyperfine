@@ -34,7 +34,7 @@ else:
 times = [b["times"] for b in results]
 
 boxplot = plt.boxplot(times, vert=True, patch_artist=True)
-cmap = plt.cm.get_cmap("rainbow")
+cmap = plt.colormaps["rainbow"]
 colors = [cmap(val / len(times)) for val in range(len(times))]
 
 for patch, color in zip(boxplot["boxes"], colors):
