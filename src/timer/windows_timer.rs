@@ -48,12 +48,14 @@ pub struct CPUTimer {
 
 impl CPUTimer {
     pub unsafe fn start_suspended_process(child: &process::Child) -> Self {
+        let child_handle = child.as_raw_handle().cast();
+
         // SAFETY: Creating a new job object is safe
         let job_object = unsafe { CreateJobObjectW(ptr::null_mut(), ptr::null_mut()) };
         assert!(!job_object.is_null(), "CreateJobObjectW failed");
 
         // SAFETY: The job object handle is valid
-        let ret = unsafe { AssignProcessToJobObject(job_object, child.as_raw_handle()) };
+        let ret = unsafe { AssignProcessToJobObject(job_object, child_handle) };
         assert!(ret != 0, "AssignProcessToJobObject failed");
 
         #[cfg(windows_process_extensions_main_thread_handle)]
@@ -70,7 +72,7 @@ impl CPUTimer {
             // resume a process by it's handle.
 
             // SAFETY: The process handle is valid
-            let ret = unsafe { NtResumeProcess(child.as_raw_handle()) };
+            let ret = unsafe { NtResumeProcess(child_handle) };
             assert!(ret == STATUS_SUCCESS, "NtResumeProcess failed");
         }
 
