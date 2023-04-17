@@ -17,14 +17,17 @@ parser.add_argument("--bins", help="Number of bins (default: auto)")
 parser.add_argument(
     "--type", help="Type of histogram (*bar*, barstacked, step, stepfilled)"
 )
-parser.add_argument(
-    "-o", "--output", help="Save image to the given filename."
-)
+parser.add_argument("-o", "--output", help="Save image to the given filename.")
 parser.add_argument(
     "--t-min", metavar="T", help="Minimum time to be displayed (seconds)"
 )
 parser.add_argument(
     "--t-max", metavar="T", help="Maximum time to be displayed (seconds)"
+)
+parser.add_argument(
+    "--log-count",
+    help="Use a logarithmic y-axis for the event count",
+    action="store_true",
 )
 
 args = parser.parse_args()
@@ -45,13 +48,22 @@ bins = int(args.bins) if args.bins else "auto"
 histtype = args.type if args.type else "bar"
 
 plt.hist(
-    all_times, label=labels, bins=bins, histtype=histtype, range=(t_min, t_max),
+    all_times,
+    label=labels,
+    bins=bins,
+    histtype=histtype,
+    range=(t_min, t_max),
 )
 plt.legend(prop={"family": ["Source Code Pro", "Fira Mono", "Courier New"]})
 
 plt.xlabel("Time [s]")
 if args.title:
     plt.title(args.title)
+
+if args.log_count:
+    plt.yscale("log")
+else:
+    plt.ylim(0, None)
 
 if args.output:
     plt.savefig(args.output)
