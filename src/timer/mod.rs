@@ -13,6 +13,9 @@ use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::os::unix::io::AsRawFd;
 
+#[cfg(target_os = "windows")]
+use windows_sys::Win32::System::Threading::CREATE_SUSPENDED;
+
 use crate::util::units::Second;
 use wall_clock_timer::WallClockTimer;
 
@@ -82,8 +85,8 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     {
         use std::os::windows::process::CommandExt;
 
-        // Create a suspended process
-        command.creation_flags(4);
+        // Create the process in a suspended state so that we don't miss any cpu time between process creation and `CPUTimer` start.
+        command.creation_flags(CREATE_SUSPENDED);
     }
 
     let wallclock_timer = WallClockTimer::start();

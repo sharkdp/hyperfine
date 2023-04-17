@@ -34,7 +34,13 @@ anyhow = "1.0"
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["processthreadsapi", "minwindef", "winnt", "jobapi2", "tlhelp32", "handleapi"] }
+windows-sys = { version = "0.45", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_JobObjects",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+] }
 
 [target.'cfg(all(windows, not(windows_process_extensions_main_thread_handle)))'.dependencies]
 once_cell = "1.17"
