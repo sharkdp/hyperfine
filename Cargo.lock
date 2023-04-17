@@ -434,7 +434,7 @@ dependencies = [
  "statistical",
  "tempfile",
  "thiserror",
- "winapi",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
