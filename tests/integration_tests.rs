@@ -345,3 +345,19 @@ fn performs_all_benchmarks_in_parameter_scan() {
                 .and(predicate::str::contains("Benchmark 5: sleep 50").not()),
         );
 }
+
+#[test]
+fn intermediate_results_are_not_exported_to_stdout() {
+    hyperfine_debug()
+        .arg("--style=none") // To only see the Markdown export on stdout
+        .arg("--export-markdown")
+        .arg("-")
+        .arg("sleep 1")
+        .arg("sleep 2")
+        .assert()
+        .success()
+        .stdout(
+            (predicate::str::contains("sleep 1").count(1))
+                .and(predicate::str::contains("sleep 2").count(1)),
+        );
+}
