@@ -68,18 +68,21 @@ impl<'a> Scheduler<'a> {
             let others = &annotated_results[1..];
 
             println!("{}", "Summary".bold());
-            println!("  '{}' ran", fastest.result.command.cyan());
+            println!(
+                "  {} ran",
+                fastest.result.command_with_unused_parameters.cyan()
+            );
 
             for item in others {
                 println!(
-                    "{}{} times faster than '{}'",
+                    "{}{} times faster than {}",
                     format!("{:8.2}", item.relative_speed).bold().green(),
                     if let Some(stddev) = item.relative_speed_stddev {
                         format!(" ± {}", format!("{:.2}", stddev).green())
                     } else {
                         "".into()
                     },
-                    &item.result.command.magenta()
+                    &item.result.command_with_unused_parameters.magenta()
                 );
             }
         } else {

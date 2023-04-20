@@ -94,6 +94,7 @@ fn test_asciidoc_format_s() {
     let results = vec![
         BenchmarkResult {
             command: String::from("FOO=1 BAR=2 command | 1"),
+            command_with_unused_parameters: String::from("FOO=1 BAR=2 command | 1"),
             mean: 1.0,
             stddev: Some(2.0),
             median: 1.0,
@@ -112,6 +113,7 @@ fn test_asciidoc_format_s() {
         },
         BenchmarkResult {
             command: String::from("FOO=1 BAR=7 command | 2"),
+            command_with_unused_parameters: String::from("FOO=1 BAR=7 command | 2"),
             mean: 11.0,
             stddev: Some(12.0),
             median: 11.0,
@@ -163,6 +165,7 @@ fn test_asciidoc_format_ms() {
     let results = vec![
         BenchmarkResult {
             command: String::from("FOO=1 BAR=7 command | 2"),
+            command_with_unused_parameters: String::from("FOO=1 BAR=7 command | 2"),
             mean: 0.011,
             stddev: Some(0.012),
             median: 0.011,
@@ -181,6 +184,7 @@ fn test_asciidoc_format_ms() {
         },
         BenchmarkResult {
             command: String::from("FOO=1 BAR=2 command | 1"),
+            command_with_unused_parameters: String::from("FOO=1 BAR=2 command | 1"),
             mean: 1.0,
             stddev: Some(2.0),
             median: 1.0,

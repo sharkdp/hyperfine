@@ -43,7 +43,9 @@ pub trait MarkupExporter {
         for entry in entries {
             let measurement = &entry.result;
             // prepare data row strings
-            let cmd_str = measurement.command.replace('|', "\\|");
+            let cmd_str = measurement
+                .command_with_unused_parameters
+                .replace('|', "\\|");
             let mean_str = format_duration_value(measurement.mean, Some(unit)).0;
             let stddev_str = if let Some(stddev) = measurement.stddev {
                 format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
@@ -119,6 +121,7 @@ fn test_determine_unit_from_results_unit_given_s() {
     let results = vec![
         BenchmarkResult {
             command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
             mean: 2.0050,
             stddev: Some(0.0020),
             median: 2.0050,
@@ -132,6 +135,7 @@ fn test_determine_unit_from_results_unit_given_s() {
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
             mean: 0.1057,
             stddev: Some(0.0016),
             median: 0.1057,
@@ -159,6 +163,7 @@ fn test_determine_unit_from_results_unit_given_ms() {
     let results = vec![
         BenchmarkResult {
             command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
             mean: 2.0050,
             stddev: Some(0.0020),
             median: 2.0050,
@@ -172,6 +177,7 @@ fn test_determine_unit_from_results_unit_given_ms() {
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
             mean: 0.1057,
             stddev: Some(0.0016),
             median: 0.1057,
@@ -199,6 +205,7 @@ fn test_determine_unit_from_results_unit_first_s() {
     let results = vec![
         BenchmarkResult {
             command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
             mean: 2.0050,
             stddev: Some(0.0020),
             median: 2.0050,
@@ -212,6 +219,7 @@ fn test_determine_unit_from_results_unit_first_s() {
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
             mean: 0.1057,
             stddev: Some(0.0016),
             median: 0.1057,
@@ -239,6 +247,7 @@ fn test_determine_unit_from_results_unit_first_ms() {
     let results = vec![
         BenchmarkResult {
             command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
             mean: 0.1057,
             stddev: Some(0.0016),
             median: 0.1057,
@@ -252,6 +261,7 @@ fn test_determine_unit_from_results_unit_first_ms() {
         },
         BenchmarkResult {
             command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
             mean: 2.0050,
             stddev: Some(0.0020),
             median: 2.0050,

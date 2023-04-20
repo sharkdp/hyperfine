@@ -77,6 +77,7 @@ fn test_orgmode_format_ms() {
     let results = vec![
         BenchmarkResult {
             command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
             mean: 0.1057,
             stddev: Some(0.0016),
             median: 0.1057,
@@ -90,6 +91,7 @@ fn test_orgmode_format_ms() {
         },
         BenchmarkResult {
             command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
             mean: 2.0050,
             stddev: Some(0.0020),
             median: 2.0050,
@@ -129,6 +131,7 @@ fn test_orgmode_format_s() {
     let results = vec![
         BenchmarkResult {
             command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
             mean: 2.0050,
             stddev: Some(0.0020),
             median: 2.0050,
@@ -142,6 +145,7 @@ fn test_orgmode_format_s() {
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
             mean: 0.1057,
             stddev: Some(0.0016),
             median: 0.1057,

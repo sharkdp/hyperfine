@@ -382,3 +382,19 @@ fn exports_intermediate_results_to_file() {
     let contents = std::fs::read_to_string(export_path).unwrap();
     assert!(contents.contains("true"));
 }
+
+#[test]
+fn unused_parameters_are_shown_in_benchmark_name() {
+    hyperfine()
+        .arg("--runs=2")
+        .arg("--parameter-list")
+        .arg("branch")
+        .arg("master,feature")
+        .arg("echo test")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("echo test (branch = master)")
+                .and(predicate::str::contains("echo test (branch = feature)")),
+        );
+}
