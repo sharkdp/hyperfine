@@ -10,7 +10,7 @@ repository = "https://github.com/sharkdp/hyperfine"
 version = "1.16.1"
 edition = "2018"
 build = "build.rs"
-rust-version = "1.64.0"
+rust-version = "1.65.0"
 
 [features]
 # Use the nightly feature windows_process_extensions_main_thread_handle
@@ -34,7 +34,7 @@ anyhow = "1.0"
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.45", features = [
+windows-sys = { version = "0.48", features = [
     "Win32_Foundation",
     "Win32_Security",
     "Win32_System_JobObjects",
