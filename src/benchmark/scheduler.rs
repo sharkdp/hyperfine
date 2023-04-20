@@ -87,8 +87,9 @@ impl<'a> Scheduler<'a> {
                 "{}: The benchmark comparison could not be computed as some benchmark times are zero. \
                  This could be caused by background interference during the initial calibration phase \
                  of hyperfine, in combination with very fast commands (faster than a few milliseconds). \
-                 Try to re-run the benchmark on a quiet system. If it does not help, you command is \
-                 most likely too fast to be accurately benchmarked by hyperfine.",
+                 Try to re-run the benchmark on a quiet system. If you did not do so already, try the \
+                 --shell=none/-N option. If it does not help either, you command is most likely too fast \
+                 to be accurately benchmarked by hyperfine.",
                  "Note".bold().red()
             );
         }
