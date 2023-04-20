@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::str::FromStr;
 
+use crate::parameter::tokenize::tokenize;
+use crate::parameter::ParameterValue;
 use crate::{
     error::{OptionsError, ParameterScanError},
     parameter::{
@@ -11,9 +13,6 @@ use crate::{
 };
 
 use clap::{parser::ValuesRef, ArgMatches};
-
-use crate::parameter::tokenize::tokenize;
-use crate::parameter::ParameterValue;
 
 use anyhow::{bail, Context, Result};
 use rust_decimal::Decimal;
@@ -59,6 +58,23 @@ impl<'a> Command<'a> {
         )
     }
 
+    pub fn get_name_with_unused_parameters(&self) -> String {
+        let parameters = self
+            .get_unused_parameters()
+            .map(|(parameter, value)| {
+                format!("{} = {}, ", parameter.to_string(), value.to_string())
+            })
+            .collect::<String>();
+        let parameters = parameters.trim_end_matches(", ");
+        let parameters = if parameters.is_empty() {
+            "".into()
+        } else {
+            format!(" ({})", parameters)
+        };
+
+        format!("{}{}", self.get_name(), parameters)
+    }
+
     pub fn get_command_line(&self) -> String {
         self.replace_parameters_in(self.expression)
     }
@@ -80,6 +96,12 @@ impl<'a> Command<'a> {
 
     pub fn get_parameters(&self) -> &[(&'a str, ParameterValue)] {
         &self.parameters
+    }
+
+    pub fn get_unused_parameters(&self) -> impl Iterator<Item = &(&'a str, ParameterValue)> {
+        self.parameters
+            .iter()
+            .filter(move |(parameter, _)| !self.expression.contains(&format!("{{{}}}", parameter)))
     }
 
     fn replace_parameters_in(&self, original: &str) -> String {

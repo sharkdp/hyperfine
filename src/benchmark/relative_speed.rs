@@ -89,6 +89,7 @@ fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
 
     BenchmarkResult {
         command: name.into(),
+        command_with_unused_parameters: name.into(),
         mean,
         stddev: Some(1.0),
         median: mean,

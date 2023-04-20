@@ -112,13 +112,12 @@ impl<'a> Benchmark<'a> {
 
     /// Run the benchmark for a single command
     pub fn run(&self) -> Result<BenchmarkResult> {
-        let command_name = self.command.get_name();
         if self.options.output_style != OutputStyleOption::Disabled {
             println!(
                 "{}{}: {}",
                 "Benchmark ".bold(),
                 (self.number + 1).to_string().bold(),
-                command_name,
+                self.command.get_name_with_unused_parameters(),
             );
         }
 
@@ -369,7 +368,8 @@ impl<'a> Benchmark<'a> {
         self.run_cleanup_command(self.command.get_parameters().iter().cloned())?;
 
         Ok(BenchmarkResult {
-            command: command_name,
+            command: self.command.get_name(),
+            command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
             mean: t_mean,
             stddev: t_stddev,
             median: t_median,
