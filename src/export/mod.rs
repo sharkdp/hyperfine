@@ -45,22 +45,31 @@ trait Exporter {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>>;
 }
 
-struct ExporterWithFilename {
+pub enum ExportTarget {
+    File(String),
+    Stdout,
+}
+
+struct ExporterWithTarget {
     exporter: Box<dyn Exporter>,
-    filename: String,
+    target: ExportTarget,
 }
 
 /// Handles the management of multiple file exporters.
 #[derive(Default)]
 pub struct ExportManager {
-    exporters: Vec<ExporterWithFilename>,
+    exporters: Vec<ExporterWithTarget>,
+    time_unit: Option<Unit>,
 }
 
 impl ExportManager {
     /// Build the ExportManager that will export the results specified
     /// in the given ArgMatches
-    pub fn from_cli_arguments(matches: &ArgMatches) -> Result<Self> {
-        let mut export_manager = Self::default();
+    pub fn from_cli_arguments(matches: &ArgMatches, time_unit: Option<Unit>) -> Result<Self> {
+        let mut export_manager = Self {
+            exporters: vec![],
+            time_unit,
+        };
         {
             let mut add_exporter = |flag, exporttype| -> Result<()> {
                 if let Some(filename) = matches.get_one::<String>(flag) {
@@ -87,29 +96,43 @@ impl ExportManager {
             ExportType::Orgmode => Box::<OrgmodeExporter>::default(),
         };
 
-        self.exporters.push(ExporterWithFilename {
+        self.exporters.push(ExporterWithTarget {
             exporter,
-            filename: if filename == "-" {
-                if cfg!(windows) {
-                    "con:".to_string()
-                } else {
-                    "/dev/stdout".to_string()
-                }
+            target: if filename == "-" {
+                ExportTarget::Stdout
             } else {
                 let _ = File::create(filename)
                     .with_context(|| format!("Could not create export file '{}'", filename))?;
-                filename.to_string()
+                ExportTarget::File(filename.to_string())
             },
         });
 
         Ok(())
     }
 
-    /// Write the given results to all Exporters contained within this manager
-    pub fn write_results(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<()> {
+    /// Write the given results to all Exporters. The 'intermediate' flag specifies
+    /// whether this is being called while still performing benchmarks, or if this
+    /// is the final call after all benchmarks have been finished. In the former case,
+    /// results are written to all file targets (to always have them up to date, even
+    /// if a benchmark fails). In the latter case, we only print to stdout targets (in
+    /// order not to clutter the output of hyperfine with intermediate results).
+    pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
         for e in &self.exporters {
-            let file_content = e.exporter.serialize(results, unit)?;
-            write_to_file(&e.filename, &file_content)?;
+            let content = || e.exporter.serialize(results, self.time_unit);
+
+            match e.target {
+                ExportTarget::File(ref filename) => {
+                    if intermediate {
+                        write_to_file(filename, &content()?)?
+                    }
+                }
+                ExportTarget::Stdout => {
+                    if !intermediate {
+                        println!();
+                        println!("{}", String::from_utf8(content()?).unwrap());
+                    }
+                }
+            }
         }
         Ok(())
     }

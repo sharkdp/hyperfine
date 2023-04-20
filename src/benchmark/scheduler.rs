@@ -44,10 +44,9 @@ impl<'a> Scheduler<'a> {
             self.results
                 .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
 
-            // We export (all results so far) after each individual benchmark, because
-            // we would risk losing all results if a later benchmark fails.
-            self.export_manager
-                .write_results(&self.results, self.options.time_unit)?;
+            // We export results after each individual benchmark, because
+            // we would risk losing them if a later benchmark fails.
+            self.export_manager.write_results(&self.results, true)?;
         }
 
         Ok(())
@@ -93,5 +92,9 @@ impl<'a> Scheduler<'a> {
                  "Note".bold().red()
             );
         }
+    }
+
+    pub fn final_export(&self) -> Result<()> {
+        self.export_manager.write_results(&self.results, false)
     }
 }
