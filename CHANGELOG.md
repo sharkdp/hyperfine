@@ -2,14 +2,18 @@
 
 ## Features
 
-
+- Parameters which are unused in the command line are now displayed in parentheses, see #600 and #644 (@sharkdp).
+- Added `--log-count` option for histogram plots, see `scripts/plot_histogram.py` (@sharkdp)
 
 ## Changes
 
-
+- Updated hyperfine to use `windows-sys` instead of the unmaintained `winapi`, see #624, #639, #636, #641 (@clemenswasser)
+- Silenced deprecation warning in Python scripts, see #633 (@nicovank)
 
 ## Bugfixes
 
+- Do not export intermediate results to stdout when using `-` as a file name, see #640 and #643 (@sharkdp)
+- Markup exporting does not fail if benchmark results are zero, see #642 (@sharkdp)
 
 
 ## Other
