@@ -10,6 +10,7 @@ pub enum Alignment {
     Left,
     Right,
 }
+
 pub trait MarkupExporter {
     fn table_results(&self, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> String {
         // prepare table header strings
