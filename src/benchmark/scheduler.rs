@@ -61,7 +61,7 @@ impl<'a> Scheduler<'a> {
             return;
         }
 
-        if let Some(mut annotated_results) = relative_speed::compute(&self.results) {
+        if let Some(mut annotated_results) = relative_speed::compute_with_check(&self.results) {
             annotated_results.sort_by(|l, r| relative_speed::compare_mean_time(l.result, r.result));
 
             let fastest = &annotated_results[0];
