@@ -4,7 +4,7 @@ use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 
 use super::Exporter;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 pub enum Alignment {
     Left,
@@ -106,13 +106,8 @@ impl<T: MarkupExporter> Exporter for T {
     fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
         let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
         let entries = relative_speed::compute(results);
-        if entries.is_none() {
-            return Err(anyhow!(
-                "Relative speed comparison is not available for markup exporter."
-            ));
-        }
 
-        let table = self.table_results(&entries.unwrap(), unit);
+        let table = self.table_results(&entries, unit);
         Ok(table.as_bytes().to_vec())
     }
 }

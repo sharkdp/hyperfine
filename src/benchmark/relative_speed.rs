@@ -15,43 +15,72 @@ pub fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
     l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal)
 }
 
-pub fn compute(results: &[BenchmarkResult]) -> Option<Vec<BenchmarkResultWithRelativeSpeed>> {
-    let fastest: &BenchmarkResult = results
+fn fastest_of(results: &[BenchmarkResult]) -> &BenchmarkResult {
+    results
         .iter()
         .min_by(|&l, &r| compare_mean_time(l, r))
-        .expect("at least one benchmark result");
+        .expect("at least one benchmark result")
+}
+
+fn compute_relative_speeds<'a>(
+    results: &'a [BenchmarkResult],
+    fastest: &'a BenchmarkResult,
+) -> Vec<BenchmarkResultWithRelativeSpeed<'a>> {
+    results
+        .iter()
+        .map(|result| {
+            let is_fastest = result == fastest;
+
+            if result.mean == 0.0 {
+                return BenchmarkResultWithRelativeSpeed {
+                    result,
+                    relative_speed: if is_fastest { 1.0 } else { f64::INFINITY },
+                    relative_speed_stddev: None,
+                    is_fastest,
+                };
+            }
+
+            let ratio = result.mean / fastest.mean;
+
+            // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
+            // Covariance asssumed to be 0, i.e. variables are assumed to be independent
+            let ratio_stddev = match (result.stddev, fastest.stddev) {
+                (Some(result_stddev), Some(fastest_stddev)) => Some(
+                    ratio
+                        * ((result_stddev / result.mean).powi(2)
+                            + (fastest_stddev / fastest.mean).powi(2))
+                        .sqrt(),
+                ),
+                _ => None,
+            };
+
+            BenchmarkResultWithRelativeSpeed {
+                result,
+                relative_speed: ratio,
+                relative_speed_stddev: ratio_stddev,
+                is_fastest,
+            }
+        })
+        .collect()
+}
+
+pub fn compute_with_check(
+    results: &[BenchmarkResult],
+) -> Option<Vec<BenchmarkResultWithRelativeSpeed>> {
+    let fastest = fastest_of(results);
 
     if fastest.mean == 0.0 {
         return None;
     }
 
-    Some(
-        results
-            .iter()
-            .map(|result| {
-                let ratio = result.mean / fastest.mean;
+    Some(compute_relative_speeds(results, fastest))
+}
 
-                // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
-                // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-                let ratio_stddev = match (result.stddev, fastest.stddev) {
-                    (Some(result_stddev), Some(fastest_stddev)) => Some(
-                        ratio
-                            * ((result_stddev / result.mean).powi(2)
-                                + (fastest_stddev / fastest.mean).powi(2))
-                            .sqrt(),
-                    ),
-                    _ => None,
-                };
+/// Same as compute_with_check, potentially resulting in relative speeds of infinity
+pub fn compute(results: &[BenchmarkResult]) -> Vec<BenchmarkResultWithRelativeSpeed> {
+    let fastest = fastest_of(results);
 
-                BenchmarkResultWithRelativeSpeed {
-                    result,
-                    relative_speed: ratio,
-                    relative_speed_stddev: ratio_stddev,
-                    is_fastest: result == fastest,
-                }
-            })
-            .collect(),
-    )
+    compute_relative_speeds(results, fastest)
 }
 
 #[cfg(test)]
@@ -83,7 +112,7 @@ fn test_compute_relative_speed() {
         create_result("cmd3", 5.0),
     ];
 
-    let annotated_results = compute(&results).unwrap();
+    let annotated_results = compute_with_check(&results).unwrap();
 
     assert_relative_eq!(1.5, annotated_results[0].relative_speed);
     assert_relative_eq!(1.0, annotated_results[1].relative_speed);
@@ -94,7 +123,7 @@ fn test_compute_relative_speed() {
 fn test_compute_relative_speed_for_zero_times() {
     let results = vec![create_result("cmd1", 1.0), create_result("cmd2", 0.0)];
 
-    let annotated_results = compute(&results);
+    let annotated_results = compute_with_check(&results);
 
     assert!(annotated_results.is_none());
 }
