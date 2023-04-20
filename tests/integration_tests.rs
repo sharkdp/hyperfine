@@ -361,3 +361,24 @@ fn intermediate_results_are_not_exported_to_stdout() {
                 .and(predicate::str::contains("sleep 2").count(1)),
         );
 }
+
+#[test]
+#[cfg(unix)]
+fn exports_intermediate_results_to_file() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let export_path = tempdir.path().join("results.md");
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--export-markdown")
+        .arg(&export_path)
+        .arg("true")
+        .arg("false")
+        .assert()
+        .failure();
+
+    let contents = std::fs::read_to_string(export_path).unwrap();
+    assert!(contents.contains("true"));
+}
