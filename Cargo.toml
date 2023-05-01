@@ -62,7 +62,7 @@ tempfile = "3.3"
 [build-dependencies]
 clap = "4.0.18"
 atty = "0.2"
-clap_complete = "4.0.3"
+clap_complete = "4.2.1"
 
 [profile.release]
 lto = true
