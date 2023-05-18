@@ -325,7 +325,7 @@ impl<'a> Benchmark<'a> {
             warnings.push(Warnings::FastExecutionTime);
         }
 
-        // Check programm exit codes
+        // Check program exit codes
         if !all_succeeded {
             warnings.push(Warnings::NonZeroExitCode);
         }
