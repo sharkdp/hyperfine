@@ -253,7 +253,7 @@ fn build_command() -> Command {
                 .long("export-orgmode")
                 .action(ArgAction::Set)
                 .value_name("FILE")
-                .help("Export the timing summary statistics as a Emacs org-mode table to the given FILE. \
+                .help("Export the timing summary statistics as an Emacs org-mode table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
         )
         .arg(
