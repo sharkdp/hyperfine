@@ -61,9 +61,7 @@ impl<'a> Command<'a> {
     pub fn get_name_with_unused_parameters(&self) -> String {
         let parameters = self
             .get_unused_parameters()
-            .map(|(parameter, value)| {
-                format!("{} = {}, ", parameter.to_string(), value.to_string())
-            })
+            .map(|(parameter, value)| format!("{} = {}, ", parameter, value.to_string()))
             .collect::<String>();
         let parameters = parameters.trim_end_matches(", ");
         let parameters = if parameters.is_empty() {

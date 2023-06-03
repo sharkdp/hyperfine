@@ -103,12 +103,10 @@ impl<'a> Scheduler<'a> {
                             format!("{:10.2}", item.relative_speed).bold().green(),
                             if item.is_fastest {
                                 "        ".into()
+                            } else if let Some(stddev) = item.relative_speed_stddev {
+                                format!(" ± {}", format!("{:5.2}", stddev).green())
                             } else {
-                                if let Some(stddev) = item.relative_speed_stddev {
-                                    format!(" ± {}", format!("{:5.2}", stddev).green())
-                                } else {
-                                    "        ".into()
-                                }
+                                "        ".into()
                             },
                             &item.result.command_with_unused_parameters,
                         );
