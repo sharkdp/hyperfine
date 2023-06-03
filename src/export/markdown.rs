@@ -28,6 +28,9 @@ impl MarkupExporter for MarkdownExporter {
     }
 }
 
+#[cfg(test)]
+use crate::options::SortOrder;
+
 /// Check Markdown-based data row formatting
 #[test]
 fn test_markdown_formatter_table_data() {
@@ -99,7 +102,12 @@ fn test_markdown_format_ms() {
         },
     ];
 
-    let actual = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
+    let actual = String::from_utf8(
+        exporter
+            .serialize(&timing_results, None, SortOrder::Command)
+            .unwrap(),
+    )
+    .unwrap();
     let expect = format!(
         "{}\
 | `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
@@ -151,7 +159,12 @@ fn test_markdown_format_s() {
         },
     ];
 
-    let actual = String::from_utf8(exporter.serialize(&timing_results, None).unwrap()).unwrap();
+    let actual = String::from_utf8(
+        exporter
+            .serialize(&timing_results, None, SortOrder::Command)
+            .unwrap(),
+    )
+    .unwrap();
     let expect = format!(
         "{}\
 | `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
@@ -174,20 +187,6 @@ fn test_markdown_format_time_unit_s() {
 
     let timing_results = vec![
         BenchmarkResult {
-            command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
-            mean: 0.1057,
-            stddev: Some(0.0016),
-            median: 0.1057,
-            user: 0.0009,
-            system: 0.0011,
-            min: 0.1023,
-            max: 0.1080,
-            times: Some(vec![0.1, 0.1, 0.1]),
-            exit_codes: vec![Some(0), Some(0), Some(0)],
-            parameters: BTreeMap::new(),
-        },
-        BenchmarkResult {
             command: String::from("sleep 2"),
             command_with_unused_parameters: String::from("sleep 2"),
             mean: 2.0050,
@@ -201,23 +200,57 @@ fn test_markdown_format_time_unit_s() {
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
     ];
 
-    let actual = String::from_utf8(
-        exporter
-            .serialize(&timing_results, Some(Unit::Second))
-            .unwrap(),
-    )
-    .unwrap();
-    let expect = format!(
-        "{}\
+    {
+        let actual = String::from_utf8(
+            exporter
+                .serialize(&timing_results, Some(Unit::Second), SortOrder::Command)
+                .unwrap(),
+        )
+        .unwrap();
+        let expect = format!(
+            "{}\
+| `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
+| `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
+",
+            cfg_test_table_header("s".to_string())
+        );
+
+        assert_eq!(expect, actual);
+    }
+
+    {
+        let actual = String::from_utf8(
+            exporter
+                .serialize(&timing_results, Some(Unit::Second), SortOrder::MeanTime)
+                .unwrap(),
+        )
+        .unwrap();
+        let expect = format!(
+            "{}\
 | `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
 | `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
 ",
-        cfg_test_table_header("s".to_string())
-    );
+            cfg_test_table_header("s".to_string())
+        );
 
-    assert_eq!(expect, actual);
+        assert_eq!(expect, actual);
+    }
 }
 
 /// This (again) demonstrates that the given time unit (ms) is used to set
@@ -263,7 +296,7 @@ fn test_markdown_format_time_unit_ms() {
 
     let actual = String::from_utf8(
         exporter
-            .serialize(&timing_results, Some(Unit::MilliSecond))
+            .serialize(&timing_results, Some(Unit::MilliSecond), SortOrder::Command)
             .unwrap(),
     )
     .unwrap();

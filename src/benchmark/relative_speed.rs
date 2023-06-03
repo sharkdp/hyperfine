@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use super::benchmark_result::BenchmarkResult;
-use crate::util::units::Scalar;
+use crate::{options::SortOrder, util::units::Scalar};
 
 #[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
@@ -25,8 +25,9 @@ fn fastest_of(results: &[BenchmarkResult]) -> &BenchmarkResult {
 fn compute_relative_speeds<'a>(
     results: &'a [BenchmarkResult],
     fastest: &'a BenchmarkResult,
+    sort_order: SortOrder,
 ) -> Vec<BenchmarkResultWithRelativeSpeed<'a>> {
-    results
+    let mut results: Vec<_> = results
         .iter()
         .map(|result| {
             let is_fastest = result == fastest;
@@ -61,11 +62,21 @@ fn compute_relative_speeds<'a>(
                 is_fastest,
             }
         })
-        .collect()
+        .collect();
+
+    match sort_order {
+        SortOrder::Command => {}
+        SortOrder::MeanTime => {
+            results.sort_unstable_by(|r1, r2| compare_mean_time(r1.result, r2.result));
+        }
+    }
+
+    results
 }
 
 pub fn compute_with_check(
     results: &[BenchmarkResult],
+    sort_order: SortOrder,
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed>> {
     let fastest = fastest_of(results);
 
@@ -73,14 +84,17 @@ pub fn compute_with_check(
         return None;
     }
 
-    Some(compute_relative_speeds(results, fastest))
+    Some(compute_relative_speeds(results, fastest, sort_order))
 }
 
 /// Same as compute_with_check, potentially resulting in relative speeds of infinity
-pub fn compute(results: &[BenchmarkResult]) -> Vec<BenchmarkResultWithRelativeSpeed> {
+pub fn compute(
+    results: &[BenchmarkResult],
+    sort_order: SortOrder,
+) -> Vec<BenchmarkResultWithRelativeSpeed> {
     let fastest = fastest_of(results);
 
-    compute_relative_speeds(results, fastest)
+    compute_relative_speeds(results, fastest, sort_order)
 }
 
 #[cfg(test)]
@@ -113,7 +127,7 @@ fn test_compute_relative_speed() {
         create_result("cmd3", 5.0),
     ];
 
-    let annotated_results = compute_with_check(&results).unwrap();
+    let annotated_results = compute_with_check(&results, SortOrder::Command).unwrap();
 
     assert_relative_eq!(1.5, annotated_results[0].relative_speed);
     assert_relative_eq!(1.0, annotated_results[1].relative_speed);
@@ -124,7 +138,7 @@ fn test_compute_relative_speed() {
 fn test_compute_relative_speed_for_zero_times() {
     let results = vec![create_result("cmd1", 1.0), create_result("cmd2", 0.0)];
 
-    let annotated_results = compute_with_check(&results);
+    let annotated_results = compute_with_check(&results, SortOrder::Command);
 
     assert!(annotated_results.is_none());
 }

@@ -398,3 +398,28 @@ fn unused_parameters_are_shown_in_benchmark_name() {
                 .and(predicate::str::contains("echo test (branch = feature)")),
         );
 }
+
+#[test]
+fn speed_comparison_sort_order() {
+    for sort_order in ["auto", "mean-time"] {
+        hyperfine_debug()
+            .arg("sleep 2")
+            .arg("sleep 1")
+            .arg(format!("--sort={sort_order}"))
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                "sleep 1 ran\n    2.00 ± 0.00 times faster than sleep 2",
+            ));
+    }
+
+    hyperfine_debug()
+        .arg("sleep 2")
+        .arg("sleep 1")
+        .arg("--sort=command")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "2.00 ±  0.00  sleep 2\n        1.00          sleep 1",
+        ));
+}
