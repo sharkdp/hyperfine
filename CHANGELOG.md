@@ -1,7 +1,8 @@
-# unreleased
+# v0.17.0
 
 ## Features
 
+- Add new `--sort` option to control the order in the rel. speed comparison and in markup export formats, see #601, #614, #655 (@sharkdp)
 - Parameters which are unused in the command line are now displayed in parentheses, see #600 and #644 (@sharkdp).
 - Added `--log-count` option for histogram plots, see `scripts/plot_histogram.py` (@sharkdp)
 
@@ -9,14 +10,12 @@
 
 - Updated hyperfine to use `windows-sys` instead of the unmaintained `winapi`, see #624, #639, #636, #641 (@clemenswasser)
 - Silenced deprecation warning in Python scripts, see #633 (@nicovank)
+- Major update of the man page, see 0ce6578, #647 (@sharkdp)
 
 ## Bugfixes
 
 - Do not export intermediate results to stdout when using `-` as a file name, see #640 and #643 (@sharkdp)
 - Markup exporting does not fail if benchmark results are zero, see #642 (@sharkdp)
-
-
-## Other
 
 
 # v1.16.1
