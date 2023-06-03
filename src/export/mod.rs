@@ -15,6 +15,7 @@ use self::markdown::MarkdownExporter;
 use self::orgmode::OrgmodeExporter;
 
 use crate::benchmark::benchmark_result::BenchmarkResult;
+use crate::options::SortOrder;
 use crate::util::units::Unit;
 
 use anyhow::{Context, Result};
@@ -42,7 +43,12 @@ pub enum ExportType {
 /// Interface for different exporters.
 trait Exporter {
     /// Export the given entries in the serialized form.
-    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>>;
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        unit: Option<Unit>,
+        sort_order: SortOrder,
+    ) -> Result<Vec<u8>>;
 }
 
 pub enum ExportTarget {
@@ -116,9 +122,14 @@ impl ExportManager {
     /// results are written to all file targets (to always have them up to date, even
     /// if a benchmark fails). In the latter case, we only print to stdout targets (in
     /// order not to clutter the output of hyperfine with intermediate results).
-    pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
+    pub fn write_results(
+        &self,
+        results: &[BenchmarkResult],
+        sort_order: SortOrder,
+        intermediate: bool,
+    ) -> Result<()> {
         for e in &self.exporters {
-            let content = || e.exporter.serialize(results, self.time_unit);
+            let content = || e.exporter.serialize(results, self.time_unit, sort_order);
 
             match e.target {
                 ExportTarget::File(ref filename) => {

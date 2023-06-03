@@ -1,5 +1,6 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
+use crate::options::SortOrder;
 use crate::output::format::format_duration_value;
 use crate::util::units::Unit;
 
@@ -105,9 +106,14 @@ fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
 }
 
 impl<T: MarkupExporter> Exporter for T {
-    fn serialize(&self, results: &[BenchmarkResult], unit: Option<Unit>) -> Result<Vec<u8>> {
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        unit: Option<Unit>,
+        sort_order: SortOrder,
+    ) -> Result<Vec<u8>> {
         let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
-        let entries = relative_speed::compute(results);
+        let entries = relative_speed::compute(results, sort_order);
 
         let table = self.table_results(&entries, unit);
         Ok(table.as_bytes().to_vec())

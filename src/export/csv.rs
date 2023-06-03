@@ -4,6 +4,7 @@ use csv::WriterBuilder;
 
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
+use crate::options::SortOrder;
 use crate::util::units::Unit;
 
 use anyhow::Result;
@@ -12,7 +13,12 @@ use anyhow::Result;
 pub struct CsvExporter {}
 
 impl Exporter for CsvExporter {
-    fn serialize(&self, results: &[BenchmarkResult], _unit: Option<Unit>) -> Result<Vec<u8>> {
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        _unit: Option<Unit>,
+        _sort_order: SortOrder,
+    ) -> Result<Vec<u8>> {
         let mut writer = WriterBuilder::new().from_writer(vec![]);
 
         {
@@ -105,8 +111,12 @@ fn test_csv() {
         FOO=one BAR=seven command | 2,11,12,11,13,14,15,16.5,seven,one\n\
         ",
     );
-    let gens =
-        String::from_utf8(exporter.serialize(&results, Some(Unit::Second)).unwrap()).unwrap();
+    let gens = String::from_utf8(
+        exporter
+            .serialize(&results, Some(Unit::Second), SortOrder::Command)
+            .unwrap(),
+    )
+    .unwrap();
 
     assert_eq!(exps, gens);
 }

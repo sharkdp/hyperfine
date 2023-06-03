@@ -77,6 +77,9 @@ fn cfg_test_table_header(unit_short_name: &str) -> String {
 }
 
 #[cfg(test)]
+use crate::options::SortOrder;
+
+#[cfg(test)]
 use crate::util::units::Unit;
 
 #[cfg(test)]
@@ -132,8 +135,12 @@ fn test_asciidoc_format_s() {
         },
     ];
 
-    let actual =
-        String::from_utf8(exporter.serialize(&results, Some(Unit::Second)).unwrap()).unwrap();
+    let actual = String::from_utf8(
+        exporter
+            .serialize(&results, Some(Unit::Second), SortOrder::Command)
+            .unwrap(),
+    )
+    .unwrap();
     let expect = format!(
         "{}
 | `FOO=1 BAR=2 command \\| 1` 
@@ -205,7 +212,7 @@ fn test_asciidoc_format_ms() {
 
     let actual = String::from_utf8(
         exporter
-            .serialize(&results, Some(Unit::MilliSecond))
+            .serialize(&results, Some(Unit::MilliSecond), SortOrder::Command)
             .unwrap(),
     )
     .unwrap();

@@ -95,6 +95,12 @@ pub enum OutputStyleOption {
     Disabled,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortOrder {
+    Command,
+    MeanTime,
+}
+
 /// Bounds for the number of benchmark runs
 pub struct RunBounds {
     /// Minimum number of benchmark runs
@@ -210,6 +216,12 @@ pub struct Options {
     /// What color mode to use for the terminal output
     pub output_style: OutputStyleOption,
 
+    /// How to order benchmarks in the relative speed comparison
+    pub sort_order_speed_comparison: SortOrder,
+
+    /// How to order benchmarks in the markup format exports
+    pub sort_order_exports: SortOrder,
+
     /// Determines how we run commands
     pub executor_kind: ExecutorKind,
 
@@ -234,6 +246,8 @@ impl Default for Options {
             setup_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
+            sort_order_speed_comparison: SortOrder::MeanTime,
+            sort_order_exports: SortOrder::Command,
             executor_kind: ExecutorKind::default(),
             command_output_policy: CommandOutputPolicy::Null,
             time_unit: None,
@@ -344,6 +358,16 @@ impl Options {
                 colored::control::set_override(true)
             }
             OutputStyleOption::Disabled => {}
+        };
+
+        (
+            options.sort_order_speed_comparison,
+            options.sort_order_exports,
+        ) = match matches.get_one::<String>("sort").map(|s| s.as_str()) {
+            None | Some("auto") => (SortOrder::MeanTime, SortOrder::Command),
+            Some("command") => (SortOrder::Command, SortOrder::Command),
+            Some("mean-time") => (SortOrder::MeanTime, SortOrder::MeanTime),
+            Some(_) => unreachable!("Unknown sort order"),
         };
 
         options.executor_kind = if matches.get_flag("no-shell") {

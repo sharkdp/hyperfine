@@ -6,7 +6,7 @@ use super::{relative_speed, Benchmark};
 
 use crate::command::Commands;
 use crate::export::ExportManager;
-use crate::options::{ExecutorKind, Options, OutputStyleOption};
+use crate::options::{ExecutorKind, Options, OutputStyleOption, SortOrder};
 
 use anyhow::Result;
 
@@ -46,7 +46,11 @@ impl<'a> Scheduler<'a> {
 
             // We export results after each individual benchmark, because
             // we would risk losing them if a later benchmark fails.
-            self.export_manager.write_results(&self.results, true)?;
+            self.export_manager.write_results(
+                &self.results,
+                self.options.sort_order_exports,
+                true,
+            )?;
         }
 
         Ok(())
@@ -61,29 +65,55 @@ impl<'a> Scheduler<'a> {
             return;
         }
 
-        if let Some(mut annotated_results) = relative_speed::compute_with_check(&self.results) {
-            annotated_results.sort_by(|l, r| relative_speed::compare_mean_time(l.result, r.result));
+        if let Some(annotated_results) = relative_speed::compute_with_check(
+            &self.results,
+            self.options.sort_order_speed_comparison,
+        ) {
+            match self.options.sort_order_speed_comparison {
+                SortOrder::MeanTime => {
+                    println!("{}", "Summary".bold());
 
-            let fastest = &annotated_results[0];
-            let others = &annotated_results[1..];
+                    let fastest = annotated_results.iter().find(|r| r.is_fastest).unwrap();
+                    let others = annotated_results.iter().filter(|r| !r.is_fastest);
 
-            println!("{}", "Summary".bold());
-            println!(
-                "  {} ran",
-                fastest.result.command_with_unused_parameters.cyan()
-            );
+                    println!(
+                        "  {} ran",
+                        fastest.result.command_with_unused_parameters.cyan()
+                    );
 
-            for item in others {
-                println!(
-                    "{}{} times faster than {}",
-                    format!("{:8.2}", item.relative_speed).bold().green(),
-                    if let Some(stddev) = item.relative_speed_stddev {
-                        format!(" ± {}", format!("{:.2}", stddev).green())
-                    } else {
-                        "".into()
-                    },
-                    &item.result.command_with_unused_parameters.magenta()
-                );
+                    for item in others {
+                        println!(
+                            "{}{} times faster than {}",
+                            format!("{:8.2}", item.relative_speed).bold().green(),
+                            if let Some(stddev) = item.relative_speed_stddev {
+                                format!(" ± {}", format!("{:.2}", stddev).green())
+                            } else {
+                                "".into()
+                            },
+                            &item.result.command_with_unused_parameters.magenta()
+                        );
+                    }
+                }
+                SortOrder::Command => {
+                    println!("{}", "Relative speed comparison".bold());
+
+                    for item in annotated_results {
+                        println!(
+                            "  {}{}  {}",
+                            format!("{:10.2}", item.relative_speed).bold().green(),
+                            if item.is_fastest {
+                                "        ".into()
+                            } else {
+                                if let Some(stddev) = item.relative_speed_stddev {
+                                    format!(" ± {}", format!("{:5.2}", stddev).green())
+                                } else {
+                                    "        ".into()
+                                }
+                            },
+                            &item.result.command_with_unused_parameters,
+                        );
+                    }
+                }
             }
         } else {
             eprintln!(
@@ -99,6 +129,7 @@ impl<'a> Scheduler<'a> {
     }
 
     pub fn final_export(&self) -> Result<()> {
-        self.export_manager.write_results(&self.results, false)
+        self.export_manager
+            .write_results(&self.results, self.options.sort_order_exports, false)
     }
 }

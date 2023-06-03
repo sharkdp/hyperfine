@@ -161,21 +161,6 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
-            Arg::new("style")
-                .long("style")
-                .action(ArgAction::Set)
-                .value_name("TYPE")
-                .value_parser(["auto", "basic", "full", "nocolor", "color", "none"])
-                .help(
-                    "Set output style type (default: auto). Set this to 'basic' to disable output \
-                     coloring and interactive elements. Set it to 'full' to enable all effects \
-                     even if no interactive terminal was detected. Set this to 'nocolor' to \
-                     keep the interactive output without any colors. Set this to 'color' to keep \
-                     the colors without any interactive output. Set this to 'none' to disable all \
-                     the output of the tool.",
-                ),
-        )
-        .arg(
             Arg::new("shell")
                 .long("shell")
                 .short('S')
@@ -203,6 +188,38 @@ fn build_command() -> Command {
                 .action(ArgAction::SetTrue)
                 .short('i')
                 .help("Ignore non-zero exit codes of the benchmarked programs."),
+        )
+        .arg(
+            Arg::new("style")
+                .long("style")
+                .action(ArgAction::Set)
+                .value_name("TYPE")
+                .value_parser(["auto", "basic", "full", "nocolor", "color", "none"])
+                .help(
+                    "Set output style type (default: auto). Set this to 'basic' to disable output \
+                     coloring and interactive elements. Set it to 'full' to enable all effects \
+                     even if no interactive terminal was detected. Set this to 'nocolor' to \
+                     keep the interactive output without any colors. Set this to 'color' to keep \
+                     the colors without any interactive output. Set this to 'none' to disable all \
+                     the output of the tool.",
+                ),
+        )
+        .arg(
+            Arg::new("sort")
+            .long("sort")
+            .action(ArgAction::Set)
+            .value_name("METHOD")
+            .value_parser(["auto", "command", "mean-time"])
+            .default_value("auto")
+            .hide_default_value(true)
+            .help(
+                "Specify the sort order of the speed comparison summary and the exported tables for \
+                 markup formats (Markdown, AsciiDoc, org-mode):\n  \
+                   * 'auto' (default): the speed comparison will be ordered by time and\n    \
+                     the markup tables will be ordered by command (input order).\n  \
+                   * 'command': order benchmarks in the way they were specified\n  \
+                   * 'mean-time': order benchmarks by mean runtime\n"
+            ),
         )
         .arg(
             Arg::new("time-unit")
