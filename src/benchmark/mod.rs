@@ -231,7 +231,7 @@ impl<'a> Benchmark<'a> {
 
             let msg = {
                 let mean = format_duration(mean(&times_real), self.options.time_unit);
-                format!("Current estimate: {}", mean.to_string().green())
+                format!("Current estimate: {}", mean.to_string().yellow().bold())
             };
 
             if let Some(bar) = progress_bar.as_ref() {
@@ -285,31 +285,31 @@ impl<'a> Benchmark<'a> {
             if times_real.len() == 1 {
                 println!(
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
-                    "abs".green().bold(),
-                    mean_str.green().bold(),
+                    "abs".yellow().bold(),
+                    mean_str.yellow().bold(),
                     "        ", // alignment
-                    user_str.blue(),
-                    system_str.blue()
+                    user_str.cyan(),
+                    system_str.cyan()
                 );
             } else {
                 let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
 
                 println!(
                     "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-                    "mean".green().bold(),
-                    "σ".green(),
-                    mean_str.green().bold(),
-                    stddev_str.green(),
-                    user_str.blue(),
-                    system_str.blue()
+                    "mean".yellow().bold(),
+                    "σ",
+                    mean_str.yellow().bold(),
+                    stddev_str,
+                    user_str.cyan(),
+                    system_str.cyan()
                 );
 
                 println!(
                     "  Range ({} … {}):   {:>8} … {:>8}    {}",
-                    "min".cyan(),
-                    "max".purple(),
-                    min_str.cyan(),
-                    max_str.purple(),
+                    "min".bright_yellow().bold(),
+                    "max".bright_red(),
+                    min_str.bright_green(),
+                    max_str.bright_red(),
                     num_str.dimmed()
                 );
             }
@@ -357,7 +357,7 @@ impl<'a> Benchmark<'a> {
             eprintln!(" ");
 
             for warning in &warnings {
-                eprintln!("  {}: {}", "Warning".yellow(), warning);
+                eprintln!("  {}: {}", "Warning".yellow().bold(), warning);
             }
         }
 

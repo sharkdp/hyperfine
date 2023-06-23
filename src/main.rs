@@ -50,7 +50,7 @@ fn main() {
     match run() {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{} {:#}", "Error:".red(), e);
+            eprintln!("{} {:#}", "Error:".bright_red(), e);
             std::process::exit(1);
         }
     }
