@@ -306,7 +306,7 @@ impl<'a> Benchmark<'a> {
 
                 println!(
                     "  Range ({} … {}):   {:>8} … {:>8}    {}",
-                    "min".bright_yellow().bold(),
+                    "min".bright_green(),
                     "max".bright_red(),
                     min_str.bright_green(),
                     max_str.bright_red(),
