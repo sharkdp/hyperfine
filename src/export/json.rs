@@ -8,9 +8,9 @@ use crate::util::units::Unit;
 
 use anyhow::Result;
 
-#[derive(Serialize, Debug)]
-struct HyperfineSummary<'a> {
-    results: &'a [BenchmarkResult],
+#[derive(Serialize, Deserialize, Debug)]
+pub struct HyperfineSummary {
+    results: Vec<BenchmarkResult>,
 }
 
 #[derive(Default)]
@@ -23,7 +23,7 @@ impl Exporter for JsonExporter {
         _unit: Option<Unit>,
         _sort_order: SortOrder,
     ) -> Result<Vec<u8>> {
-        let mut output = to_vec_pretty(&HyperfineSummary { results });
+        let mut output = to_vec_pretty(&HyperfineSummary { results: results.to_vec() });
         if let Ok(ref mut content) = output {
             content.push(b'\n');
         }
