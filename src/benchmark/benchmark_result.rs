@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::util::units::Second;
 
 /// Set of values that will be exported.
 // NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
 // `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
-#[derive(Debug, Default, Clone, Serialize, Deserialize ,PartialEq)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BenchmarkResult {
     /// The full command line of the program that is being benchmarked
     pub command: String,

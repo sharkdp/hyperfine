@@ -22,7 +22,7 @@ impl<'a> Scheduler<'a> {
         commands: &'a Commands,
         options: &'a Options,
         export_manager: &'a ExportManager,
-        results: &'a Vec<BenchmarkResult>
+        results: &'a Vec<BenchmarkResult>,
     ) -> Self {
         Self {
             commands,
@@ -84,7 +84,6 @@ impl<'a> Scheduler<'a> {
 
                     let fastest = annotated_results.iter().find(|r| r.is_fastest).unwrap();
                     let others = annotated_results.iter().filter(|r| !r.is_fastest);
-
 
                     println!(
                         "  {} ran",

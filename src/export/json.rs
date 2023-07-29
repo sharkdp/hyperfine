@@ -23,7 +23,9 @@ impl Exporter for JsonExporter {
         _unit: Option<Unit>,
         _sort_order: SortOrder,
     ) -> Result<Vec<u8>> {
-        let mut output = to_vec_pretty(&HyperfineSummary { results: results.to_vec() });
+        let mut output = to_vec_pretty(&HyperfineSummary {
+            results: results.to_vec(),
+        });
         if let Ok(ref mut content) = output {
             content.push(b'\n');
         }

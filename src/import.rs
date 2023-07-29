@@ -1,6 +1,6 @@
+use crate::{benchmark::benchmark_result::BenchmarkResult, export::json::HyperfineSummary};
 use clap::ArgMatches;
 use std::fs;
-use crate::{export::json::HyperfineSummary, benchmark::benchmark_result::BenchmarkResult};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Importer {}
@@ -19,8 +19,8 @@ fn read_summary_from_file(file_name: &str) -> Option<Vec<BenchmarkResult>> {
         Ok(content) => content,
         Err(_) => {
             eprintln!("Unable to load previous run from file {}", file_name);
-            return None
-        },
+            return None;
+        }
     };
 
     let hyperfine_summary = serde_json::from_str::<HyperfineSummary>(&file_content);
