@@ -10,7 +10,7 @@ use anyhow::Result;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HyperfineSummary {
-    results: Vec<BenchmarkResult>,
+    pub results: Vec<BenchmarkResult>,
 }
 
 #[derive(Default)]

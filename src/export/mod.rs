@@ -3,7 +3,7 @@ use std::io::Write;
 
 mod asciidoc;
 mod csv;
-mod json;
+pub mod json;
 mod markdown;
 mod markup;
 mod orgmode;
