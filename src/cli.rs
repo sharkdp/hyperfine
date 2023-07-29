@@ -258,6 +258,13 @@ fn build_command() -> Command {
                        The output time unit is always seconds"),
         )
         .arg(
+            Arg::new("import-json")
+                .long("import-json")
+                .action(ArgAction::Set)
+                .value_name("FILE")
+                .help("Import the timing summary statistics and timings of individual runs from a JSON  FILE.")
+        )
+        .arg(
             Arg::new("export-markdown")
                 .long("export-markdown")
                 .action(ArgAction::Set)
