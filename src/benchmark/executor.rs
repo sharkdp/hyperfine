@@ -141,6 +141,7 @@ impl<'a> Executor for ShellExecutor<'a> {
 
         // Windows needs special treatment for its behavior on parsing cmd arguments
         if on_windows_cmd {
+            #[cfg(windows)]
             command_builder.raw_arg(command.get_command_line());
         } else {
             command_builder.arg(command.get_command_line());
