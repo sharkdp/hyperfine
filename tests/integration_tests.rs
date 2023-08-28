@@ -423,3 +423,21 @@ fn speed_comparison_sort_order() {
             "2.00 ±  0.00  sleep 2\n        1.00          sleep 1",
         ));
 }
+
+#[cfg(windows)]
+#[test]
+fn windows_quote_args() {
+    hyperfine()
+        .arg("more \"example_input_file.txt\"")
+        .assert()
+        .success();
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_quote_before_quote_args() {
+    hyperfine()
+        .arg("dir \"..\\src\\\" \"..\\tests\\\"")
+        .assert()
+        .success();
+}
