@@ -1,7 +1,9 @@
 # hyperfine
 [![CICD](https://github.com/sharkdp/hyperfine/actions/workflows/CICD.yml/badge.svg)](https://github.com/sharkdp/hyperfine/actions/workflows/CICD.yml)
 [![Version info](https://img.shields.io/crates/v/hyperfine.svg)](https://crates.io/crates/hyperfine)
-[中文](https://github.com/chinanf-boy/hyperfine-zh)
+[中文](https://github.com/chinanf-boy/hyperfine-zh) |
+[한국어](https://github.com/Neved4/hyperfine-L10n/blob/main/hyperfine-ko.md) |
+[Русский](https://github.com/Neved4/hyperfine-L10n/blob/main/hyperfine-ru.md)
 
 A command-line benchmarking tool.
 
