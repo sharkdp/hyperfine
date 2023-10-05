@@ -13,6 +13,17 @@
 
 
 
+# v1.18.0
+
+## Features
+
+- Add support for microseconds via `--time-unit microsecond`, see #684 (@sharkdp)
+
+## Bugfixes
+
+- Proper argument quoting on Windows CMD, see #296 and #678 (@PedroWitzel)
+
+
 # v1.17.0
 
 ## Features
