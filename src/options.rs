@@ -391,6 +391,7 @@ impl Options {
         }
 
         options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {
+            Some("microsecond") => Some(Unit::MicroSecond),
             Some("millisecond") => Some(Unit::MilliSecond),
             Some("second") => Some(Unit::Second),
             _ => None,

@@ -227,8 +227,8 @@ fn build_command() -> Command {
                 .short('u')
                 .action(ArgAction::Set)
                 .value_name("UNIT")
-                .value_parser(["millisecond", "second"])
-                .help("Set the time unit to be used. Possible values: millisecond, second. \
+                .value_parser(["microsecond", "millisecond", "second"])
+                .help("Set the time unit to be used. Possible values: microsecond, millisecond, second. \
                        If the option is not given, the time unit is determined automatically. \
                        This option affects the standard output as well as all export formats except for CSV and JSON."),
         )

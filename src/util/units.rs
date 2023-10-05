@@ -10,6 +10,7 @@ pub type Second = Scalar;
 pub enum Unit {
     Second,
     MilliSecond,
+    MicroSecond,
 }
 
 impl Unit {
@@ -18,6 +19,7 @@ impl Unit {
         match self {
             Unit::Second => String::from("s"),
             Unit::MilliSecond => String::from("ms"),
+            Unit::MicroSecond => String::from("µs"),
         }
     }
 
@@ -26,6 +28,7 @@ impl Unit {
         match self {
             Unit::Second => format!("{:.3}", value),
             Unit::MilliSecond => format!("{:.1}", value * 1e3),
+            Unit::MicroSecond => format!("{:.1}", value * 1e6),
         }
     }
 }
@@ -34,6 +37,7 @@ impl Unit {
 fn test_unit_short_name() {
     assert_eq!("s", Unit::Second.short_name());
     assert_eq!("ms", Unit::MilliSecond.short_name());
+    assert_eq!("µs", Unit::MicroSecond.short_name());
 }
 
 // Note - the values are rounded when formatted.
@@ -42,4 +46,6 @@ fn test_unit_format() {
     let value: Second = 123.456789;
     assert_eq!("123.457", Unit::Second.format(value));
     assert_eq!("123456.8", Unit::MilliSecond.format(value));
+
+    assert_eq!("1234.6", Unit::MicroSecond.format(0.00123456));
 }

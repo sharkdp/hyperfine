@@ -16,7 +16,9 @@ pub fn format_duration_unit(duration: Second, unit: Option<Unit>) -> (String, Un
 
 /// Like `format_duration`, but returns the target unit as well.
 pub fn format_duration_value(duration: Second, unit: Option<Unit>) -> (String, Unit) {
-    if (duration < 1.0 && unit.is_none()) || unit == Some(Unit::MilliSecond) {
+    if (duration < 0.001 && unit.is_none()) || unit == Some(Unit::MicroSecond) {
+        (Unit::MicroSecond.format(duration), Unit::MicroSecond)
+    } else if (duration < 1.0 && unit.is_none()) || unit == Some(Unit::MilliSecond) {
         (Unit::MilliSecond.format(duration), Unit::MilliSecond)
     } else {
         (Unit::Second.format(duration), Unit::Second)
@@ -40,10 +42,15 @@ fn test_format_duration_unit_basic() {
     assert_eq!("999.0 ms", out_str);
     assert_eq!(Unit::MilliSecond, out_unit);
 
+    let (out_str, out_unit) = format_duration_unit(0.0005, None);
+
+    assert_eq!("500.0 µs", out_str);
+    assert_eq!(Unit::MicroSecond, out_unit);
+
     let (out_str, out_unit) = format_duration_unit(0.0, None);
 
-    assert_eq!("0.0 ms", out_str);
-    assert_eq!(Unit::MilliSecond, out_unit);
+    assert_eq!("0.0 µs", out_str);
+    assert_eq!(Unit::MicroSecond, out_unit);
 
     let (out_str, out_unit) = format_duration_unit(1000.0, None);
 
@@ -62,4 +69,9 @@ fn test_format_duration_unit_with_unit() {
 
     assert_eq!("1300.0 ms", out_str);
     assert_eq!(Unit::MilliSecond, out_unit);
+
+    let (out_str, out_unit) = format_duration_unit(1.3, Some(Unit::MicroSecond));
+
+    assert_eq!("1300000.0 µs", out_str);
+    assert_eq!(Unit::MicroSecond, out_unit);
 }

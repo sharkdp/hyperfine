@@ -261,6 +261,15 @@ fn returns_mean_time_in_correct_unit() {
         .assert()
         .success()
         .stdout(predicate::str::contains("Time (mean ± σ):     1234.0 ms ±"));
+
+    hyperfine_debug()
+        .arg("--time-unit=microsecond")
+        .arg("sleep 1.234")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "Time (mean ± σ):     1234000.0 µs ±",
+        ));
 }
 
 #[test]
