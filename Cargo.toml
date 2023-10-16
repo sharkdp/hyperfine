@@ -20,7 +20,6 @@ windows_process_extensions_main_thread_handle = []
 colored = "2.0"
 indicatif = "=0.17.4"
 statistical = "1.0"
-atty = "0.2"
 csv = "1.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -61,7 +60,6 @@ tempfile = "3.3"
 
 [build-dependencies]
 clap = "4.0.18"
-atty = "0.2"
 clap_complete = "4.2.1"
 
 [profile.release]
