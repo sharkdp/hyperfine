@@ -1,10 +1,10 @@
 use std::fs::File;
+use std::io::IsTerminal;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::{cmp, env, fmt, io};
 
 use anyhow::ensure;
-use atty::Stream;
 use clap::ArgMatches;
 
 use crate::command::Commands;
@@ -333,7 +333,7 @@ impl Options {
             Some("none") => OutputStyleOption::Disabled,
             _ => {
                 if options.command_output_policy == CommandOutputPolicy::Inherit
-                    || !atty::is(Stream::Stdout)
+                    || !io::stdout().is_terminal()
                 {
                     OutputStyleOption::Basic
                 } else if env::var_os("TERM")
