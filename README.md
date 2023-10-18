@@ -217,6 +217,13 @@ On NixOS, hyperfine can be installed [from the official repositories](https://ni
 nix-env -i hyperfine
 ```
 
+### On openSUSE
+
+On openSUSE, hyperfine can be installed [from the official repositories](https://software.opensuse.org/package/hyperfine):
+```
+zypper install hyperfine
+```
+
 ### On Void Linux
 
 Hyperfine can be installed via xbps
