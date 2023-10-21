@@ -163,7 +163,9 @@ like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`:
 
 ## Installation
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/hyperfine.svg)](https://repology.org/project/hyperfine/versions)
+<a href="https://repology.org/project/hyperfine/versions">
+    <img src="https://repology.org/badge/vertical-allrepos/hyperfine.svg" alt="Packaging status" align="right">
+</a>
 
 ### On Ubuntu
 
