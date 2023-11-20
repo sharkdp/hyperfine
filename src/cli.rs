@@ -112,14 +112,6 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
-            Arg::new("show-elapsed")
-                .long("show-elapsed")
-                .action(ArgAction::SetTrue)
-                .help(
-                    "Show time elapsed since the benchmarking runs were started."
-                )
-        )
-        .arg(
             Arg::new("parameter-scan")
                 .long("parameter-scan")
                 .short('P')
@@ -228,6 +220,17 @@ fn build_command() -> Command {
                    * 'command': order benchmarks in the way they were specified\n  \
                    * 'mean-time': order benchmarks by mean runtime\n"
             ),
+        )
+        .arg(
+            Arg::new("show-elapsed")
+                .long("show-elapsed")
+                .short('E')
+                .action(ArgAction::SetTrue)
+                .help(
+                    "Show time elapsed since the current run was started. \
+                     This is useful for especially long benchmarks to see \
+                     the progress the benchmark has made"
+                )
         )
         .arg(
             Arg::new("time-unit")
