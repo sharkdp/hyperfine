@@ -155,6 +155,7 @@ impl<'a> Benchmark<'a> {
                     self.options.warmup_count,
                     "Performing warmup runs",
                     self.options.output_style,
+                    self.options.show_elapsed,
                 ))
             } else {
                 None
@@ -178,6 +179,7 @@ impl<'a> Benchmark<'a> {
                 self.options.run_bounds.min,
                 "Initial time measurement",
                 self.options.output_style,
+                self.options.show_elapsed,
             ))
         } else {
             None

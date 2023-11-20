@@ -180,6 +180,7 @@ impl<'a> Executor for ShellExecutor<'a> {
                 COUNT,
                 "Measuring shell spawning time",
                 self.options.output_style,
+                self.options.show_elapsed,
             ))
         } else {
             None

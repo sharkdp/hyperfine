@@ -112,6 +112,14 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("show-elapsed")
+                .long("show-elapsed")
+                .action(ArgAction::SetTrue)
+                .help(
+                    "Show time elapsed since the benchmarking runs were started."
+                )
+        )
+        .arg(
             Arg::new("parameter-scan")
                 .long("parameter-scan")
                 .short('P')

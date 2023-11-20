@@ -233,6 +233,9 @@ pub struct Options {
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// Show elapsed time since current run start.
+    pub show_elapsed: bool,
 }
 
 impl Default for Options {
@@ -252,6 +255,7 @@ impl Default for Options {
             command_output_policy: CommandOutputPolicy::Null,
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
+            show_elapsed: false,
         }
     }
 }
@@ -418,6 +422,10 @@ impl Options {
         } else {
             CommandInputPolicy::Null
         };
+
+        if matches.get_flag("show-elapsed") {
+            options.show_elapsed = true;
+        }
 
         Ok(options)
     }
