@@ -165,7 +165,8 @@ impl<'a> Benchmark<'a> {
                 let _ = run_preparation_command()?;
                 let _ = self.executor.run_command_and_measure(self.command, None)?;
                 if let Some(bar) = progress_bar.as_ref() {
-                    bar.inc(1)
+                    bar.inc(1);
+                    bar.reset_elapsed();
                 }
             }
             if let Some(bar) = progress_bar.as_ref() {
@@ -224,7 +225,8 @@ impl<'a> Benchmark<'a> {
             bar.set_length(count)
         }
         if let Some(bar) = progress_bar.as_ref() {
-            bar.inc(1)
+            bar.inc(1);
+            bar.reset_elapsed();
         }
 
         // Gather statistics (perform the actual benchmark)
@@ -251,7 +253,8 @@ impl<'a> Benchmark<'a> {
             all_succeeded = all_succeeded && success;
 
             if let Some(bar) = progress_bar.as_ref() {
-                bar.inc(1)
+                bar.inc(1);
+                bar.reset_elapsed();
             }
         }
 

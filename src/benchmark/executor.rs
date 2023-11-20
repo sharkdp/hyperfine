@@ -215,7 +215,8 @@ impl<'a> Executor for ShellExecutor<'a> {
             }
 
             if let Some(bar) = progress_bar.as_ref() {
-                bar.inc(1)
+                bar.inc(1);
+                bar.reset_elapsed();
             }
         }
 
