@@ -300,6 +300,9 @@ Hyperfine is inspired by [bench](https://github.com/Gabriella439/bench).
 [Chronologer](https://github.com/dandavison/chronologer) is a tool that uses `hyperfine` to
 visualize changes in benchmark timings across your Git history.
 
+[Bencher](https://github.com/bencherdev/bencher) is a continuous benchmarking tool that supports `hyperfine` to
+track benchmarks and catch performance regressions in CI.
+
 Make sure to check out the [`scripts` folder](https://github.com/sharkdp/hyperfine/tree/master/scripts)
 in this repository for a set of tools to work with `hyperfine` benchmark results.
 
