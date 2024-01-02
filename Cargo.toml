@@ -59,7 +59,7 @@ predicates = "3.0"
 tempfile = "3.8"
 
 [build-dependencies]
-clap = "4.4.10"
+clap = "4.4.12"
 clap_complete = "4.2.1"
 
 [profile.release]
