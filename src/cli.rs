@@ -2,6 +2,7 @@ use std::ffi::OsString;
 
 use clap::{
     builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
+    ValueHint,
 };
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
@@ -31,6 +32,7 @@ fn build_command() -> Command {
                        comparison of the respective runtimes.")
                 .required(true)
                 .action(ArgAction::Append)
+                .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
         )
         .arg(
@@ -76,6 +78,7 @@ fn build_command() -> Command {
                 .short('s')
                 .action(ArgAction::Set)
                 .value_name("CMD")
+                .value_hint(ValueHint::CommandString)
                 .help(
                     "Execute CMD before each set of timing runs. This is useful for \
                      compiling your software with the provided parameters, or to do any \
@@ -90,6 +93,7 @@ fn build_command() -> Command {
                 .action(ArgAction::Append)
                 .num_args(1)
                 .value_name("CMD")
+                .value_hint(ValueHint::CommandString)
                 .help(
                     "Execute CMD before each timing run. This is useful for \
                      clearing disk caches, for example.\nThe --prepare option can \
@@ -104,6 +108,7 @@ fn build_command() -> Command {
                 .short('c')
                 .action(ArgAction::Set)
                 .value_name("CMD")
+                .value_hint(ValueHint::CommandString)
                 .help(
                     "Execute CMD after the completion of all benchmarking \
                      runs for each individual command to be benchmarked. \
@@ -167,6 +172,7 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("SHELL")
                 .overrides_with("shell")
+                .value_hint(ValueHint::CommandString)
                 .help("Set the shell to use for executing benchmarked commands. This can be the \
                        name or the path to the shell executable, or a full command line \
                        like \"bash --norc\". It can also be set to \"default\" to explicitly select \
@@ -237,6 +243,7 @@ fn build_command() -> Command {
                 .long("export-asciidoc")
                 .action(ArgAction::Set)
                 .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
                 .help("Export the timing summary statistics as an AsciiDoc table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
         )
@@ -245,6 +252,7 @@ fn build_command() -> Command {
                 .long("export-csv")
                 .action(ArgAction::Set)
                 .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
                 .help("Export the timing summary statistics as CSV to the given FILE. If you need \
                        the timing results for each individual run, use the JSON export format. \
                        The output time unit is always seconds."),
@@ -254,6 +262,7 @@ fn build_command() -> Command {
                 .long("export-json")
                 .action(ArgAction::Set)
                 .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
                 .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE. \
                        The output time unit is always seconds"),
         )
@@ -262,6 +271,7 @@ fn build_command() -> Command {
                 .long("export-markdown")
                 .action(ArgAction::Set)
                 .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
                 .help("Export the timing summary statistics as a Markdown table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
         )
@@ -270,6 +280,7 @@ fn build_command() -> Command {
                 .long("export-orgmode")
                 .action(ArgAction::Set)
                 .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
                 .help("Export the timing summary statistics as an Emacs org-mode table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
         )
