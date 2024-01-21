@@ -16,6 +16,8 @@ hyperfine \- command\-line benchmarking tool
 .IR CMD ]
 .RB [ \-\-prepare
 .IR CMD ]
+.RB [ \-\-conclude
+.IR CMD ]
 .RB [ \-\-cleanup
 .IR CMD ]
 .RB [ \-\-parameter\-scan
@@ -115,11 +117,20 @@ The \fB\-\-prepare\fR option can be specified once for all commands or multiple 
 once for each command. In the latter case, each preparation command will be
 run prior to the corresponding benchmark command.
 .HP
+.IP
+Execute \fICMD\fP after each timing run. This is useful for clearing disk caches,
+for example.
+The \fB\-\-conclude\fR option can be specified once for all commands or multiple times,
+once for each command. In the latter case, each conclusion command will be
+run after the corresponding benchmark command.
+.HP
 \fB\-c\fR, \fB\-\-cleanup\fR \fICMD...\fP
 .IP
 Execute \fICMD\fP after the completion of all benchmarking runs for each individual
 command to be benchmarked. This is useful if the commands to be benchmarked
-produce artifacts that need to be cleaned up.
+produce artifacts that need to be cleaned up. It only runs once a series of
+benchmark runs, as opposed to \fB\-\-conclude\fR option which runs after
+ever run.
 .HP
 \fB\-P\fR, \fB\-\-parameter\-scan\fR \fIVAR\fP \fIMIN\fP \fIMAX\fP
 .IP
@@ -335,12 +346,13 @@ Export the results of a parameter scan benchmark to a markdown table:
 .fi
 .RE
 .LP
-Demonstrate when each of \fB\-\-setup\fR, \fB\-\-prepare\fR, \fIcmd\fP and \fB\-\-cleanup\fR will run:
+Demonstrate when each of \fB\-\-setup\fR, \fB\-\-prepare\fR, \fB\-\-conclude\fR, \fIcmd\fP and \fB\-\-cleanup\fR will run:
 .RS
 .nf
 \fBhyperfine\fR \fB\-L\fR n 1,2 \fB\-r\fR 2 \fB\-\-show-output\fR \\
 	\fB\-\-setup\fR 'echo setup n={n}' \\
 	\fB\-\-prepare\fR 'echo prepare={n}' \\
+	\fB\-\-conclude\fR 'echo conclude={n}' \\
 	\fB\-\-cleanup\fR 'echo cleanup n={n}' \\
 	'echo command n={n}'
 .fi
