@@ -103,6 +103,23 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("conclude")
+                .long("conclude")
+                .short('C')
+                .action(ArgAction::Append)
+                .num_args(1)
+                .value_name("CMD")
+                .value_hint(ValueHint::CommandString)
+                .help(
+                    "Execute CMD after each timing run. This is useful for killing \
+                     long-running processes started (e.g. a web server started in --prepare), \
+                     for example.\nThe --conclude option can be specified once for all \
+                     commands or multiple times, once for each command. In the latter case, \
+                     each conclude command will be run after the corresponding benchmark \
+                     command.",
+                ),
+        )
+        .arg(
             Arg::new("cleanup")
                 .long("cleanup")
                 .short('c')
