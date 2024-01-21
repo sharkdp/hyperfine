@@ -76,6 +76,31 @@ fn fails_with_wrong_number_of_prepare_options() {
 }
 
 #[test]
+fn fails_with_wrong_number_of_conclude_options() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--conclude=echo a")
+        .arg("--conclude=echo b")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--conclude=echo a")
+        .arg("--conclude=echo b")
+        .arg("echo a")
+        .arg("echo b")
+        .arg("echo c")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The '--conclude' option has to be provided",
+        ));
+}
+
+#[test]
 fn fails_with_duplicate_parameter_names() {
     hyperfine()
         .arg("--parameter-list")
@@ -164,6 +189,18 @@ fn fails_for_unknown_prepare_command() {
         .failure()
         .stderr(predicate::str::contains(
             "The preparation command terminated with a non-zero exit code.",
+        ));
+}
+
+#[test]
+fn fails_for_unknown_conclude_command() {
+    hyperfine()
+        .arg("--conclude=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
+        .arg("echo test")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The conclusion command terminated with a non-zero exit code.",
         ));
 }
 
@@ -314,6 +351,48 @@ fn takes_preparation_command_into_account_for_computing_number_of_runs() {
     hyperfine_debug()
         .arg("--shell=sleep 0.01")
         .arg("--prepare=sleep 0.03")
+        .arg("sleep 0.05")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("30 runs"));
+}
+
+#[test]
+fn takes_conclusion_command_into_account_for_computing_number_of_runs() {
+    hyperfine_debug()
+        .arg("--conclude=sleep 0.02")
+        .arg("sleep 0.01")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("100 runs"));
+
+    // Shell overhead needs to be added to both the conclude command and the actual command,
+    // leading to a total benchmark time of (cmd + shell + conclude + shell = 0.1 s)
+    hyperfine_debug()
+        .arg("--shell=sleep 0.01")
+        .arg("--conclude=sleep 0.03")
+        .arg("sleep 0.05")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("30 runs"));
+}
+
+#[test]
+fn takes_both_preparation_and_conclusion_command_into_account_for_computing_number_of_runs() {
+    hyperfine_debug()
+        .arg("--prepare=sleep 0.01")
+        .arg("--conclude=sleep 0.01")
+        .arg("sleep 0.01")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("100 runs"));
+
+    // Shell overhead needs to be added to both the prepare, conclude and the actual command,
+    // leading to a total benchmark time of (prepare + shell + cmd + shell + conclude + shell = 0.1 s)
+    hyperfine_debug()
+        .arg("--shell=sleep 0.01")
+        .arg("--prepare=sleep 0.01")
+        .arg("--conclude=sleep 0.01")
         .arg("sleep 0.05")
         .assert()
         .success()
