@@ -56,7 +56,7 @@ features = ["suggestions", "color", "wrap_help", "cargo", "help", "usage", "erro
 approx = "0.5"
 assert_cmd = "2.0"
 predicates = "3.0"
-tempfile = "3.8"
+tempfile = "3.9"
 
 [build-dependencies]
 clap = "4.4.12"
