@@ -30,32 +30,48 @@ parser.add_argument(
     metavar="num_runs",
     help="Width of the moving-average window (default: N/5)",
 )
+parser.add_argument(
+    "--no-moving-average",
+    action="store_true",
+    help="Do not show moving average curve",
+)
+
 
 args = parser.parse_args()
 
 with open(args.file) as f:
     results = json.load(f)["results"]
 
-label = results[0]["command"]
-times = results[0]["times"]
-num = len(times)
-nums = range(num)
+for result in results:
+    label = result["command"]
+    times = result["times"]
+    num = len(times)
+    nums = range(num)
 
-plt.scatter(x=nums, y=times, marker=".", color="orange")
-plt.ylim([0, None])
-plt.xlim([-1, num])
+    plt.scatter(x=nums, y=times, marker=".")
+    plt.ylim([0, None])
+    plt.xlim([-1, num])
 
-moving_average_width = (
-    num // 5 if args.moving_average_width is None else args.moving_average_width
-)
+    if not args.no_moving_average:
+        moving_average_width = (
+            num // 5 if args.moving_average_width is None else args.moving_average_width
+        )
 
-moving_average = moving_average(times, moving_average_width)
-plt.plot(nums, moving_average, "-", color="blue")
+        average = moving_average(times, moving_average_width)
+        plt.plot(nums, average, "-")
 
 if args.title:
     plt.title(args.title)
-plt.legend(labels=[label], loc="best", fontsize="medium")
+
+legend = []
+for result in results:
+    legend.append(result["command"])
+    if not args.no_moving_average:
+        legend.append("moving average")
+plt.legend(legend)
+
 plt.ylabel("Time [s]")
+
 if args.output:
     plt.savefig(args.output)
 else:
