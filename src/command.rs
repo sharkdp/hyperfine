@@ -319,7 +319,6 @@ impl<'a> Commands<'a> {
         let command_names = command_names.map_or(vec![], |names| {
             names.map(|v| v.as_str()).collect::<Vec<_>>()
         });
-        let command_strings = command_strings;
         let param_name = vals.next().unwrap().as_str();
         let param_min = vals.next().unwrap().as_str();
         let param_max = vals.next().unwrap().as_str();
