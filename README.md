@@ -16,15 +16,14 @@ A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsor</a>:
 
 <a href="https://bencher.dev/hyperfine/?utm_source=github&utm_medium=referral&utm_campaign=hyperfine&utm_content=wordmark">
   <img src="doc/sponsors/bencher_wordmark.svg" width="200" alt="🐰 Bencher">
-  <br>
+  <br />
   <strong>Continuous Benchmarking: Catch performance regressions in CI</strong>
 </a>
-<br>
-<a href="https://bencher.dev/hyperfine/?utm_source=github&utm_medium=referral&utm_campaign=hyperfine&utm_content=copy">
-  <sub>Track the results of your <code>hyperfine</code> benchmarks over time with Bencher.</sub>
-  <br>
-  <sup>Detect and prevent performance regressions before they make it to production.</sup>
-</a>
+<br />
+<br />
+
+Track the results of your <code>hyperfine</code> benchmarks over time with Bencher. \
+Detect and prevent performance regressions before they make it to production.
 
 ## Features
 
