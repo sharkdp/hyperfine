@@ -1,5 +1,3 @@
-use std::iter::Iterator;
-
 /// A max function for f64's without NaNs
 pub fn max(vals: &[f64]) -> f64 {
     *vals
