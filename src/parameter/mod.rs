@@ -1,4 +1,5 @@
 use crate::util::number::Number;
+use std::fmt::Display;
 
 pub mod range_step;
 pub mod tokenize;
@@ -9,12 +10,13 @@ pub enum ParameterValue {
     Numeric(Number),
 }
 
-impl ToString for ParameterValue {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for ParameterValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             ParameterValue::Text(ref value) => value.clone(),
             ParameterValue::Numeric(value) => value.to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 
