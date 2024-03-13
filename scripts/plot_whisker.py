@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with benchmark results")
 parser.add_argument("--title", help="Plot Title")
+parser.add_argument("--sort-by", choices=['median'], help="Sort method")
 parser.add_argument(
     "--labels", help="Comma-separated list of entries for the plot legend"
 )
@@ -32,11 +33,12 @@ if args.labels:
 else:
     labels = [b["command"] for b in results]
 times = [b["times"] for b in results]
-medians = [b["median"] for b in results]
 
-indices = sorted(range(len(labels)), key=lambda k: medians[k])
-labels = [labels[i] for i in indices]
-times = [times[i] for i in indices]
+if args.sort_by == 'median':
+    medians = [b["median"] for b in results]
+    indices = sorted(range(len(labels)), key=lambda k: medians[k])
+    labels = [labels[i] for i in indices]
+    times = [times[i] for i in indices]
 
 plt.figure(figsize=(10, 6), constrained_layout=True)
 boxplot = plt.boxplot(times, vert=True, patch_artist=True)
