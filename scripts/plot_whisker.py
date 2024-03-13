@@ -38,6 +38,7 @@ indices = sorted(range(len(labels)), key=lambda k: medians[k])
 labels = [labels[i] for i in indices]
 times = [times[i] for i in indices]
 
+plt.figure(figsize=(10, 6), constrained_layout=True)
 boxplot = plt.boxplot(times, vert=True, patch_artist=True)
 cmap = plt.get_cmap("rainbow")
 colors = [cmap(val / len(times)) for val in range(len(times))]
