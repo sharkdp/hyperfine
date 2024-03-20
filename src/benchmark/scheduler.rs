@@ -84,13 +84,13 @@ impl<'a> Scheduler<'a> {
                     for item in others {
                         println!(
                             "{}{} times faster than {}",
-                            format!("{:8.2}", item.relative_speed).bold().green(),
+                            format!("{:8.2}", item.relative_speed).yellow().bold(),
                             if let Some(stddev) = item.relative_speed_stddev {
-                                format!(" ± {}", format!("{:.2}", stddev).green())
+                                format!(" ± {}", format!("{:.2}", stddev).yellow().bold())
                             } else {
                                 "".into()
                             },
-                            &item.result.command_with_unused_parameters.magenta()
+                            &item.result.command_with_unused_parameters.cyan()
                         );
                     }
                 }
@@ -100,11 +100,11 @@ impl<'a> Scheduler<'a> {
                     for item in annotated_results {
                         println!(
                             "  {}{}  {}",
-                            format!("{:10.2}", item.relative_speed).bold().green(),
+                            format!("{:10.2}", item.relative_speed).yellow().bold(),
                             if item.is_fastest {
                                 "        ".into()
                             } else if let Some(stddev) = item.relative_speed_stddev {
-                                format!(" ± {}", format!("{:5.2}", stddev).green())
+                                format!(" ± {}", format!("{:5.2}", stddev).yellow().bold())
                             } else {
                                 "        ".into()
                             },
@@ -121,7 +121,7 @@ impl<'a> Scheduler<'a> {
                  Try to re-run the benchmark on a quiet system. If you did not do so already, try the \
                  --shell=none/-N option. If it does not help either, you command is most likely too fast \
                  to be accurately benchmarked by hyperfine.",
-                 "Note".bold().red()
+                 "Note".bright_red()
             );
         }
     }
