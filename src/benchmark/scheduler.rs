@@ -22,12 +22,13 @@ impl<'a> Scheduler<'a> {
         commands: &'a Commands,
         options: &'a Options,
         export_manager: &'a ExportManager,
+        results: &'a Vec<BenchmarkResult>,
     ) -> Self {
         Self {
             commands,
             options,
             export_manager,
-            results: vec![],
+            results: results.to_vec(),
         }
     }
 
@@ -69,6 +70,14 @@ impl<'a> Scheduler<'a> {
             &self.results,
             self.options.sort_order_speed_comparison,
         ) {
+            fn get_command_from_result<'b>(result: &'b BenchmarkResult) -> &'b str {
+                if !result.command_with_unused_parameters.is_empty() {
+                    &result.command_with_unused_parameters
+                } else {
+                    &result.command
+                }
+            }
+
             match self.options.sort_order_speed_comparison {
                 SortOrder::MeanTime => {
                     println!("{}", "Summary".bold());
@@ -78,7 +87,7 @@ impl<'a> Scheduler<'a> {
 
                     println!(
                         "  {} ran",
-                        fastest.result.command_with_unused_parameters.cyan()
+                        (get_command_from_result(&fastest.result)).cyan()
                     );
 
                     for item in others {
@@ -90,7 +99,8 @@ impl<'a> Scheduler<'a> {
                             } else {
                                 "".into()
                             },
-                            &item.result.command_with_unused_parameters.magenta()
+                            // &item.result.command_with_unused_parameters.magenta()
+                            &(get_command_from_result(&item.result)).magenta()
                         );
                     }
                 }
@@ -108,7 +118,7 @@ impl<'a> Scheduler<'a> {
                             } else {
                                 "        ".into()
                             },
-                            &item.result.command_with_unused_parameters,
+                            &(get_command_from_result(item.result)),
                         );
                     }
                 }

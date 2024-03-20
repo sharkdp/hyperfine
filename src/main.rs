@@ -9,6 +9,7 @@ use benchmark::scheduler::Scheduler;
 use cli::get_cli_arguments;
 use command::Commands;
 use export::ExportManager;
+use import::Importer;
 use options::Options;
 
 use anyhow::Result;
@@ -19,6 +20,7 @@ pub mod cli;
 pub mod command;
 pub mod error;
 pub mod export;
+pub mod import;
 pub mod options;
 pub mod outlier_detection;
 pub mod output;
@@ -32,13 +34,15 @@ fn run() -> Result<()> {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let cli_arguments = get_cli_arguments(env::args_os());
+    let previous_results = Importer::from_cli_arguments(&cli_arguments).unwrap_or(Vec::new());
+
     let options = Options::from_cli_arguments(&cli_arguments)?;
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
     let export_manager = ExportManager::from_cli_arguments(&cli_arguments, options.time_unit)?;
 
     options.validate_against_command_list(&commands)?;
 
-    let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
+    let mut scheduler = Scheduler::new(&commands, &options, &export_manager, &previous_results);
     scheduler.run_benchmarks()?;
     scheduler.print_relative_speed_comparison();
     scheduler.final_export()?;
