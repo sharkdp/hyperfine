@@ -17,7 +17,7 @@ rust-version = "1.70.0"
 windows_process_extensions_main_thread_handle = []
 
 [dependencies]
-colored = "2.0"
+colored = "2.1"
 indicatif = "=0.17.4"
 statistical = "1.0"
 csv = "1.1"
