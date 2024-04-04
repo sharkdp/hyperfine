@@ -206,7 +206,7 @@ apk add hyperfine
 
 ### On Arch Linux
 
-On Arch Linux, hyperfine can be installed [from the official repositories](https://www.archlinux.org/packages/community/x86_64/hyperfine/):
+On Arch Linux, hyperfine can be installed [from the official repositories](https://archlinux.org/packages/extra/x86_64/hyperfine/):
 ```
 pacman -S hyperfine
 ```
