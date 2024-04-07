@@ -218,6 +218,14 @@ On Debian Linux, hyperfine can be installed [from the testing repositories](http
 apt install hyperfine
 ```
 
+### On Exherbo Linux
+
+On Exherbo Linux, hyperfine can be installed [from the rust repositories]([https://packages.debian.org/testing/main/hyperfine](https://gitlab.exherbo.org/exherbo/rust/-/tree/master/packages/sys-apps/hyperfine)
+```
+cave resolve -x repository/rust
+cave resolve -x hyperfine
+```
+
 ### On Funtoo Linux
 
 On Funtoo Linux, hyperfine can be installed [from core-kit](https://github.com/funtoo/core-kit/tree/1.4-release/app-benchmarks/hyperfine):
