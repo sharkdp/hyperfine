@@ -87,6 +87,16 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("reference")
+                .long("reference")
+                .action(ArgAction::Set)
+                .value_name("CMD")
+                .help(
+                    "The reference command for the relative comparison of results. \
+                    If this is unset, results are compared with the fastest command as reference."
+                )
+        )
+        .arg(
             Arg::new("prepare")
                 .long("prepare")
                 .short('p')
