@@ -107,10 +107,7 @@ impl<'a> Command<'a> {
         let mut result = String::new();
         let mut replacements = BTreeMap::<String, String>::new();
         for (param_name, param_value) in &self.parameters {
-            replacements.insert(
-                format!("{{{param_name}}}"),
-                param_value.to_string(),
-            );
+            replacements.insert(format!("{{{param_name}}}"), param_value.to_string());
         }
         let mut remaining = original;
         // Manually replace consecutive occurrences to avoid double-replacing: e.g.,
