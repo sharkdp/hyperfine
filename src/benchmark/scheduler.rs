@@ -86,7 +86,7 @@ impl<'a> Scheduler<'a> {
                             "{}{} times faster than {}",
                             format!("{:8.2}", item.relative_speed).bold().green(),
                             if let Some(stddev) = item.relative_speed_stddev {
-                                format!(" ± {}", format!("{:.2}", stddev).green())
+                                format!(" ± {}", format!("{stddev:.2}").green())
                             } else {
                                 "".into()
                             },
@@ -104,7 +104,7 @@ impl<'a> Scheduler<'a> {
                             if item.is_fastest {
                                 "        ".into()
                             } else if let Some(stddev) = item.relative_speed_stddev {
-                                format!(" ± {}", format!("{:5.2}", stddev).green())
+                                format!(" ± {}", format!("{stddev:5.2}").green())
                             } else {
                                 "        ".into()
                             },

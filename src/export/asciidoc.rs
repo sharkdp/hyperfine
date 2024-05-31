@@ -32,7 +32,7 @@ impl MarkupExporter for AsciidocExporter {
     }
 
     fn command(&self, cmd: &str) -> String {
-        format!("`{}`", cmd)
+        format!("`{cmd}`")
     }
 }
 
@@ -71,8 +71,7 @@ fn test_asciidoc_exporter_table_header() {
 #[cfg(test)]
 fn cfg_test_table_header(unit_short_name: &str) -> String {
     format!(
-        "[cols=\"<,>,>,>,>\"]\n|===\n| Command \n| Mean [{unit}] \n| Min [{unit}] \n| Max [{unit}] \n| Relative \n",
-        unit = unit_short_name
+        "[cols=\"<,>,>,>,>\"]\n|===\n| Command \n| Mean [{unit_short_name}] \n| Min [{unit_short_name}] \n| Max [{unit_short_name}] \n| Relative \n"
     )
 }
 

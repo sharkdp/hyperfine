@@ -26,7 +26,7 @@ impl Unit {
     /// Returns the Second value formatted for the Unit.
     pub fn format(self, value: Second) -> String {
         match self {
-            Unit::Second => format!("{:.3}", value),
+            Unit::Second => format!("{value:.3}"),
             Unit::MilliSecond => format!("{:.1}", value * 1e3),
             Unit::MicroSecond => format!("{:.1}", value * 1e6),
         }

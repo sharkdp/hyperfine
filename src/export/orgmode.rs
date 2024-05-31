@@ -18,7 +18,7 @@ impl MarkupExporter for OrgmodeExporter {
     }
 
     fn command(&self, cmd: &str) -> String {
-        format!("={}=", cmd)
+        format!("={cmd}=")
     }
 }
 
@@ -58,8 +58,7 @@ fn test_orgmode_formatter_table_line() {
 #[cfg(test)]
 fn cfg_test_table_header(unit_short_name: String) -> String {
     format!(
-        "| Command  |  Mean [{unit}] |  Min [{unit}] |  Max [{unit}] |  Relative |\n|--+--+--+--+--|\n",
-        unit = unit_short_name
+        "| Command  |  Mean [{unit_short_name}] |  Min [{unit_short_name}] |  Max [{unit_short_name}] |  Relative |\n|--+--+--+--+--|\n"
     )
 }
 

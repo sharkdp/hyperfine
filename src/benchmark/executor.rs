@@ -54,7 +54,7 @@ fn run_command_and_measure_common(
     );
 
     let result = execute_and_measure(command)
-        .with_context(|| format!("Failed to run command '{}'", command_name))?;
+        .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
     if command_failure_action == CmdFailureAction::RaiseError && !result.status.success() {
         bail!(
@@ -62,7 +62,7 @@ fn run_command_and_measure_common(
             Alternatively, use the '--show-output' option to debug what went wrong.",
             result.status.code().map_or(
                 "The process has been terminated by a signal".into(),
-                |c| format!("Command terminated with non-zero exit code: {}", c)
+                |c| format!("Command terminated with non-zero exit code: {c}")
             )
         );
     }
