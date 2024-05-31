@@ -32,9 +32,9 @@ pub trait MarkupExporter {
         // emit table header data
         table.push_str(&self.table_row(&[
             "Command",
-            &format!("Mean {}", notation),
-            &format!("Min {}", notation),
-            &format!("Max {}", notation),
+            &format!("Mean {notation}"),
+            &format!("Min {notation}"),
+            &format!("Max {notation}"),
             "Relative",
         ]));
 
@@ -59,7 +59,7 @@ pub trait MarkupExporter {
             let rel_stddev_str = if entry.is_fastest {
                 "".into()
             } else if let Some(stddev) = entry.relative_speed_stddev {
-                format!(" ± {:.2}", stddev)
+                format!(" ± {stddev:.2}")
             } else {
                 "".into()
             };
@@ -67,10 +67,10 @@ pub trait MarkupExporter {
             // prepare table row entries
             table.push_str(&self.table_row(&[
                 &self.command(&cmd_str),
-                &format!("{}{}", mean_str, stddev_str),
+                &format!("{mean_str}{stddev_str}"),
                 &min_str,
                 &max_str,
-                &format!("{}{}", rel_str, rel_stddev_str),
+                &format!("{rel_str}{rel_stddev_str}"),
             ]))
         }
 

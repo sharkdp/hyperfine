@@ -31,7 +31,7 @@ impl Exporter for CsvExporter {
             .collect();
             if let Some(res) = results.first() {
                 for param_name in res.parameters.keys() {
-                    headers.push(Cow::Owned(format!("parameter_{}", param_name).into_bytes()));
+                    headers.push(Cow::Owned(format!("parameter_{param_name}").into_bytes()));
                 }
             }
             writer.write_record(headers)?;

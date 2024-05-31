@@ -16,7 +16,7 @@ impl Display for ParameterValue {
             ParameterValue::Text(ref value) => value.clone(),
             ParameterValue::Numeric(value) => value.to_string(),
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 

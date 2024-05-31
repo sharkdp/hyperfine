@@ -62,13 +62,13 @@ impl<'a> Command<'a> {
         let parameters = self
             .get_unused_parameters()
             .fold(String::new(), |output, (parameter, value)| {
-                output + &format!("{} = {}, ", parameter, value)
+                output + &format!("{parameter} = {value}, ")
             });
         let parameters = parameters.trim_end_matches(", ");
         let parameters = if parameters.is_empty() {
             "".into()
         } else {
-            format!(" ({})", parameters)
+            format!(" ({parameters})")
         };
 
         format!("{}{}", self.get_name(), parameters)
@@ -81,7 +81,7 @@ impl<'a> Command<'a> {
     pub fn get_command(&self) -> Result<std::process::Command> {
         let command_line = self.get_command_line();
         let mut tokens = shell_words::split(&command_line)
-            .with_context(|| format!("Failed to parse command '{}'", command_line))?
+            .with_context(|| format!("Failed to parse command '{command_line}'"))?
             .into_iter();
 
         if let Some(program_name) = tokens.next() {
@@ -100,7 +100,7 @@ impl<'a> Command<'a> {
     pub fn get_unused_parameters(&self) -> impl Iterator<Item = &(&'a str, ParameterValue)> {
         self.parameters
             .iter()
-            .filter(move |(parameter, _)| !self.expression.contains(&format!("{{{}}}", parameter)))
+            .filter(move |(parameter, _)| !self.expression.contains(&format!("{{{parameter}}}")))
     }
 
     fn replace_parameters_in(&self, original: &str) -> String {
@@ -108,7 +108,7 @@ impl<'a> Command<'a> {
         let mut replacements = BTreeMap::<String, String>::new();
         for (param_name, param_value) in &self.parameters {
             replacements.insert(
-                format!("{{{param_name}}}", param_name = param_name),
+                format!("{{{param_name}}}"),
                 param_value.to_string(),
             );
         }

@@ -108,7 +108,7 @@ impl ExportManager {
                 ExportTarget::Stdout
             } else {
                 let _ = File::create(filename)
-                    .with_context(|| format!("Could not create export file '{}'", filename))?;
+                    .with_context(|| format!("Could not create export file '{filename}'"))?;
                 ExportTarget::File(filename.to_string())
             },
         });
@@ -153,5 +153,5 @@ impl ExportManager {
 fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
     let mut file = OpenOptions::new().write(true).open(filename)?;
     file.write_all(content)
-        .with_context(|| format!("Failed to export results to '{}'", filename))
+        .with_context(|| format!("Failed to export results to '{filename}'"))
 }

@@ -38,7 +38,7 @@ impl Default for Shell {
 impl fmt::Display for Shell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Shell::Default(cmd) => write!(f, "{}", cmd),
+            Shell::Default(cmd) => write!(f, "{cmd}"),
             Shell::Custom(cmdline) => write!(f, "{}", shell_words::join(cmdline)),
         }
     }
@@ -457,7 +457,7 @@ impl Options {
 fn test_default_shell() {
     let shell = Shell::default();
 
-    let s = format!("{}", shell);
+    let s = format!("{shell}");
     assert_eq!(&s, DEFAULT_SHELL);
 
     let cmd = shell.command();
@@ -468,7 +468,7 @@ fn test_default_shell() {
 fn test_can_parse_shell_command_line_from_str() {
     let shell = Shell::parse_from_str("shell -x 'aaa bbb'").unwrap();
 
-    let s = format!("{}", shell);
+    let s = format!("{shell}");
     assert_eq!(&s, "shell -x 'aaa bbb'");
 
     let cmd = shell.command();
