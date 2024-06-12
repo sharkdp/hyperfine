@@ -240,6 +240,14 @@ On NixOS, hyperfine can be installed [from the official repositories](https://ni
 nix-env -i hyperfine
 ```
 
+### On Flox
+
+On Flox, hyperfine can be installed as follows.
+```
+flox install hyperfine
+```
+Hyperfine's version in Flox follows that of Nix.
+
 ### On openSUSE
 
 On openSUSE, hyperfine can be installed [from the official repositories](https://software.opensuse.org/package/hyperfine):
