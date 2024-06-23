@@ -437,21 +437,25 @@ impl Options {
     }
 
     pub fn validate_against_command_list(&self, commands: &Commands) -> Result<()> {
+        let num_commands = commands.num_commands()
+            + if self.reference_command.is_some() {
+                1
+            } else {
+                0
+            };
         if let Some(preparation_command) = &self.preparation_command {
             ensure!(
-                preparation_command.len() <= 1
-                    || commands.num_commands() == preparation_command.len(),
+                preparation_command.len() <= 1 || num_commands == preparation_command.len(),
                 "The '--prepare' option has to be provided just once or N times, where N is the \
-             number of benchmark commands."
+             number of benchmark commands including a potential reference."
             );
         }
 
         if let Some(conclusion_command) = &self.conclusion_command {
             ensure!(
-                conclusion_command.len() <= 1
-                    || commands.num_commands() == conclusion_command.len(),
+                conclusion_command.len() <= 1 || num_commands == conclusion_command.len(),
                 "The '--conclude' option has to be provided just once or N times, where N is the \
-             number of benchmark commands."
+             number of benchmark commands including a potential reference."
             );
         }
 

@@ -156,6 +156,20 @@ fn test_compute_relative_speed() {
 }
 
 #[test]
+fn test_compute_relative_speed_with_reference() {
+    use approx::assert_relative_eq;
+
+    let results = vec![create_result("cmd2", 2.0), create_result("cmd3", 5.0)];
+    let reference = create_result("cmd2", 4.0);
+
+    let annotated_results =
+        compute_with_check_from_reference(&results, &reference, SortOrder::Command).unwrap();
+
+    assert_relative_eq!(2.0, annotated_results[0].relative_speed);
+    assert_relative_eq!(1.25, annotated_results[1].relative_speed);
+}
+
+#[test]
 fn test_compute_relative_speed_for_zero_times() {
     let results = vec![create_result("cmd1", 1.0), create_result("cmd2", 0.0)];
 
