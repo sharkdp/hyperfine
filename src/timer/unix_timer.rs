@@ -25,10 +25,10 @@ impl CPUTimer {
         }
     }
 
-    pub fn stop(&self) -> (Second, Second) {
+    pub fn stop(&self) -> (Second, Second, i64) {
         let end_cpu = get_cpu_times();
         let cpu_interval = cpu_time_interval(&self.start_cpu, &end_cpu);
-        (cpu_interval.user, cpu_interval.system)
+        (cpu_interval.user, cpu_interval.system, end_cpu.max_rss_byte)
     }
 }
 
@@ -45,12 +45,20 @@ fn get_cpu_times() -> CPUTimes {
 
     const MICROSEC_PER_SEC: i64 = 1000 * 1000;
 
+    // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
+    let max_rss_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
+        result.ru_maxrss
+    } else {
+        result.ru_maxrss * 1024
+    };
+
     #[allow(clippy::useless_conversion)]
     CPUTimes {
         user_usec: i64::from(result.ru_utime.tv_sec) * MICROSEC_PER_SEC
             + i64::from(result.ru_utime.tv_usec),
         system_usec: i64::from(result.ru_stime.tv_sec) * MICROSEC_PER_SEC
             + i64::from(result.ru_stime.tv_usec),
+        max_rss_byte,
     }
 }
 
@@ -70,11 +78,13 @@ fn test_cpu_time_interval() {
     let t_a = CPUTimes {
         user_usec: 12345,
         system_usec: 54321,
+        max_rss_byte: 0,
     };
 
     let t_b = CPUTimes {
         user_usec: 20000,
         system_usec: 70000,
+        max_rss_byte: 0,
     };
 
     let t_zero = cpu_time_interval(&t_a, &t_a);
