@@ -77,6 +77,7 @@ fn test_csv() {
             min: 5.0,
             max: 6.0,
             times: Some(vec![7.0, 8.0, 9.0]),
+            memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -96,6 +97,7 @@ fn test_csv() {
             min: 15.0,
             max: 16.5,
             times: Some(vec![17.0, 18.0, 19.0]),
+            memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();

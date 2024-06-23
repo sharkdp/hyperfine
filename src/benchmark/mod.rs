@@ -151,6 +151,7 @@ impl<'a> Benchmark<'a> {
         let mut times_real: Vec<Second> = vec![];
         let mut times_user: Vec<Second> = vec![];
         let mut times_system: Vec<Second> = vec![];
+        let mut memory_usage_byte: Vec<u64> = vec![];
         let mut exit_codes: Vec<Option<i32>> = vec![];
         let mut all_succeeded = true;
 
@@ -279,6 +280,7 @@ impl<'a> Benchmark<'a> {
         times_real.push(res.time_real);
         times_user.push(res.time_user);
         times_system.push(res.time_system);
+        memory_usage_byte.push(res.memory_usage_byte);
         exit_codes.push(extract_exit_code(status));
 
         all_succeeded = all_succeeded && success;
@@ -315,6 +317,7 @@ impl<'a> Benchmark<'a> {
             times_real.push(res.time_real);
             times_user.push(res.time_user);
             times_system.push(res.time_system);
+            memory_usage_byte.push(res.memory_usage_byte);
             exit_codes.push(extract_exit_code(status));
 
             all_succeeded = all_succeeded && success;
@@ -451,6 +454,7 @@ impl<'a> Benchmark<'a> {
             min: t_min,
             max: t_max,
             times: Some(times_real),
+            memory_usage_byte: Some(memory_usage_byte),
             exit_codes,
             parameters: self
                 .command
