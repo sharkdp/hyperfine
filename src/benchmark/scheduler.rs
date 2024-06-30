@@ -96,19 +96,30 @@ impl<'a> Scheduler<'a> {
                     );
 
                     for item in others {
+                        let stddev = if let Some(stddev) = item.relative_speed_stddev {
+                            format!(" ± {}", format!("{:.2}", stddev).green())
+                        } else {
+                            "".into()
+                        };
                         let comparator = match item.relative_ordering {
-                            Ordering::Less => "slower",
-                            Ordering::Greater => "faster",
-                            Ordering::Equal => "as fast",
+                            Ordering::Less => format!(
+                                "{}{} times slower than",
+                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                stddev
+                            ),
+                            Ordering::Greater => format!(
+                                "{}{} times faster than",
+                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                stddev
+                            ),
+                            Ordering::Equal => format!(
+                                "    As fast ({}{}) as",
+                                format!("{:.2}", item.relative_speed).bold().green(),
+                                stddev
+                            ),
                         };
                         println!(
-                            "{}{} times {} than {}",
-                            format!("{:8.2}", item.relative_speed).bold().green(),
-                            if let Some(stddev) = item.relative_speed_stddev {
-                                format!(" ± {}", format!("{stddev:.2}").green())
-                            } else {
-                                "".into()
-                            },
+                            "{} {}",
                             comparator,
                             &item.result.command_with_unused_parameters.magenta()
                         );
