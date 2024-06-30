@@ -462,6 +462,24 @@ fn shows_benchmark_comparison_with_relative_times() {
 }
 
 #[test]
+fn shows_benchmark_comparison_with_same_time() {
+    hyperfine_debug()
+        .arg("--command-name=A")
+        .arg("--command-name=B")
+        .arg("sleep 1.0")
+        .arg("sleep 1.0")
+        .arg("sleep 2.0")
+        .arg("sleep 1000.0")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("As fast (1.00 ± 0.00) as")
+                .and(predicate::str::contains("2.00 ± 0.00 times faster"))
+                .and(predicate::str::contains("1000.00 ± 0.00 times faster")),
+        );
+}
+
+#[test]
 fn shows_benchmark_comparison_relative_to_reference() {
     hyperfine_debug()
         .arg("--reference=sleep 2.0")
