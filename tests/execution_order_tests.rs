@@ -468,7 +468,7 @@ fn setup_prepare_reference_conclude_cleanup_combined() {
 }
 
 #[test]
-fn setup_separete_prepare_separate_conclude_cleanup_combined() {
+fn setup_separate_prepare_separate_conclude_cleanup_combined() {
     ExecutionOrderTest::new()
         .arg("--warmup=1")
         .arg("--runs=2")
@@ -508,7 +508,7 @@ fn setup_separete_prepare_separate_conclude_cleanup_combined() {
 }
 
 #[test]
-fn setup_separete_prepare_reference_separate_conclude_cleanup_combined() {
+fn setup_separate_prepare_reference_separate_conclude_cleanup_combined() {
     ExecutionOrderTest::new()
         .arg("--warmup=1")
         .arg("--runs=2")
