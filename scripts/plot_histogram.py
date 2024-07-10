@@ -14,7 +14,7 @@ parser.add_argument("--title", help="Plot title")
 parser.add_argument(
     "--labels", help="Comma-separated list of entries for the plot legend"
 )
-parser.add_argument( "--bins", help="Number of bins (default: auto)")
+parser.add_argument("--bins", help="Number of bins (default: auto)")
 parser.add_argument(
     "--lloc", help="Location of the legend on plot (default: upper center)",
     choices=["upper center", "lower center", "right", "left", "best", "upper left", "upper right", "lower left", "lower right", "center left", "center right", "center"],
