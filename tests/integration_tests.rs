@@ -63,11 +63,35 @@ fn fails_with_wrong_number_of_prepare_options() {
 
     hyperfine()
         .arg("--runs=1")
+        .arg("--prepare=echo ref")
+        .arg("--prepare=echo a")
+        .arg("--prepare=echo b")
+        .arg("--reference=echo ref")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
         .arg("--prepare=echo a")
         .arg("--prepare=echo b")
         .arg("echo a")
         .arg("echo b")
         .arg("echo c")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The '--prepare' option has to be provided",
+        ));
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--prepare=echo a")
+        .arg("--prepare=echo b")
+        .arg("--reference=echo ref")
+        .arg("echo a")
+        .arg("echo b")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -88,11 +112,35 @@ fn fails_with_wrong_number_of_conclude_options() {
 
     hyperfine()
         .arg("--runs=1")
+        .arg("--conclude=echo ref")
+        .arg("--conclude=echo a")
+        .arg("--conclude=echo b")
+        .arg("--reference=echo ref")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
         .arg("--conclude=echo a")
         .arg("--conclude=echo b")
         .arg("echo a")
         .arg("echo b")
         .arg("echo c")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The '--conclude' option has to be provided",
+        ));
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--conclude=echo a")
+        .arg("--conclude=echo b")
+        .arg("--reference=echo ref")
+        .arg("echo a")
+        .arg("echo b")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -414,6 +462,38 @@ fn shows_benchmark_comparison_with_relative_times() {
 }
 
 #[test]
+fn shows_benchmark_comparison_with_same_time() {
+    hyperfine_debug()
+        .arg("--command-name=A")
+        .arg("--command-name=B")
+        .arg("sleep 1.0")
+        .arg("sleep 1.0")
+        .arg("sleep 2.0")
+        .arg("sleep 1000.0")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("As fast (1.00 ± 0.00) as")
+                .and(predicate::str::contains("2.00 ± 0.00 times faster"))
+                .and(predicate::str::contains("1000.00 ± 0.00 times faster")),
+        );
+}
+
+#[test]
+fn shows_benchmark_comparison_relative_to_reference() {
+    hyperfine_debug()
+        .arg("--reference=sleep 2.0")
+        .arg("sleep 1.0")
+        .arg("sleep 3.0")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("2.00 ± 0.00 times slower")
+                .and(predicate::str::contains("1.50 ± 0.00 times faster")),
+        );
+}
+
+#[test]
 fn performs_all_benchmarks_in_parameter_scan() {
     hyperfine_debug()
         .arg("--parameter-scan")
@@ -431,6 +511,29 @@ fn performs_all_benchmarks_in_parameter_scan() {
                 .and(predicate::str::contains("Benchmark 3: sleep 40"))
                 .and(predicate::str::contains("Benchmark 4: sleep 45"))
                 .and(predicate::str::contains("Benchmark 5: sleep 50").not()),
+        );
+}
+
+#[test]
+fn performs_reference_and_all_benchmarks_in_parameter_scan() {
+    hyperfine_debug()
+        .arg("--reference=sleep 25")
+        .arg("--parameter-scan")
+        .arg("time")
+        .arg("30")
+        .arg("45")
+        .arg("--parameter-step-size")
+        .arg("5")
+        .arg("sleep {time}")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Benchmark 1: sleep 25")
+                .and(predicate::str::contains("Benchmark 2: sleep 30"))
+                .and(predicate::str::contains("Benchmark 3: sleep 35"))
+                .and(predicate::str::contains("Benchmark 4: sleep 40"))
+                .and(predicate::str::contains("Benchmark 5: sleep 45"))
+                .and(predicate::str::contains("Benchmark 6: sleep 50").not()),
         );
 }
 

@@ -1,10 +1,10 @@
-use colored::*;
-
 use super::benchmark_result::BenchmarkResult;
 use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
+use colored::*;
+use std::cmp::Ordering;
 
-use crate::command::Commands;
+use crate::command::{Command, Commands};
 use crate::export::ExportManager;
 use crate::options::{ExecutorKind, Options, OutputStyleOption, SortOrder};
 
@@ -38,9 +38,15 @@ impl<'a> Scheduler<'a> {
             ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, self.options)),
         };
 
+        let reference = self
+            .options
+            .reference_command
+            .as_ref()
+            .map(|cmd| Command::new(None, cmd));
+
         executor.calibrate()?;
 
-        for (number, cmd) in self.commands.iter().enumerate() {
+        for (number, cmd) in reference.iter().chain(self.commands.iter()).enumerate() {
             self.results
                 .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
 
@@ -65,31 +71,56 @@ impl<'a> Scheduler<'a> {
             return;
         }
 
-        if let Some(annotated_results) = relative_speed::compute_with_check(
+        let reference = self
+            .options
+            .reference_command
+            .as_ref()
+            .map(|_| &self.results[0])
+            .unwrap_or_else(|| relative_speed::fastest_of(&self.results));
+
+        if let Some(annotated_results) = relative_speed::compute_with_check_from_reference(
             &self.results,
+            reference,
             self.options.sort_order_speed_comparison,
         ) {
             match self.options.sort_order_speed_comparison {
                 SortOrder::MeanTime => {
                     println!("{}", "Summary".bold());
 
-                    let fastest = annotated_results.iter().find(|r| r.is_fastest).unwrap();
-                    let others = annotated_results.iter().filter(|r| !r.is_fastest);
+                    let reference = annotated_results.iter().find(|r| r.is_reference).unwrap();
+                    let others = annotated_results.iter().filter(|r| !r.is_reference);
 
                     println!(
                         "  {} ran",
-                        fastest.result.command_with_unused_parameters.cyan()
+                        reference.result.command_with_unused_parameters.cyan()
                     );
 
                     for item in others {
+                        let stddev = if let Some(stddev) = item.relative_speed_stddev {
+                            format!(" ± {}", format!("{:.2}", stddev).green())
+                        } else {
+                            "".into()
+                        };
+                        let comparator = match item.relative_ordering {
+                            Ordering::Less => format!(
+                                "{}{} times slower than",
+                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                stddev
+                            ),
+                            Ordering::Greater => format!(
+                                "{}{} times faster than",
+                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                stddev
+                            ),
+                            Ordering::Equal => format!(
+                                "    As fast ({}{}) as",
+                                format!("{:.2}", item.relative_speed).bold().green(),
+                                stddev
+                            ),
+                        };
                         println!(
-                            "{}{} times faster than {}",
-                            format!("{:8.2}", item.relative_speed).bold().green(),
-                            if let Some(stddev) = item.relative_speed_stddev {
-                                format!(" ± {}", format!("{stddev:.2}").green())
-                            } else {
-                                "".into()
-                            },
+                            "{} {}",
+                            comparator,
                             &item.result.command_with_unused_parameters.magenta()
                         );
                     }
@@ -101,7 +132,7 @@ impl<'a> Scheduler<'a> {
                         println!(
                             "  {}{}  {}",
                             format!("{:10.2}", item.relative_speed).bold().green(),
-                            if item.is_fastest {
+                            if item.is_reference {
                                 "        ".into()
                             } else if let Some(stddev) = item.relative_speed_stddev {
                                 format!(" ± {}", format!("{stddev:5.2}").green())

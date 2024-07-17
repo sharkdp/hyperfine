@@ -213,14 +213,14 @@ pacman -S hyperfine
 
 ### On Debian Linux
 
-On Debian Linux, hyperfine can be installed [from the testing repositories](https://packages.debian.org/testing/main/hyperfine)
+On Debian Linux, hyperfine can be installed [from the testing repositories](https://packages.debian.org/testing/main/hyperfine):
 ```
 apt install hyperfine
 ```
 
 ### On Exherbo Linux
 
-On Exherbo Linux, hyperfine can be installed [from the rust repositories]([https://packages.debian.org/testing/main/hyperfine](https://gitlab.exherbo.org/exherbo/rust/-/tree/master/packages/sys-apps/hyperfine)
+On Exherbo Linux, hyperfine can be installed [from the rust repositories](https://gitlab.exherbo.org/exherbo/rust/-/tree/master/packages/sys-apps/hyperfine):
 ```
 cave resolve -x repository/rust
 cave resolve -x hyperfine
@@ -239,6 +239,14 @@ On NixOS, hyperfine can be installed [from the official repositories](https://ni
 ```
 nix-env -i hyperfine
 ```
+
+### On Flox
+
+On Flox, hyperfine can be installed as follows.
+```
+flox install hyperfine
+```
+Hyperfine's version in Flox follows that of Nix.
 
 ### On openSUSE
 

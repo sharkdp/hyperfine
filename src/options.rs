@@ -204,6 +204,9 @@ pub struct Options {
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
 
+    // Command to use as a reference for relative speed comparison
+    pub reference_command: Option<String>,
+
     /// Command(s) to run before each timing run
     pub preparation_command: Option<Vec<String>>,
 
@@ -245,6 +248,7 @@ impl Default for Options {
             warmup_count: 0,
             min_benchmarking_time: 3.0,
             command_failure_action: CmdFailureAction::RaiseError,
+            reference_command: None,
             preparation_command: None,
             conclusion_command: None,
             setup_command: None,
@@ -303,6 +307,8 @@ impl Options {
         };
 
         options.setup_command = matches.get_one::<String>("setup").map(String::from);
+
+        options.reference_command = matches.get_one::<String>("reference").map(String::from);
 
         options.preparation_command = matches
             .get_many::<String>("prepare")
@@ -431,21 +437,25 @@ impl Options {
     }
 
     pub fn validate_against_command_list(&self, commands: &Commands) -> Result<()> {
+        let num_commands = commands.num_commands()
+            + if self.reference_command.is_some() {
+                1
+            } else {
+                0
+            };
         if let Some(preparation_command) = &self.preparation_command {
             ensure!(
-                preparation_command.len() <= 1
-                    || commands.num_commands() == preparation_command.len(),
+                preparation_command.len() <= 1 || num_commands == preparation_command.len(),
                 "The '--prepare' option has to be provided just once or N times, where N is the \
-             number of benchmark commands."
+             number of benchmark commands including a potential reference."
             );
         }
 
         if let Some(conclusion_command) = &self.conclusion_command {
             ensure!(
-                conclusion_command.len() <= 1
-                    || commands.num_commands() == conclusion_command.len(),
+                conclusion_command.len() <= 1 || num_commands == conclusion_command.len(),
                 "The '--conclude' option has to be provided just once or N times, where N is the \
-             number of benchmark commands."
+             number of benchmark commands including a potential reference."
             );
         }
 
