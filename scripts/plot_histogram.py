@@ -62,7 +62,7 @@ plt.hist(
     range=(t_min, t_max),
 )
 plt.legend(
-        loc=args.legend-location,
+        loc=args.legend_location,
         fancybox=True,
         shadow=True,
         prop={"size": 7, "family": ["Source Code Pro", "Fira Mono", "Courier New"]}
