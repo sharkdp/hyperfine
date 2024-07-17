@@ -16,7 +16,7 @@ parser.add_argument(
 )
 parser.add_argument("--bins", help="Number of bins (default: auto)")
 parser.add_argument(
-    "--lloc", help="Location of the legend on plot (default: upper center)",
+    "--legend-location", help="Location of the legend on plot (default: upper center)",
     choices=["upper center", "lower center", "right", "left", "best", "upper left", "upper right", "lower left", "lower right", "center left", "center right", "center"],
     default="upper center"
     )
@@ -62,7 +62,7 @@ plt.hist(
     range=(t_min, t_max),
 )
 plt.legend(
-        loc=args.lloc,
+        loc=args.legend-location,
         fancybox=True,
         shadow=True,
         prop={"size": 7, "family": ["Source Code Pro", "Fira Mono", "Courier New"]}
