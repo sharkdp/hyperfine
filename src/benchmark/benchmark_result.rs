@@ -45,6 +45,10 @@ pub struct BenchmarkResult {
     /// Exit codes of all command invocations
     pub exit_codes: Vec<Option<i32>>,
 
+    /// All max. memory sizes
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_rss_byte: Option<Vec<Second>>,
+
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parameters: BTreeMap<String, String>,
