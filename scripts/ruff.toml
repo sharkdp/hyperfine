@@ -1,2 +1,4 @@
+target-version = "py310"
+
 [lint]
 extend-select = ["I", "UP", "RUF"]
