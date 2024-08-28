@@ -9,7 +9,7 @@ hyperfine 'sleep 0.020' 'sleep 0.021' 'sleep 0.022' --export-json sleep.json
 
 ### Pre-requisites
 
-To make these scripts work, you will need to install `numpy`, `matplotlib` and `scipy`.
+To make these scripts work, you will need `numpy`, `matplotlib` and `scipy`.
 
 If you have a Python package manager that understands [PEP-723](https://peps.python.org/pep-0723/)
 inline script requirements like [`uv`](https://github.com/astral-sh/uv) or [`pipx`](https://github.com/pypa/pipx),
