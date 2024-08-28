@@ -39,5 +39,5 @@ for command, ts in zip(commands, times):
     print()
     print("  percentiles:")
     print(f"     P_05 .. P_95:    {p05:.3f} s .. {p95:.3f} s")
-    print(f"     P_25 .. P_75:    {p25:.3f} s .. {p75:.3f} s  " f"(IQR = {iqr:.3f} s)")
+    print(f"     P_25 .. P_75:    {p25:.3f} s .. {p75:.3f} s  (IQR = {iqr:.3f} s)")
     print()
