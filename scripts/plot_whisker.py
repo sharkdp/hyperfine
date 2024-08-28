@@ -17,6 +17,7 @@ Quoting from the matplotlib documentation:
 
 import argparse
 import json
+
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description=__doc__)

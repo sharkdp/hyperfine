@@ -13,6 +13,7 @@ the same."""
 import argparse
 import json
 import sys
+
 from scipy import stats
 
 parser = argparse.ArgumentParser(description=__doc__)

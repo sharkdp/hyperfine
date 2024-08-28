@@ -15,6 +15,7 @@ thermal throttling and similar effects.
 
 import argparse
 import json
+
 import matplotlib.pyplot as plt
 import numpy as np
 
