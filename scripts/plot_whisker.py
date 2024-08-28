@@ -15,17 +15,15 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with benchmark results")
 parser.add_argument("--title", help="Plot Title")
-parser.add_argument("--sort-by", choices=['median'], help="Sort method")
+parser.add_argument("--sort-by", choices=["median"], help="Sort method")
 parser.add_argument(
     "--labels", help="Comma-separated list of entries for the plot legend"
 )
-parser.add_argument(
-    "-o", "--output", help="Save image to the given filename."
-)
+parser.add_argument("-o", "--output", help="Save image to the given filename.")
 
 args = parser.parse_args()
 
-with open(args.file, encoding='utf-8') as f:
+with open(args.file, encoding="utf-8") as f:
     results = json.load(f)["results"]
 
 if args.labels:
@@ -34,7 +32,7 @@ else:
     labels = [b["command"] for b in results]
 times = [b["times"] for b in results]
 
-if args.sort_by == 'median':
+if args.sort_by == "median":
     medians = [b["median"] for b in results]
     indices = sorted(range(len(labels)), key=lambda k: medians[k])
     labels = [labels[i] for i in indices]
@@ -53,7 +51,7 @@ if args.title:
 plt.legend(handles=boxplot["boxes"], labels=labels, loc="best", fontsize="medium")
 plt.ylabel("Time [s]")
 plt.ylim(0, None)
-plt.xticks(list(range(1, len(labels)+1)), labels, rotation=45)
+plt.xticks(list(range(1, len(labels) + 1)), labels, rotation=45)
 if args.output:
     plt.savefig(args.output)
 else:

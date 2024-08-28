@@ -22,18 +22,15 @@ for command, ts in zip(commands, times):
 
     iqr = p75 - p25
 
-    print("Command '{}'".format(command))
-    print("  runs:   {:8d}".format(len(ts)))
-    print("  mean:   {:8.3f} s".format(np.mean(ts)))
-    print("  stddev: {:8.3f} s".format(np.std(ts, ddof=1)))
-    print("  median: {:8.3f} s".format(np.median(ts)))
-    print("  min:    {:8.3f} s".format(np.min(ts)))
-    print("  max:    {:8.3f} s".format(np.max(ts)))
+    print(f"Command '{command}'")
+    print(f"  runs:   {len(ts):8d}")
+    print(f"  mean:   {np.mean(ts):8.3f} s")
+    print(f"  stddev: {np.std(ts, ddof=1):8.3f} s")
+    print(f"  median: {np.median(ts):8.3f} s")
+    print(f"  min:    {np.min(ts):8.3f} s")
+    print(f"  max:    {np.max(ts):8.3f} s")
     print()
     print("  percentiles:")
-    print("     P_05 .. P_95:    {:.3f} s .. {:.3f} s".format(p05, p95))
-    print(
-        "     P_25 .. P_75:    {:.3f} s .. {:.3f} s  "
-        "(IQR = {:.3f} s)".format(p25, p75, iqr)
-    )
+    print(f"     P_05 .. P_95:    {p05:.3f} s .. {p95:.3f} s")
+    print(f"     P_25 .. P_75:    {p25:.3f} s .. {p75:.3f} s  " f"(IQR = {iqr:.3f} s)")
     print()

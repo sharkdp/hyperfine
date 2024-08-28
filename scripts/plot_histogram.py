@@ -6,7 +6,6 @@ import argparse
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.font_manager
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with benchmark results")
@@ -16,10 +15,24 @@ parser.add_argument(
 )
 parser.add_argument("--bins", help="Number of bins (default: auto)")
 parser.add_argument(
-    "--legend-location", help="Location of the legend on plot (default: upper center)",
-    choices=["upper center", "lower center", "right", "left", "best", "upper left", "upper right", "lower left", "lower right", "center left", "center right", "center"],
-    default="upper center"
-    )
+    "--legend-location",
+    help="Location of the legend on plot (default: upper center)",
+    choices=[
+        "upper center",
+        "lower center",
+        "right",
+        "left",
+        "best",
+        "upper left",
+        "upper right",
+        "lower left",
+        "lower right",
+        "center left",
+        "center right",
+        "center",
+    ],
+    default="upper center",
+)
 parser.add_argument(
     "--type", help="Type of histogram (*bar*, barstacked, step, stepfilled)"
 )
@@ -62,11 +75,11 @@ plt.hist(
     range=(t_min, t_max),
 )
 plt.legend(
-        loc=args.legend_location,
-        fancybox=True,
-        shadow=True,
-        prop={"size": 7, "family": ["Source Code Pro", "Fira Mono", "Courier New"]}
-        )
+    loc=args.legend_location,
+    fancybox=True,
+    shadow=True,
+    prop={"size": 10, "family": ["Source Code Pro", "Fira Mono", "Courier New"]},
+)
 
 plt.xlabel("Time [s]")
 if args.title:
