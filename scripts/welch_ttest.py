@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "scipy",
+# ]
+# ///
 
 """This script performs Welch's t-test on a JSON export file with two
 benchmark results to test whether or not the two distributions are

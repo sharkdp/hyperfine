@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "pyqt6",
+#     "matplotlib",
+#     "numpy",
+# ]
+# ///
 
 """This program shows `hyperfine` benchmark results in a sequential way
 in order to debug possible background interference, caching effects,

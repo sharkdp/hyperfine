@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "matplotlib",
+#     "pyqt6",
+# ]
+# ///
 
 """This program shows parametrized `hyperfine` benchmark results as an
 errorbar plot."""

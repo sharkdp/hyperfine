@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "matplotlib",
+#     "pyqt6",
+#     "numpy",
+# ]
+# ///
 
 """This program shows `hyperfine` benchmark results as a histogram."""
 
