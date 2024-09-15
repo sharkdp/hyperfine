@@ -15,7 +15,7 @@ complete -c $command \
     -s o \
     -l output \
     -d 'Specify an output file' \
-    -F
+    -F -r
 
 complete -c $command \
     -s w \
