@@ -134,7 +134,7 @@ impl<'a> Command<'a> {
 pub struct Commands<'a>(Vec<Command<'a>>);
 
 impl<'a> Commands<'a> {
-    pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands> {
+    pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'a>> {
         let command_names = matches.get_many::<String>("command-name");
         let command_strings = matches
             .get_many::<String>("command")
