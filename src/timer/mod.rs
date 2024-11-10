@@ -11,7 +11,7 @@ use nix::fcntl::{splice, SpliceFFlags};
 #[cfg(target_os = "linux")]
 use std::fs::File;
 #[cfg(target_os = "linux")]
-use std::os::unix::io::AsRawFd;
+use std::os::fd::AsFd;
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Threading::CREATE_SUSPENDED;
@@ -53,9 +53,9 @@ fn discard(output: ChildStdout) {
     {
         if let Ok(file) = File::create("/dev/null") {
             while let Ok(bytes) = splice(
-                output.as_raw_fd(),
+                output.as_fd(),
                 None,
-                file.as_raw_fd(),
+                file.as_fd(),
                 None,
                 CHUNK_SIZE,
                 SpliceFFlags::empty(),

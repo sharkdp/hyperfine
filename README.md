@@ -316,7 +316,7 @@ Hyperfine can be installed from source via [cargo](https://doc.rust-lang.org/car
 cargo install --locked hyperfine
 ```
 
-Make sure that you use Rust 1.70 or newer.
+Make sure that you use Rust 1.76 or newer.
 
 ### From binaries (Linux, macOS, Windows)
 

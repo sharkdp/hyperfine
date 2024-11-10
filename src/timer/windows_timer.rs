@@ -37,7 +37,7 @@ static NtResumeProcess: Lazy<unsafe extern "system" fn(ProcessHandle: HANDLE) ->
     Lazy::new(|| {
         // SAFETY: Getting the module handle for ntdll.dll is safe
         let ntdll = unsafe { GetModuleHandleW(w!("ntdll.dll")) };
-        assert!(ntdll != 0, "GetModuleHandleW failed");
+        assert!(ntdll != std::ptr::null_mut(), "GetModuleHandleW failed");
 
         // SAFETY: The ntdll handle is valid
         let nt_resume_process = unsafe { GetProcAddress(ntdll, s!("NtResumeProcess")) };
@@ -56,7 +56,10 @@ impl CPUTimer {
 
         // SAFETY: Creating a new job object is safe
         let job_object = unsafe { CreateJobObjectW(ptr::null_mut(), ptr::null_mut()) };
-        assert!(job_object != 0, "CreateJobObjectW failed");
+        assert!(
+            job_object != std::ptr::null_mut(),
+            "CreateJobObjectW failed"
+        );
 
         // SAFETY: The job object handle is valid
         let ret = unsafe { AssignProcessToJobObject(job_object, child_handle) };
