@@ -10,7 +10,7 @@ repository = "https://github.com/sharkdp/hyperfine"
 version = "1.18.0"
 edition = "2018"
 build = "build.rs"
-rust-version = "1.70.0"
+rust-version = "1.76.0"
 
 [features]
 # Use the nightly feature windows_process_extensions_main_thread_handle
@@ -20,20 +20,20 @@ windows_process_extensions_main_thread_handle = []
 colored = "2.1"
 indicatif = "=0.17.4"
 statistical = "1.0"
-csv = "1.1"
+csv = "1.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rust_decimal = "1.35"
+rust_decimal = "1.36"
 rand = "0.8"
 shell-words = "1.0"
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.48", features = [
+windows-sys = { version = "0.59", features = [
     "Win32_Foundation",
     "Win32_Security",
     "Win32_System_JobObjects",
@@ -45,18 +45,26 @@ windows-sys = { version = "0.48", features = [
 once_cell = "1.19"
 
 [target.'cfg(target_os="linux")'.dependencies]
-nix = { version = "0.27.1", features = ["zerocopy"] }
+nix = { version = "0.29", features = ["zerocopy"] }
 
 [dependencies.clap]
 version = "4"
 default-features = false
-features = ["suggestions", "color", "wrap_help", "cargo", "help", "usage", "error-context"]
+features = [
+    "suggestions",
+    "color",
+    "wrap_help",
+    "cargo",
+    "help",
+    "usage",
+    "error-context",
+]
 
 [dev-dependencies]
 approx = "0.5"
 assert_cmd = "2.0"
 predicates = "3.0"
-tempfile = "3.9"
+tempfile = "3.14"
 
 [build-dependencies]
 clap = "4.4.12"
