@@ -383,7 +383,7 @@ fn test_get_parameterized_command_name() {
     assert_eq!(cmd.get_name(), "name-quux-baz");
 }
 
-impl<'a> fmt::Display for Command<'a> {
+impl fmt::Display for Command<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.get_command_line())
     }
