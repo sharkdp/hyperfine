@@ -110,7 +110,7 @@ impl<'a> RawExecutor<'a> {
     }
 }
 
-impl<'a> Executor for RawExecutor<'a> {
+impl Executor for RawExecutor<'_> {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
@@ -161,7 +161,7 @@ impl<'a> ShellExecutor<'a> {
     }
 }
 
-impl<'a> Executor for ShellExecutor<'a> {
+impl Executor for ShellExecutor<'_> {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
