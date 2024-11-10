@@ -6,6 +6,7 @@ pub mod timing_result;
 
 use std::cmp;
 
+use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{CmdFailureAction, ExecutorKind, Options, OutputStyleOption};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
@@ -57,7 +58,11 @@ impl<'a> Benchmark<'a> {
         error_output: &'static str,
     ) -> Result<TimingResult> {
         self.executor
-            .run_command_and_measure(command, Some(CmdFailureAction::RaiseError))
+            .run_command_and_measure(
+                command,
+                executor::BenchmarkIteration::NonBenchmarkRun,
+                Some(CmdFailureAction::RaiseError),
+            )
             .map(|r| r.0)
             .map_err(|_| anyhow!(error_output))
     }
@@ -187,9 +192,13 @@ impl<'a> Benchmark<'a> {
                 None
             };
 
-            for _ in 0..self.options.warmup_count {
+            for i in 0..self.options.warmup_count {
                 let _ = run_preparation_command()?;
-                let _ = self.executor.run_command_and_measure(self.command, None)?;
+                let _ = self.executor.run_command_and_measure(
+                    self.command,
+                    BenchmarkIteration::Warmup(i),
+                    None,
+                )?;
                 let _ = run_conclusion_command()?;
                 if let Some(bar) = progress_bar.as_ref() {
                     bar.inc(1)
@@ -216,7 +225,11 @@ impl<'a> Benchmark<'a> {
             preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
 
         // Initial timing run
-        let (res, status) = self.executor.run_command_and_measure(self.command, None)?;
+        let (res, status) = self.executor.run_command_and_measure(
+            self.command,
+            BenchmarkIteration::Benchmark(0),
+            None,
+        )?;
         let success = status.success();
 
         let conclusion_result = run_conclusion_command()?;
@@ -260,7 +273,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Gather statistics (perform the actual benchmark)
-        for _ in 0..count_remaining {
+        for i in 0..count_remaining {
             run_preparation_command()?;
 
             let msg = {
@@ -272,7 +285,11 @@ impl<'a> Benchmark<'a> {
                 bar.set_message(msg.to_owned())
             }
 
-            let (res, status) = self.executor.run_command_and_measure(self.command, None)?;
+            let (res, status) = self.executor.run_command_and_measure(
+                self.command,
+                BenchmarkIteration::Benchmark(i + 1),
+                None,
+            )?;
             let success = status.success();
 
             times_real.push(res.time_real);
