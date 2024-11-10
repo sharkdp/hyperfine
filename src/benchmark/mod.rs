@@ -187,6 +187,7 @@ impl<'a> Benchmark<'a> {
                     self.options.warmup_count,
                     "Performing warmup runs",
                     self.options.output_style,
+                    self.options.show_elapsed,
                 ))
             } else {
                 None
@@ -201,7 +202,8 @@ impl<'a> Benchmark<'a> {
                 )?;
                 let _ = run_conclusion_command()?;
                 if let Some(bar) = progress_bar.as_ref() {
-                    bar.inc(1)
+                    bar.inc(1);
+                    bar.reset_elapsed();
                 }
             }
             if let Some(bar) = progress_bar.as_ref() {
@@ -215,6 +217,7 @@ impl<'a> Benchmark<'a> {
                 self.options.run_bounds.min,
                 "Initial time measurement",
                 self.options.output_style,
+                self.options.show_elapsed,
             ))
         } else {
             None
@@ -269,7 +272,8 @@ impl<'a> Benchmark<'a> {
             bar.set_length(count)
         }
         if let Some(bar) = progress_bar.as_ref() {
-            bar.inc(1)
+            bar.inc(1);
+            bar.reset_elapsed();
         }
 
         // Gather statistics (perform the actual benchmark)
@@ -300,7 +304,8 @@ impl<'a> Benchmark<'a> {
             all_succeeded = all_succeeded && success;
 
             if let Some(bar) = progress_bar.as_ref() {
-                bar.inc(1)
+                bar.inc(1);
+                bar.reset_elapsed();
             }
 
             run_conclusion_command()?;
