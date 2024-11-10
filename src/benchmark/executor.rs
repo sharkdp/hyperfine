@@ -16,11 +16,28 @@ use super::timing_result::TimingResult;
 use anyhow::{bail, Context, Result};
 use statistical::mean;
 
+pub enum BenchmarkIteration {
+    NonBenchmarkRun,
+    Warmup(u64),
+    Benchmark(u64),
+}
+
+impl BenchmarkIteration {
+    pub fn to_env_var_value(&self) -> Option<String> {
+        match self {
+            BenchmarkIteration::NonBenchmarkRun => None,
+            BenchmarkIteration::Warmup(i) => Some(format!("warmup-{}", i)),
+            BenchmarkIteration::Benchmark(i) => Some(format!("{}", i)),
+        }
+    }
+}
+
 pub trait Executor {
     /// Run the given command and measure the execution time
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
+        iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
     ) -> Result<(TimingResult, ExitStatus)>;
 
@@ -39,6 +56,7 @@ pub trait Executor {
 
 fn run_command_and_measure_common(
     mut command: std::process::Command,
+    iteration: BenchmarkIteration,
     command_failure_action: CmdFailureAction,
     command_input_policy: &CommandInputPolicy,
     command_output_policy: &CommandOutputPolicy,
@@ -53,17 +71,29 @@ fn run_command_and_measure_common(
         randomized_environment_offset::value(),
     );
 
+    if let Some(value) = iteration.to_env_var_value() {
+        command.env("HYPERFINE_ITERATION", value);
+    }
+
     let result = execute_and_measure(command)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
     if command_failure_action == CmdFailureAction::RaiseError && !result.status.success() {
+        let when = match iteration {
+            BenchmarkIteration::NonBenchmarkRun => "a non-benchmark run".to_string(),
+            BenchmarkIteration::Warmup(0) => "the first warmup run".to_string(),
+            BenchmarkIteration::Warmup(i) => format!("warmup iteration {i}"),
+            BenchmarkIteration::Benchmark(0) => "the first benchmark run".to_string(),
+            BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
+        };
         bail!(
-            "{}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+            "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
             Alternatively, use the '--show-output' option to debug what went wrong.",
-            result.status.code().map_or(
+            cause=result.status.code().map_or(
                 "The process has been terminated by a signal".into(),
-                |c| format!("Command terminated with non-zero exit code: {c}")
-            )
+                |c| format!("Command terminated with non-zero exit code {c}")
+
+            ),
         );
     }
 
@@ -84,10 +114,12 @@ impl<'a> Executor for RawExecutor<'a> {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
+        iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
     ) -> Result<(TimingResult, ExitStatus)> {
         let result = run_command_and_measure_common(
             command.get_command()?,
+            iteration,
             command_failure_action.unwrap_or(self.options.command_failure_action),
             &self.options.command_input_policy,
             &self.options.command_output_policy,
@@ -133,6 +165,7 @@ impl<'a> Executor for ShellExecutor<'a> {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
+        iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
     ) -> Result<(TimingResult, ExitStatus)> {
         let on_windows_cmd = cfg!(windows) && *self.shell == Shell::Default("cmd.exe");
@@ -149,6 +182,7 @@ impl<'a> Executor for ShellExecutor<'a> {
 
         let mut result = run_command_and_measure_common(
             command_builder,
+            iteration,
             command_failure_action.unwrap_or(self.options.command_failure_action),
             &self.options.command_input_policy,
             &self.options.command_output_policy,
@@ -191,7 +225,11 @@ impl<'a> Executor for ShellExecutor<'a> {
 
         for _ in 0..COUNT {
             // Just run the shell without any command
-            let res = self.run_command_and_measure(&Command::new(None, ""), None);
+            let res = self.run_command_and_measure(
+                &Command::new(None, ""),
+                BenchmarkIteration::NonBenchmarkRun,
+                None,
+            );
 
             match res {
                 Err(_) => {
@@ -260,6 +298,7 @@ impl Executor for MockExecutor {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
+        _iteration: BenchmarkIteration,
         _command_failure_action: Option<CmdFailureAction>,
     ) -> Result<(TimingResult, ExitStatus)> {
         #[cfg(unix)]
