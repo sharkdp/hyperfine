@@ -1,17 +1,25 @@
-# unreleased
+# v1.19.0
 
 ## Features
 
-
-## Changes
-
+- Add a new `--reference <cmd>` option to specify a reference command for the relative speed comparison, see #579, #577 and #744 (@sharkdp)
+- Add `--conclude` argument (analog to `--prepare`), see #565 and #719 (@jackoconnordev)
+- Allow `--output=…` to appear once for each command, enabling use cases like `hyperfine --output=null my-cmd --output=./file.log my-cmd`, see #529 and #775 (@sharkdp)
+- The environment variable `$HYPERFINE_ITERATION` will now contain the current iteration number for each benchmarked command, see #775 (@sharkdp)
+- Add iteration information to failure error message, see #771 and #772 (@sharkdp)
+- Python scripts: 
+  - legend modification parameters and output DPI, see #758 (@Spreadcat)
+  - Nicer whiskers plot, see #727 (@serpent7776)
 
 ## Bugfixes
 
+- ETA not clearly visible on terminals with a block cursor, see #698 and #699 (@overclockworked64)
+- Fix zsh completions, see #717 (@xzfc)
 
 ## Other
 
-
+- Build binaries for aarch64-apple-darwin, see #728 (@Phault)
+- Various cleanups (@hamirmahal, @one230six)
 
 # v1.18.0
 
