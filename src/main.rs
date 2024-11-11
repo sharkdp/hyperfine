@@ -32,7 +32,7 @@ fn run() -> Result<()> {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let cli_arguments = get_cli_arguments(env::args_os());
-    let options = Options::from_cli_arguments(&cli_arguments)?;
+    let mut options = Options::from_cli_arguments(&cli_arguments)?;
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
     let export_manager = ExportManager::from_cli_arguments(&cli_arguments, options.time_unit)?;
 

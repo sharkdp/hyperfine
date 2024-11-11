@@ -327,7 +327,7 @@ fn build_command() -> Command {
             Arg::new("output")
                 .long("output")
                 .conflicts_with("show-output")
-                .action(ArgAction::Set)
+                .action(ArgAction::Append)
                 .value_name("WHERE")
                 .help(
                     "Control where the output of the benchmark is redirected. Note \
@@ -343,7 +343,11 @@ fn build_command() -> Command {
                      \n  \
                        inherit:  Don't redirect the output at all (same as '--show-output').\n\
                      \n  \
-                       <FILE>:   Write the output to the given file.",
+                       <FILE>:   Write the output to the given file.\n\n\
+                    This option can be specified once for all commands or multiple times, once for \
+                    each command. Note: If you want to log the output of each and every iteration, \
+                    you can use a shell redirection and the '$HYPERFINE_ITERATION' environment variable:\n    \
+                    hyperfine 'my-command > output-${HYPERFINE_ITERATION}.log'\n\n",
                 ),
         )
         .arg(
