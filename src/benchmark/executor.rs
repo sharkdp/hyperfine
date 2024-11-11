@@ -39,6 +39,7 @@ pub trait Executor {
         command: &Command<'_>,
         iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
+        output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)>;
 
     /// Perform a calibration of this executor. For example,
@@ -116,13 +117,14 @@ impl Executor for RawExecutor<'_> {
         command: &Command<'_>,
         iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
+        output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)> {
         let result = run_command_and_measure_common(
             command.get_command()?,
             iteration,
             command_failure_action.unwrap_or(self.options.command_failure_action),
             &self.options.command_input_policy,
-            &self.options.command_output_policy,
+            output_policy,
             &command.get_command_line(),
         )?;
 
@@ -167,6 +169,7 @@ impl Executor for ShellExecutor<'_> {
         command: &Command<'_>,
         iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
+        output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)> {
         let on_windows_cmd = cfg!(windows) && *self.shell == Shell::Default("cmd.exe");
         let mut command_builder = self.shell.command();
@@ -185,7 +188,7 @@ impl Executor for ShellExecutor<'_> {
             iteration,
             command_failure_action.unwrap_or(self.options.command_failure_action),
             &self.options.command_input_policy,
-            &self.options.command_output_policy,
+            output_policy,
             &command.get_command_line(),
         )?;
 
@@ -229,6 +232,7 @@ impl Executor for ShellExecutor<'_> {
                 &Command::new(None, ""),
                 BenchmarkIteration::NonBenchmarkRun,
                 None,
+                &CommandOutputPolicy::Null,
             );
 
             match res {
@@ -300,6 +304,7 @@ impl Executor for MockExecutor {
         command: &Command<'_>,
         _iteration: BenchmarkIteration,
         _command_failure_action: Option<CmdFailureAction>,
+        _output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)> {
         #[cfg(unix)]
         let status = {

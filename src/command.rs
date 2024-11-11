@@ -251,8 +251,8 @@ impl<'a> Commands<'a> {
         self.0.iter()
     }
 
-    pub fn num_commands(&self) -> usize {
-        self.0.len()
+    pub fn num_commands(&self, has_reference_command: bool) -> usize {
+        self.0.len() + if has_reference_command { 1 } else { 0 }
     }
 
     /// Finds all the strings that appear multiple times in the input iterator, returning them in

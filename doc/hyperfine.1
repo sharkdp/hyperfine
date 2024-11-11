@@ -290,6 +290,11 @@ Don't redirect the output at all (same as \&'\-\-show\-output').
 .IP "<FILE>"
 Write the output to the given file.
 .RE
+.IP
+This option can be specified once for all commands or multiple times,
+once for each command. Note: If you want to log the output of each and
+every iteration, you can use a shell redirection and the $HYPERFINE_ITERATION
+environment variable: 'my-command > output-${HYPERFINE_ITERATION}.log'
 .HP
 \fB\-\-input\fR \fIWHERE\fP
 .IP

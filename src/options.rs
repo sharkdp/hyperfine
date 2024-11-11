@@ -234,8 +234,8 @@ pub struct Options {
     /// Where input to the benchmarked command comes from
     pub command_input_policy: CommandInputPolicy,
 
-    /// What to do with the output of the benchmarked command
-    pub command_output_policy: CommandOutputPolicy,
+    /// What to do with the output of the benchmarked commands
+    pub command_output_policies: Vec<CommandOutputPolicy>,
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
@@ -257,7 +257,7 @@ impl Default for Options {
             sort_order_speed_comparison: SortOrder::MeanTime,
             sort_order_exports: SortOrder::Command,
             executor_kind: ExecutorKind::default(),
-            command_output_policy: CommandOutputPolicy::Null,
+            command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
         }
@@ -320,23 +320,28 @@ impl Options {
 
         options.cleanup_command = matches.get_one::<String>("cleanup").map(String::from);
 
-        options.command_output_policy = if matches.get_flag("show-output") {
-            CommandOutputPolicy::Inherit
-        } else if let Some(output) = matches.get_one::<String>("output").map(|s| s.as_str()) {
-            match output {
-                "null" => CommandOutputPolicy::Null,
-                "pipe" => CommandOutputPolicy::Pipe,
-                "inherit" => CommandOutputPolicy::Inherit,
-                arg => {
-                    let path = PathBuf::from(arg);
-                    if path.components().count() <= 1 {
-                        return Err(OptionsError::UnknownOutputPolicy(arg.to_string()));
+        options.command_output_policies = if matches.get_flag("show-output") {
+            vec![CommandOutputPolicy::Inherit]
+        } else if let Some(output_values) = matches.get_many::<String>("output") {
+            let mut policies = vec![];
+            for value in output_values {
+                let policy = match value.as_str() {
+                    "null" => CommandOutputPolicy::Null,
+                    "pipe" => CommandOutputPolicy::Pipe,
+                    "inherit" => CommandOutputPolicy::Inherit,
+                    arg => {
+                        let path = PathBuf::from(arg);
+                        if path.components().count() <= 1 {
+                            return Err(OptionsError::UnknownOutputPolicy(arg.to_string()));
+                        }
+                        CommandOutputPolicy::File(path)
                     }
-                    CommandOutputPolicy::File(path)
-                }
+                };
+                policies.push(policy);
             }
+            policies
         } else {
-            CommandOutputPolicy::Null
+            vec![CommandOutputPolicy::Null]
         };
 
         options.output_style = match matches.get_one::<String>("style").map(|s| s.as_str()) {
@@ -346,7 +351,10 @@ impl Options {
             Some("color") => OutputStyleOption::Color,
             Some("none") => OutputStyleOption::Disabled,
             _ => {
-                if options.command_output_policy == CommandOutputPolicy::Inherit
+                if options
+                    .command_output_policies
+                    .iter()
+                    .any(|policy| *policy == CommandOutputPolicy::Inherit)
                     || !io::stdout().is_terminal()
                 {
                     OutputStyleOption::Basic
@@ -436,26 +444,34 @@ impl Options {
         Ok(options)
     }
 
-    pub fn validate_against_command_list(&self, commands: &Commands) -> Result<()> {
-        let num_commands = commands.num_commands()
-            + if self.reference_command.is_some() {
-                1
-            } else {
-                0
-            };
+    pub fn validate_against_command_list(&mut self, commands: &Commands) -> Result<()> {
+        let has_reference_command = self.reference_command.is_some();
+        let num_commands = commands.num_commands(has_reference_command);
+
         if let Some(preparation_command) = &self.preparation_command {
             ensure!(
                 preparation_command.len() <= 1 || num_commands == preparation_command.len(),
-                "The '--prepare' option has to be provided just once or N times, where N is the \
-             number of benchmark commands including a potential reference."
+                "The '--prepare' option has to be provided just once or N times, where N={num_commands} is the \
+                 number of benchmark commands (including a potential reference)."
             );
         }
 
         if let Some(conclusion_command) = &self.conclusion_command {
             ensure!(
                 conclusion_command.len() <= 1 || num_commands == conclusion_command.len(),
-                "The '--conclude' option has to be provided just once or N times, where N is the \
-             number of benchmark commands including a potential reference."
+                "The '--conclude' option has to be provided just once or N times, where N={num_commands} is the \
+                 number of benchmark commands (including a potential reference)."
+            );
+        }
+
+        if self.command_output_policies.len() == 1 {
+            self.command_output_policies =
+                vec![self.command_output_policies[0].clone(); num_commands];
+        } else {
+            ensure!(
+                self.command_output_policies.len() == num_commands,
+                "The '--output' option has to be provided just once or N times, where N={num_commands} is the \
+                 number of benchmark commands (including a potential reference)."
             );
         }
 

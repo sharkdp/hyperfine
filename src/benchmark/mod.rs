@@ -8,7 +8,9 @@ use std::cmp;
 
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
-use crate::options::{CmdFailureAction, ExecutorKind, Options, OutputStyleOption};
+use crate::options::{
+    CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
+};
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
@@ -56,12 +58,14 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         error_output: &'static str,
+        output_policy: &CommandOutputPolicy,
     ) -> Result<TimingResult> {
         self.executor
             .run_command_and_measure(
                 command,
                 executor::BenchmarkIteration::NonBenchmarkRun,
                 Some(CmdFailureAction::RaiseError),
+                output_policy,
             )
             .map(|r| r.0)
             .map_err(|_| anyhow!(error_output))
@@ -71,6 +75,7 @@ impl<'a> Benchmark<'a> {
     fn run_setup_command(
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
+        output_policy: &CommandOutputPolicy,
     ) -> Result<TimingResult> {
         let command = self
             .options
@@ -82,7 +87,7 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output))
+            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy))
             .transpose()?
             .unwrap_or_default())
     }
@@ -91,6 +96,7 @@ impl<'a> Benchmark<'a> {
     fn run_cleanup_command(
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
+        output_policy: &CommandOutputPolicy,
     ) -> Result<TimingResult> {
         let command = self
             .options
@@ -102,25 +108,33 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output))
+            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy))
             .transpose()?
             .unwrap_or_default())
     }
 
     /// Run the command specified by `--prepare`.
-    fn run_preparation_command(&self, command: &Command<'_>) -> Result<TimingResult> {
+    fn run_preparation_command(
+        &self,
+        command: &Command<'_>,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<TimingResult> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output)
+        self.run_intermediate_command(command, error_output, output_policy)
     }
 
     /// Run the command specified by `--conclude`.
-    fn run_conclusion_command(&self, command: &Command<'_>) -> Result<TimingResult> {
+    fn run_conclusion_command(
+        &self,
+        command: &Command<'_>,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<TimingResult> {
         let error_output = "The conclusion command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output)
+        self.run_intermediate_command(command, error_output, output_policy)
     }
 
     /// Run the benchmark for a single command
@@ -140,6 +154,8 @@ impl<'a> Benchmark<'a> {
         let mut exit_codes: Vec<Option<i32>> = vec![];
         let mut all_succeeded = true;
 
+        let output_policy = &self.options.command_output_policies[self.number];
+
         let preparation_command = self.options.preparation_command.as_ref().map(|values| {
             let preparation_command = if values.len() == 1 {
                 &values[0]
@@ -152,10 +168,11 @@ impl<'a> Benchmark<'a> {
                 self.command.get_parameters().iter().cloned(),
             )
         });
+
         let run_preparation_command = || {
             preparation_command
                 .as_ref()
-                .map(|cmd| self.run_preparation_command(cmd))
+                .map(|cmd| self.run_preparation_command(cmd, output_policy))
                 .transpose()
         };
 
@@ -174,11 +191,11 @@ impl<'a> Benchmark<'a> {
         let run_conclusion_command = || {
             conclusion_command
                 .as_ref()
-                .map(|cmd| self.run_conclusion_command(cmd))
+                .map(|cmd| self.run_conclusion_command(cmd, output_policy))
                 .transpose()
         };
 
-        self.run_setup_command(self.command.get_parameters().iter().cloned())?;
+        self.run_setup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
         // Warmup phase
         if self.options.warmup_count > 0 {
@@ -198,6 +215,7 @@ impl<'a> Benchmark<'a> {
                     self.command,
                     BenchmarkIteration::Warmup(i),
                     None,
+                    output_policy,
                 )?;
                 let _ = run_conclusion_command()?;
                 if let Some(bar) = progress_bar.as_ref() {
@@ -229,6 +247,7 @@ impl<'a> Benchmark<'a> {
             self.command,
             BenchmarkIteration::Benchmark(0),
             None,
+            output_policy,
         )?;
         let success = status.success();
 
@@ -289,6 +308,7 @@ impl<'a> Benchmark<'a> {
                 self.command,
                 BenchmarkIteration::Benchmark(i + 1),
                 None,
+                output_policy,
             )?;
             let success = status.success();
 
@@ -418,7 +438,7 @@ impl<'a> Benchmark<'a> {
             println!(" ");
         }
 
-        self.run_cleanup_command(self.command.get_parameters().iter().cloned())?;
+        self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
         Ok(BenchmarkResult {
             command: self.command.get_name(),
