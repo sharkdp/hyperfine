@@ -300,6 +300,7 @@ fn runs_commands_using_user_defined_shell() {
         );
 }
 
+#[cfg(unix)]
 #[test]
 fn can_pass_input_to_command_from_a_file() {
     hyperfine()
@@ -312,6 +313,7 @@ fn can_pass_input_to_command_from_a_file() {
         .stdout(predicate::str::contains("This text is part of a file"));
 }
 
+#[cfg(unix)]
 #[test]
 fn fails_if_invalid_stdin_data_file_provided() {
     hyperfine()
