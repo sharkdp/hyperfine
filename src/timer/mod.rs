@@ -32,6 +32,9 @@ struct CPUTimes {
 
     /// Total amount of time spent executing in kernel mode
     pub system_usec: i64,
+
+    /// Maximum amount of memory used by the process, in bytes
+    pub memory_usage_byte: u64,
 }
 
 /// Used to indicate the result of running a command
@@ -40,7 +43,7 @@ pub struct TimerResult {
     pub time_real: Second,
     pub time_user: Second,
     pub time_system: Second,
-
+    pub memory_usage_byte: u64,
     /// The exit status of the process
     pub status: ExitStatus,
 }
@@ -106,12 +109,13 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     let status = child.wait()?;
 
     let time_real = wallclock_timer.stop();
-    let (time_user, time_system) = cpu_timer.stop();
+    let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
 
     Ok(TimerResult {
         time_real,
         time_user,
         time_system,
+        memory_usage_byte,
         status,
     })
 }

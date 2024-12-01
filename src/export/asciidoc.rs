@@ -105,6 +105,7 @@ fn test_asciidoc_format_s() {
             min: 5.0,
             max: 6.0,
             times: Some(vec![7.0, 8.0, 9.0]),
+            memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -124,6 +125,7 @@ fn test_asciidoc_format_s() {
             min: 15.0,
             max: 16.0,
             times: Some(vec![17.0, 18.0, 19.0]),
+            memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -180,6 +182,7 @@ fn test_asciidoc_format_ms() {
             min: 0.015,
             max: 0.016,
             times: Some(vec![0.017, 0.018, 0.019]),
+            memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -199,6 +202,7 @@ fn test_asciidoc_format_ms() {
             min: 5.0,
             max: 6.0,
             times: Some(vec![7.0, 8.0, 9.0]),
+            memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
