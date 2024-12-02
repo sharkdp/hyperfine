@@ -313,6 +313,19 @@ fn can_pass_input_to_command_from_a_file() {
         .stdout(predicate::str::contains("This text is part of a file"));
 }
 
+#[cfg(windows)]
+#[test]
+fn can_pass_input_to_command_from_a_file() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--input=example_input_file.txt")
+        .arg("--show-output")
+        .arg("type example_input_file.txt")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("This text is part of a file"));
+}
+
 #[cfg(unix)]
 #[test]
 fn fails_if_invalid_stdin_data_file_provided() {
@@ -321,6 +334,21 @@ fn fails_if_invalid_stdin_data_file_provided() {
         .arg("--input=example_non_existent_file.txt")
         .arg("--show-output")
         .arg("cat")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The file 'example_non_existent_file.txt' specified as '--input' does not exist",
+        ));
+}
+
+#[cfg(windows)]
+#[test]
+fn fails_if_invalid_stdin_data_file_provided() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--input=example_non_existent_file.txt")
+        .arg("--show-output")
+        .arg("type example_non_existent_file.txt")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
