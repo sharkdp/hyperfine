@@ -1,5 +1,6 @@
 pub mod benchmark_result;
 pub mod executor;
+#[cfg(unix)]
 pub mod os_info;
 pub mod relative_speed;
 pub mod scheduler;
@@ -21,6 +22,7 @@ use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
+#[cfg(unix)]
 use os_info::OsInfo;
 use timing_result::TimingResult;
 
