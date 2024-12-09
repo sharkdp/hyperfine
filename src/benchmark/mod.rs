@@ -394,7 +394,7 @@ impl<'a> Benchmark<'a> {
 
                 println!("  OS: {}", os_name.green());
 
-                #[cfg(unix)]
+                #[cfg(target_os = "linux")]
                 self.linux_extra_inforamtion()
             }
         }
