@@ -1,5 +1,7 @@
 pub mod benchmark_result;
 pub mod executor;
+#[cfg(target_os = "linux")]
+pub mod os_info;
 pub mod relative_speed;
 pub mod scheduler;
 pub mod timing_result;
@@ -20,6 +22,8 @@ use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
+#[cfg(target_os = "linux")]
+use os_info::OsInfo;
 use timing_result::TimingResult;
 
 use anyhow::{anyhow, Result};
@@ -385,6 +389,13 @@ impl<'a> Benchmark<'a> {
                     max_str.purple(),
                     num_str.dimmed()
                 );
+
+                let os_name = std::env::consts::OS;
+
+                println!("  OS: {}", os_name.green());
+
+                #[cfg(target_os = "linux")]
+                self.linux_extra_inforamtion()
             }
         }
 
@@ -459,5 +470,19 @@ impl<'a> Benchmark<'a> {
                 .map(|(name, value)| (name.to_string(), value.to_string()))
                 .collect(),
         })
+    }
+
+    #[cfg(target_os = "linux")]
+    fn linux_extra_inforamtion(&self) {
+        if cfg!(target_os = "linux") {
+            let kernal_version = OsInfo::kernal_version();
+            let (disro_name, disro_version) = OsInfo::distro_info();
+            let number_of_cores = OsInfo::number_of_cores();
+
+            println!("  Kernal version: {}", kernal_version.green());
+            println!("  Distro: {}", disro_name.green());
+            println!("  Distro Version: {}", disro_version.green());
+            println!("  Cores: {}", number_of_cores.to_string().green());
+        }
     }
 }
