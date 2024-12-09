@@ -1,4 +1,4 @@
-#![cfg(unix)]
+#![cfg(target_os = "linux")]
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::from_utf8;
