@@ -6,7 +6,7 @@ pub mod timing_result;
 
 use std::cmp;
 
-use crate::benchmark::benchmark_result::{BenchmarkRun, Parameter};
+use crate::benchmark::benchmark_result::{Parameter, Run};
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{
@@ -149,7 +149,7 @@ impl<'a> Benchmark<'a> {
             );
         }
 
-        let mut times_real: Vec<Second> = vec![];
+        let mut times_wall_clock: Vec<Second> = vec![];
         let mut times_user: Vec<Second> = vec![];
         let mut times_system: Vec<Second> = vec![];
         let mut memory_usage_byte: Vec<u64> = vec![];
@@ -241,8 +241,9 @@ impl<'a> Benchmark<'a> {
         };
 
         let preparation_result = run_preparation_command()?;
-        let preparation_overhead =
-            preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        let preparation_overhead = preparation_result.map_or(0.0, |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Initial timing run
         let (res, status) = self.executor.run_command_and_measure(
@@ -254,12 +255,13 @@ impl<'a> Benchmark<'a> {
         let success = status.success();
 
         let conclusion_result = run_conclusion_command()?;
-        let conclusion_overhead =
-            conclusion_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        let conclusion_overhead = conclusion_result.map_or(0.0, |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real
+            / (res.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead)) as u64;
@@ -278,7 +280,7 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        times_real.push(res.time_real);
+        times_wall_clock.push(res.time_wall_clock);
         times_user.push(res.time_user);
         times_system.push(res.time_system);
         memory_usage_byte.push(res.memory_usage_byte);
@@ -299,7 +301,7 @@ impl<'a> Benchmark<'a> {
             run_preparation_command()?;
 
             let msg = {
-                let mean = format_duration(mean(&times_real), self.options.time_unit);
+                let mean = format_duration(mean(&times_wall_clock), self.options.time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -315,7 +317,7 @@ impl<'a> Benchmark<'a> {
             )?;
             let success = status.success();
 
-            times_real.push(res.time_real);
+            times_wall_clock.push(res.time_wall_clock);
             times_user.push(res.time_user);
             times_system.push(res.time_system);
             memory_usage_byte.push(res.memory_usage_byte);
@@ -335,15 +337,15 @@ impl<'a> Benchmark<'a> {
         }
 
         // Compute statistical quantities
-        let t_num = times_real.len();
-        let t_mean = mean(&times_real);
-        let t_stddev = if times_real.len() > 1 {
-            Some(standard_deviation(&times_real, Some(t_mean)))
+        let t_num = times_wall_clock.len();
+        let t_mean = mean(&times_wall_clock);
+        let t_stddev = if times_wall_clock.len() > 1 {
+            Some(standard_deviation(&times_wall_clock, Some(t_mean)))
         } else {
             None
         };
-        let t_min = min(&times_real);
-        let t_max = max(&times_real);
+        let t_min = min(&times_wall_clock);
+        let t_max = max(&times_wall_clock);
 
         let user_mean = mean(&times_user);
         let system_mean = mean(&times_system);
@@ -358,7 +360,7 @@ impl<'a> Benchmark<'a> {
         let system_str = format_duration(system_mean, Some(time_unit));
 
         if self.options.output_style != OutputStyleOption::Disabled {
-            if times_real.len() == 1 {
+            if times_wall_clock.len() == 1 {
                 println!(
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
                     "abs".green().bold(),
@@ -396,7 +398,7 @@ impl<'a> Benchmark<'a> {
 
         // Check execution time
         if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
-            && times_real.iter().any(|&t| t < MIN_EXECUTION_TIME)
+            && times_wall_clock.iter().any(|&t| t < MIN_EXECUTION_TIME)
         {
             warnings.push(Warnings::FastExecutionTime);
         }
@@ -407,7 +409,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = modified_zscores(&times_real);
+        let scores = modified_zscores(&times_wall_clock);
 
         let outlier_warning_options = OutlierWarningOptions {
             warmup_in_use: self.options.warmup_count > 0,
@@ -422,7 +424,7 @@ impl<'a> Benchmark<'a> {
 
         if scores[0] > OUTLIER_THRESHOLD {
             warnings.push(Warnings::SlowInitialRun(
-                times_real[0],
+                times_wall_clock[0],
                 outlier_warning_options,
             ));
         } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
@@ -445,7 +447,7 @@ impl<'a> Benchmark<'a> {
 
         Ok(BenchmarkResult {
             command: self.command.get_name(),
-            runs: times_real
+            runs: times_wall_clock
                 .iter()
                 .zip(times_user.iter())
                 .zip(times_system.iter())
@@ -456,7 +458,7 @@ impl<'a> Benchmark<'a> {
                         (((wall_clock_time, user_time), system_time), memory_usage_byte),
                         exit_code,
                     )| {
-                        BenchmarkRun {
+                        Run {
                             wall_clock_time: *wall_clock_time,
                             user_time: *user_time,
                             system_time: *system_time,

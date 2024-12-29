@@ -130,7 +130,7 @@ impl Executor for RawExecutor<'_> {
 
         Ok((
             TimingResult {
-                time_real: result.time_real,
+                time_wall_clock: result.time_wall_clock,
                 time_user: result.time_user,
                 time_system: result.time_system,
                 memory_usage_byte: result.memory_usage_byte,
@@ -195,14 +195,15 @@ impl Executor for ShellExecutor<'_> {
 
         // Subtract shell spawning time
         if let Some(spawning_time) = self.shell_spawning_time {
-            result.time_real = (result.time_real - spawning_time.time_real).max(0.0);
+            result.time_wall_clock =
+                (result.time_wall_clock - spawning_time.time_wall_clock).max(0.0);
             result.time_user = (result.time_user - spawning_time.time_user).max(0.0);
             result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
         }
 
         Ok((
             TimingResult {
-                time_real: result.time_real,
+                time_wall_clock: result.time_wall_clock,
                 time_user: result.time_user,
                 time_system: result.time_system,
                 memory_usage_byte: result.memory_usage_byte,
@@ -224,7 +225,7 @@ impl Executor for ShellExecutor<'_> {
             None
         };
 
-        let mut times_real: Vec<Second> = vec![];
+        let mut times_wall_clock: Vec<Second> = vec![];
         let mut times_user: Vec<Second> = vec![];
         let mut times_system: Vec<Second> = vec![];
 
@@ -251,7 +252,7 @@ impl Executor for ShellExecutor<'_> {
                     );
                 }
                 Ok((r, _)) => {
-                    times_real.push(r.time_real);
+                    times_wall_clock.push(r.time_wall_clock);
                     times_user.push(r.time_user);
                     times_system.push(r.time_system);
                 }
@@ -267,7 +268,7 @@ impl Executor for ShellExecutor<'_> {
         }
 
         self.shell_spawning_time = Some(TimingResult {
-            time_real: mean(&times_real),
+            time_wall_clock: mean(&times_wall_clock),
             time_user: mean(&times_user),
             time_system: mean(&times_system),
             memory_usage_byte: 0,
@@ -277,7 +278,7 @@ impl Executor for ShellExecutor<'_> {
     }
 
     fn time_overhead(&self) -> Second {
-        self.shell_spawning_time.unwrap().time_real
+        self.shell_spawning_time.unwrap().time_wall_clock
     }
 }
 
@@ -323,7 +324,7 @@ impl Executor for MockExecutor {
 
         Ok((
             TimingResult {
-                time_real: Self::extract_time(command.get_command_line()),
+                time_wall_clock: Self::extract_time(command.get_command_line()),
                 time_user: 0.0,
                 time_system: 0.0,
                 memory_usage_byte: 0,

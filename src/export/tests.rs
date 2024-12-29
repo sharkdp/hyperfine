@@ -1,5 +1,5 @@
 use super::Exporter;
-use crate::benchmark::benchmark_result::{BenchmarkResult, BenchmarkRun};
+use crate::benchmark::benchmark_result::{BenchmarkResult, Run};
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
 use crate::util::units::Unit;
@@ -27,21 +27,21 @@ fn test_markup_export_auto_ms() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.09,
                     user_time: 0.09,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.10,
                     user_time: 0.10,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.14,
                     user_time: 0.14,
                     system_time: 0.,
@@ -54,21 +54,21 @@ fn test_markup_export_auto_ms() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.0,
                     user_time: 2.0,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 3.0,
                     user_time: 3.0,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 4.0,
                     user_time: 4.0,
                     system_time: 0.,
@@ -126,21 +126,21 @@ fn test_markup_export_auto_s() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.1,
                     user_time: 2.1,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.2,
                     user_time: 2.2,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.3,
                     user_time: 2.3,
                     system_time: 0.,
@@ -153,21 +153,21 @@ fn test_markup_export_auto_s() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.1,
                     user_time: 0.1,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.2,
                     user_time: 0.2,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.3,
                     user_time: 0.3,
                     system_time: 0.,
@@ -225,21 +225,21 @@ fn test_markup_export_manual_ms() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.1,
                     user_time: 2.1,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.2,
                     user_time: 2.2,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.3,
                     user_time: 2.3,
                     system_time: 0.,
@@ -252,21 +252,21 @@ fn test_markup_export_manual_ms() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.1,
                     user_time: 0.1,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.2,
                     user_time: 0.2,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.3,
                     user_time: 0.3,
                     system_time: 0.,
@@ -323,21 +323,21 @@ fn test_markup_export_manual_s() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.01,
                     user_time: 2.01,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.02,
                     user_time: 2.02,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 2.03,
                     user_time: 2.03,
                     system_time: 0.,
@@ -350,21 +350,21 @@ fn test_markup_export_manual_s() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.11,
                     user_time: 0.11,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.12,
                     user_time: 0.12,
                     system_time: 0.,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 0.13,
                     user_time: 0.13,
                     system_time: 0.,

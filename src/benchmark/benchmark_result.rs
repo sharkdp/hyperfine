@@ -8,8 +8,9 @@ use crate::util::{
     units::Second,
 };
 
+/// Performance metrics and exit codes for each run
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
-pub struct BenchmarkRun {
+pub struct Run {
     /// Wall clock time measurement
     pub wall_clock_time: Second,
 
@@ -26,22 +27,21 @@ pub struct BenchmarkRun {
     pub exit_code: Option<i32>,
 }
 
+/// Parameter value and whether it was used in the command line template
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct Parameter {
     pub value: String,
     pub is_unused: bool,
 }
 
-/// Set of values that will be exported.
-// NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
-// `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
+/// Meta data and performance metrics for a single benchmark
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkResult {
     /// The full command line of the program that is being benchmarked
     pub command: String,
 
-    /// All run time measurements
-    pub runs: Vec<BenchmarkRun>,
+    /// Performance metrics and exit codes for each run
+    pub runs: Vec<Run>,
 
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
