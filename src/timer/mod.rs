@@ -27,7 +27,7 @@ use anyhow::Result;
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]
 pub struct TimerResult {
-    pub time_real: Second,
+    pub time_wall_clock: Second,
     pub time_user: Second,
     pub time_system: Second,
     pub memory_usage_byte: u64,
@@ -94,10 +94,10 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     }
 
     let (status, time_user, time_system, memory_usage_byte) = cpu_timer.stop(child)?;
-    let time_real = wallclock_timer.stop();
+    let time_wall_clock = wallclock_timer.stop();
 
     Ok(TimerResult {
-        time_real,
+        time_wall_clock,
         time_user,
         time_system,
         memory_usage_byte,

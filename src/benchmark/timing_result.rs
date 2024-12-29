@@ -4,7 +4,7 @@ use crate::util::units::Second;
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TimingResult {
     /// Wall clock time
-    pub time_real: Second,
+    pub time_wall_clock: Second,
 
     /// Time spent in user mode
     pub time_user: Second,

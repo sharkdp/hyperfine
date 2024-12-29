@@ -61,7 +61,7 @@ impl Exporter for CsvExporter {
 }
 
 #[cfg(test)]
-use crate::benchmark::benchmark_result::{BenchmarkRun, Parameter};
+use crate::benchmark::benchmark_result::{Parameter, Run};
 
 #[test]
 fn test_csv() {
@@ -72,21 +72,21 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_a"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 7.0,
                     user_time: 7.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 8.0,
                     user_time: 8.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 12.0,
                     user_time: 12.0,
                     system_time: 0.0,
@@ -116,21 +116,21 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_b"),
             runs: vec![
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 17.0,
                     user_time: 17.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 18.0,
                     user_time: 18.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                BenchmarkRun {
+                Run {
                     wall_clock_time: 19.0,
                     user_time: 19.0,
                     system_time: 0.0,

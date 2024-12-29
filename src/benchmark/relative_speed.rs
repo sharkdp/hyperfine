@@ -122,11 +122,11 @@ pub fn compute(
 fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
-    use crate::benchmark::benchmark_result::BenchmarkRun;
+    use crate::benchmark::benchmark_result::Run;
 
     BenchmarkResult {
         command: name.into(),
-        runs: vec![BenchmarkRun {
+        runs: vec![Run {
             wall_clock_time: mean,
             user_time: mean,
             system_time: 0.,
