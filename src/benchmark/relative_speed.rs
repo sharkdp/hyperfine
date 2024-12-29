@@ -57,7 +57,10 @@ fn compute_relative_speeds<'a>(
 
             // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
             // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-            let ratio_stddev = match (result.runs.stddev(), reference.runs.stddev()) {
+            let ratio_stddev = match (
+                result.measurements.stddev(),
+                reference.measurements.stddev(),
+            ) {
                 (Some(result_stddev), Some(fastest_stddev)) => Some(
                     ratio
                         * ((result_stddev / result.mean_wall_clock_time()).powi(2)
@@ -127,12 +130,12 @@ pub fn compute(
 fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
-    use crate::benchmark::benchmark_result::{Run, Runs};
+    use crate::benchmark::measurement::{Measurement, Measurements};
 
     BenchmarkResult {
         command: name.into(),
-        runs: Runs {
-            runs: vec![Run {
+        measurements: Measurements {
+            measurements: vec![Measurement {
                 wall_clock_time: mean,
                 user_time: mean,
                 system_time: 0.,
