@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Performance metric measurements and exit code for a single run
-#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Measurement {
     /// Elapsed wall clock time (real time)
     pub wall_clock_time: Second,

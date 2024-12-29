@@ -1,6 +1,7 @@
 pub mod benchmark_result;
 pub mod executor;
 pub mod measurement;
+pub mod quantity;
 pub mod relative_speed;
 pub mod scheduler;
 pub mod timing_result;
