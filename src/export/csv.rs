@@ -40,13 +40,13 @@ impl Exporter for CsvExporter {
         for res in results {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
-                res.mean(),
-                res.stddev().unwrap_or(0.0),
-                res.median(),
-                res.user_mean(),
-                res.system_mean(),
-                res.min(),
-                res.max(),
+                res.mean_wall_clock_time(),
+                res.runs.stddev().unwrap_or(0.0),
+                res.runs.median(),
+                res.runs.user_mean(),
+                res.runs.system_mean(),
+                res.runs.min(),
+                res.runs.max(),
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }

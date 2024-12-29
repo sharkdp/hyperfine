@@ -3,9 +3,12 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 use statistical::{mean, median, standard_deviation};
 
-use crate::util::{
-    min_max::{max, min},
-    units::Second,
+use crate::{
+    outlier_detection::modified_zscores,
+    util::{
+        min_max::{max, min},
+        units::Second,
+    },
 };
 
 /// Performance metrics and exit codes for each run
@@ -106,6 +109,10 @@ impl Runs {
                 .collect::<Vec<_>>(),
         )
     }
+
+    pub fn modified_zscores(&self) -> Vec<f64> {
+        modified_zscores(&self.wall_clock_times())
+    }
 }
 
 /// Parameter value and whether it was used in the command line template
@@ -131,32 +138,9 @@ pub struct BenchmarkResult {
 }
 
 impl BenchmarkResult {
-    pub fn mean(&self) -> Second {
+    /// The average wall clock time
+    pub fn mean_wall_clock_time(&self) -> Second {
         self.runs.mean()
-    }
-
-    pub fn stddev(&self) -> Option<Second> {
-        self.runs.stddev()
-    }
-
-    pub fn median(&self) -> Second {
-        self.runs.median()
-    }
-
-    pub fn min(&self) -> Second {
-        self.runs.min()
-    }
-
-    pub fn max(&self) -> Second {
-        self.runs.max()
-    }
-
-    pub fn user_mean(&self) -> Second {
-        self.runs.user_mean()
-    }
-
-    pub fn system_mean(&self) -> Second {
-        self.runs.system_mean()
     }
 
     /// The full command line of the program that is being benchmarked, possibly including a list of
