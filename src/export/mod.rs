@@ -7,6 +7,8 @@ mod json;
 mod markdown;
 mod markup;
 mod orgmode;
+#[cfg(test)]
+mod tests;
 
 use self::asciidoc::AsciidocExporter;
 use self::csv::CsvExporter;
