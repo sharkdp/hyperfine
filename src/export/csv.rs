@@ -67,8 +67,8 @@ fn test_csv() {
 
     let results = vec![
         BenchmarkResult {
-            command: String::from("FOO=one BAR=two command | 1"),
-            command_with_unused_parameters: String::from("FOO=one BAR=two command | 1"),
+            command: String::from("command_a"),
+            command_with_unused_parameters: String::from("command_a"),
             mean: 1.0,
             stddev: Some(2.0),
             median: 1.0,
@@ -87,8 +87,8 @@ fn test_csv() {
             },
         },
         BenchmarkResult {
-            command: String::from("FOO=one BAR=seven command | 2"),
-            command_with_unused_parameters: String::from("FOO=one BAR=seven command | 2"),
+            command: String::from("command_b"),
+            command_with_unused_parameters: String::from("command_b"),
             mean: 11.0,
             stddev: Some(12.0),
             median: 11.0,
@@ -117,7 +117,7 @@ fn test_csv() {
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    FOO=one BAR=two command | 1,1,2,1,3,4,5,6,two,one
-    FOO=one BAR=seven command | 2,11,12,11,13,14,15,16.5,seven,one
+    command_a,1,2,1,3,4,5,6,two,one
+    command_b,11,12,11,13,14,15,16.5,seven,one
     "#);
 }
