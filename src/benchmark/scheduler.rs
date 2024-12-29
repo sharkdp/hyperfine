@@ -162,3 +162,68 @@ impl<'a> Scheduler<'a> {
             .write_results(&self.results, self.options.sort_order_exports, false)
     }
 }
+
+#[cfg(test)]
+fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
+    use crate::cli::get_cli_arguments;
+
+    let args = ["hyperfine", "--debug-mode", "--style=none"]
+        .iter()
+        .chain(args.into_iter());
+    let cli_arguments = get_cli_arguments(args);
+    let mut options = Options::from_cli_arguments(&cli_arguments)?;
+
+    assert_eq!(options.executor_kind, ExecutorKind::Mock(None));
+
+    let commands = Commands::from_cli_arguments(&cli_arguments)?;
+    let export_manager = ExportManager::from_cli_arguments(&cli_arguments, options.time_unit)?;
+
+    options.validate_against_command_list(&commands)?;
+
+    let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
+
+    scheduler.run_benchmarks()?;
+    Ok(scheduler.results)
+}
+
+#[test]
+fn scheduler_basic() -> Result<()> {
+    insta::assert_yaml_snapshot!(generate_results(&["--runs=2", "sleep 0.123", "sleep 0.456"])?, @r#"
+    - command: sleep 0.123
+      mean: 0.123
+      stddev: 0
+      median: 0.123
+      user: 0
+      system: 0
+      min: 0.123
+      max: 0.123
+      times:
+        - 0.123
+        - 0.123
+      memory_usage_byte:
+        - 0
+        - 0
+      exit_codes:
+        - 0
+        - 0
+    - command: sleep 0.456
+      mean: 0.456
+      stddev: 0
+      median: 0.456
+      user: 0
+      system: 0
+      min: 0.456
+      max: 0.456
+      times:
+        - 0.456
+        - 0.456
+      memory_usage_byte:
+        - 0
+        - 0
+      exit_codes:
+        - 0
+        - 0
+    "#);
+
+    Ok(())
+}
