@@ -446,12 +446,13 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command: self.command.get_name(),
             command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
-            user: user_mean,
-            system: system_mean,
             runs: times_real
                 .iter()
-                .map(|t| BenchmarkRun {
-                    wall_clock_time: *t,
+                .zip(times_user.iter().zip(times_system.iter()))
+                .map(|(wall_clock_time, (user_time, system_time))| BenchmarkRun {
+                    wall_clock_time: *wall_clock_time,
+                    user_time: *user_time,
+                    system_time: *system_time,
                 })
                 .collect(),
             memory_usage_byte: Some(memory_usage_byte),

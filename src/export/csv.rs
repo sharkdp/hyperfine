@@ -43,8 +43,8 @@ impl Exporter for CsvExporter {
                 res.mean(),
                 res.stddev().unwrap_or(0.0),
                 res.median(),
-                res.user,
-                res.system,
+                res.user_mean(),
+                res.system_mean(),
                 res.min(),
                 res.max(),
             ] {
@@ -72,17 +72,21 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_a"),
             command_with_unused_parameters: String::from("command_a"),
-            user: 3.0,
-            system: 4.0,
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 7.0,
+                    user_time: 7.0,
+                    system_time: 0.0,
                 },
                 BenchmarkRun {
                     wall_clock_time: 8.0,
+                    user_time: 8.0,
+                    system_time: 0.0,
                 },
                 BenchmarkRun {
                     wall_clock_time: 12.0,
+                    user_time: 12.0,
+                    system_time: 0.0,
                 },
             ],
             memory_usage_byte: None,
@@ -97,17 +101,21 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_b"),
             command_with_unused_parameters: String::from("command_b"),
-            user: 13.0,
-            system: 14.0,
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 17.0,
+                    user_time: 17.0,
+                    system_time: 0.0,
                 },
                 BenchmarkRun {
                     wall_clock_time: 18.0,
+                    user_time: 18.0,
+                    system_time: 0.0,
                 },
                 BenchmarkRun {
                     wall_clock_time: 19.0,
+                    user_time: 19.0,
+                    system_time: 0.0,
                 },
             ],
             memory_usage_byte: None,
@@ -130,7 +138,7 @@ fn test_csv() {
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,9,2.6457513110645907,8,3,4,7,12,two,one
-    command_b,18,1,18,13,14,17,19,seven,one
+    command_a,9,2.6457513110645907,8,9,0,7,12,two,one
+    command_b,18,1,18,18,0,17,19,seven,one
     "#);
 }
