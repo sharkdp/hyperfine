@@ -40,13 +40,13 @@ impl Exporter for CsvExporter {
         for res in results {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
-                res.mean,
-                res.stddev.unwrap_or(0.0),
-                res.median,
+                res.mean(),
+                res.stddev().unwrap_or(0.0),
+                res.median(),
                 res.user,
                 res.system,
-                res.min,
-                res.max,
+                res.min(),
+                res.max(),
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
@@ -60,6 +60,9 @@ impl Exporter for CsvExporter {
     }
 }
 
+#[cfg(test)]
+use crate::benchmark::benchmark_result::BenchmarkRun;
+
 #[test]
 fn test_csv() {
     use std::collections::BTreeMap;
@@ -69,14 +72,19 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_a"),
             command_with_unused_parameters: String::from("command_a"),
-            mean: 1.0,
-            stddev: Some(2.0),
-            median: 1.0,
             user: 3.0,
             system: 4.0,
-            min: 5.0,
-            max: 6.0,
-            times: Some(vec![7.0, 8.0, 9.0]),
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 7.0,
+                },
+                BenchmarkRun {
+                    wall_clock_time: 8.0,
+                },
+                BenchmarkRun {
+                    wall_clock_time: 12.0,
+                },
+            ],
             memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
@@ -89,14 +97,19 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_b"),
             command_with_unused_parameters: String::from("command_b"),
-            mean: 11.0,
-            stddev: Some(12.0),
-            median: 11.0,
             user: 13.0,
             system: 14.0,
-            min: 15.0,
-            max: 16.5,
-            times: Some(vec![17.0, 18.0, 19.0]),
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 17.0,
+                },
+                BenchmarkRun {
+                    wall_clock_time: 18.0,
+                },
+                BenchmarkRun {
+                    wall_clock_time: 19.0,
+                },
+            ],
             memory_usage_byte: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
@@ -117,7 +130,7 @@ fn test_csv() {
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,1,2,1,3,4,5,6,two,one
-    command_b,11,12,11,13,14,15,16.5,seven,one
+    command_a,9,2.6457513110645907,8,3,4,7,12,two,one
+    command_b,18,1,18,13,14,17,19,seven,one
     "#);
 }

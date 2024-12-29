@@ -189,16 +189,11 @@ fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
 fn scheduler_basic() -> Result<()> {
     insta::assert_yaml_snapshot!(generate_results(&["--runs=2", "sleep 0.123", "sleep 0.456"])?, @r#"
     - command: sleep 0.123
-      mean: 0.123
-      stddev: 0
-      median: 0.123
       user: 0
       system: 0
-      min: 0.123
-      max: 0.123
-      times:
-        - 0.123
-        - 0.123
+      runs:
+        - wall_clock_time: 0.123
+        - wall_clock_time: 0.123
       memory_usage_byte:
         - 0
         - 0
@@ -206,16 +201,11 @@ fn scheduler_basic() -> Result<()> {
         - 0
         - 0
     - command: sleep 0.456
-      mean: 0.456
-      stddev: 0
-      median: 0.456
       user: 0
       system: 0
-      min: 0.456
-      max: 0.456
-      times:
-        - 0.456
-        - 0.456
+      runs:
+        - wall_clock_time: 0.456
+        - wall_clock_time: 0.456
       memory_usage_byte:
         - 0
         - 0
