@@ -107,18 +107,17 @@ fn test_csv() {
             },
         },
     ];
-    let exps: String = String::from(
-        "command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo\n\
-        FOO=one BAR=two command | 1,1,2,1,3,4,5,6,two,one\n\
-        FOO=one BAR=seven command | 2,11,12,11,13,14,15,16.5,seven,one\n\
-        ",
-    );
-    let gens = String::from_utf8(
+
+    let actual = String::from_utf8(
         exporter
             .serialize(&results, Some(Unit::Second), SortOrder::Command)
             .unwrap(),
     )
     .unwrap();
 
-    assert_eq!(exps, gens);
+    insta::assert_snapshot!(actual, @r#"
+    command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
+    FOO=one BAR=two command | 1,1,2,1,3,4,5,6,two,one
+    FOO=one BAR=seven command | 2,11,12,11,13,14,15,16.5,seven,one
+    "#);
 }
