@@ -1,8 +1,19 @@
 use std::collections::BTreeMap;
 
 use serde::Serialize;
+use statistical::{mean, median, standard_deviation};
 
-use crate::util::units::Second;
+use crate::util::{
+    min_max::{max, min},
+    units::Second,
+};
+
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+pub struct BenchmarkRun {
+    pub wall_clock_time: Second,
+    // user_time: Second,
+    // system_time: Second,
+}
 
 /// Set of values that will be exported.
 // NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
@@ -17,30 +28,14 @@ pub struct BenchmarkResult {
     #[serde(skip_serializing)]
     pub command_with_unused_parameters: String,
 
-    /// The average run time
-    pub mean: Second,
-
-    /// The standard deviation of all run times. Not available if only one run has been performed
-    pub stddev: Option<Second>,
-
-    /// The median run time
-    pub median: Second,
-
     /// Time spent in user mode
     pub user: Second,
 
     /// Time spent in kernel mode
     pub system: Second,
 
-    /// Minimum of all measured times
-    pub min: Second,
-
-    /// Maximum of all measured times
-    pub max: Second,
-
     /// All run time measurements
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub times: Option<Vec<Second>>,
+    pub runs: Vec<BenchmarkRun>,
 
     /// Maximum memory usage of the process, in bytes
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -52,4 +47,42 @@ pub struct BenchmarkResult {
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parameters: BTreeMap<String, String>,
+}
+
+impl BenchmarkResult {
+    fn wall_clock_times(&self) -> Vec<Second> {
+        self.runs.iter().map(|run| run.wall_clock_time).collect()
+    }
+
+    /// The average run time
+    pub fn mean(&self) -> Second {
+        mean(&self.wall_clock_times())
+    }
+
+    /// The standard deviation of all run times. Not available if only one run has been performed
+    pub fn stddev(&self) -> Option<Second> {
+        let times = self.wall_clock_times();
+
+        let t_mean = mean(&times);
+        if times.len() > 1 {
+            Some(standard_deviation(&times, Some(t_mean)))
+        } else {
+            None
+        }
+    }
+
+    /// The median run time
+    pub fn median(&self) -> Second {
+        median(&self.wall_clock_times())
+    }
+
+    /// The minimum run time
+    pub fn min(&self) -> Second {
+        min(&self.wall_clock_times())
+    }
+
+    /// The maximum run time
+    pub fn max(&self) -> Second {
+        max(&self.wall_clock_times())
+    }
 }

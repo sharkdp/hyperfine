@@ -6,6 +6,7 @@ pub mod timing_result;
 
 use std::cmp;
 
+use crate::benchmark::benchmark_result::BenchmarkRun;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{
@@ -24,7 +25,7 @@ use timing_result::TimingResult;
 
 use anyhow::{anyhow, Result};
 use colored::*;
-use statistical::{mean, median, standard_deviation};
+use statistical::{mean, standard_deviation};
 
 use self::executor::Executor;
 
@@ -341,7 +342,6 @@ impl<'a> Benchmark<'a> {
         } else {
             None
         };
-        let t_median = median(&times_real);
         let t_min = min(&times_real);
         let t_max = max(&times_real);
 
@@ -446,14 +446,14 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command: self.command.get_name(),
             command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
-            mean: t_mean,
-            stddev: t_stddev,
-            median: t_median,
             user: user_mean,
             system: system_mean,
-            min: t_min,
-            max: t_max,
-            times: Some(times_real),
+            runs: times_real
+                .iter()
+                .map(|t| BenchmarkRun {
+                    wall_clock_time: *t,
+                })
+                .collect(),
             memory_usage_byte: Some(memory_usage_byte),
             exit_codes,
             parameters: self
