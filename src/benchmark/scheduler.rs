@@ -52,11 +52,7 @@ impl<'a> Scheduler<'a> {
 
             // We export results after each individual benchmark, because
             // we would risk losing them if a later benchmark fails.
-            self.export_manager.write_results(
-                &self.results,
-                self.options.sort_order_exports,
-                true,
-            )?;
+            self.export_manager.write_results(&self.results, true)?;
         }
 
         Ok(())
@@ -158,8 +154,7 @@ impl<'a> Scheduler<'a> {
     }
 
     pub fn final_export(&self) -> Result<()> {
-        self.export_manager
-            .write_results(&self.results, self.options.sort_order_exports, false)
+        self.export_manager.write_results(&self.results, false)
     }
 }
 
@@ -176,7 +171,11 @@ fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
     assert_eq!(options.executor_kind, ExecutorKind::Mock(None));
 
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
-    let export_manager = ExportManager::from_cli_arguments(&cli_arguments, options.time_unit)?;
+    let export_manager = ExportManager::from_cli_arguments(
+        &cli_arguments,
+        options.time_unit,
+        options.sort_order_exports,
+    )?;
 
     options.validate_against_command_list(&commands)?;
 
