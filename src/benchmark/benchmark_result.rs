@@ -26,6 +26,12 @@ pub struct BenchmarkRun {
     pub exit_code: Option<i32>,
 }
 
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+pub struct Parameter {
+    pub value: String,
+    pub is_unused: bool,
+}
+
 /// Set of values that will be exported.
 // NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
 // `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
@@ -34,17 +40,12 @@ pub struct BenchmarkResult {
     /// The full command line of the program that is being benchmarked
     pub command: String,
 
-    /// The full command line of the program that is being benchmarked, possibly including a list of
-    /// parameters that were not used in the command line template.
-    #[serde(skip_serializing)]
-    pub command_with_unused_parameters: String,
-
     /// All run time measurements
     pub runs: Vec<BenchmarkRun>,
 
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub parameters: BTreeMap<String, String>,
+    pub parameters: BTreeMap<String, Parameter>,
 }
 
 impl BenchmarkResult {
@@ -102,5 +103,25 @@ impl BenchmarkResult {
                 .map(|run| run.system_time)
                 .collect::<Vec<_>>(),
         )
+    }
+
+    /// The full command line of the program that is being benchmarked, possibly including a list of
+    /// parameters that were not used in the command line template.
+    pub fn command_with_unused_parameters(&self) -> String {
+        let parameters = self
+            .parameters
+            .iter()
+            .filter(|(_, parameter)| parameter.is_unused)
+            .fold(String::new(), |output, (name, parameter)| {
+                output + &format!("{name} = {value}, ", value = parameter.value)
+            });
+        let parameters = parameters.trim_end_matches(", ");
+        let parameters = if parameters.is_empty() {
+            "".into()
+        } else {
+            format!(" ({parameters})")
+        };
+
+        format!("{}{}", self.command, parameters)
     }
 }

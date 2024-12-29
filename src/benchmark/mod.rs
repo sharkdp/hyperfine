@@ -6,7 +6,7 @@ pub mod timing_result;
 
 use std::cmp;
 
-use crate::benchmark::benchmark_result::BenchmarkRun;
+use crate::benchmark::benchmark_result::{BenchmarkRun, Parameter};
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{
@@ -445,7 +445,6 @@ impl<'a> Benchmark<'a> {
 
         Ok(BenchmarkResult {
             command: self.command.get_name(),
-            command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
             runs: times_real
                 .iter()
                 .zip(times_user.iter())
@@ -471,7 +470,15 @@ impl<'a> Benchmark<'a> {
                 .command
                 .get_parameters()
                 .iter()
-                .map(|(name, value)| (name.to_string(), value.to_string()))
+                .map(|(name, value)| {
+                    (
+                        name.to_string(),
+                        Parameter {
+                            value: value.to_string(),
+                            is_unused: self.command.is_parameter_unused(&name),
+                        },
+                    )
+                })
                 .collect(),
         })
     }
