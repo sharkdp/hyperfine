@@ -164,7 +164,7 @@ fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
 
     let args = ["hyperfine", "--debug-mode", "--style=none"]
         .iter()
-        .chain(args.into_iter());
+        .chain(args);
     let cli_arguments = get_cli_arguments(args);
     let mut options = Options::from_cli_arguments(&cli_arguments)?;
 
