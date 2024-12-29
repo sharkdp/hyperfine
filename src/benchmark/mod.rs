@@ -6,7 +6,7 @@ pub mod timing_result;
 
 use std::cmp;
 
-use crate::benchmark::benchmark_result::{Parameter, Run};
+use crate::benchmark::benchmark_result::{Parameter, Run, Runs};
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{
@@ -18,14 +18,12 @@ use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
-use crate::util::min_max::{max, min};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
 
 use anyhow::{anyhow, Result};
 use colored::*;
-use statistical::{mean, standard_deviation};
 
 use self::executor::Executor;
 
@@ -149,11 +147,7 @@ impl<'a> Benchmark<'a> {
             );
         }
 
-        let mut times_wall_clock: Vec<Second> = vec![];
-        let mut times_user: Vec<Second> = vec![];
-        let mut times_system: Vec<Second> = vec![];
-        let mut memory_usage_byte: Vec<u64> = vec![];
-        let mut exit_codes: Vec<Option<i32>> = vec![];
+        let mut runs = Runs::default();
         let mut all_succeeded = true;
 
         let output_policy = &self.options.command_output_policies[self.number];
@@ -280,11 +274,13 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        times_wall_clock.push(res.time_wall_clock);
-        times_user.push(res.time_user);
-        times_system.push(res.time_system);
-        memory_usage_byte.push(res.memory_usage_byte);
-        exit_codes.push(extract_exit_code(status));
+        runs.push(Run {
+            wall_clock_time: res.time_wall_clock,
+            user_time: res.time_user,
+            system_time: res.time_system,
+            memory_usage_byte: res.memory_usage_byte,
+            exit_code: extract_exit_code(status),
+        });
 
         all_succeeded = all_succeeded && success;
 
@@ -301,7 +297,7 @@ impl<'a> Benchmark<'a> {
             run_preparation_command()?;
 
             let msg = {
-                let mean = format_duration(mean(&times_wall_clock), self.options.time_unit);
+                let mean = format_duration(runs.mean(), self.options.time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -317,11 +313,13 @@ impl<'a> Benchmark<'a> {
             )?;
             let success = status.success();
 
-            times_wall_clock.push(res.time_wall_clock);
-            times_user.push(res.time_user);
-            times_system.push(res.time_system);
-            memory_usage_byte.push(res.memory_usage_byte);
-            exit_codes.push(extract_exit_code(status));
+            runs.push(Run {
+                wall_clock_time: res.time_wall_clock,
+                user_time: res.time_user,
+                system_time: res.time_system,
+                memory_usage_byte: res.memory_usage_byte,
+                exit_code: extract_exit_code(status),
+            });
 
             all_succeeded = all_succeeded && success;
 
@@ -336,31 +334,17 @@ impl<'a> Benchmark<'a> {
             bar.finish_and_clear()
         }
 
-        // Compute statistical quantities
-        let t_num = times_wall_clock.len();
-        let t_mean = mean(&times_wall_clock);
-        let t_stddev = if times_wall_clock.len() > 1 {
-            Some(standard_deviation(&times_wall_clock, Some(t_mean)))
-        } else {
-            None
-        };
-        let t_min = min(&times_wall_clock);
-        let t_max = max(&times_wall_clock);
-
-        let user_mean = mean(&times_user);
-        let system_mean = mean(&times_system);
-
         // Formatting and console output
-        let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
-        let min_str = format_duration(t_min, Some(time_unit));
-        let max_str = format_duration(t_max, Some(time_unit));
-        let num_str = format!("{t_num} runs");
+        let (mean_str, time_unit) = format_duration_unit(runs.mean(), self.options.time_unit);
+        let min_str = format_duration(runs.min(), Some(time_unit));
+        let max_str = format_duration(runs.max(), Some(time_unit));
+        let num_str = format!("{num_runs} runs", num_runs = runs.len());
 
-        let user_str = format_duration(user_mean, Some(time_unit));
-        let system_str = format_duration(system_mean, Some(time_unit));
+        let user_str = format_duration(runs.user_mean(), Some(time_unit));
+        let system_str = format_duration(runs.system_mean(), Some(time_unit));
 
         if self.options.output_style != OutputStyleOption::Disabled {
-            if times_wall_clock.len() == 1 {
+            if runs.len() == 1 {
                 println!(
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
                     "abs".green().bold(),
@@ -370,7 +354,7 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 );
             } else {
-                let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
+                let stddev_str = format_duration(runs.stddev().unwrap(), Some(time_unit));
 
                 println!(
                     "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
@@ -398,7 +382,10 @@ impl<'a> Benchmark<'a> {
 
         // Check execution time
         if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
-            && times_wall_clock.iter().any(|&t| t < MIN_EXECUTION_TIME)
+            && runs
+                .wall_clock_times()
+                .iter()
+                .any(|&t| t < MIN_EXECUTION_TIME)
         {
             warnings.push(Warnings::FastExecutionTime);
         }
@@ -409,7 +396,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = modified_zscores(&times_wall_clock);
+        let scores = modified_zscores(&runs.wall_clock_times());
 
         let outlier_warning_options = OutlierWarningOptions {
             warmup_in_use: self.options.warmup_count > 0,
@@ -424,7 +411,7 @@ impl<'a> Benchmark<'a> {
 
         if scores[0] > OUTLIER_THRESHOLD {
             warnings.push(Warnings::SlowInitialRun(
-                times_wall_clock[0],
+                runs.wall_clock_times()[0],
                 outlier_warning_options,
             ));
         } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
@@ -447,27 +434,7 @@ impl<'a> Benchmark<'a> {
 
         Ok(BenchmarkResult {
             command: self.command.get_name(),
-            runs: times_wall_clock
-                .iter()
-                .zip(times_user.iter())
-                .zip(times_system.iter())
-                .zip(memory_usage_byte.iter())
-                .zip(exit_codes.iter())
-                .map(
-                    |(
-                        (((wall_clock_time, user_time), system_time), memory_usage_byte),
-                        exit_code,
-                    )| {
-                        Run {
-                            wall_clock_time: *wall_clock_time,
-                            user_time: *user_time,
-                            system_time: *system_time,
-                            memory_usage_byte: *memory_usage_byte,
-                            exit_code: *exit_code,
-                        }
-                    },
-                )
-                .collect(),
+            runs,
             parameters: self
                 .command
                 .get_parameters()
@@ -477,7 +444,7 @@ impl<'a> Benchmark<'a> {
                         name.to_string(),
                         Parameter {
                             value: value.to_string(),
-                            is_unused: self.command.is_parameter_unused(&name),
+                            is_unused: self.command.is_parameter_unused(name),
                         },
                     )
                 })

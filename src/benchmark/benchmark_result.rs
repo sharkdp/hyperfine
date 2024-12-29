@@ -27,6 +27,87 @@ pub struct Run {
     pub exit_code: Option<i32>,
 }
 
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+pub struct Runs {
+    pub runs: Vec<Run>,
+}
+
+impl Runs {
+    pub fn new(runs: Vec<Run>) -> Self {
+        Self { runs }
+    }
+
+    pub fn len(&self) -> usize {
+        self.runs.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.runs.is_empty()
+    }
+
+    pub fn push(&mut self, run: Run) {
+        self.runs.push(run);
+    }
+
+    pub fn wall_clock_times(&self) -> Vec<Second> {
+        self.runs.iter().map(|run| run.wall_clock_time).collect()
+    }
+
+    /// The average wall clock time
+    pub fn mean(&self) -> Second {
+        mean(&self.wall_clock_times())
+    }
+
+    /// The standard deviation of all wall clock times. Not available if only one run has been performed
+    pub fn stddev(&self) -> Option<Second> {
+        let times = self.wall_clock_times();
+
+        let t_mean = mean(&times);
+        if times.len() > 1 {
+            Some(standard_deviation(&times, Some(t_mean)))
+        } else {
+            None
+        }
+    }
+
+    /// The median wall clock time
+    pub fn median(&self) -> Second {
+        median(&self.wall_clock_times())
+    }
+
+    /// The minimum wall clock time
+    pub fn min(&self) -> Second {
+        min(&self.wall_clock_times())
+    }
+
+    /// The maximum wall clock time
+    pub fn max(&self) -> Second {
+        max(&self.wall_clock_times())
+    }
+
+    /// The average user time
+    pub fn user_mean(&self) -> Second {
+        mean(
+            &self
+                .runs
+                .iter()
+                .map(|run| run.user_time)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    /// The average system time
+    pub fn system_mean(&self) -> Second {
+        mean(
+            &self
+                .runs
+                .iter()
+                .map(|run| run.system_time)
+                .collect::<Vec<_>>(),
+        )
+    }
+}
+
 /// Parameter value and whether it was used in the command line template
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct Parameter {
@@ -41,7 +122,8 @@ pub struct BenchmarkResult {
     pub command: String,
 
     /// Performance metrics and exit codes for each run
-    pub runs: Vec<Run>,
+    #[serde(flatten)]
+    pub runs: Runs,
 
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -49,60 +131,32 @@ pub struct BenchmarkResult {
 }
 
 impl BenchmarkResult {
-    fn wall_clock_times(&self) -> Vec<Second> {
-        self.runs.iter().map(|run| run.wall_clock_time).collect()
-    }
-
-    /// The average run time
     pub fn mean(&self) -> Second {
-        mean(&self.wall_clock_times())
+        self.runs.mean()
     }
 
-    /// The standard deviation of all run times. Not available if only one run has been performed
     pub fn stddev(&self) -> Option<Second> {
-        let times = self.wall_clock_times();
-
-        let t_mean = mean(&times);
-        if times.len() > 1 {
-            Some(standard_deviation(&times, Some(t_mean)))
-        } else {
-            None
-        }
+        self.runs.stddev()
     }
 
-    /// The median run time
     pub fn median(&self) -> Second {
-        median(&self.wall_clock_times())
+        self.runs.median()
     }
 
-    /// The minimum run time
     pub fn min(&self) -> Second {
-        min(&self.wall_clock_times())
+        self.runs.min()
     }
 
-    /// The maximum run time
     pub fn max(&self) -> Second {
-        max(&self.wall_clock_times())
+        self.runs.max()
     }
 
     pub fn user_mean(&self) -> Second {
-        mean(
-            &self
-                .runs
-                .iter()
-                .map(|run| run.user_time)
-                .collect::<Vec<_>>(),
-        )
+        self.runs.user_mean()
     }
 
     pub fn system_mean(&self) -> Second {
-        mean(
-            &self
-                .runs
-                .iter()
-                .map(|run| run.system_time)
-                .collect::<Vec<_>>(),
-        )
+        self.runs.system_mean()
     }
 
     /// The full command line of the program that is being benchmarked, possibly including a list of
