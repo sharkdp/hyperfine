@@ -131,9 +131,9 @@ fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
             wall_clock_time: mean,
             user_time: mean,
             system_time: 0.,
+            memory_usage_byte: 1024,
+            exit_code: Some(0),
         }],
-        memory_usage_byte: None,
-        exit_codes: Vec::new(),
         parameters: BTreeMap::new(),
     }
 }

@@ -1,7 +1,10 @@
 #![cfg(windows)]
 #![warn(unsafe_op_in_unsafe_fn)]
 
-use std::{mem, os::windows::io::AsRawHandle, process, ptr};
+use std::process::{self, Child, ExitStatus};
+use std::{mem, os::windows::io::AsRawHandle, ptr};
+
+use anyhow::Result;
 
 use windows_sys::Win32::{
     Foundation::{CloseHandle, HANDLE},
@@ -86,7 +89,9 @@ impl CPUTimer {
         Self { job_object }
     }
 
-    pub fn stop(&self) -> (Second, Second, u64) {
+    pub fn stop(&self, mut child: Child) -> Result<(ExitStatus, Second, Second, u64)> {
+        let status = child.wait()?;
+
         let mut job_object_info =
             mem::MaybeUninit::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>::uninit();
 
@@ -114,9 +119,9 @@ impl CPUTimer {
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
             let kernel: i64 = job_object_info.TotalKernelTime / HUNDRED_NS_PER_MS;
-            (user as f64 * 1e-6, kernel as f64 * 1e-6, 0)
+            Ok((status, user as f64 * 1e-6, kernel as f64 * 1e-6, 0))
         } else {
-            (0.0, 0.0, 0)
+            Ok((status, 0.0, 0.0, 0))
         }
     }
 }
