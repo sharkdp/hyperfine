@@ -45,7 +45,7 @@ pub trait MarkupExporter {
             let measurement = &entry.result;
             // prepare data row strings
             let cmd_str = measurement
-                .command_with_unused_parameters
+                .command_with_unused_parameters()
                 .replace('|', "\\|");
             let mean_str = format_duration_value(measurement.mean(), Some(unit)).0;
             let stddev_str = if let Some(stddev) = measurement.stddev() {

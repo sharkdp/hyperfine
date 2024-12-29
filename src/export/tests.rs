@@ -26,7 +26,6 @@ fn test_markup_export_auto_ms() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 0.09,
@@ -54,7 +53,6 @@ fn test_markup_export_auto_ms() {
         },
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 2.0,
@@ -127,7 +125,6 @@ fn test_markup_export_auto_s() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 2.1,
@@ -155,7 +152,6 @@ fn test_markup_export_auto_s() {
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 0.1,
@@ -228,7 +224,6 @@ fn test_markup_export_manual_ms() {
     let timing_results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 2.1,
@@ -256,7 +251,6 @@ fn test_markup_export_manual_ms() {
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 0.1,
@@ -328,7 +322,6 @@ fn test_markup_export_manual_s() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 2.01,
@@ -356,7 +349,6 @@ fn test_markup_export_manual_s() {
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 0.11,

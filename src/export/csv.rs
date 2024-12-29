@@ -51,7 +51,7 @@ impl Exporter for CsvExporter {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
             for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.as_bytes()))
+                fields.push(Cow::Borrowed(v.value.as_bytes()))
             }
             writer.write_record(fields)?;
         }
@@ -61,7 +61,7 @@ impl Exporter for CsvExporter {
 }
 
 #[cfg(test)]
-use crate::benchmark::benchmark_result::BenchmarkRun;
+use crate::benchmark::benchmark_result::{BenchmarkRun, Parameter};
 
 #[test]
 fn test_csv() {
@@ -71,7 +71,6 @@ fn test_csv() {
     let results = vec![
         BenchmarkResult {
             command: String::from("command_a"),
-            command_with_unused_parameters: String::from("command_a"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 7.0,
@@ -97,14 +96,25 @@ fn test_csv() {
             ],
             parameters: {
                 let mut params = BTreeMap::new();
-                params.insert("foo".into(), "one".into());
-                params.insert("bar".into(), "two".into());
+                params.insert(
+                    "foo".into(),
+                    Parameter {
+                        value: "one".into(),
+                        is_unused: false,
+                    },
+                );
+                params.insert(
+                    "bar".into(),
+                    Parameter {
+                        value: "two".into(),
+                        is_unused: false,
+                    },
+                );
                 params
             },
         },
         BenchmarkResult {
             command: String::from("command_b"),
-            command_with_unused_parameters: String::from("command_b"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 17.0,
@@ -130,8 +140,20 @@ fn test_csv() {
             ],
             parameters: {
                 let mut params = BTreeMap::new();
-                params.insert("foo".into(), "one".into());
-                params.insert("bar".into(), "seven".into());
+                params.insert(
+                    "foo".into(),
+                    Parameter {
+                        value: "one".into(),
+                        is_unused: false,
+                    },
+                );
+                params.insert(
+                    "bar".into(),
+                    Parameter {
+                        value: "seven".into(),
+                        is_unused: false,
+                    },
+                );
                 params
             },
         },
