@@ -41,12 +41,12 @@ impl Exporter for CsvExporter {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
                 res.mean_wall_clock_time(),
-                res.runs.stddev().unwrap_or(0.0),
-                res.runs.median(),
-                res.runs.user_mean(),
-                res.runs.system_mean(),
-                res.runs.min(),
-                res.runs.max(),
+                res.measurements.stddev().unwrap_or(0.0),
+                res.measurements.median(),
+                res.measurements.user_mean(),
+                res.measurements.system_mean(),
+                res.measurements.min(),
+                res.measurements.max(),
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
@@ -61,7 +61,10 @@ impl Exporter for CsvExporter {
 }
 
 #[cfg(test)]
-use crate::benchmark::benchmark_result::{Parameter, Run, Runs};
+use crate::benchmark::benchmark_result::Parameter;
+
+#[cfg(test)]
+use crate::benchmark::measurement::{Measurement, Measurements};
 
 #[test]
 fn test_csv() {
@@ -71,22 +74,22 @@ fn test_csv() {
     let results = vec![
         BenchmarkResult {
             command: String::from("command_a"),
-            runs: Runs::new(vec![
-                Run {
+            measurements: Measurements::new(vec![
+                Measurement {
                     wall_clock_time: 7.0,
                     user_time: 7.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                Run {
+                Measurement {
                     wall_clock_time: 8.0,
                     user_time: 8.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                Run {
+                Measurement {
                     wall_clock_time: 12.0,
                     user_time: 12.0,
                     system_time: 0.0,
@@ -115,22 +118,22 @@ fn test_csv() {
         },
         BenchmarkResult {
             command: String::from("command_b"),
-            runs: Runs::new(vec![
-                Run {
+            measurements: Measurements::new(vec![
+                Measurement {
                     wall_clock_time: 17.0,
                     user_time: 17.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                Run {
+                Measurement {
                     wall_clock_time: 18.0,
                     user_time: 18.0,
                     system_time: 0.0,
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-                Run {
+                Measurement {
                     wall_clock_time: 19.0,
                     user_time: 19.0,
                     system_time: 0.0,
