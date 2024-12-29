@@ -42,19 +42,17 @@ pub trait MarkupExporter {
         table.push_str(&self.table_divider(&cells_alignment));
 
         for entry in entries {
-            let measurement = &entry.result;
+            let result = &entry.result;
             // prepare data row strings
-            let cmd_str = measurement
-                .command_with_unused_parameters()
-                .replace('|', "\\|");
-            let mean_str = format_duration_value(measurement.mean(), Some(unit)).0;
-            let stddev_str = if let Some(stddev) = measurement.stddev() {
+            let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
+            let mean_str = format_duration_value(result.mean_wall_clock_time(), Some(unit)).0;
+            let stddev_str = if let Some(stddev) = result.runs.stddev() {
                 format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
             } else {
                 "".into()
             };
-            let min_str = format_duration_value(measurement.min(), Some(unit)).0;
-            let max_str = format_duration_value(measurement.max(), Some(unit)).0;
+            let min_str = format_duration_value(result.runs.min(), Some(unit)).0;
+            let max_str = format_duration_value(result.runs.max(), Some(unit)).0;
             let rel_str = format!("{:.2}", entry.relative_speed);
             let rel_stddev_str = if entry.is_reference {
                 "".into()
@@ -98,7 +96,7 @@ pub trait MarkupExporter {
 fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
     if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
-        format_duration_value(first_result.mean(), None).1
+        format_duration_value(first_result.mean_wall_clock_time(), None).1
     } else {
         // Default to `Second`.
         Unit::Second

@@ -14,7 +14,9 @@ pub struct BenchmarkResultWithRelativeSpeed<'a> {
 }
 
 pub fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
-    l.mean().partial_cmp(&r.mean()).unwrap_or(Ordering::Equal)
+    l.mean_wall_clock_time()
+        .partial_cmp(&r.mean_wall_clock_time())
+        .unwrap_or(Ordering::Equal)
 }
 
 pub fn fastest_of(results: &[BenchmarkResult]) -> &BenchmarkResult {
@@ -35,7 +37,7 @@ fn compute_relative_speeds<'a>(
             let is_reference = result == reference;
             let relative_ordering = compare_mean_time(result, reference);
 
-            if result.mean() == 0.0 {
+            if result.mean_wall_clock_time() == 0.0 {
                 return BenchmarkResultWithRelativeSpeed {
                     result,
                     relative_speed: if is_reference { 1.0 } else { f64::INFINITY },
@@ -46,18 +48,20 @@ fn compute_relative_speeds<'a>(
             }
 
             let ratio = match relative_ordering {
-                Ordering::Less => reference.mean() / result.mean(),
+                Ordering::Less => reference.mean_wall_clock_time() / result.mean_wall_clock_time(),
                 Ordering::Equal => 1.0,
-                Ordering::Greater => result.mean() / reference.mean(),
+                Ordering::Greater => {
+                    result.mean_wall_clock_time() / reference.mean_wall_clock_time()
+                }
             };
 
             // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
             // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-            let ratio_stddev = match (result.stddev(), reference.stddev()) {
+            let ratio_stddev = match (result.runs.stddev(), reference.runs.stddev()) {
                 (Some(result_stddev), Some(fastest_stddev)) => Some(
                     ratio
-                        * ((result_stddev / result.mean()).powi(2)
-                            + (fastest_stddev / reference.mean()).powi(2))
+                        * ((result_stddev / result.mean_wall_clock_time()).powi(2)
+                            + (fastest_stddev / reference.mean_wall_clock_time()).powi(2))
                         .sqrt(),
                 ),
                 _ => None,
@@ -88,7 +92,8 @@ pub fn compute_with_check_from_reference<'a>(
     reference: &'a BenchmarkResult,
     sort_order: SortOrder,
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
-    if fastest_of(results).mean() == 0.0 || reference.mean() == 0.0 {
+    if fastest_of(results).mean_wall_clock_time() == 0.0 || reference.mean_wall_clock_time() == 0.0
+    {
         return None;
     }
 
@@ -101,7 +106,7 @@ pub fn compute_with_check(
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed>> {
     let fastest = fastest_of(results);
 
-    if fastest.mean() == 0.0 {
+    if fastest.mean_wall_clock_time() == 0.0 {
         return None;
     }
 
