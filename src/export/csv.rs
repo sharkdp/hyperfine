@@ -61,7 +61,7 @@ impl Exporter for CsvExporter {
 }
 
 #[cfg(test)]
-use crate::benchmark::benchmark_result::{Parameter, Run};
+use crate::benchmark::benchmark_result::{Parameter, Run, Runs};
 
 #[test]
 fn test_csv() {
@@ -71,7 +71,7 @@ fn test_csv() {
     let results = vec![
         BenchmarkResult {
             command: String::from("command_a"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 7.0,
                     user_time: 7.0,
@@ -93,7 +93,7 @@ fn test_csv() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert(
@@ -115,7 +115,7 @@ fn test_csv() {
         },
         BenchmarkResult {
             command: String::from("command_b"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 17.0,
                     user_time: 17.0,
@@ -137,7 +137,7 @@ fn test_csv() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert(
