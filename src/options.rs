@@ -178,6 +178,7 @@ impl CommandOutputPolicy {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum ExecutorKind {
     Raw,
     Shell(Shell),
