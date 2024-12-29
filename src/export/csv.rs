@@ -77,20 +77,24 @@ fn test_csv() {
                     wall_clock_time: 7.0,
                     user_time: 7.0,
                     system_time: 0.0,
+                    memory_usage_byte: 1024,
+                    exit_code: Some(0),
                 },
                 BenchmarkRun {
                     wall_clock_time: 8.0,
                     user_time: 8.0,
                     system_time: 0.0,
+                    memory_usage_byte: 1024,
+                    exit_code: Some(0),
                 },
                 BenchmarkRun {
                     wall_clock_time: 12.0,
                     user_time: 12.0,
                     system_time: 0.0,
+                    memory_usage_byte: 1024,
+                    exit_code: Some(0),
                 },
             ],
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "one".into());
@@ -106,20 +110,24 @@ fn test_csv() {
                     wall_clock_time: 17.0,
                     user_time: 17.0,
                     system_time: 0.0,
+                    memory_usage_byte: 1024,
+                    exit_code: Some(0),
                 },
                 BenchmarkRun {
                     wall_clock_time: 18.0,
                     user_time: 18.0,
                     system_time: 0.0,
+                    memory_usage_byte: 1024,
+                    exit_code: Some(0),
                 },
                 BenchmarkRun {
                     wall_clock_time: 19.0,
                     user_time: 19.0,
                     system_time: 0.0,
+                    memory_usage_byte: 1024,
+                    exit_code: Some(0),
                 },
             ],
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert("foo".into(), "one".into());

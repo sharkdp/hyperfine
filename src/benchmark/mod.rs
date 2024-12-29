@@ -448,15 +448,25 @@ impl<'a> Benchmark<'a> {
             command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
             runs: times_real
                 .iter()
-                .zip(times_user.iter().zip(times_system.iter()))
-                .map(|(wall_clock_time, (user_time, system_time))| BenchmarkRun {
-                    wall_clock_time: *wall_clock_time,
-                    user_time: *user_time,
-                    system_time: *system_time,
-                })
+                .zip(times_user.iter())
+                .zip(times_system.iter())
+                .zip(memory_usage_byte.iter())
+                .zip(exit_codes.iter())
+                .map(
+                    |(
+                        (((wall_clock_time, user_time), system_time), memory_usage_byte),
+                        exit_code,
+                    )| {
+                        BenchmarkRun {
+                            wall_clock_time: *wall_clock_time,
+                            user_time: *user_time,
+                            system_time: *system_time,
+                            memory_usage_byte: *memory_usage_byte,
+                            exit_code: *exit_code,
+                        }
+                    },
+                )
                 .collect(),
-            memory_usage_byte: Some(memory_usage_byte),
-            exit_codes,
             parameters: self
                 .command
                 .get_parameters()

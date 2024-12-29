@@ -193,29 +193,25 @@ fn scheduler_basic() -> Result<()> {
         - wall_clock_time: 0.123
           user_time: 0
           system_time: 0
+          memory_usage_byte: 0
+          exit_code: 0
         - wall_clock_time: 0.123
           user_time: 0
           system_time: 0
-      memory_usage_byte:
-        - 0
-        - 0
-      exit_codes:
-        - 0
-        - 0
+          memory_usage_byte: 0
+          exit_code: 0
     - command: sleep 0.456
       runs:
         - wall_clock_time: 0.456
           user_time: 0
           system_time: 0
+          memory_usage_byte: 0
+          exit_code: 0
         - wall_clock_time: 0.456
           user_time: 0
           system_time: 0
-      memory_usage_byte:
-        - 0
-        - 0
-      exit_codes:
-        - 0
-        - 0
+          memory_usage_byte: 0
+          exit_code: 0
     "#);
 
     Ok(())

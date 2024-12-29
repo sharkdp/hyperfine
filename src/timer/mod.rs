@@ -24,19 +24,6 @@ use std::process::{ChildStdout, Command, ExitStatus};
 
 use anyhow::Result;
 
-#[cfg(not(windows))]
-#[derive(Debug, Copy, Clone)]
-struct CPUTimes {
-    /// Total amount of time spent executing in user mode
-    pub user_usec: i64,
-
-    /// Total amount of time spent executing in kernel mode
-    pub system_usec: i64,
-
-    /// Maximum amount of memory used by the process, in bytes
-    pub memory_usage_byte: u64,
-}
-
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]
 pub struct TimerResult {
@@ -106,10 +93,8 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
         discard(output);
     }
 
-    let status = child.wait()?;
-
+    let (status, time_user, time_system, memory_usage_byte) = cpu_timer.stop(child)?;
     let time_real = wallclock_timer.stop();
-    let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
 
     Ok(TimerResult {
         time_real,
