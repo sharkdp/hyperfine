@@ -28,6 +28,7 @@ rand = "0.8"
 shell-words = "1.0"
 thiserror = "2.0"
 anyhow = "1.0"
+static_assertions = "1.1.0"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"

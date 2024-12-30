@@ -1,12 +1,7 @@
 use serde::Serialize;
 
-use statistical::{mean, median, standard_deviation};
-
-use crate::util::units::Second;
-use crate::{
-    outlier_detection::modified_zscores,
-    util::min_max::{max, min},
-};
+use crate::benchmark::quantity::{max, mean, median, min, standard_deviation, Byte, Second};
+use crate::outlier_detection::modified_zscores;
 
 /// Performance metric measurements and exit code for a single run
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -20,8 +15,8 @@ pub struct Measurement {
     /// Time spent in kernel mode
     pub system_time: Second,
 
-    /// Maximum memory usage of the process, in bytes
-    pub memory_usage_byte: u64,
+    /// Maximum memory usage of the process
+    pub memory_usage_byte: Byte,
 
     /// Exit codes of the process
     pub exit_code: Option<i32>,
@@ -65,11 +60,10 @@ impl Measurements {
     pub fn stddev(&self) -> Option<Second> {
         let times = self.wall_clock_times();
 
-        let t_mean = mean(&times);
-        if times.len() > 1 {
-            Some(standard_deviation(&times, Some(t_mean)))
-        } else {
+        if times.len() < 2 {
             None
+        } else {
+            Some(standard_deviation(&times))
         }
     }
 
@@ -111,6 +105,12 @@ impl Measurements {
     }
 
     pub fn modified_zscores(&self) -> Vec<f64> {
-        modified_zscores(&self.wall_clock_times())
+        modified_zscores(
+            &self
+                .wall_clock_times()
+                .iter()
+                .map(|t| t.value_in::<Second>()) // TODO
+                .collect::<Vec<_>>(),
+        )
     }
 }
