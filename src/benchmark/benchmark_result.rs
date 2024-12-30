@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::{benchmark::measurement::Measurements, util::units::Second};
+use crate::benchmark::{measurement::Measurements, quantity::Second};
 
 /// Parameter value and whether it was used in the command line template
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]

@@ -2,6 +2,9 @@
 use std::os::windows::process::CommandExt;
 use std::process::ExitStatus;
 
+use crate::benchmark::quantity::mean;
+use crate::benchmark::quantity::Byte;
+use crate::benchmark::quantity::Second;
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
@@ -9,12 +12,10 @@ use crate::options::{
 use crate::output::progress_bar::get_progress_bar;
 use crate::timer::{execute_and_measure, TimerResult};
 use crate::util::randomized_environment_offset;
-use crate::util::units::Second;
 
 use super::timing_result::TimingResult;
 
 use anyhow::{bail, Context, Result};
-use statistical::mean;
 
 pub enum BenchmarkIteration {
     NonBenchmarkRun,
@@ -144,7 +145,7 @@ impl Executor for RawExecutor<'_> {
     }
 
     fn time_overhead(&self) -> Second {
-        0.0
+        Second::zero()
     }
 }
 
@@ -194,11 +195,20 @@ impl Executor for ShellExecutor<'_> {
         )?;
 
         // Subtract shell spawning time
+        fn ensure_non_negative(time: Second) -> Second {
+            if time < Second::zero() {
+                Second::zero()
+            } else {
+                time
+            }
+        }
+
         if let Some(spawning_time) = self.shell_spawning_time {
             result.time_wall_clock =
-                (result.time_wall_clock - spawning_time.time_wall_clock).max(0.0);
-            result.time_user = (result.time_user - spawning_time.time_user).max(0.0);
-            result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
+                ensure_non_negative(result.time_wall_clock - spawning_time.time_wall_clock);
+            result.time_user = ensure_non_negative(result.time_user - spawning_time.time_user);
+            result.time_system =
+                ensure_non_negative(result.time_system - spawning_time.time_system);
         }
 
         Ok((
@@ -225,7 +235,7 @@ impl Executor for ShellExecutor<'_> {
             None
         };
 
-        let mut times_wall_clock: Vec<Second> = vec![];
+        let mut times_wall_clock: Vec<Second> = vec![]; // TODO
         let mut times_user: Vec<Second> = vec![];
         let mut times_system: Vec<Second> = vec![];
 
@@ -271,7 +281,7 @@ impl Executor for ShellExecutor<'_> {
             time_wall_clock: mean(&times_wall_clock),
             time_user: mean(&times_user),
             time_system: mean(&times_system),
-            memory_usage_byte: 0,
+            memory_usage_byte: Byte::new(0),
         });
 
         Ok(())
@@ -294,11 +304,13 @@ impl MockExecutor {
 
     fn extract_time<S: AsRef<str>>(sleep_command: S) -> Second {
         assert!(sleep_command.as_ref().starts_with("sleep "));
-        sleep_command
-            .as_ref()
-            .trim_start_matches("sleep ")
-            .parse::<Second>()
-            .unwrap()
+        Second::new(
+            sleep_command
+                .as_ref()
+                .trim_start_matches("sleep ")
+                .parse::<f64>()
+                .unwrap(),
+        )
     }
 }
 
@@ -325,9 +337,9 @@ impl Executor for MockExecutor {
         Ok((
             TimingResult {
                 time_wall_clock: Self::extract_time(command.get_command_line()),
-                time_user: 0.0,
-                time_system: 0.0,
-                memory_usage_byte: 0,
+                time_user: Second::zero(),
+                time_system: Second::zero(),
+                memory_usage_byte: Byte::new(0),
             },
             status,
         ))
@@ -339,7 +351,7 @@ impl Executor for MockExecutor {
 
     fn time_overhead(&self) -> Second {
         match &self.shell {
-            None => 0.0,
+            None => Second::zero(),
             Some(shell) => Self::extract_time(shell),
         }
     }
@@ -347,5 +359,5 @@ impl Executor for MockExecutor {
 
 #[test]
 fn test_mock_executor_extract_time() {
-    assert_eq!(MockExecutor::extract_time("sleep 0.1"), 0.1);
+    assert_eq!(MockExecutor::extract_time("sleep 0.1"), Second::new(0.1));
 }

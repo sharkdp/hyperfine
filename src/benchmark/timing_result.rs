@@ -1,4 +1,4 @@
-use crate::util::units::Second;
+use crate::benchmark::quantity::{Byte, Second};
 
 /// Results from timing a single command
 #[derive(Debug, Default, Copy, Clone)]
@@ -13,5 +13,5 @@ pub struct TimingResult {
     pub time_system: Second,
 
     /// Maximum amount of memory used, in bytes
-    pub memory_usage_byte: u64,
+    pub memory_usage_byte: Byte,
 }

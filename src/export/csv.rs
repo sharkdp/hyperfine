@@ -4,6 +4,7 @@ use csv::WriterBuilder;
 
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
+use crate::benchmark::quantity::Second;
 use crate::options::SortOrder;
 use crate::util::units::Unit;
 
@@ -41,14 +42,14 @@ impl Exporter for CsvExporter {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
                 res.mean_wall_clock_time(),
-                res.measurements.stddev().unwrap_or(0.0),
+                res.measurements.stddev().unwrap_or_default(),
                 res.measurements.median(),
                 res.measurements.user_mean(),
                 res.measurements.system_mean(),
                 res.measurements.min(),
                 res.measurements.max(),
             ] {
-                fields.push(Cow::Owned(f.to_string().into_bytes()))
+                fields.push(Cow::Owned(f.value_in::<Second>().to_string().into_bytes()))
             }
             for v in res.parameters.values() {
                 fields.push(Cow::Borrowed(v.value.as_bytes()))
@@ -60,15 +61,14 @@ impl Exporter for CsvExporter {
     }
 }
 
-#[cfg(test)]
-use crate::benchmark::benchmark_result::Parameter;
-
-#[cfg(test)]
-use crate::benchmark::measurement::{Measurement, Measurements};
-
 #[test]
 fn test_csv() {
+    use crate::benchmark::benchmark_result::Parameter;
+    use crate::benchmark::measurement::{Measurement, Measurements};
+    use crate::benchmark::quantity::{Byte, Second};
+
     use std::collections::BTreeMap;
+
     let exporter = CsvExporter::default();
 
     let results = vec![
@@ -76,24 +76,24 @@ fn test_csv() {
             command: String::from("command_a"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    wall_clock_time: 7.0,
-                    user_time: 7.0,
-                    system_time: 0.0,
-                    memory_usage_byte: 1024,
+                    wall_clock_time: Second::new(7.0),
+                    user_time: Second::new(7.0),
+                    system_time: Second::zero(),
+                    memory_usage_byte: Byte::new(1024),
                     exit_code: Some(0),
                 },
                 Measurement {
-                    wall_clock_time: 8.0,
-                    user_time: 8.0,
-                    system_time: 0.0,
-                    memory_usage_byte: 1024,
+                    wall_clock_time: Second::new(8.0),
+                    user_time: Second::new(8.0),
+                    system_time: Second::zero(),
+                    memory_usage_byte: Byte::new(1024),
                     exit_code: Some(0),
                 },
                 Measurement {
-                    wall_clock_time: 12.0,
-                    user_time: 12.0,
-                    system_time: 0.0,
-                    memory_usage_byte: 1024,
+                    wall_clock_time: Second::new(12.0),
+                    user_time: Second::new(12.0),
+                    system_time: Second::zero(),
+                    memory_usage_byte: Byte::new(1024),
                     exit_code: Some(0),
                 },
             ]),
@@ -120,24 +120,24 @@ fn test_csv() {
             command: String::from("command_b"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    wall_clock_time: 17.0,
-                    user_time: 17.0,
-                    system_time: 0.0,
-                    memory_usage_byte: 1024,
+                    wall_clock_time: Second::new(17.0),
+                    user_time: Second::new(17.0),
+                    system_time: Second::zero(),
+                    memory_usage_byte: Byte::new(1024),
                     exit_code: Some(0),
                 },
                 Measurement {
-                    wall_clock_time: 18.0,
-                    user_time: 18.0,
-                    system_time: 0.0,
-                    memory_usage_byte: 1024,
+                    wall_clock_time: Second::new(18.0),
+                    user_time: Second::new(18.0),
+                    system_time: Second::zero(),
+                    memory_usage_byte: Byte::new(1024),
                     exit_code: Some(0),
                 },
                 Measurement {
-                    wall_clock_time: 19.0,
-                    user_time: 19.0,
-                    system_time: 0.0,
-                    memory_usage_byte: 1024,
+                    wall_clock_time: Second::new(19.0),
+                    user_time: Second::new(19.0),
+                    system_time: Second::zero(),
+                    memory_usage_byte: Byte::new(1024),
                     exit_code: Some(0),
                 },
             ]),

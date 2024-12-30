@@ -1,9 +1,6 @@
 //! This module contains common units.
 
-pub type Scalar = f64;
-
-/// Type alias for unit of time
-pub type Second = Scalar;
+use crate::benchmark::quantity::{MicroSecond, MilliSecond, Second};
 
 /// Supported time units
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,9 +23,15 @@ impl Unit {
     /// Returns the Second value formatted for the Unit.
     pub fn format(self, value: Second) -> String {
         match self {
-            Unit::Second => format!("{value:.3}"),
-            Unit::MilliSecond => format!("{:.1}", value * 1e3),
-            Unit::MicroSecond => format!("{:.1}", value * 1e6),
+            Unit::Second => format!("{value:.3}", value = value.value_in::<Second>()),
+            Unit::MilliSecond => format!(
+                "{value:.1}",
+                value = value.convert_to::<MilliSecond>().value_in::<MilliSecond>()
+            ),
+            Unit::MicroSecond => format!(
+                "{value:.1}",
+                value = value.convert_to::<MicroSecond>().value_in::<MicroSecond>()
+            ),
         }
     }
 }
@@ -43,9 +46,9 @@ fn test_unit_short_name() {
 // Note - the values are rounded when formatted.
 #[test]
 fn test_unit_format() {
-    let value: Second = 123.456789;
+    let value = Second::new(123.456789);
     assert_eq!("123.457", Unit::Second.format(value));
     assert_eq!("123456.8", Unit::MilliSecond.format(value));
 
-    assert_eq!("1234.6", Unit::MicroSecond.format(0.00123456));
+    assert_eq!("1234.6", Unit::MicroSecond.format(Second::new(0.00123456)));
 }

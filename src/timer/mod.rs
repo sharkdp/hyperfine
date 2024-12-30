@@ -16,7 +16,7 @@ use std::os::fd::AsFd;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Threading::CREATE_SUSPENDED;
 
-use crate::util::units::Second;
+use crate::benchmark::quantity::{Byte, Second};
 use wall_clock_timer::WallClockTimer;
 
 use std::io::Read;
@@ -30,7 +30,7 @@ pub struct TimerResult {
     pub time_wall_clock: Second,
     pub time_user: Second,
     pub time_system: Second,
-    pub memory_usage_byte: u64,
+    pub memory_usage_byte: Byte,
     /// The exit status of the process
     pub status: ExitStatus,
 }

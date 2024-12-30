@@ -11,6 +11,7 @@ use std::cmp;
 use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::benchmark::measurement::{Measurement, Measurements};
+use crate::benchmark::quantity::{MilliSecond, Second};
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
@@ -21,7 +22,6 @@ use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
-use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
 
@@ -31,7 +31,7 @@ use colored::*;
 use self::executor::Executor;
 
 /// Threshold for warning about fast execution time
-pub const MIN_EXECUTION_TIME: Second = 5e-3;
+pub const MIN_EXECUTION_TIME: MilliSecond = MilliSecond::new(5.);
 
 pub struct Benchmark<'a> {
     number: usize,
@@ -238,7 +238,7 @@ impl<'a> Benchmark<'a> {
         };
 
         let preparation_result = run_preparation_command()?;
-        let preparation_overhead = preparation_result.map_or(0.0, |res| {
+        let preparation_overhead = preparation_result.map_or(Second::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
 
@@ -252,7 +252,7 @@ impl<'a> Benchmark<'a> {
         let success = status.success();
 
         let conclusion_result = run_conclusion_command()?;
-        let conclusion_overhead = conclusion_result.map_or(0.0, |res| {
+        let conclusion_overhead = conclusion_result.map_or(Second::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
 
@@ -389,7 +389,7 @@ impl<'a> Benchmark<'a> {
             && measurements
                 .wall_clock_times()
                 .iter()
-                .any(|&t| t < MIN_EXECUTION_TIME)
+                .any(|&t| t < MIN_EXECUTION_TIME.convert_to::<Second>())
         {
             warnings.push(Warnings::FastExecutionTime);
         }
