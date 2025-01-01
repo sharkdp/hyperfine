@@ -255,6 +255,17 @@ fn build_command() -> Command {
             ),
         )
         .arg(
+            Arg::new("show-elapsed")
+                .long("show-elapsed")
+                .short('E')
+                .action(ArgAction::SetTrue)
+                .help(
+                    "Show time elapsed since the current run was started. \
+                     This is useful for especially long benchmarks to see \
+                     the progress the benchmark has made"
+                )
+        )
+        .arg(
             Arg::new("time-unit")
                 .long("time-unit")
                 .short('u')
