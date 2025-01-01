@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Div, Sub},
 };
 
-use serde::Serialize;
+use serde::{ser::SerializeStruct, Serialize, Serializer};
 
 pub trait IsQuantity {
     type Value;
@@ -16,7 +16,7 @@ pub trait IsQuantity {
     fn unsafe_from(value: Self::Value) -> Self;
 }
 
-#[derive(Debug, Clone, Copy, Default, Serialize, PartialEq, Eq, PartialOrd)] // TODO: check partialord
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd)] // TODO: check partialord
 pub struct Quantity<
     Value,
     const IS_TIME: bool,
@@ -84,6 +84,26 @@ impl<
 
         self.0
     }
+
+    const fn unit_name_long(&self) -> &'static str {
+        match (IS_TIME, IS_INFORMATION) {
+            (true, false) => match METRIC_PREFIX_TIME {
+                -6 => "microsecond",
+                -3 => "millisecond",
+                0 => "second",
+                _ => unreachable!(),
+            },
+            (false, true) => match BINARY_PREFIX_INFORMATION {
+                0 => "byte",
+                10 => "kibibyte",
+                20 => "mebibyte",
+                30 => "gibibyte",
+                40 => "tebibyte",
+                _ => unreachable!(),
+            },
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl<const METRIC_PREFIX_TIME: i32> Time<METRIC_PREFIX_TIME> {
@@ -141,6 +161,26 @@ impl<const BINARY_PREFIX_INFORMATION: i32> Display for Information<BINARY_PREFIX
             _ => unreachable!(),
         };
         write!(f, "{} {}B", self.0, prefix)
+    }
+}
+
+impl<
+        Value: Copy + Default + Serialize,
+        const IS_TIME: bool,
+        const METRIC_PREFIX_TIME: i32,
+        const IS_INFORMATION: bool,
+        const BINARY_PREFIX_INFORMATION: i32,
+    > Serialize
+    for Quantity<Value, IS_TIME, METRIC_PREFIX_TIME, IS_INFORMATION, BINARY_PREFIX_INFORMATION>
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Quantity", 2)?;
+        state.serialize_field("value", &self.0)?;
+        state.serialize_field("unit", self.unit_name_long())?;
+        state.end()
     }
 }
 
