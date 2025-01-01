@@ -29,7 +29,7 @@ pub struct BenchmarkResult {
 impl BenchmarkResult {
     /// The average wall clock time
     pub fn mean_wall_clock_time(&self) -> Second {
-        self.measurements.mean()
+        self.measurements.time_wall_clock_mean()
     }
 
     /// The full command line of the program that is being benchmarked, possibly including a list of

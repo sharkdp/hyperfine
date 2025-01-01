@@ -129,7 +129,7 @@ pub fn compute(
 
 #[cfg(test)]
 fn create_result(name: &str, mean: f64) -> BenchmarkResult {
-    use std::collections::BTreeMap;
+    use std::{collections::BTreeMap, process::ExitStatus};
 
     use crate::benchmark::{
         measurement::{Measurement, Measurements},
@@ -140,11 +140,11 @@ fn create_result(name: &str, mean: f64) -> BenchmarkResult {
         command: name.into(),
         measurements: Measurements {
             measurements: vec![Measurement {
-                wall_clock_time: Second::new(mean),
-                user_time: Second::new(mean),
-                system_time: Second::zero(),
-                memory_usage_byte: Byte::new(1024),
-                exit_code: Some(0),
+                time_wall_clock: Second::new(mean),
+                time_user: Second::new(mean),
+                time_system: Second::zero(),
+                peak_memory_usage: Byte::new(1024),
+                exit_status: ExitStatus::default(),
             }],
         },
         parameters: BTreeMap::new(),
