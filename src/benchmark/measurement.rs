@@ -32,7 +32,7 @@ pub struct Measurement {
     pub peak_memory_usage: Byte,
 
     // The exit status of the process
-    #[serde(serialize_with = "serialize_exit_status")]
+    #[serde(rename = "exit_code", serialize_with = "serialize_exit_status")]
     pub exit_status: ExitStatus,
 }
 
