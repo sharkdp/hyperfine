@@ -44,8 +44,8 @@ impl Exporter for CsvExporter {
                 res.mean_wall_clock_time(),
                 res.measurements.stddev().unwrap_or_default(),
                 res.measurements.median(),
-                res.measurements.user_mean(),
-                res.measurements.system_mean(),
+                res.measurements.time_user_mean(),
+                res.measurements.time_system_mean(),
                 res.measurements.min(),
                 res.measurements.max(),
             ] {
@@ -68,6 +68,7 @@ fn test_csv() {
     use crate::benchmark::quantity::{Byte, Second};
 
     use std::collections::BTreeMap;
+    use std::process::ExitStatus;
 
     let exporter = CsvExporter::default();
 
@@ -76,25 +77,25 @@ fn test_csv() {
             command: String::from("command_a"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    wall_clock_time: Second::new(7.0),
-                    user_time: Second::new(7.0),
-                    system_time: Second::zero(),
-                    memory_usage_byte: Byte::new(1024),
-                    exit_code: Some(0),
+                    time_wall_clock: Second::new(7.0),
+                    time_user: Second::new(7.0),
+                    time_system: Second::zero(),
+                    peak_memory_usage: Byte::new(1024),
+                    exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    wall_clock_time: Second::new(8.0),
-                    user_time: Second::new(8.0),
-                    system_time: Second::zero(),
-                    memory_usage_byte: Byte::new(1024),
-                    exit_code: Some(0),
+                    time_wall_clock: Second::new(8.0),
+                    time_user: Second::new(8.0),
+                    time_system: Second::zero(),
+                    peak_memory_usage: Byte::new(1024),
+                    exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    wall_clock_time: Second::new(12.0),
-                    user_time: Second::new(12.0),
-                    system_time: Second::zero(),
-                    memory_usage_byte: Byte::new(1024),
-                    exit_code: Some(0),
+                    time_wall_clock: Second::new(12.0),
+                    time_user: Second::new(12.0),
+                    time_system: Second::zero(),
+                    peak_memory_usage: Byte::new(1024),
+                    exit_status: ExitStatus::default(),
                 },
             ]),
             parameters: {
@@ -120,25 +121,25 @@ fn test_csv() {
             command: String::from("command_b"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    wall_clock_time: Second::new(17.0),
-                    user_time: Second::new(17.0),
-                    system_time: Second::zero(),
-                    memory_usage_byte: Byte::new(1024),
-                    exit_code: Some(0),
+                    time_wall_clock: Second::new(17.0),
+                    time_user: Second::new(17.0),
+                    time_system: Second::zero(),
+                    peak_memory_usage: Byte::new(1024),
+                    exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    wall_clock_time: Second::new(18.0),
-                    user_time: Second::new(18.0),
-                    system_time: Second::zero(),
-                    memory_usage_byte: Byte::new(1024),
-                    exit_code: Some(0),
+                    time_wall_clock: Second::new(18.0),
+                    time_user: Second::new(18.0),
+                    time_system: Second::zero(),
+                    peak_memory_usage: Byte::new(1024),
+                    exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    wall_clock_time: Second::new(19.0),
-                    user_time: Second::new(19.0),
-                    system_time: Second::zero(),
-                    memory_usage_byte: Byte::new(1024),
-                    exit_code: Some(0),
+                    time_wall_clock: Second::new(19.0),
+                    time_user: Second::new(19.0),
+                    time_system: Second::zero(),
+                    peak_memory_usage: Byte::new(1024),
+                    exit_status: ExitStatus::default(),
                 },
             ]),
             parameters: {
