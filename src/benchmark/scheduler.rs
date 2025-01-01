@@ -190,27 +190,27 @@ fn scheduler_basic() -> Result<()> {
     insta::assert_yaml_snapshot!(generate_results(&["--runs=2", "sleep 0.123", "sleep 0.456"])?, @r#"
     - command: sleep 0.123
       measurements:
-        - wall_clock_time: 0.123
-          user_time: 0
-          system_time: 0
-          memory_usage_byte: 0
+        - time_wall_clock: 0.123
+          time_user: 0
+          time_system: 0
+          peak_memory_usage: 0
           exit_code: 0
-        - wall_clock_time: 0.123
-          user_time: 0
-          system_time: 0
-          memory_usage_byte: 0
+        - time_wall_clock: 0.123
+          time_user: 0
+          time_system: 0
+          peak_memory_usage: 0
           exit_code: 0
     - command: sleep 0.456
       measurements:
-        - wall_clock_time: 0.456
-          user_time: 0
-          system_time: 0
-          memory_usage_byte: 0
+        - time_wall_clock: 0.456
+          time_user: 0
+          time_system: 0
+          peak_memory_usage: 0
           exit_code: 0
-        - wall_clock_time: 0.456
-          user_time: 0
-          system_time: 0
-          memory_usage_byte: 0
+        - time_wall_clock: 0.456
+          time_user: 0
+          time_system: 0
+          peak_memory_usage: 0
           exit_code: 0
     "#);
 
