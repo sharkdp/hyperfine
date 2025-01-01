@@ -72,7 +72,7 @@ insta.opt-level = 3
 similar.opt-level = 3
 
 [build-dependencies]
-clap = "4.4.12"
+clap = "4.5.23"
 clap_complete = "4.2.1"
 
 [profile.release]
