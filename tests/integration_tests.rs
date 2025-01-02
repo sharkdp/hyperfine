@@ -315,12 +315,13 @@ fn can_pass_input_to_command_from_a_file() {
 
 #[cfg(windows)]
 #[test]
+// See https://superuser.com/questions/853580/real-windows-equivalent-to-cat-stdin
 fn can_pass_input_to_command_from_a_file() {
     hyperfine()
         .arg("--runs=1")
         .arg("--input=example_input_file.txt")
         .arg("--show-output")
-        .arg("type example_input_file.txt")
+        .arg("findstr x*")
         .assert()
         .success()
         .stdout(predicate::str::contains("This text is part of a file"));
@@ -348,7 +349,7 @@ fn fails_if_invalid_stdin_data_file_provided() {
         .arg("--runs=1")
         .arg("--input=example_non_existent_file.txt")
         .arg("--show-output")
-        .arg("type example_non_existent_file.txt")
+        .arg("findstr x*")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
