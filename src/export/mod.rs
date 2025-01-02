@@ -7,6 +7,8 @@ mod json;
 mod markdown;
 mod markup;
 mod orgmode;
+#[cfg(test)]
+mod tests;
 
 use self::asciidoc::AsciidocExporter;
 use self::csv::CsvExporter;
@@ -62,19 +64,24 @@ struct ExporterWithTarget {
 }
 
 /// Handles the management of multiple file exporters.
-#[derive(Default)]
 pub struct ExportManager {
     exporters: Vec<ExporterWithTarget>,
     time_unit: Option<Unit>,
+    sort_order: SortOrder,
 }
 
 impl ExportManager {
     /// Build the ExportManager that will export the results specified
     /// in the given ArgMatches
-    pub fn from_cli_arguments(matches: &ArgMatches, time_unit: Option<Unit>) -> Result<Self> {
+    pub fn from_cli_arguments(
+        matches: &ArgMatches,
+        time_unit: Option<Unit>,
+        sort_order: SortOrder,
+    ) -> Result<Self> {
         let mut export_manager = Self {
             exporters: vec![],
             time_unit,
+            sort_order,
         };
         {
             let mut add_exporter = |flag, exporttype| -> Result<()> {
@@ -122,14 +129,12 @@ impl ExportManager {
     /// results are written to all file targets (to always have them up to date, even
     /// if a benchmark fails). In the latter case, we only print to stdout targets (in
     /// order not to clutter the output of hyperfine with intermediate results).
-    pub fn write_results(
-        &self,
-        results: &[BenchmarkResult],
-        sort_order: SortOrder,
-        intermediate: bool,
-    ) -> Result<()> {
+    pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
         for e in &self.exporters {
-            let content = || e.exporter.serialize(results, self.time_unit, sort_order);
+            let content = || {
+                e.exporter
+                    .serialize(results, self.time_unit, self.sort_order)
+            };
 
             match e.target {
                 ExportTarget::File(ref filename) => {

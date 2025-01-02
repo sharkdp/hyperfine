@@ -11,4 +11,7 @@ pub struct TimingResult {
 
     /// Time spent in kernel mode
     pub time_system: Second,
+
+    /// Maximum amount of memory used, in bytes
+    pub memory_usage_byte: u64,
 }
