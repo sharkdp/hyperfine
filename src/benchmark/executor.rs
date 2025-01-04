@@ -4,8 +4,9 @@ use std::process::ExitStatus;
 
 use crate::benchmark::measurement::Measurement;
 use crate::benchmark::measurement::Measurements;
-use crate::benchmark::quantity::Byte;
-use crate::benchmark::quantity::Second;
+use crate::benchmark::quantity::Information;
+use crate::benchmark::quantity::InformationQuantity;
+use crate::benchmark::quantity::{Time, TimeQuantity};
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
@@ -52,7 +53,7 @@ pub trait Executor {
     /// performing a measurement. This should return the time
     /// that is being used in addition to the actual runtime
     /// of the command.
-    fn time_overhead(&self) -> Second;
+    fn time_overhead(&self) -> Time;
 }
 
 fn run_command_and_measure_common(
@@ -141,8 +142,8 @@ impl Executor for RawExecutor<'_> {
         Ok(())
     }
 
-    fn time_overhead(&self) -> Second {
-        Second::zero()
+    fn time_overhead(&self) -> Time {
+        Time::zero()
     }
 }
 
@@ -192,9 +193,9 @@ impl Executor for ShellExecutor<'_> {
         )?;
 
         // Subtract shell spawning time
-        fn ensure_non_negative(time: Second) -> Second {
-            if time < Second::zero() {
-                Second::zero()
+        fn ensure_non_negative(time: Time) -> Time {
+            if time < Time::zero() {
+                Time::zero()
             } else {
                 time
             }
@@ -279,7 +280,7 @@ impl Executor for ShellExecutor<'_> {
         Ok(())
     }
 
-    fn time_overhead(&self) -> Second {
+    fn time_overhead(&self) -> Time {
         self.shell_spawning_time.as_ref().unwrap().time_wall_clock
     }
 }
@@ -294,9 +295,9 @@ impl MockExecutor {
         MockExecutor { shell }
     }
 
-    fn extract_time<S: AsRef<str>>(sleep_command: S) -> Second {
+    fn extract_time<S: AsRef<str>>(sleep_command: S) -> Time {
         assert!(sleep_command.as_ref().starts_with("sleep "));
-        Second::new(
+        Time::from_seconds(
             sleep_command
                 .as_ref()
                 .trim_start_matches("sleep ")
@@ -328,9 +329,9 @@ impl Executor for MockExecutor {
 
         Ok(Measurement {
             time_wall_clock: Self::extract_time(command.get_command_line()),
-            time_user: Second::zero(),
-            time_system: Second::zero(),
-            peak_memory_usage: Byte::new(0),
+            time_user: Time::zero(),
+            time_system: Time::zero(),
+            peak_memory_usage: Information::from_bytes(0),
             exit_status,
         })
     }
@@ -339,9 +340,9 @@ impl Executor for MockExecutor {
         Ok(())
     }
 
-    fn time_overhead(&self) -> Second {
+    fn time_overhead(&self) -> Time {
         match &self.shell {
-            None => Second::zero(),
+            None => Time::zero(),
             Some(shell) => Self::extract_time(shell),
         }
     }
@@ -349,5 +350,8 @@ impl Executor for MockExecutor {
 
 #[test]
 fn test_mock_executor_extract_time() {
-    assert_eq!(MockExecutor::extract_time("sleep 0.1"), Second::new(0.1));
+    assert_eq!(
+        MockExecutor::extract_time("sleep 0.1"),
+        Time::from_seconds(0.1)
+    );
 }

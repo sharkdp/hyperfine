@@ -10,7 +10,7 @@ use std::cmp;
 use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::benchmark::measurement::{Measurement, Measurements};
-use crate::benchmark::quantity::{MilliSecond, Second};
+use crate::benchmark::quantity::{const_time_from_seconds, Time, TimeQuantity};
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
@@ -28,7 +28,7 @@ use colored::*;
 use self::executor::Executor;
 
 /// Threshold for warning about fast execution time
-pub const MIN_EXECUTION_TIME: MilliSecond = MilliSecond::new(5.);
+pub const MIN_EXECUTION_TIME: Time = const_time_from_seconds(0.005);
 
 pub struct Benchmark<'a> {
     number: usize,
@@ -234,7 +234,7 @@ impl<'a> Benchmark<'a> {
         };
 
         let preparation_result = run_preparation_command()?;
-        let preparation_overhead = preparation_result.map_or(Second::zero(), |res| {
+        let preparation_overhead = preparation_result.map_or(Time::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
 
@@ -248,7 +248,7 @@ impl<'a> Benchmark<'a> {
         let success = result.exit_status.success();
 
         let conclusion_result = run_conclusion_command()?;
-        let conclusion_overhead = conclusion_result.map_or(Second::zero(), |res| {
+        let conclusion_overhead = conclusion_result.map_or(Time::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
 
@@ -257,7 +257,8 @@ impl<'a> Benchmark<'a> {
             / (result.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
-                + conclusion_overhead)) as u64;
+                + conclusion_overhead))
+            .get::<quantity::ratio>() as u64;
 
         let count = {
             let min = cmp::max(runs_in_min_time, self.options.run_bounds.min);
@@ -386,7 +387,7 @@ impl<'a> Benchmark<'a> {
             && measurements
                 .wall_clock_times()
                 .iter()
-                .any(|&t| t < MIN_EXECUTION_TIME.convert_to::<Second>())
+                .any(|&t| t < MIN_EXECUTION_TIME)
         {
             warnings.push(Warnings::FastExecutionTime);
         }

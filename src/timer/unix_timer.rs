@@ -8,7 +8,7 @@ use std::process::{Child, ExitStatus};
 
 use anyhow::Result;
 
-use crate::benchmark::quantity::{Byte, Second};
+use crate::benchmark::quantity::{Information, InformationQuantity, Time, TimeQuantity};
 
 #[derive(Debug, Copy, Clone)]
 struct ResourceUsage {
@@ -68,13 +68,13 @@ impl CPUTimer {
         Self {}
     }
 
-    pub fn stop(&self, child: Child) -> Result<(ExitStatus, Second, Second, Byte)> {
+    pub fn stop(&self, child: Child) -> Result<(ExitStatus, Time, Time, Information)> {
         let (status, usage) = wait4(child)?;
         Ok((
             status,
-            Second::new(usage.user_usec),
-            Second::new(usage.system_usec),
-            Byte::new(u64::try_from(usage.memory_usage_byte).unwrap_or(0)),
+            Time::from_seconds(usage.user_usec),
+            Time::from_seconds(usage.system_usec),
+            Information::from_bytes(u64::try_from(usage.memory_usage_byte).unwrap_or(0)),
         ))
     }
 }

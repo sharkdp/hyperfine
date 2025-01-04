@@ -1,6 +1,6 @@
 //! This module contains common units.
 
-use crate::benchmark::quantity::{MicroSecond, MilliSecond, Second};
+use crate::benchmark::quantity::{microsecond, millisecond, second, Time, TimeQuantity};
 
 /// Supported time units
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,17 +21,11 @@ impl Unit {
     }
 
     /// Returns the Second value formatted for the Unit.
-    pub fn format(self, value: Second) -> String {
+    pub fn format(self, value: Time) -> String {
         match self {
-            Unit::Second => format!("{value:.3}", value = value.value_in::<Second>()),
-            Unit::MilliSecond => format!(
-                "{value:.1}",
-                value = value.convert_to::<MilliSecond>().value_in::<MilliSecond>()
-            ),
-            Unit::MicroSecond => format!(
-                "{value:.1}",
-                value = value.convert_to::<MicroSecond>().value_in::<MicroSecond>()
-            ),
+            Unit::Second => format!("{value:.3}", value = value.value_in::<second>()), // TODO: use .to_string on Time?
+            Unit::MilliSecond => format!("{value:.1}", value = value.value_in::<millisecond>()),
+            Unit::MicroSecond => format!("{value:.1}", value = value.value_in::<microsecond>()),
         }
     }
 }
@@ -46,9 +40,12 @@ fn test_unit_short_name() {
 // Note - the values are rounded when formatted.
 #[test]
 fn test_unit_format() {
-    let value = Second::new(123.456789);
+    let value = Time::from_seconds(123.456789);
     assert_eq!("123.457", Unit::Second.format(value));
     assert_eq!("123456.8", Unit::MilliSecond.format(value));
 
-    assert_eq!("1234.6", Unit::MicroSecond.format(Second::new(0.00123456)));
+    assert_eq!(
+        "1234.6",
+        Unit::MicroSecond.format(Time::from_seconds(0.00123456))
+    );
 }

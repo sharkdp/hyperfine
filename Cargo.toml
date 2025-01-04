@@ -28,6 +28,12 @@ rand = "0.8"
 shell-words = "1.0"
 thiserror = "2.0"
 anyhow = "1.0"
+uom = { version = "0.36.0", default-features = false, features = [
+    "std",
+    "si",
+    "f64",
+    "u64",
+] }
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"

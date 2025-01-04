@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::benchmark::{measurement::Measurements, quantity::Second};
+use crate::benchmark::{measurement::Measurements, quantity::Time};
 
 /// Parameter value and whether it was used in the command line template
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
@@ -28,7 +28,7 @@ pub struct BenchmarkResult {
 
 impl BenchmarkResult {
     /// The average wall clock time
-    pub fn mean_wall_clock_time(&self) -> Second {
+    pub fn mean_wall_clock_time(&self) -> Time {
         self.measurements.time_wall_clock_mean()
     }
 

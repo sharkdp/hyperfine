@@ -7,7 +7,7 @@ use std::{cmp, env, fmt, io};
 use anyhow::ensure;
 use clap::ArgMatches;
 
-use crate::benchmark::quantity::Second;
+use crate::benchmark::quantity::{Time, TimeQuantity};
 use crate::command::Commands;
 use crate::error::OptionsError;
 use crate::util::units::Unit;
@@ -201,7 +201,7 @@ pub struct Options {
     pub warmup_count: u64,
 
     /// Minimum benchmarking time
-    pub min_benchmarking_time: Second,
+    pub min_benchmarking_time: Time,
 
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
@@ -251,7 +251,7 @@ impl Default for Options {
         Options {
             run_bounds: RunBounds::default(),
             warmup_count: 0,
-            min_benchmarking_time: Second::new(3.0),
+            min_benchmarking_time: Time::from_seconds(3.0),
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
             reference_name: None,
@@ -427,7 +427,7 @@ impl Options {
         };
 
         if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
-            options.min_benchmarking_time = Second::new(
+            options.min_benchmarking_time = Time::from_seconds(
                 time.parse::<f64>()
                     .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?,
             );

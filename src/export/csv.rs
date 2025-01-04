@@ -4,7 +4,7 @@ use csv::WriterBuilder;
 
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
-use crate::benchmark::quantity::Second;
+use crate::benchmark::quantity::{second, TimeQuantity};
 use crate::options::SortOrder;
 use crate::util::units::Unit;
 
@@ -49,7 +49,7 @@ impl Exporter for CsvExporter {
                 res.measurements.min(),
                 res.measurements.max(),
             ] {
-                fields.push(Cow::Owned(f.value_in::<Second>().to_string().into_bytes()))
+                fields.push(Cow::Owned(f.value_in::<second>().to_string().into_bytes()))
             }
             for v in res.parameters.values() {
                 fields.push(Cow::Borrowed(v.value.as_bytes()))
@@ -65,7 +65,7 @@ impl Exporter for CsvExporter {
 fn test_csv() {
     use crate::benchmark::benchmark_result::Parameter;
     use crate::benchmark::measurement::{Measurement, Measurements};
-    use crate::benchmark::quantity::{Byte, Second};
+    use crate::benchmark::quantity::{Information, InformationQuantity, Time, TimeQuantity};
 
     use std::collections::BTreeMap;
     use std::process::ExitStatus;
@@ -77,24 +77,24 @@ fn test_csv() {
             command: String::from("command_a"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    time_wall_clock: Second::new(7.0),
-                    time_user: Second::new(7.0),
-                    time_system: Second::zero(),
-                    peak_memory_usage: Byte::new(1024),
+                    time_wall_clock: Time::from_seconds(7.0),
+                    time_user: Time::from_seconds(7.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::from_bytes(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Second::new(8.0),
-                    time_user: Second::new(8.0),
-                    time_system: Second::zero(),
-                    peak_memory_usage: Byte::new(1024),
+                    time_wall_clock: Time::from_seconds(8.0),
+                    time_user: Time::from_seconds(8.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::from_bytes(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Second::new(12.0),
-                    time_user: Second::new(12.0),
-                    time_system: Second::zero(),
-                    peak_memory_usage: Byte::new(1024),
+                    time_wall_clock: Time::from_seconds(12.0),
+                    time_user: Time::from_seconds(12.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::from_bytes(1024),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -121,24 +121,24 @@ fn test_csv() {
             command: String::from("command_b"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    time_wall_clock: Second::new(17.0),
-                    time_user: Second::new(17.0),
-                    time_system: Second::zero(),
-                    peak_memory_usage: Byte::new(1024),
+                    time_wall_clock: Time::from_seconds(17.0),
+                    time_user: Time::from_seconds(17.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::from_bytes(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Second::new(18.0),
-                    time_user: Second::new(18.0),
-                    time_system: Second::zero(),
-                    peak_memory_usage: Byte::new(1024),
+                    time_wall_clock: Time::from_seconds(18.0),
+                    time_user: Time::from_seconds(18.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::from_bytes(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Second::new(19.0),
-                    time_user: Second::new(19.0),
-                    time_system: Second::zero(),
-                    peak_memory_usage: Byte::new(1024),
+                    time_wall_clock: Time::from_seconds(19.0),
+                    time_user: Time::from_seconds(19.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::from_bytes(1024),
                     exit_status: ExitStatus::default(),
                 },
             ]),

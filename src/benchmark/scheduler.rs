@@ -192,73 +192,57 @@ fn scheduler_basic() -> Result<()> {
       measurements:
         - time_wall_clock:
             value: 0.123
-            unit: s
-            unit_long: second
+            unit: second
           time_user:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           time_system:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           peak_memory_usage:
             value: 0
-            unit: B
-            unit_long: byte
+            unit: byte
           exit_code: 0
         - time_wall_clock:
             value: 0.123
-            unit: s
-            unit_long: second
+            unit: second
           time_user:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           time_system:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           peak_memory_usage:
             value: 0
-            unit: B
-            unit_long: byte
+            unit: byte
           exit_code: 0
     - command: sleep 0.456
       measurements:
         - time_wall_clock:
             value: 0.456
-            unit: s
-            unit_long: second
+            unit: second
           time_user:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           time_system:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           peak_memory_usage:
             value: 0
-            unit: B
-            unit_long: byte
+            unit: byte
           exit_code: 0
         - time_wall_clock:
             value: 0.456
-            unit: s
-            unit_long: second
+            unit: second
           time_user:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           time_system:
             value: 0
-            unit: s
-            unit_long: second
+            unit: second
           peak_memory_usage:
             value: 0
-            unit: B
-            unit_long: byte
+            unit: byte
           exit_code: 0
     "#);
 

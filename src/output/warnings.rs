@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::benchmark::quantity::Second;
+use crate::benchmark::quantity::{millisecond, Time, TimeQuantity};
 use crate::benchmark::MIN_EXECUTION_TIME;
 use crate::output::format::format_duration;
 
@@ -13,7 +13,7 @@ pub struct OutlierWarningOptions {
 pub enum Warnings {
     FastExecutionTime,
     NonZeroExitCode,
-    SlowInitialRun(Second, OutlierWarningOptions),
+    SlowInitialRun(Time, OutlierWarningOptions),
     OutliersDetected(OutlierWarningOptions),
 }
 
@@ -22,10 +22,11 @@ impl fmt::Display for Warnings {
         match *self {
             Warnings::FastExecutionTime => write!(
                 f,
-                "Command took less than {MIN_EXECUTION_TIME} to complete. Note that the results might be \
+                "Command took less than {min_execution_time} to complete. Note that the results might be \
                 inaccurate because hyperfine can not calibrate the shell startup time much \
                 more precise than this limit. You can try to use the `-N`/`--shell=none` \
                 option to disable the shell completely.",
+                min_execution_time = MIN_EXECUTION_TIME.to_string(millisecond)
             ),
             Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
             Warnings::SlowInitialRun(time_first_run, ref options) => write!(
