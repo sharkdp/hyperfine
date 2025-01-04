@@ -3,6 +3,12 @@ use common::hyperfine;
 
 use predicates::prelude::*;
 
+/// Platform-specific I/O utility.
+/// - On Unix-like systems, defaults to `cat`.
+/// - On Windows, uses `findstr` as an alternative.
+///   See: <https://superuser.com/questions/853580/real-windows-equivalent-to-cat-stdin>
+const STDIN_READ_COMMAND: &str = if cfg!(windows) { "findstr x*" } else { "cat" };
+
 pub fn hyperfine_debug() -> assert_cmd::Command {
     let mut cmd = hyperfine();
     cmd.arg("--debug-mode");
@@ -300,56 +306,25 @@ fn runs_commands_using_user_defined_shell() {
         );
 }
 
-#[cfg(unix)]
 #[test]
 fn can_pass_input_to_command_from_a_file() {
     hyperfine()
         .arg("--runs=1")
         .arg("--input=example_input_file.txt")
         .arg("--show-output")
-        .arg("cat")
+        .arg(STDIN_READ_COMMAND)
         .assert()
         .success()
         .stdout(predicate::str::contains("This text is part of a file"));
 }
 
-#[cfg(windows)]
-#[test]
-// See https://superuser.com/questions/853580/real-windows-equivalent-to-cat-stdin
-fn can_pass_input_to_command_from_a_file() {
-    hyperfine()
-        .arg("--runs=1")
-        .arg("--input=example_input_file.txt")
-        .arg("--show-output")
-        .arg("findstr x*")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("This text is part of a file"));
-}
-
-#[cfg(unix)]
 #[test]
 fn fails_if_invalid_stdin_data_file_provided() {
     hyperfine()
         .arg("--runs=1")
         .arg("--input=example_non_existent_file.txt")
         .arg("--show-output")
-        .arg("cat")
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains(
-            "The file 'example_non_existent_file.txt' specified as '--input' does not exist",
-        ));
-}
-
-#[cfg(windows)]
-#[test]
-fn fails_if_invalid_stdin_data_file_provided() {
-    hyperfine()
-        .arg("--runs=1")
-        .arg("--input=example_non_existent_file.txt")
-        .arg("--show-output")
-        .arg("findstr x*")
+        .arg(STDIN_READ_COMMAND)
         .assert()
         .failure()
         .stderr(predicate::str::contains(
