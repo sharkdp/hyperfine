@@ -85,6 +85,26 @@ impl<
         self.0
     }
 
+    const fn unit_name(&self) -> &'static str {
+        match (IS_TIME, IS_INFORMATION) {
+            (true, false) => match METRIC_PREFIX_TIME {
+                -6 => "µs",
+                -3 => "ms",
+                0 => "s",
+                _ => unreachable!(),
+            },
+            (false, true) => match BINARY_PREFIX_INFORMATION {
+                0 => "B",
+                10 => "KiB",
+                20 => "MiB",
+                30 => "GiB",
+                40 => "TiB",
+                _ => unreachable!(),
+            },
+            _ => unreachable!(),
+        }
+    }
+
     const fn unit_name_long(&self) -> &'static str {
         match (IS_TIME, IS_INFORMATION) {
             (true, false) => match METRIC_PREFIX_TIME {
@@ -179,7 +199,8 @@ impl<
     {
         let mut state = serializer.serialize_struct("Quantity", 2)?;
         state.serialize_field("value", &self.0)?;
-        state.serialize_field("unit", self.unit_name_long())?;
+        state.serialize_field("unit", self.unit_name())?;
+        state.serialize_field("unit_long", self.unit_name_long())?;
         state.end()
     }
 }

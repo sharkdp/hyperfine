@@ -190,27 +190,75 @@ fn scheduler_basic() -> Result<()> {
     insta::assert_yaml_snapshot!(generate_results(&["--runs=2", "sleep 0.123", "sleep 0.456"])?, @r#"
     - command: sleep 0.123
       measurements:
-        - time_wall_clock: 0.123
-          time_user: 0
-          time_system: 0
-          peak_memory_usage: 0
+        - time_wall_clock:
+            value: 0.123
+            unit: s
+            unit_long: second
+          time_user:
+            value: 0
+            unit: s
+            unit_long: second
+          time_system:
+            value: 0
+            unit: s
+            unit_long: second
+          peak_memory_usage:
+            value: 0
+            unit: B
+            unit_long: byte
           exit_code: 0
-        - time_wall_clock: 0.123
-          time_user: 0
-          time_system: 0
-          peak_memory_usage: 0
+        - time_wall_clock:
+            value: 0.123
+            unit: s
+            unit_long: second
+          time_user:
+            value: 0
+            unit: s
+            unit_long: second
+          time_system:
+            value: 0
+            unit: s
+            unit_long: second
+          peak_memory_usage:
+            value: 0
+            unit: B
+            unit_long: byte
           exit_code: 0
     - command: sleep 0.456
       measurements:
-        - time_wall_clock: 0.456
-          time_user: 0
-          time_system: 0
-          peak_memory_usage: 0
+        - time_wall_clock:
+            value: 0.456
+            unit: s
+            unit_long: second
+          time_user:
+            value: 0
+            unit: s
+            unit_long: second
+          time_system:
+            value: 0
+            unit: s
+            unit_long: second
+          peak_memory_usage:
+            value: 0
+            unit: B
+            unit_long: byte
           exit_code: 0
-        - time_wall_clock: 0.456
-          time_user: 0
-          time_system: 0
-          peak_memory_usage: 0
+        - time_wall_clock:
+            value: 0.456
+            unit: s
+            unit_long: second
+          time_user:
+            value: 0
+            unit: s
+            unit_long: second
+          time_system:
+            value: 0
+            unit: s
+            unit_long: second
+          peak_memory_usage:
+            value: 0
+            unit: B
+            unit_long: byte
           exit_code: 0
     "#);
 
