@@ -13,19 +13,21 @@ use crate::benchmark::quantity::{Information, InformationQuantity, Time, TimeQua
 #[derive(Debug, Copy, Clone)]
 struct ResourceUsage {
     /// Total amount of time spent executing in user mode
-    pub user_usec: f64,
+    pub time_user: Time,
 
     /// Total amount of time spent executing in kernel mode
-    pub system_usec: f64,
+    pub time_system: Time,
 
     /// Maximum amount of memory used by the process, in bytes
-    pub memory_usage_byte: i64,
+    pub memory_usage: Information,
 }
 
 #[allow(clippy::useless_conversion)]
-fn timeval_to_seconds(tv: libc::timeval) -> f64 {
-    const MICROSEC_PER_SEC: i64 = 1000 * 1000;
-    (i64::from(tv.tv_sec) * MICROSEC_PER_SEC + i64::from(tv.tv_usec)) as f64 * 1e-6
+fn convert_timeval(tv: libc::timeval) -> Time {
+    let sec = tv.tv_sec as f64;
+    let usec = tv.tv_usec as f64;
+
+    Time::from_seconds(sec) + Time::from_microseconds(usec)
 }
 
 #[allow(clippy::useless_conversion)]
@@ -45,17 +47,17 @@ fn wait4(mut child: Child) -> io::Result<(ExitStatus, ResourceUsage)> {
 
         let memory_usage_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
             // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
-            rusage.ru_maxrss
+            Information::from_bytes(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
         } else {
-            rusage.ru_maxrss * 1024
+            Information::from_kibibytes(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
         };
 
         Ok((
             ExitStatus::from_raw(status),
             ResourceUsage {
-                user_usec: timeval_to_seconds(rusage.ru_utime),
-                system_usec: timeval_to_seconds(rusage.ru_stime),
-                memory_usage_byte: memory_usage_byte.into(),
+                time_user: convert_timeval(rusage.ru_utime),
+                time_system: convert_timeval(rusage.ru_stime),
+                memory_usage: memory_usage_byte.into(),
             },
         ))
     }
@@ -72,9 +74,9 @@ impl CPUTimer {
         let (status, usage) = wait4(child)?;
         Ok((
             status,
-            Time::from_seconds(usage.user_usec),
-            Time::from_seconds(usage.system_usec),
-            Information::from_bytes(u64::try_from(usage.memory_usage_byte).unwrap_or(0)),
+            usage.time_user,
+            usage.time_system,
+            usage.memory_usage,
         ))
     }
 }
