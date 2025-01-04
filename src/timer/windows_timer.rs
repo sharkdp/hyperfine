@@ -30,9 +30,7 @@ use windows_sys::{
     },
 };
 
-use crate::util::units::Second;
-
-const HUNDRED_NS_PER_MS: i64 = 10;
+use crate::benchmark::quantity::{Information, InformationQuantity, Time, TimeQuantity};
 
 #[cfg(not(feature = "windows_process_extensions_main_thread_handle"))]
 #[allow(non_upper_case_globals)]
@@ -89,7 +87,7 @@ impl CPUTimer {
         Self { job_object }
     }
 
-    pub fn stop(&self, mut child: Child) -> Result<(ExitStatus, Second, Second, u64)> {
+    pub fn stop(&self, mut child: Child) -> Result<(ExitStatus, Time, Time, Information)> {
         let status = child.wait()?;
 
         let mut job_object_info =
@@ -113,15 +111,17 @@ impl CPUTimer {
             // The `TotalUserTime` is "The total amount of user-mode execution time for
             // all active processes associated with the job, as well as all terminated processes no
             // longer associated with the job, in 100-nanosecond ticks."
-            let user: i64 = job_object_info.TotalUserTime / HUNDRED_NS_PER_MS;
+            let user_time = Time::from_nanoseconds((job_object_info.TotalUserTime as f64) * 100.0);
 
             // The `TotalKernelTime` is "The total amount of kernel-mode execution time
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
-            let kernel: i64 = job_object_info.TotalKernelTime / HUNDRED_NS_PER_MS;
-            Ok((status, user as f64 * 1e-6, kernel as f64 * 1e-6, 0))
+            let system_time =
+                Time::from_nanoseconds((job_object_info.TotalKernelTime as f64) * 100.0);
+
+            Ok((status, user_time, system_time, Information::zero()))
         } else {
-            Ok((status, 0.0, 0.0, 0))
+            Ok((status, Time::zero(), Time::zero(), Information::zero()))
         }
     }
 }
