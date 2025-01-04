@@ -4,14 +4,14 @@ use std::process::ExitStatus;
 
 use crate::benchmark::measurement::Measurement;
 use crate::benchmark::measurement::Measurements;
-use crate::benchmark::quantity::Information;
-use crate::benchmark::quantity::InformationQuantity;
-use crate::benchmark::quantity::{Time, TimeQuantity};
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
 };
 use crate::output::progress_bar::get_progress_bar;
+use crate::quantity::Information;
+use crate::quantity::InformationQuantity;
+use crate::quantity::{Time, TimeQuantity};
 use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
 

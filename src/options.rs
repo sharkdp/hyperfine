@@ -7,9 +7,9 @@ use std::{cmp, env, fmt, io};
 use anyhow::ensure;
 use clap::ArgMatches;
 
-use crate::benchmark::quantity::{Time, TimeQuantity};
 use crate::command::Commands;
 use crate::error::OptionsError;
+use crate::quantity::{Time, TimeQuantity};
 use crate::util::units::Unit;
 
 use anyhow::Result;

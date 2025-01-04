@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::benchmark::quantity::{Time, TimeQuantity};
+use crate::quantity::{Time, TimeQuantity};
 
 pub struct WallClockTimer {
     start: Instant,

@@ -1,6 +1,6 @@
 //! This module contains common units.
 
-use crate::benchmark::quantity::{microsecond, millisecond, second, Time, TimeQuantity};
+use crate::quantity::{microsecond, millisecond, second, Time, TimeQuantity};
 
 /// Supported time units
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,5 +1,5 @@
 use crate::{
-    benchmark::quantity::{Time, TimeQuantity},
+    quantity::{Time, TimeQuantity},
     util::units::Unit,
 };
 

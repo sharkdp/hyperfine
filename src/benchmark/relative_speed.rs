@@ -2,8 +2,8 @@ use std::cmp::Ordering;
 
 use super::benchmark_result::BenchmarkResult;
 use crate::{
-    benchmark::quantity::{self, Ratio, Time, TimeQuantity},
     options::SortOrder,
+    quantity::{self, Ratio, Time, TimeQuantity},
 };
 
 #[derive(Debug)]

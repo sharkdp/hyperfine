@@ -30,7 +30,7 @@ use windows_sys::{
     },
 };
 
-use crate::benchmark::quantity::{Information, InformationQuantity, Time, TimeQuantity};
+use crate::quantity::{Information, InformationQuantity, Time, TimeQuantity};
 
 #[cfg(not(feature = "windows_process_extensions_main_thread_handle"))]
 #[allow(non_upper_case_globals)]

@@ -1,7 +1,6 @@
 pub mod benchmark_result;
 pub mod executor;
 pub mod measurement;
-pub mod quantity;
 pub mod relative_speed;
 pub mod scheduler;
 
@@ -10,7 +9,6 @@ use std::cmp;
 use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::benchmark::measurement::{Measurement, Measurements};
-use crate::benchmark::quantity::{const_time_from_seconds, Time, TimeQuantity};
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
@@ -20,6 +18,7 @@ use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
+use crate::quantity::{self, const_time_from_seconds, Time, TimeQuantity};
 use benchmark_result::BenchmarkResult;
 
 use anyhow::{anyhow, Result};

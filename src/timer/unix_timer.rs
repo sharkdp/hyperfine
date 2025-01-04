@@ -8,7 +8,7 @@ use std::process::{Child, ExitStatus};
 
 use anyhow::Result;
 
-use crate::benchmark::quantity::{Information, InformationQuantity, Time, TimeQuantity};
+use crate::quantity::{Information, InformationQuantity, Time, TimeQuantity};
 
 #[derive(Debug, Copy, Clone)]
 struct ResourceUsage {
