@@ -34,9 +34,7 @@ pub trait TimeQuantity {
         Time::new::<nanosecond>(value)
     }
 
-    // fn square(&self) -> Time;
-
-    fn value_in<U>(&self) -> f64
+    fn value_in<U>(&self, u: U) -> f64
     where
         U: si::time::Unit + Conversion<f64, T = f64>;
 
@@ -46,7 +44,7 @@ pub trait TimeQuantity {
 }
 
 impl TimeQuantity for Time {
-    fn value_in<U>(&self) -> f64
+    fn value_in<U>(&self, _u: U) -> f64
     where
         U: si::time::Unit + Conversion<f64, T = f64>,
     {
@@ -86,7 +84,7 @@ pub trait InformationQuantity {
         Information::new::<kibibyte>(value)
     }
 
-    fn value_in<U>(&self) -> u64
+    fn value_in<U>(&self, u: U) -> u64
     where
         U: si::information::Unit + Conversion<u64, T = uom::num_rational::Ratio<u64>>;
 
@@ -96,7 +94,7 @@ pub trait InformationQuantity {
 }
 
 impl InformationQuantity for Information {
-    fn value_in<U>(&self) -> u64
+    fn value_in<U>(&self, _u: U) -> u64
     where
         U: si::information::Unit + Conversion<u64, T = uom::num_rational::Ratio<u64>>,
     {
@@ -137,7 +135,7 @@ where
 macro_rules! quantity_fn {
     ($name:ident, $unwrapped_values:ident, $body:expr) => {
         pub fn $name(values: &[Time]) -> Time {
-            let $unwrapped_values: Vec<_> = values.iter().map(|q| q.value_in::<second>()).collect();
+            let $unwrapped_values: Vec<_> = values.iter().map(|q| q.value_in(second)).collect();
             let result_value = $body;
 
             Time::new::<second>(result_value)
@@ -157,21 +155,21 @@ quantity_fn!(standard_deviation, values, {
 #[test]
 fn test_time() {
     let time = Time::from_milliseconds(123.4);
-    assert_eq!(time.value_in::<millisecond>(), 123.4);
+    assert_eq!(time.value_in(millisecond), 123.4);
 
-    let time_s = time.value_in::<second>();
+    let time_s = time.value_in(second);
     approx::assert_relative_eq!(time_s, 0.1234);
 
-    let time_us = time.value_in::<microsecond>();
+    let time_us = time.value_in(microsecond);
     approx::assert_relative_eq!(time_us, 123400.0);
 }
 
 #[test]
 fn test_information() {
     let information = Information::from_kibibytes(8);
-    assert_eq!(information.value_in::<byte>(), 8192);
+    assert_eq!(information.value_in(byte), 8192);
 
-    let information_kib = information.value_in::<kibibyte>();
+    let information_kib = information.value_in(kibibyte);
     assert_eq!(information_kib, 8);
 }
 

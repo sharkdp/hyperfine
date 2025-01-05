@@ -4,14 +4,14 @@ use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
 use crate::quantity::{Information, InformationQuantity, Time, TimeQuantity};
-use crate::util::units::Unit;
+use crate::util::units::TimeUnit;
 use crate::{export::markdown::MarkdownExporter, options::SortOrder};
 use std::collections::BTreeMap;
 use std::process::ExitStatus;
 
 fn get_output<E: Exporter + Default>(
     results: &[BenchmarkResult],
-    unit: Option<Unit>,
+    unit: Option<TimeUnit>,
     sort_order: SortOrder,
 ) -> String {
     let exporter = E::default();
@@ -281,14 +281,14 @@ fn test_markup_export_manual_ms() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(Unit::MilliSecond), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
     | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
     |:---|---:|---:|---:|---:|
     | `sleep 2` | 2200.0 ± 100.0 | 2100.0 | 2300.0 | 11.00 ± 5.52 |
     | `sleep 0.1` | 200.0 ± 100.0 | 100.0 | 300.0 | 1.00 |
     "#);
 
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(Unit::MilliSecond), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command 
@@ -311,7 +311,7 @@ fn test_markup_export_manual_ms() {
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(Unit::MilliSecond), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
     | Command  |  Mean [ms] |  Min [ms] |  Max [ms] |  Relative |
     |--+--+--+--+--|
     | =sleep 2=  |  2200.0 ± 100.0 |  2100.0 |  2300.0 |  11.00 ± 5.52 |
@@ -379,21 +379,21 @@ fn test_markup_export_manual_s() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit::Second), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::Command), @r#"
     | Command | Mean [s] | Min [s] | Max [s] | Relative |
     |:---|---:|---:|---:|---:|
     | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | 16.83 ± 1.41 |
     | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
     "#);
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit::Second), SortOrder::MeanTime), @r#"
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::MeanTime), @r#"
     | Command | Mean [s] | Min [s] | Max [s] | Relative |
     |:---|---:|---:|---:|---:|
     | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
     | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | 16.83 ± 1.41 |
     "#);
 
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(Unit::Second), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(TimeUnit::Second), SortOrder::Command), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command 

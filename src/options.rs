@@ -10,7 +10,7 @@ use clap::ArgMatches;
 use crate::command::Commands;
 use crate::error::OptionsError;
 use crate::quantity::{Time, TimeQuantity};
-use crate::util::units::Unit;
+use crate::util::units::TimeUnit;
 
 use anyhow::Result;
 
@@ -243,7 +243,7 @@ pub struct Options {
     pub command_output_policies: Vec<CommandOutputPolicy>,
 
     /// Which time unit to use when displaying results
-    pub time_unit: Option<Unit>,
+    pub time_unit: Option<TimeUnit>,
 }
 
 impl Default for Options {
@@ -420,9 +420,9 @@ impl Options {
         }
 
         options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {
-            Some("microsecond") => Some(Unit::MicroSecond),
-            Some("millisecond") => Some(Unit::MilliSecond),
-            Some("second") => Some(Unit::Second),
+            Some("µs" | "us" | "microsecond" | "microseconds") => Some(TimeUnit::MicroSecond),
+            Some("ms" | "millisecond" | "milliseconds") => Some(TimeUnit::MilliSecond),
+            Some("s" | "second" | "seconds") => Some(TimeUnit::Second),
             _ => None,
         };
 
