@@ -9,7 +9,7 @@ use clap::ArgMatches;
 
 use crate::command::Commands;
 use crate::error::OptionsError;
-use crate::quantity::{Time, TimeQuantity};
+use crate::quantity::{second, Time};
 use crate::util::units::TimeUnit;
 
 use anyhow::Result;
@@ -251,7 +251,7 @@ impl Default for Options {
         Options {
             run_bounds: RunBounds::default(),
             warmup_count: 0,
-            min_benchmarking_time: Time::from_seconds(3.0),
+            min_benchmarking_time: Time::new::<second>(3.0),
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
             reference_name: None,
@@ -429,7 +429,7 @@ impl Options {
         };
 
         if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
-            options.min_benchmarking_time = Time::from_seconds(
+            options.min_benchmarking_time = Time::new::<second>(
                 time.parse::<f64>()
                     .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?,
             );

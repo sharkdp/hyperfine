@@ -18,22 +18,6 @@ pub trait TimeQuantity {
         Time::new::<second>(0.0)
     }
 
-    fn from_seconds(value: f64) -> Time {
-        Time::new::<second>(value)
-    }
-
-    fn from_milliseconds(value: f64) -> Time {
-        Time::new::<millisecond>(value)
-    }
-
-    fn from_microseconds(value: f64) -> Time {
-        Time::new::<microsecond>(value)
-    }
-
-    fn from_nanoseconds(value: f64) -> Time {
-        Time::new::<nanosecond>(value)
-    }
-
     fn value_in<U>(&self, u: U) -> f64
     where
         U: si::time::Unit + Conversion<f64, T = f64>;
@@ -74,14 +58,6 @@ pub const fn const_time_from_seconds(value: f64) -> Time {
 pub trait InformationQuantity {
     fn zero() -> Information {
         Information::new::<byte>(0)
-    }
-
-    fn from_bytes(value: u64) -> Information {
-        Information::new::<byte>(value)
-    }
-
-    fn from_kibibytes(value: u64) -> Information {
-        Information::new::<kibibyte>(value)
     }
 
     fn value_in<U>(&self, u: U) -> u64
@@ -154,7 +130,7 @@ quantity_fn!(standard_deviation, values, {
 
 #[test]
 fn test_time() {
-    let time = Time::from_milliseconds(123.4);
+    let time = Time::new::<millisecond>(123.4);
     assert_eq!(time.value_in(millisecond), 123.4);
 
     let time_s = time.value_in(second);
@@ -166,7 +142,7 @@ fn test_time() {
 
 #[test]
 fn test_information() {
-    let information = Information::from_kibibytes(8);
+    let information = Information::new::<kibibyte>(8);
     assert_eq!(information.value_in(byte), 8192);
 
     let information_kib = information.value_in(kibibyte);
@@ -175,12 +151,12 @@ fn test_information() {
 
 #[test]
 fn test_format() {
-    let time = Time::from_milliseconds(123.4);
+    let time = Time::new::<millisecond>(123.4);
     assert_eq!(time.to_string(second), "0.123 s");
     assert_eq!(time.to_string(millisecond), "123.400 ms");
     assert_eq!(time.to_string(microsecond), "123400.000 µs");
 
-    let peak_memory_usage = Information::from_kibibytes(8);
+    let peak_memory_usage = Information::new::<kibibyte>(8);
     assert_eq!(peak_memory_usage.to_string(byte), "8192 B");
     assert_eq!(peak_memory_usage.to_string(kibibyte), "8 KiB");
 }
@@ -188,8 +164,8 @@ fn test_format() {
 #[test]
 fn test_mean() {
     let values = vec![
-        Time::from_milliseconds(123.4),
-        Time::from_milliseconds(234.5),
+        Time::new::<millisecond>(123.4),
+        Time::new::<millisecond>(234.5),
     ];
     let result = mean(&values);
     assert_eq!(result.to_string(millisecond), "178.950 ms");

@@ -74,12 +74,10 @@ fn test_unit_short_name() {
 // Note - the values are rounded when formatted.
 #[test]
 fn test_unit_format() {
-    use crate::quantity::TimeQuantity;
-
-    let value = Time::from_seconds(123.456789);
+    let value = Time::new::<second>(123.456789);
     assert_eq!(
         "1234.6",
-        TimeUnit::MicroSecond.format(Time::from_seconds(0.00123456))
+        TimeUnit::MicroSecond.format(Time::new::<second>(0.00123456))
     );
     assert_eq!("123456.8", TimeUnit::MilliSecond.format(value));
     assert_eq!("123.457", TimeUnit::Second.format(value));

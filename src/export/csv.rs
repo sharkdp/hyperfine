@@ -65,7 +65,7 @@ impl Exporter for CsvExporter {
 fn test_csv() {
     use crate::benchmark::benchmark_result::Parameter;
     use crate::benchmark::measurement::{Measurement, Measurements};
-    use crate::quantity::{Information, InformationQuantity, Time, TimeQuantity};
+    use crate::quantity::{byte, Information, Time, TimeQuantity};
 
     use std::collections::BTreeMap;
     use std::process::ExitStatus;
@@ -77,24 +77,24 @@ fn test_csv() {
             command: String::from("command_a"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    time_wall_clock: Time::from_seconds(7.0),
-                    time_user: Time::from_seconds(7.0),
+                    time_wall_clock: Time::new::<second>(7.0),
+                    time_user: Time::new::<second>(7.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::from_bytes(1024),
+                    peak_memory_usage: Information::new::<byte>(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Time::from_seconds(8.0),
-                    time_user: Time::from_seconds(8.0),
+                    time_wall_clock: Time::new::<second>(8.0),
+                    time_user: Time::new::<second>(8.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::from_bytes(1024),
+                    peak_memory_usage: Information::new::<byte>(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Time::from_seconds(12.0),
-                    time_user: Time::from_seconds(12.0),
+                    time_wall_clock: Time::new::<second>(12.0),
+                    time_user: Time::new::<second>(12.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::from_bytes(1024),
+                    peak_memory_usage: Information::new::<byte>(1024),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -121,24 +121,24 @@ fn test_csv() {
             command: String::from("command_b"),
             measurements: Measurements::new(vec![
                 Measurement {
-                    time_wall_clock: Time::from_seconds(17.0),
-                    time_user: Time::from_seconds(17.0),
+                    time_wall_clock: Time::new::<second>(17.0),
+                    time_user: Time::new::<second>(17.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::from_bytes(1024),
+                    peak_memory_usage: Information::new::<byte>(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Time::from_seconds(18.0),
-                    time_user: Time::from_seconds(18.0),
+                    time_wall_clock: Time::new::<second>(18.0),
+                    time_user: Time::new::<second>(18.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::from_bytes(1024),
+                    peak_memory_usage: Information::new::<byte>(1024),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
-                    time_wall_clock: Time::from_seconds(19.0),
-                    time_user: Time::from_seconds(19.0),
+                    time_wall_clock: Time::new::<second>(19.0),
+                    time_user: Time::new::<second>(19.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::from_bytes(1024),
+                    peak_memory_usage: Information::new::<byte>(1024),
                     exit_status: ExitStatus::default(),
                 },
             ]),

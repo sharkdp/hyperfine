@@ -9,9 +9,7 @@ use crate::options::{
     CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
 };
 use crate::output::progress_bar::get_progress_bar;
-use crate::quantity::Information;
-use crate::quantity::InformationQuantity;
-use crate::quantity::{Time, TimeQuantity};
+use crate::quantity::{byte, second, Information, Time, TimeQuantity};
 use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
 
@@ -285,7 +283,7 @@ impl MockExecutor {
 
     fn extract_time<S: AsRef<str>>(sleep_command: S) -> Time {
         assert!(sleep_command.as_ref().starts_with("sleep "));
-        Time::from_seconds(
+        Time::new::<second>(
             sleep_command
                 .as_ref()
                 .trim_start_matches("sleep ")
@@ -319,7 +317,7 @@ impl Executor for MockExecutor {
             time_wall_clock: Self::extract_time(command.get_command_line()),
             time_user: Time::zero(),
             time_system: Time::zero(),
-            peak_memory_usage: Information::from_bytes(0),
+            peak_memory_usage: Information::new::<byte>(0),
             exit_status,
         })
     }
@@ -340,6 +338,6 @@ impl Executor for MockExecutor {
 fn test_mock_executor_extract_time() {
     assert_eq!(
         MockExecutor::extract_time("sleep 0.1"),
-        Time::from_seconds(0.1)
+        Time::new::<second>(0.1)
     );
 }

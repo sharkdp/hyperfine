@@ -30,7 +30,7 @@ use windows_sys::{
     },
 };
 
-use crate::quantity::{Information, InformationQuantity, Time, TimeQuantity};
+use crate::quantity::{nanosecond, Information, InformationQuantity, Time};
 
 #[cfg(not(feature = "windows_process_extensions_main_thread_handle"))]
 #[allow(non_upper_case_globals)]
@@ -111,13 +111,13 @@ impl CPUTimer {
             // The `TotalUserTime` is "The total amount of user-mode execution time for
             // all active processes associated with the job, as well as all terminated processes no
             // longer associated with the job, in 100-nanosecond ticks."
-            let user_time = Time::from_nanoseconds((job_object_info.TotalUserTime as f64) * 100.0);
+            let user_time = Time::new::<nanosecond>((job_object_info.TotalUserTime as f64) * 100.0);
 
             // The `TotalKernelTime` is "The total amount of kernel-mode execution time
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
             let system_time =
-                Time::from_nanoseconds((job_object_info.TotalKernelTime as f64) * 100.0);
+                Time::new::<nanosecond>((job_object_info.TotalKernelTime as f64) * 100.0);
 
             Ok((user_time, system_time, Information::zero(), status))
         } else {

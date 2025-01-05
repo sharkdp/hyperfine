@@ -137,13 +137,14 @@ fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
     use crate::benchmark::measurement::{Measurement, Measurements};
+    use crate::quantity::second;
 
     BenchmarkResult {
         command: name.into(),
         measurements: Measurements {
             measurements: vec![Measurement {
-                time_wall_clock: Time::from_seconds(mean),
-                time_user: Time::from_seconds(mean),
+                time_wall_clock: Time::new::<second>(mean),
+                time_user: Time::new::<second>(mean),
                 ..Default::default()
             }],
         },
