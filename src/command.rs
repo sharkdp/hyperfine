@@ -277,17 +277,7 @@ impl<'a> Commands<'a> {
         command_strings: Vec<&'b str>,
     ) -> Result<Vec<Command<'b>>, ParameterScanError> {
         let param_range = RangeStep::new(param_min, param_max, step)?;
-        let param_count = param_range.size_hint().1.unwrap();
         let command_name_count = command_names.len();
-
-        // `--command-name` should appear exactly once or exactly B times,
-        // where B is the total number of benchmarks.
-        if command_name_count > 1 && command_name_count != param_count {
-            return Err(ParameterScanError::UnexpectedCommandNameCount(
-                command_name_count,
-                param_count,
-            ));
-        }
 
         let mut i = 0;
         let mut commands = vec![];
@@ -305,6 +295,17 @@ impl<'a> Commands<'a> {
                 i += 1;
             }
         }
+
+        // `--command-name` should appear exactly once or exactly B times,
+        // where B is the total number of benchmarks.
+        let command_count = commands.len();
+        if command_name_count > 1 && command_name_count != command_count {
+            return Err(ParameterScanError::UnexpectedCommandNameCount(
+                command_name_count,
+                command_count,
+            ));
+        }
+
         Ok(commands)
     }
 
@@ -469,6 +470,40 @@ fn test_build_parameter_scan_commands() {
     assert_eq!(commands[1].get_name(), "name-2");
     assert_eq!(commands[0].get_command_line(), "echo 1");
     assert_eq!(commands[1].get_command_line(), "echo 2");
+}
+
+#[test]
+fn test_build_parameter_scan_commands_named() {
+    use crate::cli::get_cli_arguments;
+    let matches = get_cli_arguments(vec![
+        "hyperfine",
+        "echo {val}",
+        "sleep {val}",
+        "--parameter-scan",
+        "val",
+        "1",
+        "2",
+        "--parameter-step-size",
+        "1",
+        "--command-name",
+        "echo-1",
+        "--command-name",
+        "sleep-1",
+        "--command-name",
+        "echo-2",
+        "--command-name",
+        "sleep-2",
+    ]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    assert_eq!(commands.len(), 4);
+    assert_eq!(commands[0].get_name(), "echo-1");
+    assert_eq!(commands[0].get_command_line(), "echo 1");
+    assert_eq!(commands[1].get_name(), "sleep-1");
+    assert_eq!(commands[1].get_command_line(), "sleep 1");
+    assert_eq!(commands[2].get_name(), "echo-2");
+    assert_eq!(commands[2].get_command_line(), "echo 2");
+    assert_eq!(commands[3].get_name(), "sleep-2");
+    assert_eq!(commands[3].get_command_line(), "sleep 2");
 }
 
 #[test]
