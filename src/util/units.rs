@@ -2,14 +2,16 @@
 
 use std::marker::PhantomData;
 
-use crate::quantity::{microsecond, millisecond, second, Time};
+use crate::quantity::{hour, microsecond, millisecond, minute, second, Time};
 
 /// Supported time units
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimeUnit {
-    Second,
-    MilliSecond,
     MicroSecond,
+    MilliSecond,
+    Second,
+    Minute,
+    Hour,
 }
 
 struct Dispatcher<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> {
@@ -41,9 +43,11 @@ impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> UnitImpl for Dispat
 impl TimeUnit {
     fn dispatch(self) -> Box<dyn UnitImpl> {
         match self {
-            TimeUnit::Second => Box::new(Dispatcher::<second>::new()),
-            TimeUnit::MilliSecond => Box::new(Dispatcher::<millisecond>::new()),
             TimeUnit::MicroSecond => Box::new(Dispatcher::<microsecond>::new()),
+            TimeUnit::MilliSecond => Box::new(Dispatcher::<millisecond>::new()),
+            TimeUnit::Second => Box::new(Dispatcher::<second>::new()),
+            TimeUnit::Minute => Box::new(Dispatcher::<minute>::new()),
+            TimeUnit::Hour => Box::new(Dispatcher::<hour>::new()),
         }
     }
 
@@ -63,6 +67,8 @@ fn test_unit_short_name() {
     assert_eq!("s", TimeUnit::Second.short_name());
     assert_eq!("ms", TimeUnit::MilliSecond.short_name());
     assert_eq!("µs", TimeUnit::MicroSecond.short_name());
+    assert_eq!("min", TimeUnit::Minute.short_name());
+    assert_eq!("h", TimeUnit::Hour.short_name());
 }
 
 // Note - the values are rounded when formatted.
@@ -71,11 +77,12 @@ fn test_unit_format() {
     use crate::quantity::TimeQuantity;
 
     let value = Time::from_seconds(123.456789);
-    assert_eq!("123.457", TimeUnit::Second.format(value));
-    assert_eq!("123456.8", TimeUnit::MilliSecond.format(value));
-
     assert_eq!(
         "1234.6",
         TimeUnit::MicroSecond.format(Time::from_seconds(0.00123456))
     );
+    assert_eq!("123456.8", TimeUnit::MilliSecond.format(value));
+    assert_eq!("123.457", TimeUnit::Second.format(value));
+    assert_eq!("2.1", TimeUnit::Minute.format(value));
+    assert_eq!("0.0", TimeUnit::Hour.format(value));
 }

@@ -423,6 +423,8 @@ impl Options {
             Some("µs" | "us" | "microsecond" | "microseconds") => Some(TimeUnit::MicroSecond),
             Some("ms" | "millisecond" | "milliseconds") => Some(TimeUnit::MilliSecond),
             Some("s" | "second" | "seconds") => Some(TimeUnit::Second),
+            Some("min" | "minute" | "minutes") => Some(TimeUnit::Minute),
+            Some("h" | "hour" | "hours") => Some(TimeUnit::Hour),
             _ => None,
         };
 

@@ -268,13 +268,15 @@ fn build_command() -> Command {
                 .short('u')
                 .action(ArgAction::Set)
                 .value_name("UNIT")
-                .value_parser(["µs", "us", "microsecond", "microseconds", "ms", "millisecond", "milliseconds", "s", "second", "seconds"])
+                .value_parser(["µs", "us", "microsecond", "microseconds", "ms", "millisecond", "milliseconds", "s", "second", "seconds", "min", "minute", "minutes", "h", "hour", "hours"])
                 .help("Set the time unit to be used. If the option is not given, the time unit is determined automatically. \
                        This option affects the standard output as well as all export formats except for CSV and JSON.\n\
                        Possible values:\n  \
                          * 'µs', 'us', 'microsecond', 'microseconds'\n  \
                          * 'ms', 'millisecond', 'milliseconds'\n  \
-                         * 's', 'second', 'seconds'"),
+                         * 's', 'second', 'seconds'\n  \
+                         * 'min', 'minute', 'minutes'\n  \
+                         * 'h', 'hour', 'hours'"),
         )
         .arg(
             Arg::new("export-asciidoc")

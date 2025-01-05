@@ -7,7 +7,7 @@ use uom::{si, Conversion};
 
 pub use uom::si::information::{byte, kibibyte};
 pub use uom::si::ratio::ratio;
-pub use uom::si::time::{microsecond, millisecond, nanosecond, second};
+pub use uom::si::time::{hour, microsecond, millisecond, minute, nanosecond, second};
 
 pub use si::f64::Ratio;
 pub use si::f64::Time;

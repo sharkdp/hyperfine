@@ -34,7 +34,8 @@ pub fn format_duration_value(duration: Time, time_unit: Option<TimeUnit>) -> (St
             TimeUnit::MilliSecond,
         )
     } else {
-        (TimeUnit::Second.format(duration), TimeUnit::Second)
+        let time_unit = time_unit.unwrap_or(TimeUnit::Second);
+        (time_unit.format(duration), time_unit)
     }
 }
 
