@@ -87,7 +87,7 @@ impl CPUTimer {
         Self { job_object }
     }
 
-    pub fn stop(&self, mut child: Child) -> Result<(ExitStatus, Time, Time, Information)> {
+    pub fn stop(&self, mut child: Child) -> Result<(Time, Time, Information, ExitStatus)> {
         let status = child.wait()?;
 
         let mut job_object_info =
@@ -119,9 +119,9 @@ impl CPUTimer {
             let system_time =
                 Time::from_nanoseconds((job_object_info.TotalKernelTime as f64) * 100.0);
 
-            Ok((status, user_time, system_time, Information::zero()))
+            Ok((user_time, system_time, Information::zero(), status))
         } else {
-            Ok((status, Time::zero(), Time::zero(), Information::zero()))
+            Ok((Time::zero(), Time::zero(), Information::zero(), status))
         }
     }
 }

@@ -238,13 +238,13 @@ impl<'a> Benchmark<'a> {
         });
 
         // Initial timing run
-        let result = self.executor.run_command_and_measure(
+        let measurement = self.executor.run_command_and_measure(
             self.command,
             BenchmarkIteration::Benchmark(0),
             None,
             output_policy,
         )?;
-        let success = result.exit_status.success();
+        let success = measurement.exit_status.success();
 
         let conclusion_result = run_conclusion_command()?;
         let conclusion_overhead = conclusion_result.map_or(Time::zero(), |res| {
@@ -253,7 +253,7 @@ impl<'a> Benchmark<'a> {
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (result.time_wall_clock
+            / (measurement.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead))
@@ -273,13 +273,7 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        measurements.push(Measurement {
-            time_wall_clock: result.time_wall_clock,
-            time_user: result.time_user,
-            time_system: result.time_system,
-            peak_memory_usage: result.peak_memory_usage,
-            exit_status: result.exit_status,
-        });
+        measurements.push(measurement);
 
         all_succeeded = all_succeeded && success;
 
@@ -305,21 +299,14 @@ impl<'a> Benchmark<'a> {
                 bar.set_message(msg.to_owned())
             }
 
-            let result = self.executor.run_command_and_measure(
+            let measurement = self.executor.run_command_and_measure(
                 self.command,
                 BenchmarkIteration::Benchmark(i + 1),
                 None,
                 output_policy,
             )?;
-            let success = result.exit_status.success();
-
-            measurements.push(Measurement {
-                time_wall_clock: result.time_wall_clock,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                peak_memory_usage: result.peak_memory_usage,
-                exit_status: result.exit_status,
-            });
+            let success = measurement.exit_status.success();
+            measurements.push(measurement);
 
             all_succeeded = all_succeeded && success;
 

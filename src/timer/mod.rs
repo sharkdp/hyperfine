@@ -82,14 +82,14 @@ pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
         discard(output);
     }
 
-    let (exit_status, time_user, time_system, memory_usage_byte) = cpu_timer.stop(child)?;
+    let (time_user, time_system, peak_memory_usage, exit_status) = cpu_timer.stop(child)?;
     let time_wall_clock = wallclock_timer.stop();
 
     Ok(Measurement {
         time_wall_clock,
         time_user,
         time_system,
-        peak_memory_usage: memory_usage_byte,
+        peak_memory_usage,
         exit_status,
     })
 }

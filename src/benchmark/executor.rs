@@ -77,10 +77,11 @@ fn run_command_and_measure_common(
         command.env("HYPERFINE_ITERATION", value);
     }
 
-    let result = execute_and_measure(command)
+    let measurement = execute_and_measure(command)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
-    if command_failure_action == CmdFailureAction::RaiseError && !result.exit_status.success() {
+    if command_failure_action == CmdFailureAction::RaiseError && !measurement.exit_status.success()
+    {
         let when = match iteration {
             BenchmarkIteration::NonBenchmarkRun => "a non-benchmark run".to_string(),
             BenchmarkIteration::Warmup(0) => "the first warmup run".to_string(),
@@ -91,7 +92,7 @@ fn run_command_and_measure_common(
         bail!(
             "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
             Alternatively, use the '--show-output' option to debug what went wrong.",
-            cause=result.exit_status.code().map_or(
+            cause=measurement.exit_status.code().map_or(
                 "The process has been terminated by a signal".into(),
                 |c| format!("Command terminated with non-zero exit code {c}")
 
@@ -99,7 +100,7 @@ fn run_command_and_measure_common(
         );
     }
 
-    Ok(result)
+    Ok(measurement)
 }
 
 pub struct RawExecutor<'a> {
@@ -120,22 +121,14 @@ impl Executor for RawExecutor<'_> {
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
     ) -> Result<Measurement> {
-        let result = run_command_and_measure_common(
+        run_command_and_measure_common(
             command.get_command()?,
             iteration,
             command_failure_action.unwrap_or(self.options.command_failure_action),
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
-        )?;
-
-        Ok(Measurement {
-            time_wall_clock: result.time_wall_clock,
-            time_user: result.time_user,
-            time_system: result.time_system,
-            peak_memory_usage: result.peak_memory_usage,
-            exit_status: result.exit_status,
-        })
+        )
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -183,7 +176,7 @@ impl Executor for ShellExecutor<'_> {
             command_builder.arg(command.get_command_line());
         }
 
-        let mut result = run_command_and_measure_common(
+        let mut measurement = run_command_and_measure_common(
             command_builder,
             iteration,
             command_failure_action.unwrap_or(self.options.command_failure_action),
@@ -202,20 +195,15 @@ impl Executor for ShellExecutor<'_> {
         }
 
         if let Some(ref spawning_time) = self.shell_spawning_time {
-            result.time_wall_clock =
-                ensure_non_negative(result.time_wall_clock - spawning_time.time_wall_clock);
-            result.time_user = ensure_non_negative(result.time_user - spawning_time.time_user);
-            result.time_system =
-                ensure_non_negative(result.time_system - spawning_time.time_system);
+            measurement.time_wall_clock =
+                ensure_non_negative(measurement.time_wall_clock - spawning_time.time_wall_clock);
+            measurement.time_user =
+                ensure_non_negative(measurement.time_user - spawning_time.time_user);
+            measurement.time_system =
+                ensure_non_negative(measurement.time_system - spawning_time.time_system);
         }
 
-        Ok(Measurement {
-            time_wall_clock: result.time_wall_clock,
-            time_user: result.time_user,
-            time_system: result.time_system,
-            peak_memory_usage: result.peak_memory_usage,
-            exit_status: result.exit_status,
-        })
+        Ok(measurement)
     }
 
     /// Measure the average shell spawning time
