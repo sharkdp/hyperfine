@@ -129,8 +129,8 @@ impl Measurements {
         self.measurements
             .iter()
             .map(|m| m.peak_memory_usage)
-            .max_by(|a, b| a.partial_cmp(b).unwrap()) // TODO
-            .unwrap() // TODO
+            .max() // TODO: should be mean: do we need InformationF64?
+            .unwrap_or_default()
     }
 
     pub fn modified_zscores(&self) -> Vec<f64> {
