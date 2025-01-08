@@ -201,9 +201,13 @@ impl<'a> Benchmark<'a> {
         // Warmup phase
         if self.options.warmup_count > 0 {
             let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
+                let mut msg = "Performing warmup runs";
+                if self.options.warmup_count == 1 {
+                    msg = "Performing warmup run";
+                }
                 Some(get_progress_bar(
                     self.options.warmup_count,
-                    "Performing warmup runs",
+                    msg,
                     self.options.output_style,
                 ))
             } else {
