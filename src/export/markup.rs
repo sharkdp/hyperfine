@@ -50,23 +50,14 @@ pub trait MarkupExporter {
             let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
             let mean_str = result
                 .mean_wall_clock_time()
-                .format_value_auto(Some(time_unit))
-                .0;
+                .format_value_auto(Some(time_unit));
             let stddev_str = if let Some(stddev) = result.measurements.stddev() {
-                format!(" ± {}", stddev.format_value_auto(Some(time_unit)).0)
+                format!(" ± {}", stddev.format_value_auto(Some(time_unit)))
             } else {
                 "".into()
             };
-            let min_str = result
-                .measurements
-                .min()
-                .format_value_auto(Some(time_unit))
-                .0;
-            let max_str = result
-                .measurements
-                .max()
-                .format_value_auto(Some(time_unit))
-                .0;
+            let min_str = result.measurements.min().format_value_auto(Some(time_unit));
+            let max_str = result.measurements.max().format_value_auto(Some(time_unit));
             let rel_str = format!("{:.2}", entry.relative_speed);
             let rel_stddev_str = if entry.is_reference {
                 "".into()
@@ -110,10 +101,7 @@ pub trait MarkupExporter {
 fn determine_unit_from_results(results: &[BenchmarkResult]) -> TimeUnit {
     if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
-        first_result
-            .mean_wall_clock_time()
-            .format_auto_with_unit(None)
-            .1
+        first_result.mean_wall_clock_time().suitable_unit()
     } else {
         // Default to `Second`.
         TimeUnit::Second

@@ -322,9 +322,12 @@ impl<'a> Benchmark<'a> {
         }
 
         // Formatting and console output
-        let (mean_str, time_unit) = measurements
-            .time_wall_clock_mean()
-            .format_auto_with_unit(self.options.time_unit);
+        let t_wall_clock_mean = measurements.time_wall_clock_mean();
+        let time_unit = self
+            .options
+            .time_unit
+            .unwrap_or(t_wall_clock_mean.suitable_unit());
+        let mean_str = t_wall_clock_mean.format_auto(Some(time_unit));
         let min_str = measurements.min().format_auto(Some(time_unit));
         let max_str = measurements.max().format_auto(Some(time_unit));
         let num_str = format!("{num_runs} runs", num_runs = measurements.len());
