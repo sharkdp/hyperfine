@@ -9,8 +9,7 @@ use clap::ArgMatches;
 
 use crate::command::Commands;
 use crate::error::OptionsError;
-use crate::quantity::{second, Time};
-use crate::util::units::TimeUnit;
+use crate::quantity::{second, Time, TimeUnit};
 
 use anyhow::Result;
 

@@ -5,8 +5,7 @@ use csv::WriterBuilder;
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
-use crate::quantity::{second, TimeQuantity};
-use crate::util::units::TimeUnit;
+use crate::quantity::{second, TimeQuantity, TimeUnit};
 
 use anyhow::Result;
 

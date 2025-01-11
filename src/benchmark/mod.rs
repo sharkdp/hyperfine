@@ -14,7 +14,6 @@ use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
 use crate::outlier_detection::OUTLIER_THRESHOLD;
-use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
@@ -290,8 +289,9 @@ impl<'a> Benchmark<'a> {
             run_preparation_command()?;
 
             let msg = {
-                let mean =
-                    format_duration(measurements.time_wall_clock_mean(), self.options.time_unit);
+                let mean = measurements
+                    .time_wall_clock_mean()
+                    .format_auto(self.options.time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -322,14 +322,15 @@ impl<'a> Benchmark<'a> {
         }
 
         // Formatting and console output
-        let (mean_str, time_unit) =
-            format_duration_unit(measurements.time_wall_clock_mean(), self.options.time_unit);
-        let min_str = format_duration(measurements.min(), Some(time_unit));
-        let max_str = format_duration(measurements.max(), Some(time_unit));
+        let (mean_str, time_unit) = measurements
+            .time_wall_clock_mean()
+            .format_auto_with_unit(self.options.time_unit);
+        let min_str = measurements.min().format_auto(Some(time_unit));
+        let max_str = measurements.max().format_auto(Some(time_unit));
         let num_str = format!("{num_runs} runs", num_runs = measurements.len());
 
-        let user_str = format_duration(measurements.time_user_mean(), Some(time_unit));
-        let system_str = format_duration(measurements.time_system_mean(), Some(time_unit));
+        let user_str = measurements.time_user_mean().format_auto(Some(time_unit));
+        let system_str = measurements.time_system_mean().format_auto(Some(time_unit));
 
         if self.options.output_style != OutputStyleOption::Disabled {
             if measurements.len() == 1 {
@@ -342,7 +343,7 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 );
             } else {
-                let stddev_str = format_duration(measurements.stddev().unwrap(), Some(time_unit));
+                let stddev_str = measurements.stddev().unwrap().format_auto(Some(time_unit));
 
                 println!(
                     "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",

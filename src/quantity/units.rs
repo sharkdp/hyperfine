@@ -26,7 +26,7 @@ impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> Dispatcher<U> {
 
 trait UnitImpl {
     fn short_name(&self) -> &'static str;
-    fn format_value(&self, value: Time) -> String;
+    fn format_value(&self, value: Time, precision: usize) -> String;
 }
 
 impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> UnitImpl for Dispatcher<U> {
@@ -34,8 +34,7 @@ impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> UnitImpl for Dispat
         U::abbreviation()
     }
 
-    fn format_value(&self, value: Time) -> String {
-        let precision = if U::abbreviation() == "s" { 3 } else { 1 };
+    fn format_value(&self, value: Time, precision: usize) -> String {
         format!("{value:.precision$}", value = value.get::<U>())
     }
 }
@@ -56,9 +55,9 @@ impl TimeUnit {
         self.dispatch().short_name()
     }
 
-    /// Returns the Second value formatted for the Unit.
-    pub fn format(self, value: Time) -> String {
-        self.dispatch().format_value(value)
+    /// Formats the quantity as a string in the given Unit.
+    pub fn format(self, value: Time, precision: usize) -> String {
+        self.dispatch().format_value(value, precision)
     }
 }
 
@@ -69,18 +68,4 @@ fn test_unit_short_name() {
     assert_eq!("µs", TimeUnit::MicroSecond.short_name());
     assert_eq!("min", TimeUnit::Minute.short_name());
     assert_eq!("h", TimeUnit::Hour.short_name());
-}
-
-// Note - the values are rounded when formatted.
-#[test]
-fn test_unit_format() {
-    let value = Time::new::<second>(123.456789);
-    assert_eq!(
-        "1234.6",
-        TimeUnit::MicroSecond.format(Time::new::<second>(0.00123456))
-    );
-    assert_eq!("123456.8", TimeUnit::MilliSecond.format(value));
-    assert_eq!("123.457", TimeUnit::Second.format(value));
-    assert_eq!("2.1", TimeUnit::Minute.format(value));
-    assert_eq!("0.0", TimeUnit::Hour.format(value));
 }
