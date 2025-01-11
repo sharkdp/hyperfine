@@ -20,10 +20,6 @@ pub trait TimeQuantity {
         Time::new::<second>(0.0)
     }
 
-    fn value_in<U>(&self, u: U) -> f64
-    where
-        U: si::time::Unit + Conversion<f64, T = f64>;
-
     fn suitable_unit(&self) -> TimeUnit;
 
     fn format(&self, u: TimeUnit, precision: Option<usize>) -> String;
@@ -32,13 +28,6 @@ pub trait TimeQuantity {
 }
 
 impl TimeQuantity for Time {
-    fn value_in<U>(&self, _u: U) -> f64
-    where
-        U: si::time::Unit + Conversion<f64, T = f64>,
-    {
-        self.get::<U>()
-    }
-
     fn suitable_unit(&self) -> TimeUnit {
         if *self < Time::new::<millisecond>(1.0) {
             TimeUnit::MicroSecond
@@ -87,23 +76,12 @@ pub trait InformationQuantity {
         Information::new::<byte>(0.)
     }
 
-    fn value_in<U>(&self, u: U) -> f64
-    where
-        U: si::information::Unit + Conversion<f64, T = f64>;
-
     fn to_string<U>(&self, u: U) -> String
     where
         U: si::information::Unit + Conversion<f64, T = f64>;
 }
 
 impl InformationQuantity for Information {
-    fn value_in<U>(&self, _u: U) -> f64
-    where
-        U: si::information::Unit + Conversion<f64, T = f64>,
-    {
-        self.get::<U>()
-    }
-
     fn to_string<U>(&self, u: U) -> String
     where
         U: si::information::Unit + Conversion<f64, T = f64>,
@@ -122,7 +100,7 @@ pub trait UnsafeRawValue {
 
 impl UnsafeRawValue for Time {
     fn unsafe_raw_value(&self) -> f64 {
-        self.value_in(second)
+        self.get::<second>()
     }
 
     fn unsafe_from_raw_value(value: f64) -> Self {
@@ -132,7 +110,7 @@ impl UnsafeRawValue for Time {
 
 impl UnsafeRawValue for Information {
     fn unsafe_raw_value(&self) -> f64 {
-        self.value_in(byte)
+        self.get::<byte>()
     }
 
     fn unsafe_from_raw_value(value: f64) -> Self {
@@ -188,21 +166,21 @@ pub fn modified_zscores<Q: UnsafeRawValue>(values: &[Q]) -> Vec<f64> {
 #[test]
 fn test_time() {
     let time = Time::new::<millisecond>(123.4);
-    assert_eq!(time.value_in(millisecond), 123.4);
+    assert_eq!(time.get::<millisecond>(), 123.4);
 
-    let time_s = time.value_in(second);
+    let time_s = time.get::<second>();
     approx::assert_relative_eq!(time_s, 0.1234);
 
-    let time_us = time.value_in(microsecond);
+    let time_us = time.get::<microsecond>();
     approx::assert_relative_eq!(time_us, 123400.0);
 }
 
 #[test]
 fn test_information() {
     let information = Information::new::<kibibyte>(8.);
-    assert_eq!(information.value_in(byte), 8192.);
+    assert_eq!(information.get::<byte>(), 8192.);
 
-    let information_kib = information.value_in(kibibyte);
+    let information_kib = information.get::<kibibyte>();
     assert_eq!(information_kib, 8.);
 }
 
