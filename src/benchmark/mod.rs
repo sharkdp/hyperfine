@@ -17,7 +17,7 @@ use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{self, const_time_from_seconds, Time, Quantity};
+use crate::quantity::{self, const_time_from_seconds, Quantity, Time};
 use benchmark_result::BenchmarkResult;
 
 use anyhow::{anyhow, Result};
@@ -376,8 +376,7 @@ impl<'a> Benchmark<'a> {
         if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
             && measurements
                 .wall_clock_times()
-                .iter()
-                .any(|&t| t < MIN_EXECUTION_TIME)
+                .any(|t| t < MIN_EXECUTION_TIME)
         {
             warnings.push(Warnings::FastExecutionTime);
         }
@@ -403,7 +402,7 @@ impl<'a> Benchmark<'a> {
 
         if scores[0] > OUTLIER_THRESHOLD {
             warnings.push(Warnings::SlowInitialRun(
-                measurements.wall_clock_times()[0],
+                measurements.wall_clock_times().next().unwrap(),
                 outlier_warning_options,
             ));
         } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {

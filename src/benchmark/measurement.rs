@@ -64,21 +64,18 @@ impl Measurements {
         self.measurements.push(measurement);
     }
 
-    pub fn wall_clock_times(&self) -> Vec<Time> {
-        self.measurements
-            .iter()
-            .map(|m| m.time_wall_clock)
-            .collect()
+    pub fn wall_clock_times(&self) -> impl Iterator<Item = Time> + '_ {
+        self.measurements.iter().map(|m| m.time_wall_clock)
     }
 
     /// The average wall clock time
     pub fn time_wall_clock_mean(&self) -> Time {
-        mean(&self.wall_clock_times())
+        mean(self.wall_clock_times())
     }
 
     /// The standard deviation of all wall clock times. Not available if only one run has been performed
     pub fn stddev(&self) -> Option<Time> {
-        let times = self.wall_clock_times();
+        let times: Vec<_> = self.wall_clock_times().collect(); // TODO: Avoid collecting
 
         if times.len() < 2 {
             None
@@ -89,53 +86,35 @@ impl Measurements {
 
     /// The median wall clock time
     pub fn median(&self) -> Time {
-        median(&self.wall_clock_times())
+        median(&self.wall_clock_times().collect::<Vec<_>>())
     }
 
     /// The minimum wall clock time
     pub fn min(&self) -> Time {
-        min(&self.wall_clock_times())
+        min(self.wall_clock_times())
     }
 
     /// The maximum wall clock time
     pub fn max(&self) -> Time {
-        max(&self.wall_clock_times())
+        max(self.wall_clock_times())
     }
 
     /// Compute modified Z-scores for the wall clock times
     pub fn modified_zscores(&self) -> Vec<f64> {
-        modified_zscores(&self.wall_clock_times())
+        modified_zscores(&self.wall_clock_times().collect::<Vec<_>>())
     }
 
     /// The average user time
     pub fn time_user_mean(&self) -> Time {
-        mean(
-            &self
-                .measurements
-                .iter()
-                .map(|m| m.time_user)
-                .collect::<Vec<_>>(),
-        )
+        mean(self.measurements.iter().map(|m| m.time_user))
     }
 
     /// The average system time
     pub fn time_system_mean(&self) -> Time {
-        mean(
-            &self
-                .measurements
-                .iter()
-                .map(|m| m.time_system)
-                .collect::<Vec<_>>(),
-        )
+        mean(self.measurements.iter().map(|m| m.time_system))
     }
 
     pub fn peak_memory_usage_mean(&self) -> Information {
-        mean(
-            &self
-                .measurements
-                .iter()
-                .map(|m| m.peak_memory_usage)
-                .collect::<Vec<_>>(),
-        )
+        mean(self.measurements.iter().map(|m| m.peak_memory_usage))
     }
 }
