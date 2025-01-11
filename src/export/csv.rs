@@ -5,7 +5,7 @@ use csv::WriterBuilder;
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
-use crate::quantity::{TimeQuantity, TimeUnit};
+use crate::quantity::{Quantity, TimeUnit};
 
 use anyhow::Result;
 
@@ -70,7 +70,7 @@ impl Exporter for CsvExporter {
 fn test_csv() {
     use crate::benchmark::benchmark_result::Parameter;
     use crate::benchmark::measurement::{Measurement, Measurements};
-    use crate::quantity::{byte, second, Information, Time, TimeQuantity};
+    use crate::quantity::{byte, second, Information, Quantity, Time};
 
     use std::collections::BTreeMap;
     use std::process::ExitStatus;

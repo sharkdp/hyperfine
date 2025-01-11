@@ -3,7 +3,7 @@ use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
-use crate::quantity::{byte, second, Information, Time, TimeQuantity, TimeUnit};
+use crate::quantity::{byte, second, Information, Quantity, Time, TimeUnit};
 use crate::{export::markdown::MarkdownExporter, options::SortOrder};
 use std::collections::BTreeMap;
 use std::process::ExitStatus;

@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use super::benchmark_result::BenchmarkResult;
 use crate::{
     options::SortOrder,
-    quantity::{self, Ratio, Time, TimeQuantity},
+    quantity::{self, Ratio, Time, Quantity},
 };
 
 #[derive(Debug)]

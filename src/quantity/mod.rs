@@ -3,32 +3,38 @@ use std::marker::PhantomData;
 
 use serde::ser::SerializeStruct;
 use serde::Serializer;
-use uom::{si, Conversion};
 
-pub use uom::si::information::{byte, kibibyte};
+use uom::si;
+pub use uom::si::information::{byte, gibibyte, kibibyte, mebibyte, tebibyte};
 pub use uom::si::ratio::ratio;
 pub use uom::si::time::{hour, microsecond, millisecond, minute, nanosecond, second};
 
 pub use si::f64::{Information, Ratio, Time};
 
-pub use units::TimeUnit;
+pub use units::{InformationUnit, IsUnit, TimeUnit};
 
 mod units;
 
-pub trait TimeQuantity {
+pub trait Quantity {
+    type Unit;
+
+    fn zero() -> Self;
+
+    fn suitable_unit(&self) -> Self::Unit;
+
+    fn format_with_precision(&self, unit: Self::Unit, precision: usize) -> String;
+    fn format(&self, unit: Self::Unit) -> String;
+    fn format_auto(&self) -> String;
+    fn format_value(&self, unit: Self::Unit) -> String;
+}
+
+impl Quantity for Time {
+    type Unit = TimeUnit;
+
     fn zero() -> Time {
         Time::new::<second>(0.0)
     }
 
-    fn suitable_unit(&self) -> TimeUnit;
-
-    fn format_with_precision(&self, u: TimeUnit, precision: usize) -> String;
-    fn format(&self, u: TimeUnit) -> String;
-    fn format_auto(&self) -> String;
-    fn format_value(&self, time_unit: TimeUnit) -> String;
-}
-
-impl TimeQuantity for Time {
     fn suitable_unit(&self) -> TimeUnit {
         if *self < Time::new::<millisecond>(1.0) {
             TimeUnit::MicroSecond
@@ -50,16 +56,16 @@ impl TimeQuantity for Time {
         format!("{} {}", value, unit.short_name())
     }
 
+    /// Format the given time duration. The unit will be determined automatically.
+    fn format_auto(&self) -> String {
+        let unit = self.suitable_unit();
+        let value = self.format(unit);
+        format!("{} {}", value, unit.short_name())
+    }
+
     /// Like `format`, but without displaying the unit.
     fn format_value(&self, unit: TimeUnit) -> String {
         self.format_with_precision(unit, unit.preferred_precision())
-    }
-
-    /// Format the given time duration. The unit will be determined automatically.
-    fn format_auto(&self) -> String {
-        let time_unit = self.suitable_unit();
-        let value = self.format(time_unit);
-        format!("{} {}", value, time_unit.short_name())
     }
 }
 
@@ -72,25 +78,42 @@ pub const fn const_time_from_seconds(value: f64) -> Time {
     }
 }
 
-pub trait InformationQuantity {
+impl Quantity for Information {
+    type Unit = InformationUnit;
+
     fn zero() -> Information {
-        Information::new::<byte>(0.)
+        Information::new::<byte>(0.0)
     }
 
-    fn to_string<U>(&self, u: U) -> String
-    where
-        U: si::information::Unit + Conversion<f64, T = f64>;
-}
+    fn suitable_unit(&self) -> InformationUnit {
+        if *self < Information::new::<kibibyte>(1.0) {
+            InformationUnit::Byte
+        } else {
+            InformationUnit::KibiByte
+        }
+    }
 
-impl InformationQuantity for Information {
-    fn to_string<U>(&self, u: U) -> String
-    where
-        U: si::information::Unit + Conversion<f64, T = f64>,
-    {
-        format!(
-            "{}",
-            self.into_format_args(u, uom::fmt::DisplayStyle::Abbreviation)
-        )
+    /// Format the information in the given unit with the given precision.
+    fn format_with_precision(&self, u: InformationUnit, precision: usize) -> String {
+        u.format(*self, precision)
+    }
+
+    /// Format the information in the given unit.
+    fn format(&self, unit: InformationUnit) -> String {
+        let value = self.format_with_precision(unit, unit.preferred_precision());
+        format!("{} {}", value, unit.short_name())
+    }
+
+    /// Format the given information. The unit will be determined automatically.
+    fn format_auto(&self) -> String {
+        let unit = self.suitable_unit();
+        let value = self.format(unit);
+        format!("{} {}", value, unit.short_name())
+    }
+
+    /// Like `format`, but without displaying the unit.
+    fn format_value(&self, unit: InformationUnit) -> String {
+        self.format_with_precision(unit, unit.preferred_precision())
     }
 }
 
@@ -198,8 +221,11 @@ fn test_format() {
     assert_eq!(time.format(TimeUnit::MicroSecond), "123400.0 µs");
 
     let peak_memory_usage = Information::new::<kibibyte>(8.);
-    assert_eq!(peak_memory_usage.to_string(byte), "8192 B");
-    assert_eq!(peak_memory_usage.to_string(kibibyte), "8 KiB");
+    assert_eq!(peak_memory_usage.format(InformationUnit::Byte), "8192 B");
+    assert_eq!(
+        peak_memory_usage.format(InformationUnit::KibiByte),
+        "8.0 KiB"
+    );
 }
 
 #[test]
