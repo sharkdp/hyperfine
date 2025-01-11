@@ -28,13 +28,9 @@ pub trait TimeQuantity {
 
     fn suitable_unit(&self) -> TimeUnit;
 
+    fn format(&self, u: TimeUnit, precision: Option<usize>) -> String;
     fn format_auto(&self, time_unit: Option<TimeUnit>) -> String;
     fn format_value_auto(&self, time_unit: Option<TimeUnit>) -> String;
-}
-
-fn format_value_in(t: Time, u: TimeUnit, precision: Option<usize>) -> String {
-    let precision = precision.unwrap_or_else(|| if u == TimeUnit::Second { 3 } else { 1 });
-    u.format(t, precision)
 }
 
 impl TimeQuantity for Time {
@@ -55,12 +51,18 @@ impl TimeQuantity for Time {
         }
     }
 
-    /// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
+    /// Format the given time duration as a string.
+    fn format(&self, u: TimeUnit, precision: Option<usize>) -> String {
+        let precision = precision.unwrap_or_else(|| if u == TimeUnit::Second { 3 } else { 1 });
+        u.format(*self, precision)
+    }
+
+    /// Format the given time duration as a string. The output-unit can be enforced by setting `unit` to
     /// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
     fn format_auto(&self, time_unit: Option<TimeUnit>) -> String {
         let time_unit = time_unit.unwrap_or_else(|| self.suitable_unit());
 
-        let value = format_value_in(*self, time_unit, None);
+        let value = self.format(time_unit, None);
 
         format!("{} {}", value, time_unit.short_name())
     }
@@ -69,7 +71,7 @@ impl TimeQuantity for Time {
     fn format_value_auto(&self, time_unit: Option<TimeUnit>) -> String {
         let time_unit = time_unit.unwrap_or_else(|| self.suitable_unit());
 
-        format_value_in(*self, time_unit, None)
+        self.format(time_unit, None)
     }
 }
 
