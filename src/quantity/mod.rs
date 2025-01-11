@@ -177,11 +177,16 @@ fn test_time() {
 
 #[test]
 fn test_information() {
+    use uom::si::information::pebibyte;
+
     let information = Information::new::<kibibyte>(8.);
     assert_eq!(information.get::<byte>(), 8192.);
 
     let information_kib = information.get::<kibibyte>();
     assert_eq!(information_kib, 8.);
+
+    let largest_exactly_representable = Information::new::<byte>(9_007_199_254_740_992.);
+    assert_eq!(largest_exactly_representable.get::<pebibyte>(), 8.);
 }
 
 #[test]
