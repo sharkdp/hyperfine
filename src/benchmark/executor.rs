@@ -9,7 +9,7 @@ use crate::options::{
     CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
 };
 use crate::output::progress_bar::get_progress_bar;
-use crate::quantity::{byte, second, Information, Time, TimeQuantity};
+use crate::quantity::{second, Information, InformationQuantity, Time, TimeQuantity};
 use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
 
@@ -317,7 +317,7 @@ impl Executor for MockExecutor {
             time_wall_clock: Self::extract_time(command.get_command_line()),
             time_user: Time::zero(),
             time_system: Time::zero(),
-            peak_memory_usage: Information::new::<byte>(0),
+            peak_memory_usage: Information::zero(),
             exit_status,
         })
     }

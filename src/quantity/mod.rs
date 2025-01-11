@@ -9,9 +9,7 @@ pub use uom::si::information::{byte, kibibyte};
 pub use uom::si::ratio::ratio;
 pub use uom::si::time::{hour, microsecond, millisecond, minute, nanosecond, second};
 
-pub use si::f64::Ratio;
-pub use si::f64::Time;
-pub use si::u64::Information;
+pub use si::f64::{Information, Ratio, Time};
 
 pub use units::TimeUnit;
 
@@ -86,34 +84,59 @@ pub const fn const_time_from_seconds(value: f64) -> Time {
 
 pub trait InformationQuantity {
     fn zero() -> Information {
-        Information::new::<byte>(0)
+        Information::new::<byte>(0.)
     }
 
-    fn value_in<U>(&self, u: U) -> u64
+    fn value_in<U>(&self, u: U) -> f64
     where
-        U: si::information::Unit + Conversion<u64, T = uom::num_rational::Ratio<u64>>;
+        U: si::information::Unit + Conversion<f64, T = f64>;
 
     fn to_string<U>(&self, u: U) -> String
     where
-        U: si::information::Unit + Conversion<u64, T = uom::num_rational::Ratio<u64>>;
+        U: si::information::Unit + Conversion<f64, T = f64>;
 }
 
 impl InformationQuantity for Information {
-    fn value_in<U>(&self, _u: U) -> u64
+    fn value_in<U>(&self, _u: U) -> f64
     where
-        U: si::information::Unit + Conversion<u64, T = uom::num_rational::Ratio<u64>>,
+        U: si::information::Unit + Conversion<f64, T = f64>,
     {
         self.get::<U>()
     }
 
     fn to_string<U>(&self, u: U) -> String
     where
-        U: si::information::Unit + Conversion<u64, T = uom::num_rational::Ratio<u64>>,
+        U: si::information::Unit + Conversion<f64, T = f64>,
     {
         format!(
             "{}",
             self.into_format_args(u, uom::fmt::DisplayStyle::Abbreviation)
         )
+    }
+}
+
+pub trait UnsafeRawValue {
+    fn unsafe_raw_value(&self) -> f64;
+    fn unsafe_from_raw_value(value: f64) -> Self;
+}
+
+impl UnsafeRawValue for Time {
+    fn unsafe_raw_value(&self) -> f64 {
+        self.value_in(second)
+    }
+
+    fn unsafe_from_raw_value(value: f64) -> Self {
+        Time::new::<second>(value)
+    }
+}
+
+impl UnsafeRawValue for Information {
+    fn unsafe_raw_value(&self) -> f64 {
+        self.value_in(byte)
+    }
+
+    fn unsafe_from_raw_value(value: f64) -> Self {
+        Information::new::<byte>(value)
     }
 }
 
@@ -139,11 +162,11 @@ where
 
 macro_rules! quantity_fn {
     ($name:ident, $unwrapped_values:ident, $body:expr) => {
-        pub fn $name(values: &[Time]) -> Time {
-            let $unwrapped_values: Vec<_> = values.iter().map(|q| q.value_in(second)).collect();
+        pub fn $name<Q: UnsafeRawValue>(values: &[Q]) -> Q {
+            let $unwrapped_values: Vec<_> = values.iter().map(|q| q.unsafe_raw_value()).collect();
             let result_value = $body;
 
-            Time::new::<second>(result_value)
+            Q::unsafe_from_raw_value(result_value)
         }
     };
 }
@@ -156,6 +179,11 @@ quantity_fn!(standard_deviation, values, {
     let mean_value = statistical::mean(&values);
     statistical::standard_deviation(&values, Some(mean_value))
 });
+
+pub fn modified_zscores<Q: UnsafeRawValue>(values: &[Q]) -> Vec<f64> {
+    let values: Vec<_> = values.iter().map(|q| q.unsafe_raw_value()).collect();
+    crate::outlier_detection::modified_zscores(&values)
+}
 
 #[test]
 fn test_time() {
@@ -171,11 +199,11 @@ fn test_time() {
 
 #[test]
 fn test_information() {
-    let information = Information::new::<kibibyte>(8);
-    assert_eq!(information.value_in(byte), 8192);
+    let information = Information::new::<kibibyte>(8.);
+    assert_eq!(information.value_in(byte), 8192.);
 
     let information_kib = information.value_in(kibibyte);
-    assert_eq!(information_kib, 8);
+    assert_eq!(information_kib, 8.);
 }
 
 #[test]
@@ -185,7 +213,7 @@ fn test_format() {
     assert_eq!(time.format_auto(Some(TimeUnit::MilliSecond)), "123.4 ms");
     assert_eq!(time.format_auto(Some(TimeUnit::MicroSecond)), "123400.0 µs");
 
-    let peak_memory_usage = Information::new::<kibibyte>(8);
+    let peak_memory_usage = Information::new::<kibibyte>(8.);
     assert_eq!(peak_memory_usage.to_string(byte), "8192 B");
     assert_eq!(peak_memory_usage.to_string(kibibyte), "8 KiB");
 }

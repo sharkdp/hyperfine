@@ -32,7 +32,6 @@ uom = { version = "0.36.0", default-features = false, features = [
     "std",
     "si",
     "f64",
-    "u64",
 ] }
 
 [target.'cfg(not(windows))'.dependencies]
