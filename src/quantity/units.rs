@@ -14,6 +14,15 @@ pub enum TimeUnit {
     Hour,
 }
 
+impl TimeUnit {
+    pub fn preferred_precision(self) -> usize {
+        match self {
+            TimeUnit::Second => 3,
+            _ => 1,
+        }
+    }
+}
+
 struct Dispatcher<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> {
     u: PhantomData<U>,
 }

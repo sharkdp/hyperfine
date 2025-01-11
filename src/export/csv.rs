@@ -52,7 +52,8 @@ impl Exporter for CsvExporter {
                 res.measurements.max(),
             ] {
                 fields.push(Cow::Owned(
-                    f.format(CSV_UNIT, Some(CSV_PRECISION)).into_bytes(),
+                    f.format_with_precision(CSV_UNIT, CSV_PRECISION)
+                        .into_bytes(),
                 ))
             }
             for v in res.parameters.values() {

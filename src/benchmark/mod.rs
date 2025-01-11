@@ -289,9 +289,9 @@ impl<'a> Benchmark<'a> {
             run_preparation_command()?;
 
             let msg = {
-                let mean = measurements
-                    .time_wall_clock_mean()
-                    .format_auto(self.options.time_unit);
+                let t_wall_clock_mean = measurements.time_wall_clock_mean();
+                let time_unit = t_wall_clock_mean.suitable_unit();
+                let mean = t_wall_clock_mean.format(time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -327,13 +327,13 @@ impl<'a> Benchmark<'a> {
             .options
             .time_unit
             .unwrap_or(t_wall_clock_mean.suitable_unit());
-        let mean_str = t_wall_clock_mean.format_auto(Some(time_unit));
-        let min_str = measurements.min().format_auto(Some(time_unit));
-        let max_str = measurements.max().format_auto(Some(time_unit));
+        let mean_str = t_wall_clock_mean.format(time_unit);
+        let min_str = measurements.min().format(time_unit);
+        let max_str = measurements.max().format(time_unit);
         let num_str = format!("{num_runs} runs", num_runs = measurements.len());
 
-        let user_str = measurements.time_user_mean().format_auto(Some(time_unit));
-        let system_str = measurements.time_system_mean().format_auto(Some(time_unit));
+        let user_str = measurements.time_user_mean().format(time_unit);
+        let system_str = measurements.time_system_mean().format(time_unit);
 
         if self.options.output_style != OutputStyleOption::Disabled {
             if measurements.len() == 1 {
@@ -346,7 +346,7 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 );
             } else {
-                let stddev_str = measurements.stddev().unwrap().format_auto(Some(time_unit));
+                let stddev_str = measurements.stddev().unwrap().format(time_unit);
 
                 println!(
                     "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",

@@ -48,16 +48,14 @@ pub trait MarkupExporter {
             let result = &entry.result;
             // prepare data row strings
             let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
-            let mean_str = result
-                .mean_wall_clock_time()
-                .format_value_auto(Some(time_unit));
+            let mean_str = result.mean_wall_clock_time().format_value(time_unit);
             let stddev_str = if let Some(stddev) = result.measurements.stddev() {
-                format!(" ± {}", stddev.format_value_auto(Some(time_unit)))
+                format!(" ± {}", stddev.format_value(time_unit))
             } else {
                 "".into()
             };
-            let min_str = result.measurements.min().format_value_auto(Some(time_unit));
-            let max_str = result.measurements.max().format_value_auto(Some(time_unit));
+            let min_str = result.measurements.min().format_value(time_unit);
+            let max_str = result.measurements.max().format_value(time_unit);
             let rel_str = format!("{:.2}", entry.relative_speed);
             let rel_stddev_str = if entry.is_reference {
                 "".into()

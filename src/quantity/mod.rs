@@ -22,9 +22,10 @@ pub trait TimeQuantity {
 
     fn suitable_unit(&self) -> TimeUnit;
 
-    fn format(&self, u: TimeUnit, precision: Option<usize>) -> String;
-    fn format_auto(&self, time_unit: Option<TimeUnit>) -> String;
-    fn format_value_auto(&self, time_unit: Option<TimeUnit>) -> String;
+    fn format_with_precision(&self, u: TimeUnit, precision: usize) -> String;
+    fn format(&self, u: TimeUnit) -> String;
+    fn format_auto(&self) -> String;
+    fn format_value(&self, time_unit: TimeUnit) -> String;
 }
 
 impl TimeQuantity for Time {
@@ -38,27 +39,27 @@ impl TimeQuantity for Time {
         }
     }
 
-    /// Format the given time duration as a string.
-    fn format(&self, u: TimeUnit, precision: Option<usize>) -> String {
-        let precision = precision.unwrap_or_else(|| if u == TimeUnit::Second { 3 } else { 1 });
+    /// Format the time duration in the given unit with the given precision.
+    fn format_with_precision(&self, u: TimeUnit, precision: usize) -> String {
         u.format(*self, precision)
     }
 
-    /// Format the given time duration as a string. The output-unit can be enforced by setting `unit` to
-    /// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
-    fn format_auto(&self, time_unit: Option<TimeUnit>) -> String {
-        let time_unit = time_unit.unwrap_or_else(|| self.suitable_unit());
-
-        let value = self.format(time_unit, None);
-
-        format!("{} {}", value, time_unit.short_name())
+    /// Format the time duration in the given unit.
+    fn format(&self, unit: TimeUnit) -> String {
+        let value = self.format_with_precision(unit, unit.preferred_precision());
+        format!("{} {}", value, unit.short_name())
     }
 
-    /// Like `format_duration`, but returns the target unit as well.
-    fn format_value_auto(&self, time_unit: Option<TimeUnit>) -> String {
-        let time_unit = time_unit.unwrap_or_else(|| self.suitable_unit());
+    /// Like `format`, but without displaying the unit.
+    fn format_value(&self, unit: TimeUnit) -> String {
+        self.format_with_precision(unit, unit.preferred_precision())
+    }
 
-        self.format(time_unit, None)
+    /// Format the given time duration. The unit will be determined automatically.
+    fn format_auto(&self) -> String {
+        let time_unit = self.suitable_unit();
+        let value = self.format(time_unit);
+        format!("{} {}", value, time_unit.short_name())
     }
 }
 
@@ -192,9 +193,9 @@ fn test_information() {
 #[test]
 fn test_format() {
     let time = Time::new::<millisecond>(123.4);
-    assert_eq!(time.format_auto(Some(TimeUnit::Second)), "0.123 s");
-    assert_eq!(time.format_auto(Some(TimeUnit::MilliSecond)), "123.4 ms");
-    assert_eq!(time.format_auto(Some(TimeUnit::MicroSecond)), "123400.0 µs");
+    assert_eq!(time.format(TimeUnit::Second), "0.123 s");
+    assert_eq!(time.format(TimeUnit::MilliSecond), "123.4 ms");
+    assert_eq!(time.format(TimeUnit::MicroSecond), "123400.0 µs");
 
     let peak_memory_usage = Information::new::<kibibyte>(8.);
     assert_eq!(peak_memory_usage.to_string(byte), "8192 B");
@@ -208,7 +209,7 @@ fn test_mean() {
         Time::new::<millisecond>(234.5),
     ];
     let result = mean(&values);
-    assert_eq!(result.format_auto(Some(TimeUnit::MilliSecond)), "178.9 ms");
+    assert_eq!(result.format(TimeUnit::MilliSecond), "178.9 ms");
 }
 
 #[test]
@@ -235,12 +236,12 @@ fn test_suiteable_unit() {
 
 #[test]
 fn test_format_duration_unit_with_unit() {
-    let out = Time::new::<second>(1.3).format_auto(Some(TimeUnit::Second));
+    let out = Time::new::<second>(1.3).format(TimeUnit::Second);
     assert_eq!("1.300 s", out);
 
-    let out = Time::new::<second>(1.3).format_auto(Some(TimeUnit::MilliSecond));
+    let out = Time::new::<second>(1.3).format(TimeUnit::MilliSecond);
     assert_eq!("1300.0 ms", out);
 
-    let out = Time::new::<second>(1.3).format_auto(Some(TimeUnit::MicroSecond));
+    let out = Time::new::<second>(1.3).format(TimeUnit::MicroSecond);
     assert_eq!("1300000.0 µs", out);
 }

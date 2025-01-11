@@ -25,7 +25,7 @@ impl fmt::Display for Warnings {
                 inaccurate because hyperfine can not calibrate the shell startup time much \
                 more precise than this limit. You can try to use the `-N`/`--shell=none` \
                 option to disable the shell completely.",
-                min_execution_time = MIN_EXECUTION_TIME.format_auto(None)
+                min_execution_time = MIN_EXECUTION_TIME.format_auto()
             ),
             Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
             Warnings::SlowInitialRun(time_first_run, ref options) => write!(
@@ -33,7 +33,7 @@ impl fmt::Display for Warnings {
                 "The first benchmarking run for this command was significantly slower than the \
                  rest ({time}). This could be caused by (filesystem) caches that were not filled until \
                  after the first run. {hints}",
-                time=time_first_run.format_auto(None),
+                time=time_first_run.format_auto(),
                 hints=match (options.warmup_in_use, options.prepare_in_use) {
                     (true, true) => "You are already using both the '--warmup' option as well \
                     as the '--prepare' option. Consider re-running the benchmark on a quiet system. \
