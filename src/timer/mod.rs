@@ -16,37 +16,13 @@ use std::os::fd::AsFd;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Threading::CREATE_SUSPENDED;
 
-use crate::util::units::Second;
+use crate::benchmark::measurement::Measurement;
 use wall_clock_timer::WallClockTimer;
 
 use std::io::Read;
-use std::process::{ChildStdout, Command, ExitStatus};
+use std::process::{ChildStdout, Command};
 
 use anyhow::Result;
-
-#[cfg(not(windows))]
-#[derive(Debug, Copy, Clone)]
-struct CPUTimes {
-    /// Total amount of time spent executing in user mode
-    pub user_usec: i64,
-
-    /// Total amount of time spent executing in kernel mode
-    pub system_usec: i64,
-
-    /// Maximum amount of memory used by the process, in bytes
-    pub memory_usage_byte: u64,
-}
-
-/// Used to indicate the result of running a command
-#[derive(Debug, Copy, Clone)]
-pub struct TimerResult {
-    pub time_real: Second,
-    pub time_user: Second,
-    pub time_system: Second,
-    pub memory_usage_byte: u64,
-    /// The exit status of the process
-    pub status: ExitStatus,
-}
 
 /// Discard the output of a child process.
 fn discard(output: ChildStdout) {
@@ -80,7 +56,7 @@ fn discard(output: ChildStdout) {
 }
 
 /// Execute the given command and return a timing summary
-pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
+pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
     #[cfg(not(windows))]
     let cpu_timer = self::unix_timer::CPUTimer::start();
 
@@ -106,16 +82,14 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
         discard(output);
     }
 
-    let status = child.wait()?;
+    let (time_user, time_system, peak_memory_usage, exit_status) = cpu_timer.stop(child)?;
+    let time_wall_clock = wallclock_timer.stop();
 
-    let time_real = wallclock_timer.stop();
-    let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
-
-    Ok(TimerResult {
-        time_real,
+    Ok(Measurement {
+        time_wall_clock,
         time_user,
         time_system,
-        memory_usage_byte,
-        status,
+        peak_memory_usage,
+        exit_status,
     })
 }
