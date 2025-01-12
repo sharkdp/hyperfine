@@ -5,47 +5,22 @@
 //!   The ASQC Basic References in Quality Control: Statistical Techniques, Edward F. Mykytka,
 //!   Ph.D., Editor.
 
-use statistical::median;
-
 /// Minimum modified Z-score for a datapoint to be an outlier. Here, 1.4826 is a factor that
 /// converts the MAD to an estimator for the standard deviation. The second factor is the number
 /// of standard deviations.
 pub const OUTLIER_THRESHOLD: f64 = 1.4826 * 10.0;
 
-/// Compute modifized Z-scores for a given sample. A (unmodified) Z-score is defined by
-/// `(x_i - x_mean)/x_stddev` whereas the modified Z-score is defined by `(x_i - x_median)/MAD`
-/// where MAD is the median absolute deviation.
-///
-/// References:
-/// - <https://en.wikipedia.org/wiki/Median_absolute_deviation>
-pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
-    assert!(!xs.is_empty());
-
-    // Compute sample median:
-    let x_median = median(xs);
-
-    // Compute the absolute deviations from the median:
-    let deviations: Vec<f64> = xs.iter().map(|x| (x - x_median).abs()).collect();
-
-    // Compute median absolute deviation:
-    let mad = median(&deviations);
-
-    // Handle MAD == 0 case
-    let mad = if mad > 0.0 { mad } else { f64::EPSILON };
-
-    // Compute modified Z-scores (x_i - x_median) / MAD
-    xs.iter().map(|&x| (x - x_median) / mad).collect()
-}
-
 /// Return the number of outliers in a given sample. Outliers are defined as data points with a
 /// modified Z-score that is larger than `OUTLIER_THRESHOLD`.
 #[cfg(test)]
 pub fn num_outliers(xs: &[f64]) -> usize {
+    use crate::quantity::statistics::modified_zscores_f64;
+
     if xs.is_empty() {
         return 0;
     }
 
-    let scores = modified_zscores(xs);
+    let scores = modified_zscores_f64(xs);
     scores
         .iter()
         .filter(|&&s| s.abs() > OUTLIER_THRESHOLD)
