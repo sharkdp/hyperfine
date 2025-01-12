@@ -85,23 +85,23 @@ where
     }
 }
 
-fn standard_deviation_f64(values: &[f64]) -> f64 {
-    let mean_value = mean(values.iter().copied());
+fn standard_deviation_f64(values: impl IntoIterator<Item = f64> + Clone) -> f64 {
+    let mean_value = mean(values.clone());
 
     let mut squared_deviations = 0.;
-    let mut count = 0;
+    let mut n = 0;
     for value in values {
         let deviation = value - mean_value;
         squared_deviations += deviation * deviation;
-        count += 1;
+        n += 1;
     }
 
-    (1. / ((count - 1) as f64) * squared_deviations).sqrt()
+    (1. / ((n - 1) as f64) * squared_deviations).sqrt()
 }
 
-pub fn standard_deviation<Q: UnsafeRawValue>(values: &[Q]) -> Q {
-    let values: Vec<_> = values.iter().map(|q| q.unsafe_raw_value()).collect();
-    let result = standard_deviation_f64(&values);
+pub fn standard_deviation<Q: UnsafeRawValue>(values: impl IntoIterator<Item = Q> + Clone) -> Q {
+    let values: Vec<_> = values.into_iter().map(|q| q.unsafe_raw_value()).collect();
+    let result = standard_deviation_f64(values);
     Q::unsafe_from_raw_value(result)
 }
 
@@ -218,7 +218,7 @@ mod tests {
             Time::new::<millisecond>(200.0),
             Time::new::<microsecond>(300_000.0),
         ];
-        let result = standard_deviation(&values);
+        let result = standard_deviation(values);
         assert_relative_eq!(result.get::<millisecond>(), 100.0);
     }
 }

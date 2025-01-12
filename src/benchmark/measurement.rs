@@ -78,7 +78,7 @@ impl Measurements {
         if times.len() < 2 {
             None
         } else {
-            Some(standard_deviation(&times))
+            Some(standard_deviation(times))
         }
     }
 
