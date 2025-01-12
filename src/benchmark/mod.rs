@@ -17,7 +17,7 @@ use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{self, const_time_from_seconds, Quantity, Time};
+use crate::quantity::{self, const_time_from_seconds, FormatQuantity, Time, Zero};
 use benchmark_result::BenchmarkResult;
 
 use anyhow::{anyhow, Result};

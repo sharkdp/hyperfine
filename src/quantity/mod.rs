@@ -1,5 +1,6 @@
 use core::f64;
 use std::marker::PhantomData;
+use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Div;
 
@@ -8,20 +9,19 @@ use serde::Serializer;
 
 use uom::num_traits;
 use uom::si;
-pub use uom::si::information::{byte, gibibyte, kibibyte, mebibyte, tebibyte};
-pub use uom::si::ratio::ratio;
-pub use uom::si::time::{hour, microsecond, millisecond, minute, nanosecond, second};
 
 pub use si::f64::{Information, Ratio, Time};
+pub use si::information::{byte, gibibyte, kibibyte, mebibyte, tebibyte};
+pub use si::ratio::ratio;
+pub use si::time::{hour, microsecond, millisecond, minute, nanosecond, second};
+pub use uom::num_traits::Zero;
 
 pub use units::{InformationUnit, IsUnit, TimeUnit};
 
 mod units;
 
-pub trait Quantity {
+pub trait FormatQuantity {
     type Unit;
-
-    fn zero() -> Self;
 
     fn suitable_unit(&self) -> Self::Unit;
 
@@ -31,12 +31,8 @@ pub trait Quantity {
     fn format_value(&self, unit: Self::Unit) -> String;
 }
 
-impl Quantity for Time {
+impl FormatQuantity for Time {
     type Unit = TimeUnit;
-
-    fn zero() -> Time {
-        Time::new::<second>(0.0)
-    }
 
     fn suitable_unit(&self) -> TimeUnit {
         if *self < Time::new::<millisecond>(1.0) {
@@ -81,12 +77,8 @@ pub const fn const_time_from_seconds(value: f64) -> Time {
     }
 }
 
-impl Quantity for Information {
+impl FormatQuantity for Information {
     type Unit = InformationUnit;
-
-    fn zero() -> Information {
-        Information::new::<byte>(0.0)
-    }
 
     fn suitable_unit(&self) -> InformationUnit {
         if *self < Information::new::<kibibyte>(1.0) {
@@ -120,6 +112,26 @@ impl Quantity for Information {
     }
 }
 
+pub fn serialize_time<S>(t: &Time, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut state = s.serialize_struct("Time", 3)?;
+    state.serialize_field("value", &t.get::<second>())?;
+    state.serialize_field("unit", "second")?;
+    state.end()
+}
+
+pub fn serialize_information<S>(i: &Information, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut state = s.serialize_struct("Information", 3)?;
+    state.serialize_field("value", &i.get::<byte>())?;
+    state.serialize_field("unit", "byte")?;
+    state.end()
+}
+
 pub trait UnsafeRawValue {
     fn unsafe_raw_value(&self) -> f64;
     fn unsafe_from_raw_value(value: f64) -> Self;
@@ -143,26 +155,6 @@ impl UnsafeRawValue for Information {
     fn unsafe_from_raw_value(value: f64) -> Self {
         Information::new::<byte>(value)
     }
-}
-
-pub fn serialize_time<S>(t: &Time, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let mut state = s.serialize_struct("Time", 3)?;
-    state.serialize_field("value", &t.value)?;
-    state.serialize_field("unit", "second")?;
-    state.end()
-}
-
-pub fn serialize_information<S>(i: &Information, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let mut state = s.serialize_struct("Information", 3)?;
-    state.serialize_field("value", &i.value)?;
-    state.serialize_field("unit", "byte")?;
-    state.end()
 }
 
 macro_rules! quantity_fn {
@@ -209,7 +201,25 @@ where
     (sum / count).into()
 }
 
-quantity_fn!(median, values, statistical::median(&values));
+pub fn median<Q, P>(values: impl IntoIterator<Item = Q>) -> Q
+where
+    Q: Copy + PartialOrd + Add<Output = Q> + Div<Ratio, Output = P>,
+    P: Into<Q>,
+{
+    let mut values = values.into_iter().collect::<Vec<_>>();
+    values.sort_by(|a, b| a.partial_cmp(b).expect("No NaN values"));
+
+    let len = values.len();
+    if len % 2 == 0 {
+        let mid = len / 2;
+        let a = &values[mid - 1];
+        let b = &values[mid];
+        ((*a + *b) / Ratio::new::<ratio>(2.)).into()
+    } else {
+        values[len / 2]
+    }
+}
+
 quantity_fn!(standard_deviation, values, {
     let mean_value = statistical::mean(&values);
     statistical::standard_deviation(&values, Some(mean_value))
@@ -326,7 +336,10 @@ fn statistics() {
         mean(values.iter().copied()).format(TimeUnit::Second),
         "2.000 s"
     );
-    assert_eq!(median(&values).format(TimeUnit::Second), "2.000 s");
+    assert_eq!(
+        median(values.iter().copied()).format(TimeUnit::Second),
+        "2.000 s"
+    );
     assert_eq!(min(&values).format(TimeUnit::Second), "1.000 s");
     assert_eq!(max(&values).format(TimeUnit::Second), "3.000 s");
     assert_eq!(
