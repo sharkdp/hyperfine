@@ -2,10 +2,8 @@ use std::process::ExitStatus;
 
 use serde::Serialize;
 
-use crate::quantity::{
-    max, mean, median, min, modified_zscores, serialize_information, serialize_time,
-    standard_deviation, Information, Time,
-};
+use crate::quantity::statistics::{max, mean, median, min, modified_zscores, standard_deviation};
+use crate::quantity::{serialize_information, serialize_time, Information, Time};
 use crate::util::exit_code::extract_exit_code;
 
 fn serialize_exit_status<S>(exit_status: &ExitStatus, serializer: S) -> Result<S::Ok, S::Error>
