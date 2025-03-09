@@ -10,6 +10,18 @@ A command-line benchmarking tool.
 
 ![hyperfine](https://i.imgur.com/z19OYxE.gif)
 
+### Sponsors
+
+A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsor</a>:<br>
+
+<a href="https://www.warp.dev/hyperfine">
+  <img src="doc/sponsors/warp-logo.png" width="200" alt="Warp">
+  <br>
+  <strong>Warp, the intelligent terminal</strong>
+  <br>
+  <sub>Available on MacOS, Linux, Windows</sub>
+</a>
+
 ## Features
 
 * Statistical analysis across multiple runs.
