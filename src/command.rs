@@ -97,10 +97,14 @@ impl<'a> Command<'a> {
         &self.parameters
     }
 
+    pub fn is_parameter_unused(&self, parameter: &str) -> bool {
+        !self.expression.contains(&format!("{{{parameter}}}"))
+    }
+
     pub fn get_unused_parameters(&self) -> impl Iterator<Item = &(&'a str, ParameterValue)> {
         self.parameters
             .iter()
-            .filter(move |(parameter, _)| !self.expression.contains(&format!("{{{parameter}}}")))
+            .filter(move |(parameter, _)| self.is_parameter_unused(parameter))
     }
 
     fn replace_parameters_in(&self, original: &str) -> String {
