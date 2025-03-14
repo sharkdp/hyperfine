@@ -8,7 +8,10 @@
 # ]
 # ///
 
-# This program shows `hyperfine` benchmark results as a bar plot grouped by command.
+"""
+This script shows `hyperfine` benchmark results as a bar plot grouped by command.
+Note all the input files must contain results for all commands.
+"""
 
 import argparse
 import json
