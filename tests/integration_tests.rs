@@ -500,6 +500,18 @@ fn shows_benchmark_comparison_relative_to_reference() {
 }
 
 #[test]
+fn shows_reference_name() {
+    hyperfine_debug()
+        .arg("--reference=sleep 2.0")
+        .arg("--reference-name=refabc123")
+        .arg("sleep 1.0")
+        .arg("sleep 3.0")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Benchmark 1: refabc123"));
+}
+
+#[test]
 fn performs_all_benchmarks_in_parameter_scan() {
     hyperfine_debug()
         .arg("--parameter-scan")

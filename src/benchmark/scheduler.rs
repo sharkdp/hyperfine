@@ -42,7 +42,7 @@ impl<'a> Scheduler<'a> {
             .options
             .reference_command
             .as_ref()
-            .map(|cmd| Command::new(None, cmd));
+            .map(|cmd| Command::new(self.options.reference_name.as_deref(), cmd));
 
         executor.calibrate()?;
 
