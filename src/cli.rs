@@ -97,6 +97,14 @@ fn build_command() -> Command {
                 )
         )
         .arg(
+            Arg::new("reference-name")
+                .long("reference-name")
+                .action(ArgAction::Set)
+                .value_name("CMD")
+                .help("Give a meaningful name to the reference command.")
+                .requires("reference")
+        )
+        .arg(
             Arg::new("prepare")
                 .long("prepare")
                 .short('p')
