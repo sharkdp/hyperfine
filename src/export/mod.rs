@@ -3,6 +3,7 @@ use std::io::Write;
 
 mod asciidoc;
 mod csv;
+mod html;
 mod json;
 mod markdown;
 mod markup;
@@ -12,6 +13,7 @@ mod tests;
 
 use self::asciidoc::AsciidocExporter;
 use self::csv::CsvExporter;
+use self::html::HtmlExporter;
 use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 use self::orgmode::OrgmodeExporter;
@@ -31,6 +33,9 @@ pub enum ExportType {
 
     /// CSV (comma separated values) format
     Csv,
+
+    /// HTML with interactive charts
+    Html,
 
     /// JSON format
     Json,
@@ -95,6 +100,7 @@ impl ExportManager {
             add_exporter("export-csv", ExportType::Csv)?;
             add_exporter("export-markdown", ExportType::Markdown)?;
             add_exporter("export-orgmode", ExportType::Orgmode)?;
+            add_exporter("export-html", ExportType::Html)?;
         }
         Ok(export_manager)
     }
@@ -104,6 +110,7 @@ impl ExportManager {
         let exporter: Box<dyn Exporter> = match export_type {
             ExportType::Asciidoc => Box::<AsciidocExporter>::default(),
             ExportType::Csv => Box::<CsvExporter>::default(),
+            ExportType::Html => Box::<HtmlExporter>::default(),
             ExportType::Json => Box::<JsonExporter>::default(),
             ExportType::Markdown => Box::<MarkdownExporter>::default(),
             ExportType::Orgmode => Box::<OrgmodeExporter>::default(),
