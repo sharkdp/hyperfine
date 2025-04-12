@@ -201,7 +201,19 @@ pub fn execute_and_measure(mut command: Command, until: Option<&[u8]>) -> Result
         let time_real = wallclock_timer.stop();
         let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
 
-        child.kill()?;
+        #[cfg(unix)]
+        {
+            // child.kill() sends SIGKILL we don't really want that.
+            use nix::sys::signal::{self, Signal};
+            use nix::unistd::Pid;
+            signal::kill(Pid::from_raw(child.id() as i32), Signal::SIGTERM)?;
+        }
+
+        #[cfg(not(unix))]
+        {
+            child.kill()?;
+        }
+
         child.wait()?;
 
         return Ok(TimerResult {
