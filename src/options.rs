@@ -156,6 +156,9 @@ pub enum CommandOutputPolicy {
 
     /// Show command output on the terminal
     Inherit,
+
+    /// Read until the given text is matched and then exit.
+    Until(Vec<u8>),
 }
 
 impl CommandOutputPolicy {
@@ -172,9 +175,19 @@ impl CommandOutputPolicy {
             }
 
             CommandOutputPolicy::Inherit => (Stdio::inherit(), Stdio::inherit()),
+
+            CommandOutputPolicy::Until(_) => (Stdio::piped(), Stdio::null()),
         };
 
         Ok(streams)
+    }
+
+    pub fn get_until_text(&self) -> Option<&[u8]> {
+        if let CommandOutputPolicy::Until(v) = self {
+            Some(v.as_slice())
+        } else {
+            None
+        }
     }
 }
 
@@ -341,6 +354,8 @@ impl Options {
                 policies.push(policy);
             }
             policies
+        } else if let Some(text) = matches.get_one::<String>("until") {
+            vec![CommandOutputPolicy::Until(text.as_bytes().to_vec())]
         } else {
             vec![CommandOutputPolicy::Null]
         };

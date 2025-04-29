@@ -326,7 +326,7 @@ fn build_command() -> Command {
         .arg(
             Arg::new("output")
                 .long("output")
-                .conflicts_with("show-output")
+                .conflicts_with_all(["show-output", "until"])
                 .action(ArgAction::Append)
                 .value_name("WHERE")
                 .help(
@@ -349,6 +349,16 @@ fn build_command() -> Command {
                     you can use a shell redirection and the '$HYPERFINE_ITERATION' environment variable:\n    \
                     hyperfine 'my-command > output-${HYPERFINE_ITERATION}.log'\n\n",
                 ),
+        )
+        .arg(
+            Arg::new("until")
+                .long("until")
+                .action(ArgAction::Set)
+                .conflicts_with_all(["show-output", "output"])
+                .help(
+                    "Run the command until it prints the given output in stdout"
+                ),
+
         )
         .arg(
             Arg::new("input")
