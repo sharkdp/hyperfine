@@ -54,7 +54,7 @@ fn compute_relative_speeds<'a>(
             };
 
             // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
-            // Covariance asssumed to be 0, i.e. variables are assumed to be independent
+            // Covariance assumed to be 0, i.e. variables are assumed to be independent
             let ratio_stddev = match (result.stddev, reference.stddev) {
                 (Some(result_stddev), Some(fastest_stddev)) => Some(
                     ratio
