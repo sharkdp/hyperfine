@@ -16,11 +16,11 @@ pub enum Unit {
 impl Unit {
     /// The abbreviation of the Unit.
     #[must_use]
-    pub fn short_name(self) -> String {
+    pub const fn short_name(self) -> &'static str {
         match self {
-            Unit::Second => String::from("s"),
-            Unit::MilliSecond => String::from("ms"),
-            Unit::MicroSecond => String::from("µs"),
+            Unit::Second => "s",
+            Unit::MilliSecond => "ms",
+            Unit::MicroSecond => "µs",
         }
     }
 
