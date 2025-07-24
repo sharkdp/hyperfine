@@ -1,7 +1,7 @@
 use super::benchmark_result::BenchmarkResult;
 use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
-use colored::*;
+use colored::Colorize;
 use std::cmp::Ordering;
 
 use crate::command::{Command, Commands};
@@ -18,6 +18,7 @@ pub struct Scheduler<'a> {
 }
 
 impl<'a> Scheduler<'a> {
+    #[must_use]
     pub fn new(
         commands: &'a Commands,
         options: &'a Options,
@@ -67,12 +68,10 @@ impl<'a> Scheduler<'a> {
             return;
         }
 
-        let reference = self
-            .options
-            .reference_command
-            .as_ref()
-            .map(|_| &self.results[0])
-            .unwrap_or_else(|| relative_speed::fastest_of(&self.results));
+        let reference = self.options.reference_command.as_ref().map_or_else(
+            || relative_speed::fastest_of(&self.results),
+            |_| &self.results[0],
+        );
 
         if let Some(annotated_results) = relative_speed::compute_with_check_from_reference(
             &self.results,
@@ -93,9 +92,9 @@ impl<'a> Scheduler<'a> {
 
                     for item in others {
                         let stddev = if let Some(stddev) = item.relative_speed_stddev {
-                            format!(" ± {}", format!("{:.2}", stddev).green())
+                            format!(" ± {}", format!("{stddev:.2}").green())
                         } else {
-                            "".into()
+                            String::new()
                         };
                         let comparator = match item.relative_ordering {
                             Ordering::Less => format!(

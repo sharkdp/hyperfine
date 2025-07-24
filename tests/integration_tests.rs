@@ -9,6 +9,7 @@ use predicates::prelude::*;
 ///   See: <https://superuser.com/questions/853580/real-windows-equivalent-to-cat-stdin>
 const STDIN_READ_COMMAND: &str = if cfg!(windows) { "findstr x*" } else { "cat" };
 
+#[must_use]
 pub fn hyperfine_debug() -> assert_cmd::Command {
     let mut cmd = hyperfine();
     cmd.arg("--debug-mode");

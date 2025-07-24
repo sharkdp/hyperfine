@@ -15,6 +15,7 @@ pub enum Unit {
 
 impl Unit {
     /// The abbreviation of the Unit.
+    #[must_use]
     pub fn short_name(self) -> String {
         match self {
             Unit::Second => String::from("s"),
@@ -24,6 +25,7 @@ impl Unit {
     }
 
     /// Returns the Second value formatted for the Unit.
+    #[must_use]
     pub fn format(self, value: Second) -> String {
         match self {
             Unit::Second => format!("{value:.3}"),

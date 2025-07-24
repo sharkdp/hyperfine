@@ -10,6 +10,7 @@ const TICK_SETTINGS: (&str, u64) = ("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ ", 80);
 const TICK_SETTINGS: (&str, u64) = (r"+-x| ", 200);
 
 /// Return a pre-configured progress bar
+#[must_use]
 pub fn get_progress_bar(length: u64, msg: &str, option: OutputStyleOption) -> ProgressBar {
     let progressbar_style = match option {
         OutputStyleOption::Basic | OutputStyleOption::Color => ProgressStyle::default_bar(),
