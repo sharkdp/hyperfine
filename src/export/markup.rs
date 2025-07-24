@@ -51,17 +51,17 @@ pub trait MarkupExporter {
             let stddev_str = if let Some(stddev) = measurement.stddev {
                 format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
             } else {
-                "".into()
+                String::new()
             };
             let min_str = format_duration_value(measurement.min, Some(unit)).0;
             let max_str = format_duration_value(measurement.max, Some(unit)).0;
             let rel_str = format!("{:.2}", entry.relative_speed);
             let rel_stddev_str = if entry.is_reference {
-                "".into()
+                String::new()
             } else if let Some(stddev) = entry.relative_speed_stddev {
                 format!(" ± {stddev:.2}")
             } else {
-                "".into()
+                String::new()
             };
 
             // prepare table row entries
@@ -85,11 +85,11 @@ pub trait MarkupExporter {
     fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String;
 
     fn table_header(&self, _cell_aligmnents: &[Alignment]) -> String {
-        "".to_string()
+        String::new()
     }
 
     fn table_footer(&self, _cell_aligmnents: &[Alignment]) -> String {
-        "".to_string()
+        String::new()
     }
 
     fn command(&self, size: &str) -> String;

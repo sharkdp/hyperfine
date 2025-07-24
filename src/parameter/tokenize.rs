@@ -1,3 +1,4 @@
+#[must_use]
 pub fn tokenize(values: &str) -> Vec<String> {
     let mut tokens = vec![];
     let mut buf = String::new();
@@ -6,7 +7,7 @@ pub fn tokenize(values: &str) -> Vec<String> {
     while let Some(c) = iter.next() {
         match c {
             '\\' => match iter.next() {
-                Some(c2 @ ',') | Some(c2 @ '\\') => {
+                Some(c2 @ (',' | '\\')) => {
                     buf.push(c2);
                 }
                 Some(c2) => {

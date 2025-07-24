@@ -13,10 +13,12 @@ pub struct BenchmarkResultWithRelativeSpeed<'a> {
     pub relative_ordering: Ordering,
 }
 
+#[must_use]
 pub fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
     l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal)
 }
 
+#[must_use]
 pub fn fastest_of(results: &[BenchmarkResult]) -> &BenchmarkResult {
     results
         .iter()
@@ -83,6 +85,7 @@ fn compute_relative_speeds<'a>(
     results
 }
 
+#[must_use]
 pub fn compute_with_check_from_reference<'a>(
     results: &'a [BenchmarkResult],
     reference: &'a BenchmarkResult,
@@ -95,6 +98,7 @@ pub fn compute_with_check_from_reference<'a>(
     Some(compute_relative_speeds(results, reference, sort_order))
 }
 
+#[must_use]
 pub fn compute_with_check(
     results: &[BenchmarkResult],
     sort_order: SortOrder,
@@ -108,7 +112,8 @@ pub fn compute_with_check(
     Some(compute_relative_speeds(results, fastest, sort_order))
 }
 
-/// Same as compute_with_check, potentially resulting in relative speeds of infinity
+/// Same as `compute_with_check`, potentially resulting in relative speeds of infinity
+#[must_use]
 pub fn compute(
     results: &[BenchmarkResult],
     sort_order: SortOrder,

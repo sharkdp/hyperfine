@@ -23,7 +23,7 @@ use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
 
 use anyhow::{anyhow, Result};
-use colored::*;
+use colored::Colorize;
 use statistical::{mean, median, standard_deviation};
 
 use self::executor::Executor;
@@ -200,14 +200,14 @@ impl<'a> Benchmark<'a> {
 
         // Warmup phase
         if self.options.warmup_count > 0 {
-            let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
+            let progress_bar = if self.options.output_style == OutputStyleOption::Disabled {
+                None
+            } else {
                 Some(get_progress_bar(
                     self.options.warmup_count,
                     "Performing warmup runs",
                     self.options.output_style,
                 ))
-            } else {
-                None
             };
 
             for i in 0..self.options.warmup_count {
@@ -229,14 +229,14 @@ impl<'a> Benchmark<'a> {
         }
 
         // Set up progress bar (and spinner for initial measurement)
-        let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
+        let progress_bar = if self.options.output_style == OutputStyleOption::Disabled {
+            None
+        } else {
             Some(get_progress_bar(
                 self.options.run_bounds.min,
                 "Initial time measurement",
                 self.options.output_style,
             ))
-        } else {
-            None
         };
 
         let preparation_result = run_preparation_command()?;
@@ -270,8 +270,7 @@ impl<'a> Benchmark<'a> {
                 .run_bounds
                 .max
                 .as_ref()
-                .map(|max| cmp::min(min, *max))
-                .unwrap_or(min)
+                .map_or(min, |max| cmp::min(min, *max))
         };
 
         let count_remaining = count - 1;
@@ -415,8 +414,7 @@ impl<'a> Benchmark<'a> {
                 .options
                 .preparation_command
                 .as_ref()
-                .map(|v| v.len())
-                .unwrap_or(0)
+                .map_or(0, |v| v.len())
                 > 0,
         };
 
@@ -460,7 +458,7 @@ impl<'a> Benchmark<'a> {
                 .command
                 .get_parameters()
                 .iter()
-                .map(|(name, value)| (name.to_string(), value.to_string()))
+                .map(|(name, value)| ((*name).to_string(), value.to_string()))
                 .collect(),
         })
     }

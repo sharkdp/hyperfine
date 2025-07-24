@@ -1,4 +1,4 @@
-use serde::*;
+use serde::Serialize;
 use serde_json::to_vec_pretty;
 
 use super::Exporter;

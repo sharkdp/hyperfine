@@ -1,6 +1,7 @@
 use std::process::ExitStatus;
 
 #[cfg(unix)]
+#[must_use]
 pub fn extract_exit_code(status: ExitStatus) -> Option<i32> {
     use std::os::unix::process::ExitStatusExt;
 

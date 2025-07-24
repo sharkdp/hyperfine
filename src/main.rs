@@ -12,7 +12,7 @@ use export::ExportManager;
 use options::Options;
 
 use anyhow::Result;
-use colored::*;
+use colored::Colorize;
 
 pub mod benchmark;
 pub mod cli;
@@ -52,7 +52,7 @@ fn run() -> Result<()> {
 
 fn main() {
     match run() {
-        Ok(_) => {}
+        Ok(()) => {}
         Err(e) => {
             eprintln!("{} {:#}", "Error:".red(), e);
             std::process::exit(1);
