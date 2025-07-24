@@ -8,6 +8,10 @@ mod unix_timer;
 
 #[cfg(target_os = "linux")]
 use nix::fcntl::{splice, SpliceFFlags};
+#[cfg(not(windows))]
+use std::convert::TryFrom;
+#[cfg(not(windows))]
+use std::convert::TryInto;
 #[cfg(target_os = "linux")]
 use std::fs::File;
 #[cfg(target_os = "linux")]
@@ -16,7 +20,7 @@ use std::os::fd::AsFd;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Threading::CREATE_SUSPENDED;
 
-use crate::util::units::Second;
+use crate::benchmark::timing_result::TimingResult;
 use wall_clock_timer::WallClockTimer;
 
 use std::io::Read;
@@ -33,17 +37,29 @@ struct CPUTimes {
     /// Total amount of time spent executing in kernel mode
     pub system_usec: i64,
 
-    /// Maximum amount of memory used by the process, in bytes
-    pub memory_usage_byte: u64,
+    /// Number of voluntary context switches
+    pub voluntary_context_switches: u64,
+
+    /// Number of involuntary context switches
+    pub context_switches: u64,
+
+    /// Number of times the filesystem had to perform input.
+    pub filesystem_input: u64,
+
+    /// Number of times the filesystem had to perform output.
+    pub filesystem_output: u64,
+
+    /// Number of minor page faults
+    pub minor_page_faults: u64,
+
+    /// Number of major page faults
+    pub major_page_faults: u64,
 }
 
 /// Used to indicate the result of running a command
 #[derive(Debug, Copy, Clone)]
 pub struct TimerResult {
-    pub time_real: Second,
-    pub time_user: Second,
-    pub time_system: Second,
-    pub memory_usage_byte: u64,
+    pub timing: TimingResult,
     /// The exit status of the process
     pub status: ExitStatus,
 }
@@ -106,16 +122,75 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
         discard(output);
     }
 
-    let status = child.wait()?;
+    #[cfg(not(windows))]
+    let (status, memory_usage_byte) = {
+        use std::io::Error;
+        use std::os::unix::process::ExitStatusExt;
+
+        let mut raw_status = 0;
+        let pid = child.id().try_into().expect("should convert to pid_t");
+        // SAFETY: libc::rusage is Plain Old Data
+        let mut rusage = unsafe { std::mem::zeroed() };
+        // SAFETY: all syscall arguments are valid
+        let result = unsafe { libc::wait4(pid, &raw mut raw_status, 0, &raw mut rusage) };
+        if result != pid {
+            return Err(Error::last_os_error().into());
+        }
+
+        // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
+        let max_rss_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
+            rusage.ru_maxrss
+        } else {
+            rusage.ru_maxrss * 1024
+        };
+        let memory_usage_byte = u64::try_from(max_rss_byte).expect("should not be negative");
+
+        let status = ExitStatus::from_raw(raw_status);
+
+        (status, memory_usage_byte)
+    };
+
+    #[cfg(windows)]
+    let (status, memory_usage_byte) = (child.wait()?, 0);
 
     let time_real = wallclock_timer.stop();
-    let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
 
-    Ok(TimerResult {
+    #[cfg(not(windows))]
+    let (
+        time_user,
+        time_system,
+        voluntary_context_switches,
+        context_switches,
+        filesystem_input,
+        filesystem_output,
+        minor_page_faults,
+        major_page_faults,
+    ) = cpu_timer.stop();
+
+    #[cfg(windows)]
+    let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
+    #[cfg(windows)]
+    let (
+        voluntary_context_switches,
+        context_switches,
+        filesystem_input,
+        filesystem_output,
+        minor_page_faults,
+        major_page_faults,
+    ) = (0, 0, 0, 0, 0, 0);
+
+    let timing = TimingResult {
         time_real,
         time_user,
         time_system,
         memory_usage_byte,
-        status,
-    })
+        voluntary_context_switches,
+        context_switches,
+        filesystem_input,
+        filesystem_output,
+        minor_page_faults,
+        major_page_faults,
+    };
+
+    Ok(TimerResult { timing, status })
 }

@@ -146,15 +146,7 @@ impl Executor for RawExecutor<'_> {
             &command.get_command_line(),
         )?;
 
-        Ok((
-            TimingResult {
-                time_real: result.time_real,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                memory_usage_byte: result.memory_usage_byte,
-            },
-            result.status,
-        ))
+        Ok((result.timing, result.status))
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -213,20 +205,13 @@ impl Executor for ShellExecutor<'_> {
 
         // Subtract shell spawning time
         if let Some(spawning_time) = self.shell_spawning_time {
-            result.time_real = (result.time_real - spawning_time.time_real).max(0.0);
-            result.time_user = (result.time_user - spawning_time.time_user).max(0.0);
-            result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
+            result.timing.time_real = (result.timing.time_real - spawning_time.time_real).max(0.0);
+            result.timing.time_user = (result.timing.time_user - spawning_time.time_user).max(0.0);
+            result.timing.time_system =
+                (result.timing.time_system - spawning_time.time_system).max(0.0);
         }
 
-        Ok((
-            TimingResult {
-                time_real: result.time_real,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                memory_usage_byte: result.memory_usage_byte,
-            },
-            result.status,
-        ))
+        Ok((result.timing, result.status))
     }
 
     /// Measure the average shell spawning time
@@ -289,6 +274,12 @@ impl Executor for ShellExecutor<'_> {
             time_user: mean(&times_user),
             time_system: mean(&times_system),
             memory_usage_byte: 0,
+            voluntary_context_switches: 0,
+            context_switches: 0,
+            filesystem_input: 0,
+            filesystem_output: 0,
+            minor_page_faults: 0,
+            major_page_faults: 0,
         });
 
         Ok(())
@@ -345,6 +336,12 @@ impl Executor for MockExecutor {
                 time_user: 0.0,
                 time_system: 0.0,
                 memory_usage_byte: 0,
+                voluntary_context_switches: 0,
+                context_switches: 0,
+                filesystem_input: 0,
+                filesystem_output: 0,
+                minor_page_faults: 0,
+                major_page_faults: 0,
             },
             status,
         ))
