@@ -1,7 +1,7 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::options::SortOrder;
-use crate::quantity::{IsUnit, FormatQuantity, TimeUnit};
+use crate::quantity::{FormatQuantity, IsUnit, TimeUnit};
 
 use super::Exporter;
 use anyhow::Result;
