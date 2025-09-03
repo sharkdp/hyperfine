@@ -64,7 +64,7 @@ features = [
 approx = "0.5"
 assert_cmd = "2.0"
 insta = { version = "1.41.1", features = ["yaml"] }
-predicates = "3.0"
+predicates = "3.1"
 tempfile = "3.14"
 
 [profile.dev.package]
