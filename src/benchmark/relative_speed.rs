@@ -98,7 +98,7 @@ pub fn compute_with_check_from_reference<'a>(
 pub fn compute_with_check(
     results: &[BenchmarkResult],
     sort_order: SortOrder,
-) -> Option<Vec<BenchmarkResultWithRelativeSpeed>> {
+) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'_>>> {
     let fastest = fastest_of(results);
 
     if fastest.mean == 0.0 {
@@ -112,7 +112,7 @@ pub fn compute_with_check(
 pub fn compute(
     results: &[BenchmarkResult],
     sort_order: SortOrder,
-) -> Vec<BenchmarkResultWithRelativeSpeed> {
+) -> Vec<BenchmarkResultWithRelativeSpeed<'_>> {
     let fastest = fastest_of(results);
 
     compute_relative_speeds(results, fastest, sort_order)
