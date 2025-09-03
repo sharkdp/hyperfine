@@ -297,13 +297,25 @@ impl<'a> Benchmark<'a> {
         for i in 0..count_remaining {
             run_preparation_command()?;
 
-            let msg = {
-                let mean = format_duration(mean(&times_real), self.options.time_unit);
-                format!("Current estimate: {}", mean.to_string().green())
-            };
-
             if let Some(bar) = progress_bar.as_ref() {
-                bar.set_message(msg.to_owned())
+                let msg = {
+                    let mean = mean(&times_real);
+                    let (mean_str, time_unit) = format_duration_unit(mean, self.options.time_unit);
+
+                    if times_real.len() > 1 {
+                        let stddev = standard_deviation(&times_real, Some(mean));
+                        let stddev_str = format_duration(stddev, Some(time_unit));
+                        format!(
+                            "Current estimate: {} ± {}",
+                            mean_str.green(),
+                            stddev_str.cyan()
+                        )
+                    } else {
+                        format!("Current estimate: {}", mean_str.green())
+                    }
+                };
+
+                bar.set_message(msg)
             }
 
             let (res, status) = self.executor.run_command_and_measure(
