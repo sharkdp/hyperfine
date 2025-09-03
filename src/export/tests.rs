@@ -1,14 +1,16 @@
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
+use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
-use crate::util::units::Unit;
+use crate::quantity::{byte, second, Information, Time, TimeUnit, Zero};
 use crate::{export::markdown::MarkdownExporter, options::SortOrder};
 use std::collections::BTreeMap;
+use std::process::ExitStatus;
 
 fn get_output<E: Exporter + Default>(
     results: &[BenchmarkResult],
-    unit: Option<Unit>,
+    unit: Option<TimeUnit>,
     sort_order: SortOrder,
 ) -> String {
     let exporter = E::default();
@@ -26,32 +28,56 @@ fn test_markup_export_auto_ms() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
-            mean: 0.1057,
-            stddev: Some(0.0016),
-            median: 0.1057,
-            user: 0.0009,
-            system: 0.0011,
-            min: 0.1023,
-            max: 0.1080,
-            times: Some(vec![0.1, 0.1, 0.1]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.09),
+                    time_user: Time::new::<second>(0.09),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.10),
+                    time_user: Time::new::<second>(0.10),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.14),
+                    time_user: Time::new::<second>(0.14),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
-            mean: 2.0050,
-            stddev: Some(0.0020),
-            median: 2.0050,
-            user: 0.0009,
-            system: 0.0012,
-            min: 2.0020,
-            max: 2.0080,
-            times: Some(vec![2.0, 2.0, 2.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.0),
+                    time_user: Time::new::<second>(2.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(3.0),
+                    time_user: Time::new::<second>(3.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(4.0),
+                    time_user: Time::new::<second>(4.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
     ];
@@ -59,8 +85,8 @@ fn test_markup_export_auto_ms() {
     insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None, SortOrder::Command), @r#"
     | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
     |:---|---:|---:|---:|---:|
-    | `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
-    | `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 ± 0.29 |
+    | `sleep 0.1` | 110.0 ± 26.5 | 90.0 | 140.0 | 1.00 |
+    | `sleep 2` | 3000.0 ± 1000.0 | 2000.0 | 4000.0 | 27.27 ± 11.21 |
     "#);
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None, SortOrder::Command), @r#"
@@ -73,24 +99,24 @@ fn test_markup_export_auto_ms() {
     | Relative 
 
     | `sleep 0.1` 
-    | 105.7 ± 1.6 
-    | 102.3 
-    | 108.0 
+    | 110.0 ± 26.5 
+    | 90.0 
+    | 140.0 
     | 1.00 
 
     | `sleep 2` 
-    | 2005.0 ± 2.0 
-    | 2002.0 
-    | 2008.0 
-    | 18.97 ± 0.29 
+    | 3000.0 ± 1000.0 
+    | 2000.0 
+    | 4000.0 
+    | 27.27 ± 11.21 
     |===
     "#);
 
     insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None, SortOrder::Command), @r#"
     | Command  |  Mean [ms] |  Min [ms] |  Max [ms] |  Relative |
     |--+--+--+--+--|
-    | =sleep 0.1=  |  105.7 ± 1.6 |  102.3 |  108.0 |  1.00 |
-    | =sleep 2=  |  2005.0 ± 2.0 |  2002.0 |  2008.0 |  18.97 ± 0.29 |
+    | =sleep 0.1=  |  110.0 ± 26.5 |  90.0 |  140.0 |  1.00 |
+    | =sleep 2=  |  3000.0 ± 1000.0 |  2000.0 |  4000.0 |  27.27 ± 11.21 |
     "#);
 }
 
@@ -101,32 +127,56 @@ fn test_markup_export_auto_s() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
-            mean: 2.0050,
-            stddev: Some(0.0020),
-            median: 2.0050,
-            user: 0.0009,
-            system: 0.0012,
-            min: 2.0020,
-            max: 2.0080,
-            times: Some(vec![2.0, 2.0, 2.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.1),
+                    time_user: Time::new::<second>(2.1),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.2),
+                    time_user: Time::new::<second>(2.2),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.3),
+                    time_user: Time::new::<second>(2.3),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
-            mean: 0.1057,
-            stddev: Some(0.0016),
-            median: 0.1057,
-            user: 0.0009,
-            system: 0.0011,
-            min: 0.1023,
-            max: 0.1080,
-            times: Some(vec![0.1, 0.1, 0.1]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.1),
+                    time_user: Time::new::<second>(0.1),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.2),
+                    time_user: Time::new::<second>(0.2),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.3),
+                    time_user: Time::new::<second>(0.3),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
     ];
@@ -134,8 +184,8 @@ fn test_markup_export_auto_s() {
     insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None, SortOrder::Command), @r#"
     | Command | Mean [s] | Min [s] | Max [s] | Relative |
     |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
-    | `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
+    | `sleep 2` | 2.200 ± 0.100 | 2.100 | 2.300 | 11.00 ± 5.52 |
+    | `sleep 0.1` | 0.200 ± 0.100 | 0.100 | 0.300 | 1.00 |
     "#);
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None, SortOrder::Command), @r#"
@@ -148,15 +198,15 @@ fn test_markup_export_auto_s() {
     | Relative 
 
     | `sleep 2` 
-    | 2.005 ± 0.002 
-    | 2.002 
-    | 2.008 
-    | 18.97 ± 0.29 
+    | 2.200 ± 0.100 
+    | 2.100 
+    | 2.300 
+    | 11.00 ± 5.52 
 
     | `sleep 0.1` 
-    | 0.106 ± 0.002 
-    | 0.102 
-    | 0.108 
+    | 0.200 ± 0.100 
+    | 0.100 
+    | 0.300 
     | 1.00 
     |===
     "#);
@@ -164,8 +214,8 @@ fn test_markup_export_auto_s() {
     insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None, SortOrder::Command), @r#"
     | Command  |  Mean [s] |  Min [s] |  Max [s] |  Relative |
     |--+--+--+--+--|
-    | =sleep 2=  |  2.005 ± 0.002 |  2.002 |  2.008 |  18.97 ± 0.29 |
-    | =sleep 0.1=  |  0.106 ± 0.002 |  0.102 |  0.108 |  1.00 |
+    | =sleep 2=  |  2.200 ± 0.100 |  2.100 |  2.300 |  11.00 ± 5.52 |
+    | =sleep 0.1=  |  0.200 ± 0.100 |  0.100 |  0.300 |  1.00 |
     "#);
 }
 
@@ -176,44 +226,68 @@ fn test_markup_export_manual_ms() {
     let timing_results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
-            mean: 2.0050,
-            stddev: Some(0.0020),
-            median: 2.0050,
-            user: 0.0009,
-            system: 0.0012,
-            min: 2.0020,
-            max: 2.0080,
-            times: Some(vec![2.0, 2.0, 2.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.1),
+                    time_user: Time::new::<second>(2.1),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.2),
+                    time_user: Time::new::<second>(2.2),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.3),
+                    time_user: Time::new::<second>(2.3),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
-            mean: 0.1057,
-            stddev: Some(0.0016),
-            median: 0.1057,
-            user: 0.0009,
-            system: 0.0011,
-            min: 0.1023,
-            max: 0.1080,
-            times: Some(vec![0.1, 0.1, 0.1]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.1),
+                    time_user: Time::new::<second>(0.1),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.2),
+                    time_user: Time::new::<second>(0.2),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.3),
+                    time_user: Time::new::<second>(0.3),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(Unit::MilliSecond), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
     | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
     |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 18.97 ± 0.29 |
-    | `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 1.00 |
+    | `sleep 2` | 2200.0 ± 100.0 | 2100.0 | 2300.0 | 11.00 ± 5.52 |
+    | `sleep 0.1` | 200.0 ± 100.0 | 100.0 | 300.0 | 1.00 |
     "#);
 
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(Unit::MilliSecond), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command 
@@ -223,24 +297,24 @@ fn test_markup_export_manual_ms() {
     | Relative 
 
     | `sleep 2` 
-    | 2005.0 ± 2.0 
-    | 2002.0 
-    | 2008.0 
-    | 18.97 ± 0.29 
+    | 2200.0 ± 100.0 
+    | 2100.0 
+    | 2300.0 
+    | 11.00 ± 5.52 
 
     | `sleep 0.1` 
-    | 105.7 ± 1.6 
-    | 102.3 
-    | 108.0 
+    | 200.0 ± 100.0 
+    | 100.0 
+    | 300.0 
     | 1.00 
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(Unit::MilliSecond), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
     | Command  |  Mean [ms] |  Min [ms] |  Max [ms] |  Relative |
     |--+--+--+--+--|
-    | =sleep 2=  |  2005.0 ± 2.0 |  2002.0 |  2008.0 |  18.97 ± 0.29 |
-    | =sleep 0.1=  |  105.7 ± 1.6 |  102.3 |  108.0 |  1.00 |
+    | =sleep 2=  |  2200.0 ± 100.0 |  2100.0 |  2300.0 |  11.00 ± 5.52 |
+    | =sleep 0.1=  |  200.0 ± 100.0 |  100.0 |  300.0 |  1.00 |
     "#);
 }
 
@@ -250,51 +324,75 @@ fn test_markup_export_manual_s() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            command_with_unused_parameters: String::from("sleep 2"),
-            mean: 2.0050,
-            stddev: Some(0.0020),
-            median: 2.0050,
-            user: 0.0009,
-            system: 0.0012,
-            min: 2.0020,
-            max: 2.0080,
-            times: Some(vec![2.0, 2.0, 2.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.01),
+                    time_user: Time::new::<second>(2.01),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.02),
+                    time_user: Time::new::<second>(2.02),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(2.03),
+                    time_user: Time::new::<second>(2.03),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            command_with_unused_parameters: String::from("sleep 0.1"),
-            mean: 0.1057,
-            stddev: Some(0.0016),
-            median: 0.1057,
-            user: 0.0009,
-            system: 0.0011,
-            min: 0.1023,
-            max: 0.1080,
-            times: Some(vec![0.1, 0.1, 0.1]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.11),
+                    time_user: Time::new::<second>(0.11),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.12),
+                    time_user: Time::new::<second>(0.12),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(0.13),
+                    time_user: Time::new::<second>(0.13),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: BTreeMap::new(),
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit::Second), SortOrder::Command), @r#"
-        | Command | Mean [s] | Min [s] | Max [s] | Relative |
-        |:---|---:|---:|---:|---:|
-        | `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
-        | `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
-        "#);
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::Command), @r#"
+    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+    |:---|---:|---:|---:|---:|
+    | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | 16.83 ± 1.41 |
+    | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
+    "#);
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit::Second), SortOrder::MeanTime), @r#"
-        | Command | Mean [s] | Min [s] | Max [s] | Relative |
-        |:---|---:|---:|---:|---:|
-        | `sleep 0.1` | 0.106 ± 0.002 | 0.102 | 0.108 | 1.00 |
-        | `sleep 2` | 2.005 ± 0.002 | 2.002 | 2.008 | 18.97 ± 0.29 |
-        "#);
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::MeanTime), @r#"
+    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+    |:---|---:|---:|---:|---:|
+    | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
+    | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | 16.83 ± 1.41 |
+    "#);
 
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(Unit::Second), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(TimeUnit::Second), SortOrder::Command), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command 
@@ -304,15 +402,15 @@ fn test_markup_export_manual_s() {
     | Relative 
 
     | `sleep 2` 
-    | 2.005 ± 0.002 
-    | 2.002 
-    | 2.008 
-    | 18.97 ± 0.29 
+    | 2.020 ± 0.010 
+    | 2.010 
+    | 2.030 
+    | 16.83 ± 1.41 
 
     | `sleep 0.1` 
-    | 0.106 ± 0.002 
-    | 0.102 
-    | 0.108 
+    | 0.120 ± 0.010 
+    | 0.110 
+    | 0.130 
     | 1.00 
     |===
     "#);
