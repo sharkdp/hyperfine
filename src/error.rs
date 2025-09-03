@@ -6,9 +6,9 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum ParameterScanError {
     #[error("Error while parsing parameter scan arguments ({0})")]
-    ParseIntError(num::ParseIntError),
+    ParseIntError(#[from] num::ParseIntError),
     #[error("Error while parsing parameter scan arguments ({0})")]
-    ParseDecimalError(DecimalError),
+    ParseDecimalError(#[from] DecimalError),
     #[error("Empty parameter range")]
     EmptyRange,
     #[error("Parameter range is too large")]
@@ -19,18 +19,6 @@ pub enum ParameterScanError {
     StepRequired,
     #[error("'--command-name' has been specified {0} times. It has to appear exactly once, or exactly {1} times (number of benchmarks)")]
     UnexpectedCommandNameCount(usize, usize),
-}
-
-impl From<num::ParseIntError> for ParameterScanError {
-    fn from(e: num::ParseIntError) -> ParameterScanError {
-        ParameterScanError::ParseIntError(e)
-    }
-}
-
-impl From<DecimalError> for ParameterScanError {
-    fn from(e: DecimalError) -> ParameterScanError {
-        ParameterScanError::ParseDecimalError(e)
-    }
 }
 
 #[derive(Debug, Error)]
