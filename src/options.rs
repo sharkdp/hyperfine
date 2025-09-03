@@ -360,9 +360,7 @@ impl Options {
             Some("none") => OutputStyleOption::Disabled,
             _ => {
                 if options
-                    .command_output_policies
-                    .iter()
-                    .any(|policy| *policy == CommandOutputPolicy::Inherit)
+                    .command_output_policies.contains(&CommandOutputPolicy::Inherit)
                     || !io::stdout().is_terminal()
                 {
                     OutputStyleOption::Basic
