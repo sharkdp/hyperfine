@@ -23,6 +23,7 @@ A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsors</a>
 </a>
 
 <br>
+<br>
 
 <a href="https://tuple.app/hyperfine">
   <img src="doc/sponsors/tuple-logo.png" width="200" alt="Tuple">
