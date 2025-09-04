@@ -22,6 +22,8 @@ A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsors</a>
   <sub>Available on MacOS, Linux, Windows</sub>
 </a>
 
+<br>
+
 <a href="https://tuple.app/hyperfine">
   <img src="doc/sponsors/tuple-logo.png" width="200" alt="Tuple">
   <br>
