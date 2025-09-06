@@ -37,7 +37,7 @@ pub trait Executor {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
-        iteration: BenchmarkIteration,
+        iteration: &BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)>;
@@ -57,7 +57,7 @@ pub trait Executor {
 
 fn run_command_and_measure_common(
     mut command: std::process::Command,
-    iteration: BenchmarkIteration,
+    iteration: &BenchmarkIteration,
     command_failure_action: CmdFailureAction,
     command_input_policy: &CommandInputPolicy,
     command_output_policy: &CommandOutputPolicy,
@@ -115,7 +115,7 @@ impl Executor for RawExecutor<'_> {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
-        iteration: BenchmarkIteration,
+        iteration: &BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)> {
@@ -168,7 +168,7 @@ impl Executor for ShellExecutor<'_> {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
-        iteration: BenchmarkIteration,
+        iteration: &BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)> {
@@ -232,7 +232,7 @@ impl Executor for ShellExecutor<'_> {
             // Just run the shell without any command
             let res = self.run_command_and_measure(
                 &Command::new(None, ""),
-                BenchmarkIteration::NonBenchmarkRun,
+                &BenchmarkIteration::NonBenchmarkRun,
                 None,
                 &CommandOutputPolicy::Null,
             );
@@ -305,7 +305,7 @@ impl Executor for MockExecutor {
     fn run_command_and_measure(
         &self,
         command: &Command<'_>,
-        _iteration: BenchmarkIteration,
+        _iteration: &BenchmarkIteration,
         _command_failure_action: Option<CmdFailureAction>,
         _output_policy: &CommandOutputPolicy,
     ) -> Result<(TimingResult, ExitStatus)> {
