@@ -1,8 +1,7 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::options::SortOrder;
-use crate::output::format::format_duration_value;
-use crate::util::units::Unit;
+use crate::quantity::{FormatQuantity, IsUnit, TimeUnit};
 
 use super::Exporter;
 use anyhow::Result;
@@ -13,9 +12,13 @@ pub enum Alignment {
 }
 
 pub trait MarkupExporter {
-    fn table_results(&self, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> String {
+    fn table_results(
+        &self,
+        entries: &[BenchmarkResultWithRelativeSpeed],
+        time_unit: TimeUnit,
+    ) -> String {
         // prepare table header strings
-        let notation = format!("[{}]", unit.short_name());
+        let notation = format!("[{}]", time_unit.short_name());
 
         // prepare table cells alignment
         let cells_alignment = [
@@ -42,19 +45,17 @@ pub trait MarkupExporter {
         table.push_str(&self.table_divider(&cells_alignment));
 
         for entry in entries {
-            let measurement = &entry.result;
+            let result = &entry.result;
             // prepare data row strings
-            let cmd_str = measurement
-                .command_with_unused_parameters
-                .replace('|', "\\|");
-            let mean_str = format_duration_value(measurement.mean, Some(unit)).0;
-            let stddev_str = if let Some(stddev) = measurement.stddev {
-                format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
+            let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
+            let mean_str = result.mean_wall_clock_time().format_value(time_unit);
+            let stddev_str = if let Some(stddev) = result.measurements.stddev() {
+                format!(" ± {}", stddev.format_value(time_unit))
             } else {
                 "".into()
             };
-            let min_str = format_duration_value(measurement.min, Some(unit)).0;
-            let max_str = format_duration_value(measurement.max, Some(unit)).0;
+            let min_str = result.measurements.min().format_value(time_unit);
+            let max_str = result.measurements.max().format_value(time_unit);
             let rel_str = format!("{:.2}", entry.relative_speed);
             let rel_stddev_str = if entry.is_reference {
                 "".into()
@@ -95,13 +96,13 @@ pub trait MarkupExporter {
     fn command(&self, size: &str) -> String;
 }
 
-fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
+fn determine_unit_from_results(results: &[BenchmarkResult]) -> TimeUnit {
     if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
-        format_duration_value(first_result.mean, None).1
+        first_result.mean_wall_clock_time().suitable_unit()
     } else {
         // Default to `Second`.
-        Unit::Second
+        TimeUnit::Second
     }
 }
 
@@ -109,10 +110,10 @@ impl<T: MarkupExporter> Exporter for T {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<Unit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
     ) -> Result<Vec<u8>> {
-        let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
+        let unit = time_unit.unwrap_or_else(|| determine_unit_from_results(results));
         let entries = relative_speed::compute(results, sort_order);
 
         let table = self.table_results(&entries, unit);

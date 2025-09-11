@@ -88,7 +88,7 @@ impl<'a> Scheduler<'a> {
 
                     println!(
                         "  {} ran",
-                        reference.result.command_with_unused_parameters.cyan()
+                        reference.result.command_with_unused_parameters().cyan()
                     );
 
                     for item in others {
@@ -117,7 +117,7 @@ impl<'a> Scheduler<'a> {
                         println!(
                             "{} {}",
                             comparator,
-                            &item.result.command_with_unused_parameters.magenta()
+                            &item.result.command_with_unused_parameters().magenta()
                         );
                     }
                 }
@@ -135,7 +135,7 @@ impl<'a> Scheduler<'a> {
                             } else {
                                 "        ".into()
                             },
-                            &item.result.command_with_unused_parameters,
+                            &item.result.command_with_unused_parameters(),
                         );
                     }
                 }
@@ -189,39 +189,61 @@ fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
 fn scheduler_basic() -> Result<()> {
     insta::assert_yaml_snapshot!(generate_results(&["--runs=2", "sleep 0.123", "sleep 0.456"])?, @r#"
     - command: sleep 0.123
-      mean: 0.123
-      stddev: 0
-      median: 0.123
-      user: 0
-      system: 0
-      min: 0.123
-      max: 0.123
-      times:
-        - 0.123
-        - 0.123
-      memory_usage_byte:
-        - 0
-        - 0
-      exit_codes:
-        - 0
-        - 0
+      measurements:
+        - time_wall_clock:
+            value: 0.123
+            unit: second
+          time_user:
+            value: 0
+            unit: second
+          time_system:
+            value: 0
+            unit: second
+          peak_memory_usage:
+            value: 0
+            unit: byte
+          exit_code: 0
+        - time_wall_clock:
+            value: 0.123
+            unit: second
+          time_user:
+            value: 0
+            unit: second
+          time_system:
+            value: 0
+            unit: second
+          peak_memory_usage:
+            value: 0
+            unit: byte
+          exit_code: 0
     - command: sleep 0.456
-      mean: 0.456
-      stddev: 0
-      median: 0.456
-      user: 0
-      system: 0
-      min: 0.456
-      max: 0.456
-      times:
-        - 0.456
-        - 0.456
-      memory_usage_byte:
-        - 0
-        - 0
-      exit_codes:
-        - 0
-        - 0
+      measurements:
+        - time_wall_clock:
+            value: 0.456
+            unit: second
+          time_user:
+            value: 0
+            unit: second
+          time_system:
+            value: 0
+            unit: second
+          peak_memory_usage:
+            value: 0
+            unit: byte
+          exit_code: 0
+        - time_wall_clock:
+            value: 0.456
+            unit: second
+          time_user:
+            value: 0
+            unit: second
+          time_system:
+            value: 0
+            unit: second
+          peak_memory_usage:
+            value: 0
+            unit: byte
+          exit_code: 0
     "#);
 
     Ok(())

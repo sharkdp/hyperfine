@@ -5,7 +5,7 @@ use csv::WriterBuilder;
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
-use crate::util::units::Unit;
+use crate::quantity::{FormatQuantity, TimeUnit};
 
 use anyhow::Result;
 
@@ -16,9 +16,12 @@ impl Exporter for CsvExporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        _unit: Option<Unit>,
+        _time_unit: Option<TimeUnit>,
         _sort_order: SortOrder,
     ) -> Result<Vec<u8>> {
+        const CSV_UNIT: TimeUnit = TimeUnit::Second;
+        const CSV_PRECISION: usize = 6;
+
         let mut writer = WriterBuilder::new().from_writer(vec![]);
 
         {
@@ -40,18 +43,21 @@ impl Exporter for CsvExporter {
         for res in results {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
-                res.mean,
-                res.stddev.unwrap_or(0.0),
-                res.median,
-                res.user,
-                res.system,
-                res.min,
-                res.max,
+                res.mean_wall_clock_time(),
+                res.measurements.stddev().unwrap_or_default(),
+                res.measurements.median(),
+                res.measurements.time_user_mean(),
+                res.measurements.time_system_mean(),
+                res.measurements.min(),
+                res.measurements.max(),
             ] {
-                fields.push(Cow::Owned(f.to_string().into_bytes()))
+                fields.push(Cow::Owned(
+                    f.format_with_precision(CSV_UNIT, CSV_PRECISION)
+                        .into_bytes(),
+                ))
             }
             for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.as_bytes()))
+                fields.push(Cow::Borrowed(v.value.as_bytes()))
             }
             writer.write_record(fields)?;
         }
@@ -62,47 +68,101 @@ impl Exporter for CsvExporter {
 
 #[test]
 fn test_csv() {
+    use crate::benchmark::benchmark_result::Parameter;
+    use crate::benchmark::measurement::{Measurement, Measurements};
+    use crate::quantity::{byte, second, Information, Time, Zero};
+
     use std::collections::BTreeMap;
+    use std::process::ExitStatus;
+
     let exporter = CsvExporter::default();
 
     let results = vec![
         BenchmarkResult {
             command: String::from("command_a"),
-            command_with_unused_parameters: String::from("command_a"),
-            mean: 1.0,
-            stddev: Some(2.0),
-            median: 1.0,
-            user: 3.0,
-            system: 4.0,
-            min: 5.0,
-            max: 6.0,
-            times: Some(vec![7.0, 8.0, 9.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(7.0),
+                    time_user: Time::new::<second>(7.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(8.0),
+                    time_user: Time::new::<second>(8.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(12.0),
+                    time_user: Time::new::<second>(12.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: {
                 let mut params = BTreeMap::new();
-                params.insert("foo".into(), "one".into());
-                params.insert("bar".into(), "two".into());
+                params.insert(
+                    "foo".into(),
+                    Parameter {
+                        value: "one".into(),
+                        is_unused: false,
+                    },
+                );
+                params.insert(
+                    "bar".into(),
+                    Parameter {
+                        value: "two".into(),
+                        is_unused: false,
+                    },
+                );
                 params
             },
         },
         BenchmarkResult {
             command: String::from("command_b"),
-            command_with_unused_parameters: String::from("command_b"),
-            mean: 11.0,
-            stddev: Some(12.0),
-            median: 11.0,
-            user: 13.0,
-            system: 14.0,
-            min: 15.0,
-            max: 16.5,
-            times: Some(vec![17.0, 18.0, 19.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(17.0),
+                    time_user: Time::new::<second>(17.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(18.0),
+                    time_user: Time::new::<second>(18.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(19.0),
+                    time_user: Time::new::<second>(19.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: {
                 let mut params = BTreeMap::new();
-                params.insert("foo".into(), "one".into());
-                params.insert("bar".into(), "seven".into());
+                params.insert(
+                    "foo".into(),
+                    Parameter {
+                        value: "one".into(),
+                        is_unused: false,
+                    },
+                );
+                params.insert(
+                    "bar".into(),
+                    Parameter {
+                        value: "seven".into(),
+                        is_unused: false,
+                    },
+                );
                 params
             },
         },
@@ -110,14 +170,14 @@ fn test_csv() {
 
     let actual = String::from_utf8(
         exporter
-            .serialize(&results, Some(Unit::Second), SortOrder::Command)
+            .serialize(&results, Some(TimeUnit::Second), SortOrder::Command)
             .unwrap(),
     )
     .unwrap();
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,1,2,1,3,4,5,6,two,one
-    command_b,11,12,11,13,14,15,16.5,seven,one
+    command_a,9.000000,2.645751,8.000000,9.000000,0.000000,7.000000,12.000000,two,one
+    command_b,18.000000,1.000000,18.000000,18.000000,0.000000,17.000000,19.000000,seven,one
     "#);
 }
