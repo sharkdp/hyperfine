@@ -12,12 +12,12 @@ use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
-use crate::output::format::{format_duration, format_duration_unit};
+use crate::output::format::{format_duration, format_duration_unit, BytesFormat};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
-use crate::util::min_max::{max, min};
+use crate::util::min_max::{max, min, statistics};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
@@ -154,6 +154,12 @@ impl<'a> Benchmark<'a> {
         let mut memory_usage_byte: Vec<u64> = vec![];
         let mut exit_codes: Vec<Option<i32>> = vec![];
         let mut all_succeeded = true;
+        let mut voluntary_context_switches = Vec::new();
+        let mut context_switches = Vec::new();
+        let mut filesystem_input = Vec::new();
+        let mut filesystem_output = Vec::new();
+        let mut minor_page_faults = Vec::new();
+        let mut major_page_faults = Vec::new();
 
         let output_policy = &self.options.command_output_policies[self.number];
 
@@ -282,6 +288,14 @@ impl<'a> Benchmark<'a> {
         times_system.push(res.time_system);
         memory_usage_byte.push(res.memory_usage_byte);
         exit_codes.push(extract_exit_code(status));
+        if self.options.resource_usage {
+            voluntary_context_switches.push(res.voluntary_context_switches);
+            context_switches.push(res.context_switches);
+            filesystem_input.push(res.filesystem_input);
+            filesystem_output.push(res.filesystem_output);
+            minor_page_faults.push(res.minor_page_faults);
+            major_page_faults.push(res.major_page_faults);
+        }
 
         all_succeeded = all_succeeded && success;
 
@@ -319,6 +333,14 @@ impl<'a> Benchmark<'a> {
             times_system.push(res.time_system);
             memory_usage_byte.push(res.memory_usage_byte);
             exit_codes.push(extract_exit_code(status));
+            if self.options.resource_usage {
+                voluntary_context_switches.push(res.voluntary_context_switches);
+                context_switches.push(res.context_switches);
+                filesystem_input.push(res.filesystem_input);
+                filesystem_output.push(res.filesystem_output);
+                minor_page_faults.push(res.minor_page_faults);
+                major_page_faults.push(res.major_page_faults);
+            }
 
             all_succeeded = all_succeeded && success;
 
@@ -389,6 +411,56 @@ impl<'a> Benchmark<'a> {
                     num_str.dimmed()
                 );
             }
+
+            if self.options.resource_usage {
+                println!();
+
+                macro_rules! print_bytes_stats {
+                    ($stats: expr, $title: literal) => {{
+                        let stats = statistics(&$stats);
+                        println!(
+                            "  {:<7} ({} … {}|{} … {}):  {:>8} … {:>8}{}{:<8} … {:>8}",
+                            $title,
+                            "min".cyan(),
+                            "mean".green().bold(),
+                            "med".blue().bold(),
+                            "max".purple(),
+                            format!("{}", BytesFormat(stats.min)).cyan(),
+                            format!("{}", BytesFormat(stats.mean)).green().bold(),
+                            "|".dimmed(),
+                            format!("{}", BytesFormat(stats.median)).blue().bold(),
+                            format!("{}", BytesFormat(stats.max)).purple()
+                        );
+                    }};
+                }
+
+                macro_rules! print_stats {
+                    ($stats: expr, $title: literal) => {{
+                        let stats = statistics(&$stats);
+                        println!(
+                            "  {:<7} ({} … {}|{} … {}):  {:>8} … {:>8}{}{:<8} … {:>8}",
+                            $title,
+                            "min".cyan(),
+                            "mean".green().bold(),
+                            "med".blue().bold(),
+                            "max".purple(),
+                            format!("{}", stats.min).cyan(),
+                            format!("{}", stats.mean).green().bold(),
+                            "|".dimmed(),
+                            format!("{}", stats.median).blue().bold(),
+                            format!("{}", stats.max).purple()
+                        );
+                    }};
+                }
+
+                print_bytes_stats!(memory_usage_byte, "maxrss");
+                print_stats!(voluntary_context_switches, "nvcsw");
+                print_stats!(context_switches, "nivcsw");
+                print_stats!(filesystem_input, "inblock");
+                print_stats!(filesystem_output, "oublock");
+                print_stats!(minor_page_faults, "minflt");
+                print_stats!(major_page_faults, "majflt");
+            }
         }
 
         // Warnings
@@ -430,7 +502,7 @@ impl<'a> Benchmark<'a> {
         }
 
         if !warnings.is_empty() {
-            eprintln!(" ");
+            eprintln!();
 
             for warning in &warnings {
                 eprintln!("  {}: {}", "Warning".yellow(), warning);
@@ -438,7 +510,7 @@ impl<'a> Benchmark<'a> {
         }
 
         if self.options.output_style != OutputStyleOption::Disabled {
-            println!(" ");
+            println!();
         }
 
         self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
