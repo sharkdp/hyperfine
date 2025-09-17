@@ -45,7 +45,7 @@ windows-sys = { version = "0.59", features = [
 once_cell = "1.19"
 
 [target.'cfg(target_os="linux")'.dependencies]
-nix = { version = "0.29", features = ["zerocopy"] }
+nix = { version = "0.29", features = ["zerocopy","resource"] }
 
 [dependencies.clap]
 version = "4"

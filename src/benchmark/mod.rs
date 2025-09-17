@@ -153,8 +153,8 @@ impl<'a> Benchmark<'a> {
         let mut times_system: Vec<Second> = vec![];
         let mut memory_usage_byte: Vec<u64> = vec![];
         let mut exit_codes: Vec<Option<i32>> = vec![];
-        let mut voluntary_cs: Vec<i32> = vec![];
-        let mut involuntary_cs: Vec<i32> = vec![];
+        let mut voluntary_cs: Vec<u64> = vec![];
+        let mut involuntary_cs: Vec<u64> = vec![];
         let mut io_read_ops: Vec<u64> = vec![];
         let mut io_write_ops: Vec<u64> = vec![];
 

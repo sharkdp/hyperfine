@@ -12,6 +12,7 @@ use nix::fcntl::{splice, SpliceFFlags};
 use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::os::fd::AsFd;
+use std::os::unix::process::ExitStatusExt;
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Threading::CREATE_SUSPENDED;
@@ -44,10 +45,10 @@ pub struct TimerResult {
     pub time_user: Second,
     pub time_system: Second,
     pub memory_usage_byte: u64,
-   pub voluntary_cs:i32,
-   pub involuntary_cs :i32,
-   pub io_read_ops: u64,
-   pub io_write_ops :u64,
+    pub voluntary_cs: u64,
+    pub involuntary_cs: u64,
+    pub io_read_ops: u64,
+    pub io_write_ops: u64,
     /// The exit status of the process
     pub status: ExitStatus,
 }
@@ -98,30 +99,44 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     let mut child = command.spawn()?; // <-- Start process
 
     #[cfg(windows)]
-    let cpu_timer = {
-        unsafe { self::windows_timer::CPUTimer::start_suspended_process(&child) }
-    };
+    let cpu_timer = { unsafe { self::windows_timer::CPUTimer::start_suspended_process(&child) } };
 
     if let Some(output) = child.stdout.take() {
         discard(output);
     }
+    #[cfg(unix)]
+    let (status, io_read, io_writes, voluntary_cs, involuntary_cs) = {
+        use libc::{c_int, rusage};
 
+        let pid = child.id() as libc::pid_t;
+
+        // Wait for child and get rusage
+        let mut status: c_int = 0;
+        let mut usage: rusage = unsafe { std::mem::zeroed() };
+
+        unsafe {
+            use libc::wait4;
+
+            wait4(pid, &mut status, 0, &mut usage);
+
+            // println!("Child exited with status: {}", status);
+            // println!("I/O reads: {}", usage.ru_inblock);
+            // println!("I/O writes: {}", usage.ru_oublock);
+        }
+        (
+            ExitStatus::from_raw(status),
+            usage.ru_inblock,
+            usage.ru_oublock,
+            usage.ru_nvcsw,
+            usage.ru_nivcsw,
+        )
+    };
+    
+    #[cfg(windows)]
     let status = child.wait()?; // <-- Wait for completion
 
     let time_real = wallclock_timer.stop();
     let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
-
-    // 🔹 Collect extra stats on Unix
-    #[cfg(unix)]
-    let (voluntary_cs, involuntary_cs, io_read_ops, io_write_ops) = {
-        let usage: RUsage = getrusage(UsageWho::RUSAGE_CHILDREN)?;
-        (
-            usage.ru_nvcsw() as u64,
-            usage.ru_nivcsw() as u64,
-            usage.ru_inblock() as u64,
-            usage.ru_oublock() as u64,
-        )
-    };
 
     //  Collect extra stats on Windows
     #[cfg(windows)]
@@ -129,8 +144,7 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
         use std::mem::MaybeUninit;
         use std::os::windows::io::AsRawHandle;
         use windows_sys::Win32::{
-            Foundation::HANDLE,
-            System::Threading::GetProcessIoCounters,
+            Foundation::HANDLE, System::Threading::GetProcessIoCounters,
             System::Threading::IO_COUNTERS,
         };
 
@@ -151,6 +165,11 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
         }
     };
 
+    let voluntary_cs = voluntary_cs as u64;
+    let involuntary_cs = involuntary_cs as u64;
+    let io_read_ops = io_read as u64;
+    let io_write_ops = io_writes as u64;
+
     Ok(TimerResult {
         time_real,
         time_user,
@@ -163,4 +182,3 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
         status,
     })
 }
-

@@ -48,10 +48,10 @@ pub struct BenchmarkResult {
 
     /// All the voluntary context switching
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub voluntary_cs: Option<Vec<i32>>,
+    pub voluntary_cs: Option<Vec<u64>>,
     /// All the involuntary context switching
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub involuntary_cs: Option<Vec<i32>>,
+    pub involuntary_cs: Option<Vec<u64>>,
 
     ///  All io read operations
     #[serde(skip_serializing_if = "Option::is_none")]

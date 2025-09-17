@@ -15,9 +15,9 @@ pub struct TimingResult {
     /// Maximum amount of memory used, in bytes
     pub memory_usage_byte: u64,
     /// number of voluntary context swithcing
-    pub voluntary_cs: i32,
+    pub voluntary_cs: u64,
     /// number of involuntary context swithcing
-    pub involuntary_cs: i32,
+    pub involuntary_cs: u64,
 
     ///  number of io read operations
     pub io_read_ops: u64,
