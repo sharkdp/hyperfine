@@ -85,6 +85,7 @@ fn test_csv() {
                 params.insert("bar".into(), "two".into());
                 params
             },
+            ..Default::default()
         },
         BenchmarkResult {
             command: String::from("command_b"),
@@ -105,7 +106,9 @@ fn test_csv() {
                 params.insert("bar".into(), "seven".into());
                 params
             },
+            ..Default::default()
         },
+        
     ];
 
     let actual = String::from_utf8(

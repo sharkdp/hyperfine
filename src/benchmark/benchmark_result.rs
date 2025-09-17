@@ -46,6 +46,20 @@ pub struct BenchmarkResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memory_usage_byte: Option<Vec<u64>>,
 
+    /// All the voluntary context switching
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub voluntary_cs: Option<Vec<i32>>,
+    /// All the involuntary context switching
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub involuntary_cs: Option<Vec<i32>>,
+
+    ///  All io read operations
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub io_read_ops: Option<Vec<u64>>,
+    /// All io write operations
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub io_write_ops: Option<Vec<u64>>,
+
     /// Exit codes of all command invocations
     pub exit_codes: Vec<Option<i32>>,
 

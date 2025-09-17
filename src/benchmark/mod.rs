@@ -153,6 +153,11 @@ impl<'a> Benchmark<'a> {
         let mut times_system: Vec<Second> = vec![];
         let mut memory_usage_byte: Vec<u64> = vec![];
         let mut exit_codes: Vec<Option<i32>> = vec![];
+        let mut voluntary_cs: Vec<i32> = vec![];
+        let mut involuntary_cs: Vec<i32> = vec![];
+        let mut io_read_ops: Vec<u64> = vec![];
+        let mut io_write_ops: Vec<u64> = vec![];
+
         let mut all_succeeded = true;
 
         let output_policy = &self.options.command_output_policies[self.number];
@@ -281,6 +286,10 @@ impl<'a> Benchmark<'a> {
         times_user.push(res.time_user);
         times_system.push(res.time_system);
         memory_usage_byte.push(res.memory_usage_byte);
+        voluntary_cs.push(res.voluntary_cs);
+        involuntary_cs.push(res.involuntary_cs);
+        io_read_ops.push(res.io_read_ops);
+        io_write_ops.push(res.io_write_ops);
         exit_codes.push(extract_exit_code(status));
 
         all_succeeded = all_succeeded && success;
@@ -318,6 +327,10 @@ impl<'a> Benchmark<'a> {
             times_user.push(res.time_user);
             times_system.push(res.time_system);
             memory_usage_byte.push(res.memory_usage_byte);
+            voluntary_cs.push(res.voluntary_cs);
+            involuntary_cs.push(res.involuntary_cs);
+            io_read_ops.push(res.io_read_ops);
+            io_write_ops.push(res.io_write_ops);
             exit_codes.push(extract_exit_code(status));
 
             all_succeeded = all_succeeded && success;
@@ -347,6 +360,11 @@ impl<'a> Benchmark<'a> {
 
         let user_mean = mean(&times_user);
         let system_mean = mean(&times_system);
+
+        let total_voluntary_cs = voluntary_cs.iter().fold(0, |acc, x| acc + x);
+        let total_involuntary_cs = involuntary_cs.iter().fold(0, |acc, x| acc + x);
+        let total_io_read_ops = io_read_ops.iter().fold(0, |acc, x| acc + x);
+        let total_io_write_ops = io_write_ops.iter().fold(0, |acc, x| acc + x);
 
         // Formatting and console output
         let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
@@ -387,6 +405,21 @@ impl<'a> Benchmark<'a> {
                     min_str.cyan(),
                     max_str.purple(),
                     num_str.dimmed()
+                );
+
+                println!(
+                    "  {}      {}  {:>8} … {:>8}    ",
+                    "voluntary cs".cyan(),
+                    "involuntary cs".purple(),
+                    total_voluntary_cs,
+                    total_involuntary_cs,
+                );
+                println!(
+                    "  {}      {}  {:>8} … {:>8}    ",
+                    "io read ops".cyan(),
+                    "io write ops".purple(),
+                    total_io_read_ops,
+                    total_io_write_ops,
                 );
             }
         }
@@ -454,6 +487,10 @@ impl<'a> Benchmark<'a> {
             min: t_min,
             max: t_max,
             times: Some(times_real),
+            voluntary_cs: Some(voluntary_cs),
+            involuntary_cs: Some(involuntary_cs),
+            io_read_ops: Some(io_read_ops),
+            io_write_ops: Some(io_write_ops),
             memory_usage_byte: Some(memory_usage_byte),
             exit_codes,
             parameters: self

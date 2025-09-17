@@ -44,6 +44,10 @@ pub struct TimerResult {
     pub time_user: Second,
     pub time_system: Second,
     pub memory_usage_byte: u64,
+   pub voluntary_cs:i32,
+   pub involuntary_cs :i32,
+   pub io_read_ops: u64,
+   pub io_write_ops :u64,
     /// The exit status of the process
     pub status: ExitStatus,
 }
@@ -87,35 +91,76 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
-
-        // Create the process in a suspended state so that we don't miss any cpu time between process creation and `CPUTimer` start.
         command.creation_flags(CREATE_SUSPENDED);
     }
 
     let wallclock_timer = WallClockTimer::start();
-    let mut child = command.spawn()?;
+    let mut child = command.spawn()?; // <-- Start process
 
     #[cfg(windows)]
     let cpu_timer = {
-        // SAFETY: We created a suspended process
         unsafe { self::windows_timer::CPUTimer::start_suspended_process(&child) }
     };
 
     if let Some(output) = child.stdout.take() {
-        // Handle CommandOutputPolicy::Pipe
         discard(output);
     }
 
-    let status = child.wait()?;
+    let status = child.wait()?; // <-- Wait for completion
 
     let time_real = wallclock_timer.stop();
     let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
+
+    // 🔹 Collect extra stats on Unix
+    #[cfg(unix)]
+    let (voluntary_cs, involuntary_cs, io_read_ops, io_write_ops) = {
+        let usage: RUsage = getrusage(UsageWho::RUSAGE_CHILDREN)?;
+        (
+            usage.ru_nvcsw() as u64,
+            usage.ru_nivcsw() as u64,
+            usage.ru_inblock() as u64,
+            usage.ru_oublock() as u64,
+        )
+    };
+
+    //  Collect extra stats on Windows
+    #[cfg(windows)]
+    let (voluntary_cs, involuntary_cs, io_read_ops, io_write_ops) = {
+        use std::mem::MaybeUninit;
+        use std::os::windows::io::AsRawHandle;
+        use windows_sys::Win32::{
+            Foundation::HANDLE,
+            System::Threading::GetProcessIoCounters,
+            System::Threading::IO_COUNTERS,
+        };
+
+        let handle: HANDLE = child.as_raw_handle() as HANDLE;
+        let mut counters = MaybeUninit::<IO_COUNTERS>::uninit();
+
+        let success = unsafe { GetProcessIoCounters(handle, counters.as_mut_ptr()) };
+        if success == 0 {
+            (0, 0, 0, 0)
+        } else {
+            let counters = unsafe { counters.assume_init() };
+            (
+                0, // Context switches not available via this API
+                0,
+                counters.ReadOperationCount as u64,
+                counters.WriteOperationCount as u64,
+            )
+        }
+    };
 
     Ok(TimerResult {
         time_real,
         time_user,
         time_system,
         memory_usage_byte,
+        voluntary_cs,
+        involuntary_cs,
+        io_read_ops,
+        io_write_ops,
         status,
     })
 }
+
