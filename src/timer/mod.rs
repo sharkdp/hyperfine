@@ -13,7 +13,6 @@ use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::os::fd::AsFd;
 #[cfg(target_os = "linux")]
-
 use std::os::unix::process::ExitStatusExt;
 
 #[cfg(target_os = "windows")]
@@ -121,9 +120,7 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
 
             wait4(pid, &mut status, 0, &mut usage);
 
-            // println!("Child exited with status: {}", status);
-            // println!("I/O reads: {}", usage.ru_inblock);
-            // println!("I/O writes: {}", usage.ru_oublock);
+
         }
         (
             ExitStatus::from_raw(status),
@@ -133,7 +130,9 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
             usage.ru_nivcsw,
         )
     };
-    
+
+    // Note that you can not use both child.wait()? and wait4
+    // Because both pull the process from the process table
     #[cfg(windows)]
     let status = child.wait()?; // <-- Wait for completion
 
@@ -142,7 +141,7 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
 
     //  Collect extra stats on Windows
     #[cfg(windows)]
-    let (voluntary_cs, involuntary_cs, io_read_ops, io_write_ops) = {
+    let (voluntary_cs, involuntary_cs, io_read, io_writes) = {
         use std::mem::MaybeUninit;
         use std::os::windows::io::AsRawHandle;
         use windows_sys::Win32::{
@@ -159,7 +158,7 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
         } else {
             let counters = unsafe { counters.assume_init() };
             (
-                0, // Context switches not available via this API
+                0, // Can not find any API  available for Context  switches  in windows
                 0,
                 counters.ReadOperationCount as u64,
                 counters.WriteOperationCount as u64,

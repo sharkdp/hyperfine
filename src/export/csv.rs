@@ -78,6 +78,10 @@ fn test_csv() {
             max: 6.0,
             times: Some(vec![7.0, 8.0, 9.0]),
             memory_usage_byte: None,
+            voluntary_cs: None,
+            involuntary_cs: None,
+            io_read_ops: None,
+            io_write_ops: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -85,7 +89,6 @@ fn test_csv() {
                 params.insert("bar".into(), "two".into());
                 params
             },
-            ..Default::default()
         },
         BenchmarkResult {
             command: String::from("command_b"),
@@ -99,6 +102,10 @@ fn test_csv() {
             max: 16.5,
             times: Some(vec![17.0, 18.0, 19.0]),
             memory_usage_byte: None,
+            voluntary_cs: None,
+            involuntary_cs: None,
+            io_read_ops: None,
+            io_write_ops: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -106,9 +113,7 @@ fn test_csv() {
                 params.insert("bar".into(), "seven".into());
                 params
             },
-            ..Default::default()
         },
-        
     ];
 
     let actual = String::from_utf8(
