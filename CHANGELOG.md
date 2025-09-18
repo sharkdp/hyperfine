@@ -1,3 +1,10 @@
+## v1.20.0 
+
+## Features
+
+- Add reporting for both I/O operations for windows in the benchmark results.
+ and I/O operations and context switching counts for linux in benchmark results(@mahmoudkhera)
+
 # v1.19.0
 
 ## Features
