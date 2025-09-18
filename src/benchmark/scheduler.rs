@@ -202,6 +202,18 @@ fn scheduler_basic() -> Result<()> {
       memory_usage_byte:
         - 0
         - 0
+      voluntary_cs:
+        - 0
+        - 0
+      involuntary_cs:
+        - 0
+        - 0
+      io_read_ops:
+        - 0
+        - 0
+      io_write_ops:
+        - 0
+        - 0
       exit_codes:
         - 0
         - 0
@@ -217,6 +229,18 @@ fn scheduler_basic() -> Result<()> {
         - 0.456
         - 0.456
       memory_usage_byte:
+        - 0
+        - 0
+      voluntary_cs:
+        - 0
+        - 0
+      involuntary_cs:
+        - 0
+        - 0
+      io_read_ops:
+        - 0
+        - 0
+      io_write_ops:
         - 0
         - 0
       exit_codes:
