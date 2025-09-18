@@ -361,12 +361,11 @@ impl<'a> Benchmark<'a> {
         let user_mean = mean(&times_user);
         let system_mean = mean(&times_system);
         #[cfg(not(windows))]
-        let(vcs,invcs)=
-        {
+        let (vcs, invcs) = {
             let total_voluntary_cs = voluntary_cs.iter().fold(0, |acc, x| acc + x);
             let total_involuntary_cs = involuntary_cs.iter().fold(0, |acc, x| acc + x);
 
-            (total_voluntary_cs,total_involuntary_cs)
+            (total_voluntary_cs, total_involuntary_cs)
         };
         let total_io_read_ops = io_read_ops.iter().fold(0, |acc, x| acc + x);
         let total_io_write_ops = io_write_ops.iter().fold(0, |acc, x| acc + x);
@@ -419,7 +418,6 @@ impl<'a> Benchmark<'a> {
                     "Read/Write".purple(),
                     total_io_read_ops.to_string().green(),
                     total_io_write_ops.to_string().green(),
-                    
                 );
 
                 // Print context switches if  not   windows
@@ -431,7 +429,6 @@ impl<'a> Benchmark<'a> {
                     "vcs/invcs".purple(),
                     vcs.to_string().green(),
                     invcs.to_string().green(),
-
                 );
             }
         }

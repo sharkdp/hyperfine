@@ -119,8 +119,6 @@ pub fn execute_and_measure(mut command: Command) -> Result<TimerResult> {
             use libc::wait4;
 
             wait4(pid, &mut status, 0, &mut usage);
-
-
         }
         (
             ExitStatus::from_raw(status),
