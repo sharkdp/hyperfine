@@ -12,7 +12,7 @@ use nix::fcntl::{splice, SpliceFFlags};
 use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::os::fd::AsFd;
-#[cfg(target_os = "unix")]
+#[cfg( unix)]
 use std::os::unix::process::ExitStatusExt;
 
 #[cfg(target_os = "windows")]
