@@ -23,6 +23,7 @@ pub mod options;
 pub mod outlier_detection;
 pub mod output;
 pub mod parameter;
+pub mod quantity;
 pub mod timer;
 pub mod util;
 

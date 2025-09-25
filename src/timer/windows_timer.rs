@@ -1,7 +1,10 @@
 #![cfg(windows)]
 #![warn(unsafe_op_in_unsafe_fn)]
 
-use std::{mem, os::windows::io::AsRawHandle, process, ptr};
+use std::process::{self, Child, ExitStatus};
+use std::{mem, os::windows::io::AsRawHandle, ptr};
+
+use anyhow::Result;
 
 use windows_sys::Win32::{
     Foundation::{CloseHandle, HANDLE},
@@ -27,9 +30,7 @@ use windows_sys::{
     },
 };
 
-use crate::util::units::Second;
-
-const HUNDRED_NS_PER_MS: i64 = 10;
+use crate::quantity::{nanosecond, Information, Time, Zero};
 
 #[cfg(not(feature = "windows_process_extensions_main_thread_handle"))]
 #[allow(non_upper_case_globals)]
@@ -86,7 +87,9 @@ impl CPUTimer {
         Self { job_object }
     }
 
-    pub fn stop(&self) -> (Second, Second, u64) {
+    pub fn stop(&self, mut child: Child) -> Result<(Time, Time, Information, ExitStatus)> {
+        let status = child.wait()?;
+
         let mut job_object_info =
             mem::MaybeUninit::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>::uninit();
 
@@ -108,15 +111,17 @@ impl CPUTimer {
             // The `TotalUserTime` is "The total amount of user-mode execution time for
             // all active processes associated with the job, as well as all terminated processes no
             // longer associated with the job, in 100-nanosecond ticks."
-            let user: i64 = job_object_info.TotalUserTime / HUNDRED_NS_PER_MS;
+            let user_time = Time::new::<nanosecond>((job_object_info.TotalUserTime as f64) * 100.0);
 
             // The `TotalKernelTime` is "The total amount of kernel-mode execution time
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
-            let kernel: i64 = job_object_info.TotalKernelTime / HUNDRED_NS_PER_MS;
-            (user as f64 * 1e-6, kernel as f64 * 1e-6, 0)
+            let system_time =
+                Time::new::<nanosecond>((job_object_info.TotalKernelTime as f64) * 100.0);
+
+            Ok((user_time, system_time, Information::zero(), status))
         } else {
-            (0.0, 0.0, 0)
+            Ok((Time::zero(), Time::zero(), Information::zero(), status))
         }
     }
 }

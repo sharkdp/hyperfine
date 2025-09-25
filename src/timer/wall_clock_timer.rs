@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::util::units::Second;
+use crate::quantity::{nanosecond, second, Time};
 
 pub struct WallClockTimer {
     start: Instant,
@@ -13,8 +13,10 @@ impl WallClockTimer {
         }
     }
 
-    pub fn stop(&self) -> Second {
+    pub fn stop(&self) -> Time {
         let duration = self.start.elapsed();
-        duration.as_secs() as f64 + f64::from(duration.subsec_nanos()) * 1e-9
+
+        Time::new::<second>(duration.as_secs() as f64)
+            + Time::new::<nanosecond>(duration.subsec_nanos() as f64)
     }
 }

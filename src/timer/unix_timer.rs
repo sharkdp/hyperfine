@@ -1,106 +1,84 @@
 #![cfg(not(windows))]
 
-use std::convert::TryFrom;
-use std::mem;
+use std::io;
+use std::mem::MaybeUninit;
+use std::os::unix::process::ExitStatusExt;
+use std::process::{Child, ExitStatus};
 
-use crate::timer::CPUTimes;
-use crate::util::units::Second;
+use anyhow::Result;
+
+use crate::quantity::{byte, kibibyte, microsecond, second, Information, Time};
 
 #[derive(Debug, Copy, Clone)]
-pub struct CPUInterval {
+struct ResourceUsage {
     /// Total amount of time spent executing in user mode
-    pub user: Second,
+    pub time_user: Time,
 
     /// Total amount of time spent executing in kernel mode
-    pub system: Second,
+    pub time_system: Time,
+
+    /// Maximum amount of memory used by the process, in bytes
+    pub memory_usage: Information,
 }
 
-pub struct CPUTimer {
-    start_cpu: CPUTimes,
+#[allow(clippy::useless_conversion)]
+fn convert_timeval(tv: libc::timeval) -> Time {
+    let sec = tv.tv_sec as f64;
+    let usec = tv.tv_usec as f64;
+
+    Time::new::<second>(sec) + Time::new::<microsecond>(usec)
 }
+
+#[allow(clippy::useless_conversion)]
+fn wait4(mut child: Child) -> io::Result<(ExitStatus, ResourceUsage)> {
+    drop(child.stdin.take());
+
+    let pid = child.id() as i32;
+    let mut status = 0;
+    let mut rusage = MaybeUninit::zeroed();
+
+    let result = unsafe { libc::wait4(pid, &mut status, 0, rusage.as_mut_ptr()) };
+
+    if result < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        let rusage = unsafe { rusage.assume_init() };
+
+        let memory_usage_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
+            // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
+            // A f64 can represent integers up to 2^53 exactly, so we can represent
+            // all values up to 2^53 bytes = 8 PiB exactly. Beyond that, our precision
+            // is larger than 1 byte, but that's considered acceptable.
+            Information::new::<byte>(rusage.ru_maxrss as f64)
+        } else {
+            Information::new::<kibibyte>(rusage.ru_maxrss as f64)
+        };
+
+        Ok((
+            ExitStatus::from_raw(status),
+            ResourceUsage {
+                time_user: convert_timeval(rusage.ru_utime),
+                time_system: convert_timeval(rusage.ru_stime),
+                memory_usage: memory_usage_byte.into(),
+            },
+        ))
+    }
+}
+
+pub struct CPUTimer {}
 
 impl CPUTimer {
     pub fn start() -> Self {
-        CPUTimer {
-            start_cpu: get_cpu_times(),
-        }
+        Self {}
     }
 
-    pub fn stop(&self) -> (Second, Second, u64) {
-        let end_cpu = get_cpu_times();
-        let cpu_interval = cpu_time_interval(&self.start_cpu, &end_cpu);
-        (
-            cpu_interval.user,
-            cpu_interval.system,
-            end_cpu.memory_usage_byte,
-        )
+    pub fn stop(&self, child: Child) -> Result<(Time, Time, Information, ExitStatus)> {
+        let (status, usage) = wait4(child)?;
+        Ok((
+            usage.time_user,
+            usage.time_system,
+            usage.memory_usage,
+            status,
+        ))
     }
-}
-
-/// Read CPU execution times ('user' and 'system')
-fn get_cpu_times() -> CPUTimes {
-    use libc::{getrusage, rusage, RUSAGE_CHILDREN};
-
-    let result: rusage = unsafe {
-        let mut buf = mem::zeroed();
-        let success = getrusage(RUSAGE_CHILDREN, &mut buf);
-        assert_eq!(0, success);
-        buf
-    };
-
-    const MICROSEC_PER_SEC: i64 = 1000 * 1000;
-
-    // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
-    let max_rss_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
-        result.ru_maxrss
-    } else {
-        result.ru_maxrss * 1024
-    };
-
-    #[allow(clippy::useless_conversion)]
-    CPUTimes {
-        user_usec: i64::from(result.ru_utime.tv_sec) * MICROSEC_PER_SEC
-            + i64::from(result.ru_utime.tv_usec),
-        system_usec: i64::from(result.ru_stime.tv_sec) * MICROSEC_PER_SEC
-            + i64::from(result.ru_stime.tv_usec),
-        memory_usage_byte: u64::try_from(max_rss_byte).unwrap_or(0),
-    }
-}
-
-/// Compute the time intervals in between two `CPUTimes` snapshots
-fn cpu_time_interval(start: &CPUTimes, end: &CPUTimes) -> CPUInterval {
-    CPUInterval {
-        user: ((end.user_usec - start.user_usec) as f64) * 1e-6,
-        system: ((end.system_usec - start.system_usec) as f64) * 1e-6,
-    }
-}
-
-#[cfg(test)]
-use approx::assert_relative_eq;
-
-#[test]
-fn test_cpu_time_interval() {
-    let t_a = CPUTimes {
-        user_usec: 12345,
-        system_usec: 54321,
-        memory_usage_byte: 0,
-    };
-
-    let t_b = CPUTimes {
-        user_usec: 20000,
-        system_usec: 70000,
-        memory_usage_byte: 0,
-    };
-
-    let t_zero = cpu_time_interval(&t_a, &t_a);
-    assert!(t_zero.user.abs() < f64::EPSILON);
-    assert!(t_zero.system.abs() < f64::EPSILON);
-
-    let t_ab = cpu_time_interval(&t_a, &t_b);
-    assert_relative_eq!(0.007655, t_ab.user);
-    assert_relative_eq!(0.015679, t_ab.system);
-
-    let t_ba = cpu_time_interval(&t_b, &t_a);
-    assert_relative_eq!(-0.007655, t_ba.user);
-    assert_relative_eq!(-0.015679, t_ba.system);
 }
