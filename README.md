@@ -225,7 +225,7 @@ pacman -S hyperfine
 
 ### On Debian Linux
 
-On Debian Linux, hyperfine can be installed [from the testing repositories](https://packages.debian.org/testing/main/hyperfine):
+On Debian Linux, hyperfine can be installed [from the official repositories](https://packages.debian.org/hyperfine):
 ```
 apt install hyperfine
 ```
