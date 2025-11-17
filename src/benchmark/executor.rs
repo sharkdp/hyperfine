@@ -79,23 +79,41 @@ fn run_command_and_measure_common(
     let result = execute_and_measure(command)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
-    if command_failure_action == CmdFailureAction::RaiseError && !result.status.success() {
-        let when = match iteration {
-            BenchmarkIteration::NonBenchmarkRun => "a non-benchmark run".to_string(),
-            BenchmarkIteration::Warmup(0) => "the first warmup run".to_string(),
-            BenchmarkIteration::Warmup(i) => format!("warmup iteration {i}"),
-            BenchmarkIteration::Benchmark(0) => "the first benchmark run".to_string(),
-            BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
-        };
-        bail!(
-            "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-            Alternatively, use the '--show-output' option to debug what went wrong.",
-            cause=result.status.code().map_or(
-                "The process has been terminated by a signal".into(),
-                |c| format!("Command terminated with non-zero exit code {c}")
+    if !result.status.success() {
+        use crate::util::exit_code::extract_exit_code;
 
-            ),
-        );
+        let should_fail = match command_failure_action {
+            CmdFailureAction::RaiseError => true,
+            CmdFailureAction::IgnoreAllFailures => false,
+            CmdFailureAction::IgnoreSpecificFailures(ref codes) => {
+                // Only fail if the exit code is not in the list of codes to ignore
+                if let Some(exit_code) = extract_exit_code(result.status) {
+                    !codes.contains(&exit_code)
+                } else {
+                    // If we can't extract an exit code, treat it as a failure
+                    true
+                }
+            }
+        };
+
+        if should_fail {
+            let when = match iteration {
+                BenchmarkIteration::NonBenchmarkRun => "a non-benchmark run".to_string(),
+                BenchmarkIteration::Warmup(0) => "the first warmup run".to_string(),
+                BenchmarkIteration::Warmup(i) => format!("warmup iteration {i}"),
+                BenchmarkIteration::Benchmark(0) => "the first benchmark run".to_string(),
+                BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
+            };
+            bail!(
+                "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+                Alternatively, use the '--show-output' option to debug what went wrong.",
+                cause=result.status.code().map_or(
+                    "The process has been terminated by a signal".into(),
+                    |c| format!("Command terminated with non-zero exit code {c}")
+
+                ),
+            );
+        }
     }
 
     Ok(result)
@@ -122,7 +140,7 @@ impl Executor for RawExecutor<'_> {
         let result = run_command_and_measure_common(
             command.get_command()?,
             iteration,
-            command_failure_action.unwrap_or(self.options.command_failure_action),
+            command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
@@ -187,7 +205,7 @@ impl Executor for ShellExecutor<'_> {
         let mut result = run_command_and_measure_common(
             command_builder,
             iteration,
-            command_failure_action.unwrap_or(self.options.command_failure_action),
+            command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),

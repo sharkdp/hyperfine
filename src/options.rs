@@ -67,13 +67,16 @@ impl Shell {
 }
 
 /// Action to take when an executed command fails.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CmdFailureAction {
     /// Exit with an error message
     RaiseError,
 
-    /// Simply ignore the non-zero exit code
-    Ignore,
+    /// Ignore all non-zero exit codes
+    IgnoreAllFailures,
+
+    /// Ignore specific exit codes
+    IgnoreSpecificFailures(Vec<i32>),
 }
 
 /// Output style type option
@@ -415,8 +418,21 @@ impl Options {
             }
         };
 
-        if matches.get_flag("ignore-failure") {
-            options.command_failure_action = CmdFailureAction::Ignore;
+        if let Some(mode) = matches.get_one::<String>("ignore-failure") {
+            options.command_failure_action = match mode.as_str() {
+                "all-non-zero" | "" => CmdFailureAction::IgnoreAllFailures,
+                codes => {
+                    let exit_codes: Result<Vec<i32>, _> = codes
+                        .split(',')
+                        .map(|s| {
+                            s.trim()
+                                .parse::<i32>()
+                                .map_err(|e| OptionsError::IntParsingError("ignore-failure", e))
+                        })
+                        .collect();
+                    CmdFailureAction::IgnoreSpecificFailures(exit_codes?)
+                }
+            };
         }
 
         options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {

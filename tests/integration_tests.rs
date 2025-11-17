@@ -277,6 +277,78 @@ fn can_run_failing_commands_with_ignore_failure_option() {
         .success();
 }
 
+#[cfg(unix)]
+#[test]
+fn can_ignore_specific_exit_codes() {
+    // Test that specifying exit code 1 ignores it
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-failure=1")
+        .arg("exit 1")
+        .assert()
+        .success();
+
+    // Test that other exit codes still fail
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-failure=1")
+        .arg("exit 2")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Command terminated with non-zero exit code 2",
+        ));
+}
+
+#[cfg(unix)]
+#[test]
+fn can_ignore_multiple_exit_codes() {
+    // Test that all specified exit codes are ignored
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-failure=1,2,3")
+        .arg("exit 1")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-failure=1,2,3")
+        .arg("exit 2")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-failure=1,2,3")
+        .arg("exit 3")
+        .assert()
+        .success();
+
+    // Test that other exit codes still fail
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-failure=1,2,3")
+        .arg("exit 4")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Command terminated with non-zero exit code 4",
+        ));
+}
+
+#[cfg(unix)]
+#[test]
+fn ignore_failure_with_all_non_zero() {
+    // Test explicit "all-non-zero" mode
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-failure=all-non-zero")
+        .arg("exit 5")
+        .assert()
+        .success();
+}
+
 #[test]
 fn shows_output_of_benchmarked_command() {
     hyperfine()
