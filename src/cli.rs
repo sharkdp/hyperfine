@@ -226,9 +226,15 @@ fn build_command() -> Command {
         .arg(
             Arg::new("ignore-failure")
                 .long("ignore-failure")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Set)
+                .value_name("MODE")
+                .num_args(0..=1)
+                .default_missing_value("all-non-zero")
+                .require_equals(true)
                 .short('i')
-                .help("Ignore non-zero exit codes of the benchmarked programs."),
+                .help("Ignore failures of the benchmarked programs. Without a value or with \
+                       'all-non-zero', all non-zero exit codes are ignored. You can also provide \
+                       a comma-separated list of exit codes to ignore (e.g., --ignore-failure=1,2)."),
         )
         .arg(
             Arg::new("style")
