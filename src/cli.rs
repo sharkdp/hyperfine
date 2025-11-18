@@ -326,6 +326,15 @@ fn build_command() -> Command {
                        The output time unit can be changed using the --time-unit option."),
         )
         .arg(
+            Arg::new("export-html")
+                .long("export-html")
+                .action(ArgAction::Set)
+                .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
+                .help("Export the timing summary statistics as an HTML page with interactive charts to the given FILE. \
+                       The charts include a boxplot of all results, as well as histograms for individual commands."),
+        )
+        .arg(
             Arg::new("show-output")
                 .long("show-output")
                 .action(ArgAction::SetTrue)

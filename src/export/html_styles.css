@@ -1,0 +1,202 @@
+/*
+ * Hyperfine Benchmark Results - Stylesheet
+ * Main styles for the benchmark report visualization
+ */
+
+/* Base styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 0;
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 10px;
+}
+
+h1,
+h2,
+h3 {
+  color: #333;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+/* Chart and visualization styles */
+.chart {
+  height: 400px;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.chart-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 20px;
+}
+
+.chart-box {
+  width: 100%;
+}
+
+/* Table styles */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 30px;
+  overflow-x: auto;
+  display: block;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+.reference {
+  font-weight: bold;
+}
+
+.stddev {
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* Tab navigation */
+.tab-container {
+  margin-top: 20px;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.tab-button {
+  padding: 10px 15px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.tab-button:hover {
+  background: #e9e9e9;
+}
+
+.tab-button.active {
+  background: #e1e1e1;
+  font-weight: bold;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Statistics cards */
+.stats-card {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stats-header {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.stats-label {
+  color: #666;
+  flex: 1;
+}
+
+.stats-value {
+  font-family: monospace;
+  text-align: right;
+  flex: 1;
+}
+
+/* Footer styling */
+.footer {
+  margin-top: 40px;
+  font-size: 0.8em;
+  color: #666;
+  text-align: center;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chart {
+    height: 350px;
+  }
+
+  .chart-container {
+    grid-template-columns: 1fr;
+  }
+
+  body {
+    margin: 10px;
+  }
+
+  .tab-buttons {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 5px;
+  }
+
+  .tab-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 500px) {
+  .chart {
+    height: 300px;
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 1.8em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  h3 {
+    font-size: 1.2em;
+  }
+}
