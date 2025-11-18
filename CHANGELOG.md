@@ -1,3 +1,20 @@
+# v1.20.0
+
+## Features
+
+- Add `--reference-name` option to give a meaningful name to the reference command, see #808 (@niklasdewally)
+- The `--ignore-failure` option now supports a comma-separated list of exit codes to ignore (e.g., `--ignore-failure=1,2`), see #836 (@sharkdp)
+- Python scripts: Add `--time-unit` option to `advanced_statistics.py` (@sharkdp)
+- Python scripts: Add new `plot_benchmarks.py` script for plotting collections of benchmarks, see #806 (@marxin)
+
+## Bugfixes
+
+- Fix bug where naming individual commands with parameter scan was not working correctly, see #794 (@teofr)
+
+## Other
+
+- Restrict `cat` tests to Unix environments, see #776 and #777 (@ritvikos)
+
 # v1.19.0
 
 ## Features
