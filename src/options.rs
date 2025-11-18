@@ -229,6 +229,9 @@ pub struct Options {
     /// What color mode to use for the terminal output
     pub output_style: OutputStyleOption,
 
+    /// Display resource usage of commands
+    pub resource_usage: bool,
+
     /// How to order benchmarks in the relative speed comparison
     pub sort_order_speed_comparison: SortOrder,
 
@@ -262,6 +265,7 @@ impl Default for Options {
             setup_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
+            resource_usage: false,
             sort_order_speed_comparison: SortOrder::MeanTime,
             sort_order_exports: SortOrder::Command,
             executor_kind: ExecutorKind::default(),
@@ -381,6 +385,8 @@ impl Options {
                 }
             }
         };
+
+        options.resource_usage = *matches.get_one::<bool>("resource-usage").unwrap_or(&false);
 
         match options.output_style {
             OutputStyleOption::Basic | OutputStyleOption::NoColor => {
