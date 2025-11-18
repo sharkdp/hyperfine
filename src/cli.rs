@@ -280,6 +280,30 @@ fn build_command() -> Command {
                        This option affects the standard output as well as all export formats except for CSV and JSON."),
         )
         .arg(
+            Arg::new("export")
+                .long("export")
+                .action(ArgAction::Append)
+                .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
+                .num_args(0..=1)
+                .default_missing_value("export.json")
+                .help(
+                    "Export timing results to the given FILE.
+                     \n\
+                     Supported formats:\n\
+                     .json     Includes summary and individual run timings (in seconds).\n\
+                     .csv      Summary only (in seconds).\n\
+                     .md       Markdown table.\n\
+                     .adoc     AsciiDoc table.\n\
+                     .org      Org-mode table.\n\
+                     \n\
+                     Notes:\n\
+                     - Repeat --export to generate multiple formats.\n\
+                     - Except for JSON and CSV, the output time unit can be changed using '--time-unit' option.\n\
+                     - Defaults to JSON for unsupported or missing file extensions."
+                ),
+        )
+        .arg(
             Arg::new("export-asciidoc")
                 .long("export-asciidoc")
                 .action(ArgAction::Set)
