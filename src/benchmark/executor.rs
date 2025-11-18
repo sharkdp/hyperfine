@@ -152,6 +152,10 @@ impl Executor for RawExecutor<'_> {
                 time_user: result.time_user,
                 time_system: result.time_system,
                 memory_usage_byte: result.memory_usage_byte,
+                voluntary_cs: result.voluntary_cs,
+                involuntary_cs: result.involuntary_cs,
+                io_read_ops: result.io_read_ops,
+                io_write_ops: result.io_write_ops,
             },
             result.status,
         ))
@@ -224,6 +228,10 @@ impl Executor for ShellExecutor<'_> {
                 time_user: result.time_user,
                 time_system: result.time_system,
                 memory_usage_byte: result.memory_usage_byte,
+                voluntary_cs: result.voluntary_cs,
+                involuntary_cs: result.involuntary_cs,
+                io_read_ops: result.io_read_ops,
+                io_write_ops: result.io_write_ops,
             },
             result.status,
         ))
@@ -288,6 +296,10 @@ impl Executor for ShellExecutor<'_> {
             time_real: mean(&times_real),
             time_user: mean(&times_user),
             time_system: mean(&times_system),
+            voluntary_cs: 0,
+            involuntary_cs: 0,
+            io_read_ops: 0,
+            io_write_ops: 0,
             memory_usage_byte: 0,
         });
 
@@ -345,6 +357,10 @@ impl Executor for MockExecutor {
                 time_user: 0.0,
                 time_system: 0.0,
                 memory_usage_byte: 0,
+                voluntary_cs: 0,
+                involuntary_cs: 0,
+                io_read_ops: 0,
+                io_write_ops: 0,
             },
             status,
         ))
