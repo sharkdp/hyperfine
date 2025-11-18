@@ -722,3 +722,119 @@ fn windows_quote_before_quote_args() {
         .assert()
         .success();
 }
+
+#[cfg(unix)]
+#[test]
+fn hyperfine_iteration_env_var_in_prepare_command() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let output_path = tempdir.path().join("iteration_output.txt");
+
+    // Write HYPERFINE_ITERATION value to a file during prepare
+    hyperfine()
+        .arg("--runs=2")
+        .arg("--warmup=1")
+        .arg(format!(
+            "--prepare=echo $HYPERFINE_ITERATION >> {}",
+            output_path.to_string_lossy()
+        ))
+        .arg("echo test")
+        .assert()
+        .success();
+
+    let contents = std::fs::read_to_string(output_path).unwrap();
+    let lines: Vec<&str> = contents.lines().collect();
+
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0], "warmup-0");
+    assert_eq!(lines[1], "0");
+    assert_eq!(lines[2], "1");
+}
+
+#[cfg(windows)]
+#[test]
+fn hyperfine_iteration_env_var_in_prepare_command() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let output_path = tempdir.path().join("iteration_output.txt");
+
+    // Write HYPERFINE_ITERATION value to a file during prepare
+    hyperfine()
+        .arg("--runs=2")
+        .arg("--warmup=1")
+        .arg(format!(
+            "--prepare=echo %HYPERFINE_ITERATION% >> {}",
+            output_path.to_string_lossy()
+        ))
+        .arg("echo test")
+        .assert()
+        .success();
+
+    let contents = std::fs::read_to_string(output_path).unwrap();
+    let lines: Vec<String> = contents.lines().map(|l| l.trim().to_string()).collect();
+
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0], "warmup-0");
+    assert_eq!(lines[1], "0");
+    assert_eq!(lines[2], "1");
+}
+
+#[cfg(unix)]
+#[test]
+fn hyperfine_iteration_env_var_in_conclude_command() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let output_path = tempdir.path().join("iteration_output.txt");
+
+    // Write HYPERFINE_ITERATION value to a file during conclude
+    hyperfine()
+        .arg("--runs=2")
+        .arg("--warmup=1")
+        .arg(format!(
+            "--conclude=echo $HYPERFINE_ITERATION >> {}",
+            output_path.to_string_lossy()
+        ))
+        .arg("echo test")
+        .assert()
+        .success();
+
+    let contents = std::fs::read_to_string(output_path).unwrap();
+    let lines: Vec<&str> = contents.lines().collect();
+
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0], "warmup-0");
+    assert_eq!(lines[1], "0");
+    assert_eq!(lines[2], "1");
+}
+
+#[cfg(windows)]
+#[test]
+fn hyperfine_iteration_env_var_in_conclude_command() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let output_path = tempdir.path().join("iteration_output.txt");
+
+    // Write HYPERFINE_ITERATION value to a file during conclude
+    hyperfine()
+        .arg("--runs=2")
+        .arg("--warmup=1")
+        .arg(format!(
+            "--conclude=echo %HYPERFINE_ITERATION% >> {}",
+            output_path.to_string_lossy()
+        ))
+        .arg("echo test")
+        .assert()
+        .success();
+
+    let contents = std::fs::read_to_string(output_path).unwrap();
+    let lines: Vec<String> = contents.lines().map(|l| l.trim().to_string()).collect();
+
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0], "warmup-0");
+    assert_eq!(lines[1], "0");
+    assert_eq!(lines[2], "1");
+}
