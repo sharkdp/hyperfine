@@ -321,6 +321,14 @@ Hyperfine can be installed via [`conda`](https://conda.io/en/latest/) from the [
 conda install -c conda-forge hyperfine
 ```
 
+### With mise-en-place
+
+Hyperfine can be installed on Linux,MacOS, Windows via [mise](https://mise.jdx.dev), the polyglot tool version manager using a command like:
+
+```shell
+mise use -g hyperfine@latest
+```
+
 ### With cargo (Linux, macOS, Windows)
 
 Hyperfine can be installed from source via [cargo](https://doc.rust-lang.org/cargo/):
