@@ -12,7 +12,7 @@ A command-line benchmarking tool.
 
 ### Sponsors
 
-A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsors</a>:<br>
+A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsor</a>:<br>
 
 <a href="https://www.warp.dev/hyperfine">
   <img src="doc/sponsors/warp-logo.png" width="200" alt="Warp">
@@ -20,17 +20,6 @@ A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsors</a>
   <strong>Warp, the intelligent terminal</strong>
   <br>
   <sub>Available on MacOS, Linux, Windows</sub>
-</a>
-
-<br>
-<br>
-
-<a href="https://tuple.app/hyperfine">
-  <img src="doc/sponsors/tuple-logo.png" width="200" alt="Tuple">
-  <br>
-  <strong>Tuple, the premier screen sharing app for developers</strong>
-  <br>
-  <sub>Available for MacOS &amp; Windows</sub>
 </a>
 
 ## Features
