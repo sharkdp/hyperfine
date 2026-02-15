@@ -26,13 +26,19 @@ impl CPUTimer {
         }
     }
 
-    pub fn stop(&self) -> (Second, Second, u64) {
+    pub fn stop(&self) -> (Second, Second, u64, u64, u64, u64, u64, u64) {
         let end_cpu = get_cpu_times();
         let cpu_interval = cpu_time_interval(&self.start_cpu, &end_cpu);
+
         (
             cpu_interval.user,
             cpu_interval.system,
-            end_cpu.memory_usage_byte,
+            end_cpu.voluntary_context_switches - self.start_cpu.voluntary_context_switches,
+            end_cpu.context_switches - self.start_cpu.context_switches,
+            end_cpu.filesystem_input - self.start_cpu.filesystem_input,
+            end_cpu.filesystem_output - self.start_cpu.filesystem_output,
+            end_cpu.minor_page_faults - self.start_cpu.minor_page_faults,
+            end_cpu.major_page_faults - self.start_cpu.major_page_faults,
         )
     }
 }
@@ -50,12 +56,13 @@ fn get_cpu_times() -> CPUTimes {
 
     const MICROSEC_PER_SEC: i64 = 1000 * 1000;
 
-    // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
-    let max_rss_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
-        result.ru_maxrss
-    } else {
-        result.ru_maxrss * 1024
-    };
+    let voluntary_context_switches =
+        u64::try_from(result.ru_nvcsw).expect("should never be negative");
+    let context_switches = u64::try_from(result.ru_nivcsw).expect("should never be negative");
+    let filesystem_input = u64::try_from(result.ru_inblock).expect("should never be negative");
+    let filesystem_output = u64::try_from(result.ru_oublock).expect("should never be negative");
+    let minor_page_faults = u64::try_from(result.ru_minflt).expect("should never be negative");
+    let major_page_faults = u64::try_from(result.ru_majflt).expect("should never be negative");
 
     #[allow(clippy::useless_conversion)]
     CPUTimes {
@@ -63,7 +70,12 @@ fn get_cpu_times() -> CPUTimes {
             + i64::from(result.ru_utime.tv_usec),
         system_usec: i64::from(result.ru_stime.tv_sec) * MICROSEC_PER_SEC
             + i64::from(result.ru_stime.tv_usec),
-        memory_usage_byte: u64::try_from(max_rss_byte).unwrap_or(0),
+        voluntary_context_switches,
+        context_switches,
+        filesystem_input,
+        filesystem_output,
+        minor_page_faults,
+        major_page_faults,
     }
 }
 
@@ -83,13 +95,23 @@ fn test_cpu_time_interval() {
     let t_a = CPUTimes {
         user_usec: 12345,
         system_usec: 54321,
-        memory_usage_byte: 0,
+        voluntary_context_switches: 0,
+        context_switches: 0,
+        filesystem_input: 0,
+        filesystem_output: 0,
+        minor_page_faults: 0,
+        major_page_faults: 0,
     };
 
     let t_b = CPUTimes {
         user_usec: 20000,
         system_usec: 70000,
-        memory_usage_byte: 0,
+        voluntary_context_switches: 0,
+        context_switches: 0,
+        filesystem_input: 0,
+        filesystem_output: 0,
+        minor_page_faults: 0,
+        major_page_faults: 0,
     };
 
     let t_zero = cpu_time_interval(&t_a, &t_a);
