@@ -152,26 +152,14 @@ impl<'a> Commands<'a> {
                 args,
                 step_size,
             )?))
-        } else if let Some(args) = matches.get_many::<String>("parameter-list") {
+        } else if matches.contains_id("parameter-list")
+            || matches.contains_id("parameter-list-file")
+        {
             let command_names = command_names.map_or(vec![], |names| {
                 names.map(|v| v.as_str()).collect::<Vec<_>>()
             });
-            let args: Vec<_> = args.map(|v| v.as_str()).collect::<Vec<_>>();
-            let param_names_and_values: Vec<(&str, Vec<String>)> = args
-                .chunks_exact(2)
-                .map(|pair| {
-                    let name = pair[0];
-                    let list_str = pair[1];
-                    (name, tokenize(list_str))
-                })
-                .collect();
-            {
-                let duplicates =
-                    Self::find_duplicates(param_names_and_values.iter().map(|(name, _)| *name));
-                if !duplicates.is_empty() {
-                    bail!("Duplicate parameter names: {}", &duplicates.join(", "));
-                }
-            }
+
+            let param_names_and_values = Self::get_parameter_lists(matches)?;
 
             let dimensions: Vec<usize> = std::iter::once(command_strings.len())
                 .chain(
@@ -266,6 +254,69 @@ impl<'a> Commands<'a> {
             .into_iter()
             .filter_map(|(k, n)| if n > 1 { Some(k) } else { None })
             .collect()
+    }
+
+    fn get_parameter_lists(matches: &'a ArgMatches) -> Result<Vec<(&'a str, Vec<String>)>> {
+        let get_arg_pairs = |name| {
+            matches
+                .get_many::<String>(name)
+                .unwrap_or_default()
+                .map(|a| a.as_str())
+                .collect::<Vec<_>>()
+                .chunks_exact(2)
+                .map(|pair| (pair[0], pair[1]))
+                .collect::<Vec<_>>()
+        };
+
+        let cli_params = get_arg_pairs("parameter-list");
+        let file_params = get_arg_pairs("parameter-list-file");
+
+        {
+            let cli_param_names = cli_params.iter().map(|(name, _)| *name);
+            let file_param_names = file_params.iter().map(|(name, _)| *name);
+            let duplicates = Self::find_duplicates(cli_param_names.chain(file_param_names));
+            if !duplicates.is_empty() {
+                bail!("Duplicate parameter names: {}", &duplicates.join(", "));
+            }
+        }
+
+        let mut parameters = Vec::with_capacity(cli_params.len() + file_params.len());
+
+        let mut cli_params_it = cli_params.into_iter();
+        let mut file_params_it = file_params.into_iter();
+
+        let mut cli_params_indices = matches
+            .indices_of("parameter-list")
+            .unwrap_or_default()
+            .peekable();
+        let mut file_params_indices = matches
+            .indices_of("parameter-list-file")
+            .unwrap_or_default()
+            .peekable();
+
+        // Maintain ordering for instances of --parameter-list and --parameter-list-file
+        while cli_params_indices.peek().is_some() || file_params_indices.peek().is_some() {
+            let next_cli_index = cli_params_indices.peek();
+            let next_file_index = file_params_indices.peek();
+            if next_cli_index.is_some_and(|c| next_file_index.is_none_or(|f| c < f)) {
+                let (name, values) = cli_params_it.next().unwrap();
+                parameters.push((name, tokenize(values)));
+                cli_params_indices.next();
+                cli_params_indices.next();
+            } else {
+                let (name, path) = file_params_it.next().unwrap();
+                let values = std::fs::read_to_string(path)
+                    .with_context(|| format!("Failed to read parameters from '{path}'"))?
+                    .lines()
+                    .map(ToOwned::to_owned)
+                    .collect::<Vec<_>>();
+                parameters.push((name, values));
+                file_params_indices.next();
+                file_params_indices.next();
+            }
+        }
+
+        Ok(parameters)
     }
 
     fn build_parameter_scan_commands<'b, T: Numeric>(
@@ -438,6 +489,31 @@ fn test_build_parameter_list_commands() {
         "--parameter-list",
         "foo",
         "1,2",
+        "--command-name",
+        "name-{foo}",
+    ]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    assert_eq!(commands.len(), 2);
+    assert_eq!(commands[0].get_name(), "name-1");
+    assert_eq!(commands[1].get_name(), "name-2");
+    assert_eq!(commands[0].get_command_line(), "echo 1");
+    assert_eq!(commands[1].get_command_line(), "echo 2");
+}
+
+#[test]
+fn test_build_parameter_list_file_commands() {
+    use crate::cli::get_cli_arguments;
+    use std::io::Write;
+
+    let mut parameters = tempfile::NamedTempFile::new().unwrap();
+    parameters.write_all("1\n2\n".as_bytes()).unwrap();
+
+    let matches = get_cli_arguments(vec![
+        "hyperfine",
+        "echo {foo}",
+        "--parameter-list-file",
+        "foo",
+        parameters.path().to_str().unwrap(),
         "--command-name",
         "name-{foo}",
     ]);
