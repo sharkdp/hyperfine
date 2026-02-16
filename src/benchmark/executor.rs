@@ -30,6 +30,14 @@ impl BenchmarkIteration {
             BenchmarkIteration::Benchmark(i) => Some(format!("{}", i)),
         }
     }
+
+    /// Returns `true` if the benchmark iteration is [`NonBenchmarkRun`].
+    ///
+    /// [`NonBenchmarkRun`]: BenchmarkIteration::NonBenchmarkRun
+    #[must_use]
+    pub fn is_non_benchmark_run(&self) -> bool {
+        matches!(self, Self::NonBenchmarkRun)
+    }
 }
 
 pub trait Executor {
@@ -65,6 +73,12 @@ fn run_command_and_measure_common(
 ) -> Result<TimerResult> {
     let stdin = command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
+    let until_text = if iteration.is_non_benchmark_run() {
+        None
+    } else {
+        command_output_policy.get_until_text()
+    };
+
     command.stdin(stdin).stdout(stdout).stderr(stderr);
 
     command.env(
@@ -76,7 +90,7 @@ fn run_command_and_measure_common(
         command.env("HYPERFINE_ITERATION", value);
     }
 
-    let result = execute_and_measure(command)
+    let result = execute_and_measure(command, until_text)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
     if !result.status.success() {
