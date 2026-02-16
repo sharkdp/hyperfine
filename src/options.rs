@@ -54,6 +54,7 @@ impl Shell {
         Ok(Shell::Custom(v))
     }
 
+    #[must_use]
     pub fn command(&self) -> Command {
         match self {
             Shell::Default(cmd) => Command::new(cmd),
@@ -368,12 +369,9 @@ impl Options {
                     || !io::stdout().is_terminal()
                 {
                     OutputStyleOption::Basic
-                } else if env::var_os("TERM")
-                    .map(|t| t == "unknown" || t == "dumb")
-                    .unwrap_or(!cfg!(target_os = "windows"))
-                    || env::var_os("NO_COLOR")
-                        .map(|t| !t.is_empty())
-                        .unwrap_or(false)
+                } else if env::var_os("TERM").map_or(!cfg!(target_os = "windows"), |t| {
+                    t == "unknown" || t == "dumb"
+                }) || env::var_os("NO_COLOR").is_some_and(|t| !t.is_empty())
                 {
                     OutputStyleOption::NoColor
                 } else {

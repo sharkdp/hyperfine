@@ -18,6 +18,7 @@ pub const OUTLIER_THRESHOLD: f64 = 1.4826 * 10.0;
 ///
 /// References:
 /// - <https://en.wikipedia.org/wiki/Median_absolute_deviation>
+#[must_use]
 pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
     assert!(!xs.is_empty());
 
@@ -40,6 +41,7 @@ pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
 /// Return the number of outliers in a given sample. Outliers are defined as data points with a
 /// modified Z-score that is larger than `OUTLIER_THRESHOLD`.
 #[cfg(test)]
+#[must_use]
 pub fn num_outliers(xs: &[f64]) -> usize {
     if xs.is_empty() {
         return 0;

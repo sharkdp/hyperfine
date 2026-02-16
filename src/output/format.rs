@@ -2,12 +2,14 @@ use crate::util::units::{Second, Unit};
 
 /// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
 /// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
+#[must_use]
 pub fn format_duration(duration: Second, unit: Option<Unit>) -> String {
     let (duration_fmt, _) = format_duration_unit(duration, unit);
     duration_fmt
 }
 
 /// Like `format_duration`, but returns the target unit as well.
+#[must_use]
 pub fn format_duration_unit(duration: Second, unit: Option<Unit>) -> (String, Unit) {
     let (out_str, out_unit) = format_duration_value(duration, unit);
 
@@ -15,6 +17,7 @@ pub fn format_duration_unit(duration: Second, unit: Option<Unit>) -> (String, Un
 }
 
 /// Like `format_duration`, but returns the target unit as well.
+#[must_use]
 pub fn format_duration_value(duration: Second, unit: Option<Unit>) -> (String, Unit) {
     if (duration < 0.001 && unit.is_none()) || unit == Some(Unit::MicroSecond) {
         (Unit::MicroSecond.format(duration), Unit::MicroSecond)
