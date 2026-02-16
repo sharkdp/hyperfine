@@ -237,6 +237,7 @@ impl Executor for ShellExecutor<'_> {
                 COUNT,
                 "Measuring shell spawning time",
                 self.options.output_style,
+                self.options.show_elapsed,
             ))
         } else {
             None
@@ -276,7 +277,8 @@ impl Executor for ShellExecutor<'_> {
             }
 
             if let Some(bar) = progress_bar.as_ref() {
-                bar.inc(1)
+                bar.inc(1);
+                bar.reset_elapsed();
             }
         }
 
