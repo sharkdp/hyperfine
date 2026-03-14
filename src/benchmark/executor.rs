@@ -13,8 +13,8 @@ use crate::util::units::Second;
 
 use super::timing_result::TimingResult;
 
+use crate::util::stats::mean;
 use anyhow::{bail, Context, Result};
-use statistical::mean;
 
 pub enum BenchmarkIteration {
     NonBenchmarkRun,
