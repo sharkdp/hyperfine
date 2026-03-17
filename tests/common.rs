@@ -1,9 +1,7 @@
 use std::process::Command;
 
-use assert_cmd::cargo::CommandCargoExt;
-
 pub fn hyperfine_raw_command() -> Command {
-    let mut cmd = Command::cargo_bin("hyperfine").unwrap();
+    let mut cmd = Command::from(assert_cmd::cargo::cargo_bin!("hyperfine"));
     cmd.current_dir("tests/");
     cmd
 }
