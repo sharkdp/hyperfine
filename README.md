@@ -19,7 +19,7 @@ A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsor</a>:
   <br>
   <strong>Warp, the intelligent terminal</strong>
   <br>
-  <sub>Available on MacOS, Linux, Windows</sub>
+  <sub>Available on macOS, Linux, Windows</sub>
 </a>
 
 ## Features
