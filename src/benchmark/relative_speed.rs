@@ -124,7 +124,11 @@ fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
 }
 
 #[cfg(test)]
-fn create_result_with_exit_codes(name: &str, mean: Scalar, exit_codes: Vec<Option<i32>>) -> BenchmarkResult {
+fn create_result_with_exit_codes(
+    name: &str,
+    mean: Scalar,
+    exit_codes: Vec<Option<i32>>,
+) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
     BenchmarkResult {
