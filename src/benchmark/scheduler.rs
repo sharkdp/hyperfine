@@ -79,12 +79,18 @@ impl<'a> Scheduler<'a> {
 
         let results_slice: Vec<_> = results.iter().map(|r| (*r).clone()).collect();
 
-        let reference = self
-            .options
-            .reference_command
-            .as_ref()
-            .map(|_| &results_slice[0])
-            .unwrap_or_else(|| relative_speed::fastest_of(&results_slice));
+        let reference = if self.options.reference_command.is_some() {
+            // When a reference command is set, it's always the first result.
+            // If it was filtered out, fall back to the fastest remaining result.
+            let ref_cmd = &self.results[0];
+            if self.options.filter_failed && ref_cmd.has_failure() {
+                relative_speed::fastest_of(&results_slice)
+            } else {
+                &results_slice[0]
+            }
+        } else {
+            relative_speed::fastest_of(&results_slice)
+        };
 
         if let Some(annotated_results) = relative_speed::compute_with_check_from_reference(
             &results_slice,
