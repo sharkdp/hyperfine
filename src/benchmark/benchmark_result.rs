@@ -53,3 +53,46 @@ pub struct BenchmarkResult {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parameters: BTreeMap<String, String>,
 }
+
+impl BenchmarkResult {
+    /// Returns true if any run had a non-zero or missing exit code.
+    pub fn has_failure(&self) -> bool {
+        self.exit_codes.iter().any(|code| *code != Some(0))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn result_with_exit_codes(codes: Vec<Option<i32>>) -> BenchmarkResult {
+        BenchmarkResult {
+            exit_codes: codes,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn test_has_failure_all_success() {
+        let r = result_with_exit_codes(vec![Some(0), Some(0), Some(0)]);
+        assert!(!r.has_failure());
+    }
+
+    #[test]
+    fn test_has_failure_with_nonzero() {
+        let r = result_with_exit_codes(vec![Some(0), Some(1), Some(0)]);
+        assert!(r.has_failure());
+    }
+
+    #[test]
+    fn test_has_failure_with_signal_kill() {
+        let r = result_with_exit_codes(vec![Some(0), None]);
+        assert!(r.has_failure());
+    }
+
+    #[test]
+    fn test_has_failure_empty() {
+        let r = result_with_exit_codes(vec![]);
+        assert!(!r.has_failure());
+    }
+}

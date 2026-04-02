@@ -67,15 +67,27 @@ impl<'a> Scheduler<'a> {
             return;
         }
 
+        let results: Vec<_> = if self.options.filter_failed {
+            self.results.iter().filter(|r| !r.has_failure()).collect()
+        } else {
+            self.results.iter().collect()
+        };
+
+        if results.len() < 2 {
+            return;
+        }
+
+        let results_slice: Vec<_> = results.iter().map(|r| (*r).clone()).collect();
+
         let reference = self
             .options
             .reference_command
             .as_ref()
-            .map(|_| &self.results[0])
-            .unwrap_or_else(|| relative_speed::fastest_of(&self.results));
+            .map(|_| &results_slice[0])
+            .unwrap_or_else(|| relative_speed::fastest_of(&results_slice));
 
         if let Some(annotated_results) = relative_speed::compute_with_check_from_reference(
-            &self.results,
+            &results_slice,
             reference,
             self.options.sort_order_speed_comparison,
         ) {

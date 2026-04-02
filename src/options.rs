@@ -246,6 +246,9 @@ pub struct Options {
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// Whether to exclude results with non-zero exit codes from comparisons
+    pub filter_failed: bool,
 }
 
 impl Default for Options {
@@ -267,6 +270,7 @@ impl Default for Options {
             executor_kind: ExecutorKind::default(),
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
+            filter_failed: false,
             command_input_policy: CommandInputPolicy::Null,
         }
     }
@@ -434,6 +438,8 @@ impl Options {
                 }
             };
         }
+
+        options.filter_failed = matches.get_flag("filter-failed");
 
         options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {
             Some("microsecond") => Some(Unit::MicroSecond),
