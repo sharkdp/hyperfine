@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::BTreeSet;
 
 use csv::WriterBuilder;
 
@@ -21,6 +22,13 @@ impl Exporter for CsvExporter {
     ) -> Result<Vec<u8>> {
         let mut writer = WriterBuilder::new().from_writer(vec![]);
 
+        let parameter_names: Vec<_> = results
+            .iter()
+            .flat_map(|result| result.parameters.keys().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+
         {
             let mut headers: Vec<Cow<[u8]>> = [
                 // The list of times and exit codes cannot be exported to the CSV file - omit them.
@@ -29,10 +37,8 @@ impl Exporter for CsvExporter {
             .iter()
             .map(|x| Cow::Borrowed(x.as_bytes()))
             .collect();
-            if let Some(res) = results.first() {
-                for param_name in res.parameters.keys() {
-                    headers.push(Cow::Owned(format!("parameter_{param_name}").into_bytes()));
-                }
+            for param_name in &parameter_names {
+                headers.push(Cow::Owned(format!("parameter_{param_name}").into_bytes()));
             }
             writer.write_record(headers)?;
         }
@@ -50,8 +56,11 @@ impl Exporter for CsvExporter {
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
-            for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.as_bytes()))
+            for param_name in &parameter_names {
+                fields.push(match res.parameters.get(param_name) {
+                    Some(value) => Cow::Borrowed(value.as_bytes()),
+                    None => Cow::Borrowed(b""),
+                });
             }
             writer.write_record(fields)?;
         }
@@ -119,5 +128,61 @@ fn test_csv() {
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
     command_a,1,2,1,3,4,5,6,two,one
     command_b,11,12,11,13,14,15,16.5,seven,one
+    "#);
+}
+
+#[test]
+fn test_csv_with_reference_row_before_parameterized_rows() {
+    use std::collections::BTreeMap;
+    let exporter = CsvExporter::default();
+
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("reference"),
+            command_with_unused_parameters: String::from("reference"),
+            mean: 1.0,
+            stddev: Some(0.0),
+            median: 1.0,
+            user: 0.0,
+            system: 0.0,
+            min: 1.0,
+            max: 1.0,
+            times: Some(vec![1.0]),
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
+            mean: 2.0,
+            stddev: Some(0.0),
+            median: 2.0,
+            user: 0.0,
+            system: 0.0,
+            min: 2.0,
+            max: 2.0,
+            times: Some(vec![2.0]),
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0)],
+            parameters: {
+                let mut params = BTreeMap::new();
+                params.insert("secs".into(), "2".into());
+                params
+            },
+        },
+    ];
+
+    let actual = String::from_utf8(
+        exporter
+            .serialize(&results, Some(Unit::Second), SortOrder::Command)
+            .unwrap(),
+    )
+    .unwrap();
+
+    insta::assert_snapshot!(actual, @r#"
+    command,mean,stddev,median,user,system,min,max,parameter_secs
+    reference,1,0,1,0,0,1,1,
+    sleep 2,2,0,2,0,0,2,2,2
     "#);
 }
