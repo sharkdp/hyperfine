@@ -109,6 +109,16 @@ for compiling your software or with the provided parameters, or to do any
 other work that should happen once before a series of benchmark runs,
 not every time as would happen with the \fB\-\-prepare\fR option.
 .HP
+\fB\-\-reference\fR \fICMD\fP
+.IP
+The reference command for the relative comparison of results. If this is unset,
+results are compared with the fastest command as reference.
+.HP
+\fB\-\-reference\-name\fR \fICMD\fP
+.IP
+Give a meaningful name to the reference command.
+Requires \fB\-\-reference\fR.
+.HP
 \fB\-p\fR, \fB\-\-prepare\fR \fICMD...\fP
 .IP
 Execute \fICMD\fP before each timing run. This is useful for clearing disk caches,
@@ -309,9 +319,9 @@ Read from \fI\,/dev/null\/\fP (the default).
 Read the input from the given file.
 .RE
 .HP
-\fB\-n\fR, \fB\-\-command\-name\fR \fiNAME\fP
+\fB\-n\fR, \fB\-\-command\-name\fR \fINAME\fP
 .IP
-Give a meaningful \fiNAME\fP to a command. This can be specified multiple times
+Give a meaningful \fINAME\fP to a command. This can be specified multiple times
 if several commands are benchmarked.
 .HP
 \fB\-h\fR, \fB\-\-help\fR
