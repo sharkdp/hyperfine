@@ -19,6 +19,7 @@ pub mod cli;
 pub mod command;
 pub mod error;
 pub mod export;
+pub mod import;
 pub mod options;
 pub mod outlier_detection;
 pub mod output;
@@ -40,9 +41,22 @@ fn run() -> Result<()> {
         options.sort_order_exports,
     )?;
 
+    let imported_results = if let Some(paths) = cli_arguments.get_many::<String>("import-json") {
+        let mut all = Vec::new();
+        for path in paths {
+            all.extend(import::load_results_from_json(path)?);
+        }
+        all
+    } else {
+        Vec::new()
+    };
+
     options.validate_against_command_list(&commands)?;
 
     let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
+    if !imported_results.is_empty() {
+        scheduler.add_imported_results(imported_results);
+    }
     scheduler.run_benchmarks()?;
     scheduler.print_relative_speed_comparison();
     scheduler.final_export()?;

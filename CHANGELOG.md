@@ -1,3 +1,9 @@
+# unreleased
+
+## Features
+
+- Add `--import-json <file>` option that loads benchmarks from a JSON file written by `--export-json` and includes them in the comparison output without re-running them, see #607
+
 # v1.20.0
 
 ## Features

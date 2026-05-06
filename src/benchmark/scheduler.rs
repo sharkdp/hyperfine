@@ -17,6 +17,23 @@ pub struct Scheduler<'a> {
     results: Vec<BenchmarkResult>,
 }
 
+/// Print a header for an imported benchmark. Mirrors the format used by
+/// `Benchmark::run` so the imported entries blend in with the live ones.
+fn print_imported_header(number: usize, result: &BenchmarkResult) {
+    let label = if result.command_with_unused_parameters.is_empty() {
+        result.command.as_str()
+    } else {
+        result.command_with_unused_parameters.as_str()
+    };
+    println!(
+        "{}{}: {} {}",
+        "Benchmark ".bold(),
+        (number + 1).to_string().bold(),
+        label,
+        "(imported)".dimmed(),
+    );
+}
+
 impl<'a> Scheduler<'a> {
     pub fn new(
         commands: &'a Commands,
@@ -31,7 +48,29 @@ impl<'a> Scheduler<'a> {
         }
     }
 
+    /// Add benchmark results that were loaded from a previously-saved JSON file.
+    /// These are not re-run, but participate in the relative speed comparison
+    /// and in all configured exports as if they had just finished.
+    pub fn add_imported_results(&mut self, imported: Vec<BenchmarkResult>) {
+        if self.options.output_style != OutputStyleOption::Disabled {
+            for (offset, result) in imported.iter().enumerate() {
+                print_imported_header(self.results.len() + offset, result);
+            }
+        }
+        self.results.extend(imported);
+    }
+
     pub fn run_benchmarks(&mut self) -> Result<()> {
+        // Preserve any pre-populated results (e.g. loaded via --import-json) so
+        // they share the same export pipeline as live benchmarks.
+        if !self.results.is_empty() {
+            self.export_manager.write_results(&self.results, true)?;
+        }
+
+        if self.commands.iter().next().is_none() && self.options.reference_command.is_none() {
+            return Ok(());
+        }
+
         let mut executor: Box<dyn Executor> = match self.options.executor_kind {
             ExecutorKind::Raw => Box::new(RawExecutor::new(self.options)),
             ExecutorKind::Mock(ref shell) => Box::new(MockExecutor::new(shell.clone())),
@@ -46,9 +85,13 @@ impl<'a> Scheduler<'a> {
 
         executor.calibrate()?;
 
+        let display_offset = self.results.len();
         for (number, cmd) in reference.iter().chain(self.commands.iter()).enumerate() {
-            self.results
-                .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
+            self.results.push(
+                Benchmark::new(number, cmd, self.options, &*executor)
+                    .with_display_number(number + display_offset)
+                    .run()?,
+            );
 
             // We export results after each individual benchmark, because
             // we would risk losing them if a later benchmark fails.
