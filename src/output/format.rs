@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::util::units::{Second, Unit};
 
 /// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
@@ -22,6 +24,51 @@ pub fn format_duration_value(duration: Second, unit: Option<Unit>) -> (String, U
         (Unit::MilliSecond.format(duration), Unit::MilliSecond)
     } else {
         (Unit::Second.format(duration), Unit::Second)
+    }
+}
+
+/// Wrapper to format memory sizes as a string.
+pub struct BytesFormat(pub u64);
+
+impl Display for BytesFormat {
+    #[expect(clippy::cast_precision_loss)]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let bytes = self.0;
+        if bytes < 100_000 {
+            return write!(f, "{bytes} b");
+        }
+        let bytes = bytes as f64 / 1000.0;
+        if bytes < 10.0 {
+            return write!(f, "{bytes:.3} kb");
+        }
+        if bytes < 100.0 {
+            return write!(f, "{bytes:.2} kb");
+        }
+        if bytes < 1000.0 {
+            return write!(f, "{bytes:.1} kb");
+        }
+        let bytes = bytes / 1000.0;
+        if bytes < 10.0 {
+            return write!(f, "{bytes:.3} MB");
+        }
+        if bytes < 100.0 {
+            return write!(f, "{bytes:.2} MB");
+        }
+        if bytes < 1000.0 {
+            return write!(f, "{bytes:.1} MB");
+        }
+        let bytes = bytes / 1000.0;
+        if bytes < 10.0 {
+            return write!(f, "{bytes:.3} GB");
+        }
+        if bytes < 100.0 {
+            return write!(f, "{bytes:.2} GB");
+        }
+        if bytes < 1000.0 {
+            return write!(f, "{bytes:.1} GB");
+        }
+        let bytes = bytes / 1000.0;
+        write!(f, "{bytes:.0} TB")
     }
 }
 
@@ -74,4 +121,15 @@ fn test_format_duration_unit_with_unit() {
 
     assert_eq!("1300000.0 µs", out_str);
     assert_eq!(Unit::MicroSecond, out_unit);
+}
+
+#[test]
+fn test_format_bytes() {
+    assert_eq!("0 b", format!("{}", BytesFormat(0)));
+    assert_eq!("42 b", format!("{}", BytesFormat(42)));
+    assert_eq!("10240 b", format!("{}", BytesFormat(10240)));
+    assert_eq!("102.4 kb", format!("{}", BytesFormat(102400)));
+    assert_eq!("102.4 MB", format!("{}", BytesFormat(102400000)));
+    assert_eq!("1.024 GB", format!("{}", BytesFormat(1024000000)));
+    assert_eq!("18446744 TB", format!("{}", BytesFormat(u64::MAX)));
 }

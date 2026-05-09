@@ -252,6 +252,12 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("resource-usage")
+            .long("resource-usage")
+            .action(ArgAction::SetTrue)
+            .help("Show resource usage of the command.")
+        )
+        .arg(
             Arg::new("sort")
             .long("sort")
             .action(ArgAction::Set)
