@@ -21,6 +21,15 @@ impl Exporter for CsvExporter {
     ) -> Result<Vec<u8>> {
         let mut writer = WriterBuilder::new().from_writer(vec![]);
 
+        // The reference command (if present) has no parameters, so using `.first()`
+        // would produce a header with no parameter columns, causing a field-count
+        // mismatch when the parameterised rows are written.
+        let param_names: Vec<&str> = results
+            .iter()
+            .find(|r| !r.parameters.is_empty())
+            .map(|r| r.parameters.keys().map(String::as_str).collect())
+            .unwrap_or_default();
+
         {
             let mut headers: Vec<Cow<[u8]>> = [
                 // The list of times and exit codes cannot be exported to the CSV file - omit them.
@@ -29,10 +38,8 @@ impl Exporter for CsvExporter {
             .iter()
             .map(|x| Cow::Borrowed(x.as_bytes()))
             .collect();
-            if let Some(res) = results.first() {
-                for param_name in res.parameters.keys() {
-                    headers.push(Cow::Owned(format!("parameter_{param_name}").into_bytes()));
-                }
+            for param_name in &param_names {
+                headers.push(Cow::Owned(format!("parameter_{param_name}").into_bytes()));
             }
             writer.write_record(headers)?;
         }
@@ -50,8 +57,9 @@ impl Exporter for CsvExporter {
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
-            for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.as_bytes()))
+            for name in &param_names {
+                let value = res.parameters.get(*name).map(String::as_str).unwrap_or("");
+                fields.push(Cow::Owned(value.as_bytes().to_vec()));
             }
             writer.write_record(fields)?;
         }
@@ -119,5 +127,81 @@ fn test_csv() {
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
     command_a,1,2,1,3,4,5,6,two,one
     command_b,11,12,11,13,14,15,16.5,seven,one
+    "#);
+}
+
+#[test]
+fn test_csv_with_reference() {
+    use std::collections::BTreeMap;
+    let exporter = CsvExporter::default();
+
+    let results = vec![
+        BenchmarkResult {
+            command: String::from("sleep 1"),
+            command_with_unused_parameters: String::from("sleep 1"),
+            mean: 1.0,
+            stddev: Some(0.0),
+            median: 1.0,
+            user: 0.0,
+            system: 0.0,
+            min: 1.0,
+            max: 1.0,
+            times: Some(vec![1.0]),
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep {secs}"),
+            mean: 2.0,
+            stddev: Some(0.0),
+            median: 2.0,
+            user: 0.0,
+            system: 0.0,
+            min: 2.0,
+            max: 2.0,
+            times: Some(vec![2.0]),
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0)],
+            parameters: {
+                let mut params = BTreeMap::new();
+                params.insert("secs".into(), "2".into());
+                params
+            },
+        },
+        BenchmarkResult {
+            command: String::from("sleep 3"),
+            command_with_unused_parameters: String::from("sleep {secs}"),
+            mean: 3.0,
+            stddev: Some(0.0),
+            median: 3.0,
+            user: 0.0,
+            system: 0.0,
+            min: 3.0,
+            max: 3.0,
+            times: Some(vec![3.0]),
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0)],
+            parameters: {
+                let mut params = BTreeMap::new();
+                params.insert("secs".into(), "3".into());
+                params
+            },
+        },
+    ];
+
+    let actual = String::from_utf8(
+        exporter
+            .serialize(&results, Some(Unit::Second), SortOrder::Command)
+            .unwrap(),
+    )
+    .unwrap();
+
+    insta::assert_snapshot!(actual, @r#"
+    command,mean,stddev,median,user,system,min,max,parameter_secs
+    sleep 1,1,0,1,0,0,1,1,
+    sleep 2,2,0,2,0,0,2,2,2
+    sleep 3,3,0,3,0,0,3,3,3
     "#);
 }
