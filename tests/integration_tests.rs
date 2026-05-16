@@ -708,13 +708,13 @@ fn speed_comparison_sort_order() {
 #[cfg(windows)]
 #[test]
 fn windows_forward_slashes_in_executable_path() {
-    let exe = std::env::current_exe().expect("current test binary path");
-    let forward_slashes = exe.to_string_lossy().replace('\\', "/");
+    let hyperfine_exe = assert_cmd::cargo::cargo_bin!("hyperfine");
+    let forward_slashes = hyperfine_exe.to_string_lossy().replace('\\', "/");
 
     hyperfine()
         .arg("--runs=1")
         .arg("--warmup=0")
-        .arg(&*forward_slashes)
+        .arg(format!("{forward_slashes} --version"))
         .assert()
         .success();
 }
