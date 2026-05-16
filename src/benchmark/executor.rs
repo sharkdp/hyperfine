@@ -10,6 +10,8 @@ use crate::output::progress_bar::get_progress_bar;
 use crate::timer::{execute_and_measure, TimerResult};
 use crate::util::randomized_environment_offset;
 use crate::util::units::Second;
+#[cfg(windows)]
+use crate::util::windows_cmd::normalize_command_line_for_cmd;
 
 use super::timing_result::TimingResult;
 
@@ -197,7 +199,9 @@ impl Executor for ShellExecutor<'_> {
         // Windows needs special treatment for its behavior on parsing cmd arguments
         if on_windows_cmd {
             #[cfg(windows)]
-            command_builder.raw_arg(command.get_command_line());
+            command_builder.raw_arg(normalize_command_line_for_cmd(
+                &command.get_command_line(),
+            ));
         } else {
             command_builder.arg(command.get_command_line());
         }
