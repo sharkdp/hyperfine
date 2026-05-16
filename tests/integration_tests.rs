@@ -705,6 +705,27 @@ fn speed_comparison_sort_order() {
         ));
 }
 
+#[test]
+fn hyperfine_iteration_env_in_prepare_and_conclude_commands() {
+    hyperfine()
+        .arg("--runs=2")
+        .arg("--warmup=0")
+        .arg("--show-output")
+        .arg("--prepare=echo prep-$HYPERFINE_ITERATION")
+        .arg("--conclude=echo done-$HYPERFINE_ITERATION")
+        .arg("echo run-$HYPERFINE_ITERATION")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("prep-0")
+                .and(predicate::str::contains("prep-1"))
+                .and(predicate::str::contains("run-0"))
+                .and(predicate::str::contains("run-1"))
+                .and(predicate::str::contains("done-0"))
+                .and(predicate::str::contains("done-1")),
+        );
+}
+
 #[cfg(windows)]
 #[test]
 fn windows_quote_args() {
