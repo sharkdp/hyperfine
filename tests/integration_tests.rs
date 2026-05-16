@@ -705,6 +705,7 @@ fn speed_comparison_sort_order() {
         ));
 }
 
+#[cfg(unix)]
 #[test]
 fn hyperfine_iteration_env_in_prepare_and_conclude_commands() {
     hyperfine()
