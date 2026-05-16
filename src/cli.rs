@@ -92,8 +92,10 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
-                    "The reference command for the relative comparison of results. \
-                    If this is unset, results are compared with the fastest command as reference."
+                    "An extra command to use as the baseline for relative speed comparison \
+                    (not a label from the benchmark list). If unset, the fastest command is used. \
+                    With parameterized benchmarks, --prepare/--conclude templates containing \
+                    {parameter} placeholders are skipped for the reference command."
                 )
         )
         .arg(
