@@ -199,9 +199,7 @@ impl Executor for ShellExecutor<'_> {
         // Windows needs special treatment for its behavior on parsing cmd arguments
         if on_windows_cmd {
             #[cfg(windows)]
-            command_builder.raw_arg(normalize_command_line_for_cmd(
-                &command.get_command_line(),
-            ));
+            command_builder.raw_arg(normalize_command_line_for_cmd(&command.get_command_line()));
         } else {
             command_builder.arg(command.get_command_line());
         }
