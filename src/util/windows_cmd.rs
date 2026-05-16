@@ -19,11 +19,13 @@ pub fn normalize_command_line_for_cmd(command_line: &str) -> String {
 
 #[cfg_attr(not(windows), allow(dead_code))]
 fn normalize_command_line_for_cmd_impl(command_line: &str) -> String {
-    let Ok(words) = shell_words::split(command_line) else {
+    if !command_line.contains('/') {
         return command_line.to_string();
-    };
+    }
 
-    let normalized: Vec<String> = words
+    // Do not use `shell_words::split` here: it treats `\` as an escape character and
+    // corrupts Windows paths such as `C:\Users\...\file.log` in `echo x >> path`.
+    let normalized: Vec<String> = split_command_line(command_line)
         .into_iter()
         .map(|word| {
             if should_normalize_path_token(&word) {
@@ -35,6 +37,38 @@ fn normalize_command_line_for_cmd_impl(command_line: &str) -> String {
         .collect();
 
     join_for_cmd(&normalized)
+}
+
+/// Split a command line on whitespace outside of double quotes.
+///
+/// Unlike `shell_words::split`, backslashes are not interpreted as escape characters.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn split_command_line(command_line: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut in_double_quotes = false;
+
+    for ch in command_line.chars() {
+        match ch {
+            '"' => {
+                in_double_quotes = !in_double_quotes;
+                current.push(ch);
+            }
+            ' ' | '\t' if !in_double_quotes => {
+                if !current.is_empty() {
+                    tokens.push(current.clone());
+                    current.clear();
+                }
+            }
+            _ => current.push(ch),
+        }
+    }
+
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+
+    tokens
 }
 
 #[cfg_attr(not(windows), allow(dead_code))]
@@ -112,7 +146,7 @@ mod tests {
     fn normalizes_only_path_tokens_in_multi_arg_commands() {
         assert_eq!(
             normalize_command_line_for_cmd_impl(r#"./foo.exe --output "out/a.txt""#),
-            r".\foo.exe --output out/a.txt"
+            r#".\foo.exe --output "out/a.txt""#
         );
     }
 
@@ -121,6 +155,25 @@ mod tests {
         assert_eq!(
             normalize_command_line_for_cmd_impl("echo hello/world"),
             "echo hello/world"
+        );
+    }
+
+    #[test]
+    fn preserves_windows_paths_with_backslashes() {
+        let command = r#"echo setup >> C:\Users\runner\output.log"#;
+        assert_eq!(normalize_command_line_for_cmd_impl(command), command);
+    }
+
+    #[test]
+    fn split_command_line_respects_double_quotes() {
+        assert_eq!(
+            super::split_command_line(r#"echo "a b" >> C:\out\file.log"#),
+            vec![
+                "echo".to_string(),
+                "\"a b\"".to_string(),
+                ">>".to_string(),
+                "C:\\out\\file.log".to_string(),
+            ]
         );
     }
 }
