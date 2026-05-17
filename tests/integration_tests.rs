@@ -584,6 +584,22 @@ fn shows_reference_name() {
 }
 
 #[test]
+fn shows_faster_slower_annotations_with_sort_command_and_reference() {
+    hyperfine_debug()
+        .arg("--sort=command")
+        .arg("--reference=sleep 2.0")
+        .arg("sleep 1.0")
+        .arg("sleep 3.0")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Relative speed comparison")
+                .and(predicate::str::contains("times faster than sleep 2.0"))
+                .and(predicate::str::contains("times slower than sleep 2.0")),
+        );
+}
+
+#[test]
 fn performs_all_benchmarks_in_parameter_scan() {
     hyperfine_debug()
         .arg("--parameter-scan")
