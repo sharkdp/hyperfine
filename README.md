@@ -87,6 +87,19 @@ option:
 hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
 ```
 
+### Reference command
+
+The `--reference <cmd>` option runs an **additional** command and uses it as the baseline for the
+relative speed comparison in the summary. It does **not** select one of the parameterized benchmark
+names (such as `echo a (delay = 0.4)`). To compare all variants against the fastest run, simply omit
+`--reference`.
+
+If you use `--prepare` or `--conclude` with parameter placeholders (e.g. `--prepare 'sleep {delay}'`),
+those commands are automatically skipped for the reference benchmark, because the reference command
+has no parameters to substitute. Use a parameter-free prepare script for the reference, provide one
+`--prepare` per benchmark (including the reference), or omit `--reference` and let hyperfine pick
+the fastest command.
+
 ### Intermediate shell
 
 By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).

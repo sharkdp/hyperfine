@@ -705,6 +705,22 @@ fn speed_comparison_sort_order() {
         ));
 }
 
+#[test]
+fn reference_skips_prepare_with_parameter_placeholders() {
+    hyperfine()
+        .arg("--shell=none")
+        .arg("--runs=1")
+        .arg("--warmup=0")
+        .arg("-L")
+        .arg("delay")
+        .arg("0.2,0.4")
+        .arg("--prepare=sleep {delay}")
+        .arg("--reference=echo ref")
+        .arg("echo {delay}")
+        .assert()
+        .success();
+}
+
 #[cfg(windows)]
 #[test]
 fn windows_quote_args() {

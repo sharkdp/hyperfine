@@ -53,6 +53,29 @@ impl<'a> Benchmark<'a> {
         }
     }
 
+    /// Build a `--prepare` / `--conclude` command for this benchmark.
+    ///
+    /// Skips the intermediate command when the template contains `{parameter}` placeholders
+    /// that are not available on `command` (for example, `--prepare 'sleep {delay}'` together
+    /// with a `--reference` command that has no parameters).
+    fn intermediate_command_from_template(
+        command: &'a Command<'a>,
+        template: &'a str,
+    ) -> Option<Command<'a>> {
+        if command.get_parameters().is_empty() {
+            if template.contains('{') {
+                return None;
+            }
+            return Some(Command::new(None, template));
+        }
+
+        Some(Command::new_parametrized(
+            None,
+            template,
+            command.get_parameters().iter().cloned(),
+        ))
+    }
+
     /// Run setup, cleanup, or preparation commands
     fn run_intermediate_command(
         &self,
@@ -157,18 +180,18 @@ impl<'a> Benchmark<'a> {
 
         let output_policy = &self.options.command_output_policies[self.number];
 
-        let preparation_command = self.options.preparation_command.as_ref().map(|values| {
-            let preparation_command = if values.len() == 1 {
-                &values[0]
-            } else {
-                &values[self.number]
-            };
-            Command::new_parametrized(
-                None,
-                preparation_command,
-                self.command.get_parameters().iter().cloned(),
-            )
-        });
+        let preparation_command = self
+            .options
+            .preparation_command
+            .as_ref()
+            .and_then(|values| {
+                let preparation_command = if values.len() == 1 {
+                    &values[0]
+                } else {
+                    &values[self.number]
+                };
+                Self::intermediate_command_from_template(self.command, preparation_command)
+            });
 
         let run_preparation_command = || {
             preparation_command
@@ -177,17 +200,13 @@ impl<'a> Benchmark<'a> {
                 .transpose()
         };
 
-        let conclusion_command = self.options.conclusion_command.as_ref().map(|values| {
+        let conclusion_command = self.options.conclusion_command.as_ref().and_then(|values| {
             let conclusion_command = if values.len() == 1 {
                 &values[0]
             } else {
                 &values[self.number]
             };
-            Command::new_parametrized(
-                None,
-                conclusion_command,
-                self.command.get_parameters().iter().cloned(),
-            )
+            Self::intermediate_command_from_template(self.command, conclusion_command)
         });
         let run_conclusion_command = || {
             conclusion_command

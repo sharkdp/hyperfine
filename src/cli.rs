@@ -11,7 +11,54 @@ where
     T: Into<OsString> + Clone + 'a,
 {
     let command = build_command();
-    command.get_matches_from(args)
+    command.get_matches_from(preprocess_args(args))
+}
+
+/// Join arguments after `--` into a single command expression.
+///
+/// This allows invocations like `hyperfine -- ls -la` without quoting.
+fn preprocess_args<I, T>(args: I) -> Vec<OsString>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString>,
+{
+    let args: Vec<OsString> = args.into_iter().map(Into::into).collect();
+    let Some(sep_pos) = args.iter().position(|arg| arg == "--") else {
+        return args;
+    };
+
+    let mut result = args[..sep_pos].to_vec();
+    let rest: Vec<String> = args[sep_pos + 1..]
+        .iter()
+        .map(|arg| arg.to_string_lossy().into_owned())
+        .collect();
+
+    if !rest.is_empty() {
+        result.push(OsString::from(rest.join(" ")));
+    }
+
+    result
+}
+
+#[cfg(test)]
+mod preprocess_tests {
+    use super::*;
+
+    #[test]
+    fn joins_arguments_after_double_dash() {
+        let args = preprocess_args(vec![
+            "hyperfine", "-r", "1", "--shell=none", "--", "ls", "-la",
+        ]);
+        assert_eq!(args.len(), 5);
+        assert_eq!(args[4].to_string_lossy(), "ls -la");
+    }
+
+    #[test]
+    fn leaves_arguments_without_double_dash_unchanged() {
+        let input = vec!["hyperfine", "echo", "test"];
+        let args = preprocess_args(input.clone());
+        assert_eq!(args.len(), input.len());
+    }
 }
 
 /// Build the clap command for parsing command line arguments
@@ -29,9 +76,12 @@ fn build_command() -> Command {
                        line like \"grep -i todo\" or a shell command like \"sleep 0.5 && echo test\". \
                        The latter is only available if the shell is not explicitly disabled via \
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
-                       comparison of the respective runtimes.")
+                       comparison of the respective runtimes.\n\n\
+                       Use '--' to separate hyperfine options from command arguments that start \
+                       with a hyphen, e.g. 'hyperfine -- ls -la'.")
                 .required(true)
                 .action(ArgAction::Append)
+                .allow_hyphen_values(true)
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
         )
@@ -92,8 +142,10 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
-                    "The reference command for the relative comparison of results. \
-                    If this is unset, results are compared with the fastest command as reference."
+                    "An extra command to use as the baseline for relative speed comparison \
+                    (not a label from the benchmark list). If unset, the fastest command is used. \
+                    With parameterized benchmarks, --prepare/--conclude templates containing \
+                    {parameter} placeholders are skipped for the reference command."
                 )
         )
         .arg(
