@@ -103,6 +103,11 @@ fn should_normalize_path_token(token: &str) -> bool {
         }
     }
 
+    // Win32 extended-length paths (`\\?\` prefix) may use `/` in user input.
+    if token.starts_with(r"\\?\") && token.contains('/') {
+        return true;
+    }
+
     has_windows_executable_extension(token)
 }
 
@@ -161,6 +166,20 @@ mod tests {
     #[test]
     fn preserves_windows_paths_with_backslashes() {
         let command = r#"echo setup >> C:\Users\runner\output.log"#;
+        assert_eq!(normalize_command_line_for_cmd_impl(command), command);
+    }
+
+    #[test]
+    fn normalizes_extended_length_path_prefix() {
+        assert_eq!(
+            normalize_command_line_for_cmd_impl(r"\\?\C:/Users/foo/very/long/path/to/tool.exe"),
+            r"\\?\C:\Users\foo\very\long\path\to\tool.exe"
+        );
+    }
+
+    #[test]
+    fn leaves_extended_length_path_with_backslashes_unchanged() {
+        let command = r"\\?\C:\Users\foo\tool.exe";
         assert_eq!(normalize_command_line_for_cmd_impl(command), command);
     }
 
