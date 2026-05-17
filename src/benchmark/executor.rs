@@ -16,6 +16,7 @@ use super::timing_result::TimingResult;
 use anyhow::{bail, Context, Result};
 use statistical::mean;
 
+#[derive(Clone, Copy)]
 pub enum BenchmarkIteration {
     NonBenchmarkRun,
     Warmup(u64),
