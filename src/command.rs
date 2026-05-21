@@ -31,6 +31,7 @@ pub struct Command<'a> {
 }
 
 impl<'a> Command<'a> {
+    #[must_use]
     pub fn new(name: Option<&'a str>, expression: &'a str) -> Command<'a> {
         Command {
             name,
@@ -51,6 +52,7 @@ impl<'a> Command<'a> {
         }
     }
 
+    #[must_use]
     pub fn get_name(&self) -> String {
         self.name.map_or_else(
             || self.get_command_line(),
@@ -58,6 +60,7 @@ impl<'a> Command<'a> {
         )
     }
 
+    #[must_use]
     pub fn get_name_with_unused_parameters(&self) -> String {
         let parameters = self
             .get_unused_parameters()
@@ -66,7 +69,7 @@ impl<'a> Command<'a> {
             });
         let parameters = parameters.trim_end_matches(", ");
         let parameters = if parameters.is_empty() {
-            "".into()
+            String::new()
         } else {
             format!(" ({parameters})")
         };
@@ -74,6 +77,7 @@ impl<'a> Command<'a> {
         format!("{}{}", self.get_name(), parameters)
     }
 
+    #[must_use]
     pub fn get_command_line(&self) -> String {
         self.replace_parameters_in(self.expression)
     }
@@ -93,6 +97,7 @@ impl<'a> Command<'a> {
         }
     }
 
+    #[must_use]
     pub fn get_parameters(&self) -> &[(&'a str, ParameterValue)] {
         &self.parameters
     }
@@ -223,9 +228,8 @@ impl<'a> Commands<'a> {
                     *i += 1;
                     if *i < *n {
                         continue 'outer;
-                    } else {
-                        *i = 0;
                     }
+                    *i = 0;
                 }
                 break 'outer;
             }
@@ -251,8 +255,9 @@ impl<'a> Commands<'a> {
         self.0.iter()
     }
 
+    #[must_use]
     pub fn num_commands(&self, has_reference_command: bool) -> usize {
-        self.0.len() + if has_reference_command { 1 } else { 0 }
+        self.0.len() + usize::from(has_reference_command)
     }
 
     /// Finds all the strings that appear multiple times in the input iterator, returning them in

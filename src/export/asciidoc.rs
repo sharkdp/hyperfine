@@ -28,7 +28,7 @@ impl MarkupExporter for AsciidocExporter {
     }
 
     fn table_divider(&self, _cell_aligmnents: &[Alignment]) -> String {
-        "".to_string()
+        String::new()
     }
 
     fn command(&self, cmd: &str) -> String {

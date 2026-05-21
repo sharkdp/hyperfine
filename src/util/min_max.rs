@@ -1,4 +1,5 @@
 /// A max function for f64's without NaNs
+#[must_use]
 pub fn max(vals: &[f64]) -> f64 {
     *vals
         .iter()
@@ -7,6 +8,7 @@ pub fn max(vals: &[f64]) -> f64 {
 }
 
 /// A min function for f64's without NaNs
+#[must_use]
 pub fn min(vals: &[f64]) -> f64 {
     *vals
         .iter()

@@ -12,11 +12,10 @@ pub enum ParameterValue {
 
 impl Display for ParameterValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            ParameterValue::Text(ref value) => value.clone(),
-            ParameterValue::Numeric(value) => value.to_string(),
-        };
-        write!(f, "{str}")
+        match self {
+            ParameterValue::Text(value) => value.fmt(f),
+            ParameterValue::Numeric(value) => value.fmt(f),
+        }
     }
 }
 

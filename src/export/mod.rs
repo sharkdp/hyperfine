@@ -24,7 +24,7 @@ use anyhow::{Context, Result};
 use clap::ArgMatches;
 
 /// The desired form of exporter to use for a given file.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum ExportType {
     /// Asciidoc Table
     Asciidoc,
@@ -71,8 +71,8 @@ pub struct ExportManager {
 }
 
 impl ExportManager {
-    /// Build the ExportManager that will export the results specified
-    /// in the given ArgMatches
+    /// Build the `ExportManager` that will export the results specified
+    /// in the given `ArgMatches`
     pub fn from_cli_arguments(
         matches: &ArgMatches,
         time_unit: Option<Unit>,
@@ -99,7 +99,7 @@ impl ExportManager {
         Ok(export_manager)
     }
 
-    /// Add an additional exporter to the ExportManager
+    /// Add an additional exporter to the `ExportManager`
     pub fn add_exporter(&mut self, export_type: ExportType, filename: &str) -> Result<()> {
         let exporter: Box<dyn Exporter> = match export_type {
             ExportType::Asciidoc => Box::<AsciidocExporter>::default(),
