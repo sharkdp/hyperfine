@@ -1,6 +1,7 @@
-use std::{fs::File, io::Read, path::PathBuf};
+use std::io::{Read, Write};
+use std::{fs::File, path::PathBuf};
 
-use tempfile::{tempdir, TempDir};
+use tempfile::{tempdir, NamedTempFile, TempDir};
 
 mod common;
 use common::hyperfine;
@@ -367,6 +368,93 @@ fn multiple_parameter_values() {
         .expect_output("command 2 b")
         .expect_output("command 3 b")
         .expect_output("command 3 b")
+        .run();
+}
+
+#[test]
+fn single_parameter_file() {
+    let mut numbers = NamedTempFile::new().unwrap();
+    numbers.write_all("1\n2\n3\n".as_bytes()).unwrap();
+
+    ExecutionOrderTest::new()
+        .arg("--runs=2")
+        .arg("--parameter-list-file")
+        .arg("number")
+        .arg(numbers.path().to_str().unwrap())
+        .command("command {number}")
+        .expect_output("command 1")
+        .expect_output("command 1")
+        .expect_output("command 2")
+        .expect_output("command 2")
+        .expect_output("command 3")
+        .expect_output("command 3")
+        .run();
+}
+
+#[test]
+fn mutiple_parameter_files() {
+    let mut numbers = NamedTempFile::new().unwrap();
+    numbers.write_all("1\n2\n3\n".as_bytes()).unwrap();
+
+    let mut letters = NamedTempFile::new().unwrap();
+    letters.write_all("a\nb\n".as_bytes()).unwrap();
+
+    ExecutionOrderTest::new()
+        .arg("--runs=2")
+        .arg("--parameter-list-file")
+        .arg("number")
+        .arg(numbers.path().to_str().unwrap())
+        .arg("--parameter-list-file")
+        .arg("letter")
+        .arg(letters.path().to_str().unwrap())
+        .command("command {number} {letter}")
+        .expect_output("command 1 a")
+        .expect_output("command 1 a")
+        .expect_output("command 2 a")
+        .expect_output("command 2 a")
+        .expect_output("command 3 a")
+        .expect_output("command 3 a")
+        .expect_output("command 1 b")
+        .expect_output("command 1 b")
+        .expect_output("command 2 b")
+        .expect_output("command 2 b")
+        .expect_output("command 3 b")
+        .expect_output("command 3 b")
+        .run();
+}
+
+#[test]
+fn parameter_values_and_files_interspersed() {
+    let mut numbers = NamedTempFile::new().unwrap();
+    numbers.write_all("1\n2\n3\n".as_bytes()).unwrap();
+
+    let mut letters = NamedTempFile::new().unwrap();
+    letters.write_all("a\nb\n".as_bytes()).unwrap();
+
+    ExecutionOrderTest::new()
+        .arg("--runs=1")
+        .arg("--parameter-list-file")
+        .arg("number")
+        .arg(numbers.path().to_str().unwrap())
+        .arg("--parameter-list")
+        .arg("fruit")
+        .arg("apple,banana")
+        .arg("--parameter-list-file")
+        .arg("letter")
+        .arg(letters.path().to_str().unwrap())
+        .command("command {number} {fruit} {letter}")
+        .expect_output("command 1 apple a")
+        .expect_output("command 2 apple a")
+        .expect_output("command 3 apple a")
+        .expect_output("command 1 banana a")
+        .expect_output("command 2 banana a")
+        .expect_output("command 3 banana a")
+        .expect_output("command 1 apple b")
+        .expect_output("command 2 apple b")
+        .expect_output("command 3 apple b")
+        .expect_output("command 1 banana b")
+        .expect_output("command 2 banana b")
+        .expect_output("command 3 banana b")
         .run();
 }
 
