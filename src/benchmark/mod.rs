@@ -22,9 +22,9 @@ use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
 
+use crate::util::stats::{mean, median, standard_deviation};
 use anyhow::{anyhow, Result};
 use colored::*;
-use statistical::{mean, median, standard_deviation};
 
 use self::executor::Executor;
 
