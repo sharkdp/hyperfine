@@ -17,6 +17,18 @@ use clap::{parser::ValuesRef, ArgMatches};
 use anyhow::{bail, Context, Result};
 use rust_decimal::Decimal;
 
+fn split_command_tokens(command_line: &str) -> Result<Vec<String>> {
+    #[cfg(windows)]
+    {
+        Ok(crate::util::windows_cmd::split_command_line(command_line))
+    }
+
+    #[cfg(not(windows))]
+    {
+        shell_words::split(command_line).map_err(Into::into)
+    }
+}
+
 /// A command that should be benchmarked.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Command<'a> {
@@ -80,7 +92,7 @@ impl<'a> Command<'a> {
 
     pub fn get_command(&self) -> Result<std::process::Command> {
         let command_line = self.get_command_line();
-        let mut tokens = shell_words::split(&command_line)
+        let mut tokens = split_command_tokens(&command_line)
             .with_context(|| format!("Failed to parse command '{command_line}'"))?
             .into_iter();
 
