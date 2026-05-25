@@ -26,3 +26,40 @@ fn test_max() {
     assert_float_eq(1.0, max(&[-1.0, 1.0]));
     assert_float_eq(1.0, max(&[-1.0, 1.0, 0.0]));
 }
+
+#[test]
+fn test_min() {
+    let assert_float_eq = |a: f64, b: f64| {
+        assert!((a - b).abs() < f64::EPSILON);
+    };
+
+    assert_float_eq(1.0, min(&[1.0]));
+    assert_float_eq(-1.0, min(&[-1.0]));
+    assert_float_eq(-2.0, min(&[-2.0, -1.0]));
+    assert_float_eq(-1.0, min(&[-1.0, 1.0]));
+    assert_float_eq(-1.0, min(&[-1.0, 1.0, 0.0]));
+}
+
+#[test]
+#[should_panic]
+fn test_max_empty_slice() {
+    max(&[]);
+}
+
+#[test]
+#[should_panic]
+fn test_min_empty_slice() {
+    min(&[]);
+}
+
+#[test]
+#[should_panic]
+fn test_max_nan() {
+    max(&[1.0, f64::NAN]);
+}
+
+#[test]
+#[should_panic]
+fn test_min_nan() {
+    min(&[1.0, f64::NAN]);
+}

@@ -49,3 +49,27 @@ fn test_unit_format() {
 
     assert_eq!("1234.6", Unit::MicroSecond.format(0.00123456));
 }
+
+#[test]
+fn test_unit_format_zero() {
+    assert_eq!("0.000", Unit::Second.format(0.0));
+    assert_eq!("0.0", Unit::MilliSecond.format(0.0));
+    assert_eq!("0.0", Unit::MicroSecond.format(0.0));
+}
+
+#[test]
+fn test_unit_format_sub_microsecond() {
+    // Values smaller than one microsecond
+    assert_eq!("0.0", Unit::MicroSecond.format(1e-9));
+    assert_eq!("0.0", Unit::MicroSecond.format(1e-8));
+    assert_eq!("0.1", Unit::MicroSecond.format(1e-7));
+    assert_eq!("0.0", Unit::MilliSecond.format(1e-9));
+    assert_eq!("0.000", Unit::Second.format(1e-9));
+}
+
+#[test]
+fn test_unit_format_very_large() {
+    assert_eq!("1000000.000", Unit::Second.format(1e6));
+    assert_eq!("1000000000.0", Unit::MilliSecond.format(1e6));
+    assert_eq!("1000000000000.0", Unit::MicroSecond.format(1e6));
+}
