@@ -25,6 +25,24 @@ fn runs_successfully() {
 }
 
 #[test]
+fn gen_completions_fish() {
+    hyperfine()
+        .arg("--gen-completions")
+        .arg("fish")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("complete -c hyperfine"));
+}
+
+#[test]
+fn gen_completions_requires_shell() {
+    hyperfine()
+        .arg("--gen-completions")
+        .assert()
+        .failure();
+}
+
+#[test]
 fn one_run_is_supported() {
     hyperfine()
         .arg("--runs=1")
