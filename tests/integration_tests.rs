@@ -260,6 +260,24 @@ fn fails_for_unknown_conclude_command() {
 
 #[cfg(unix)]
 #[test]
+fn ignore_exit_code_is_an_alias_for_ignore_failure() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-exit-code")
+        .arg("false")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--ignore-exit-code=1")
+        .arg("exit 1")
+        .assert()
+        .success();
+}
+
+#[cfg(unix)]
+#[test]
 fn can_run_failing_commands_with_ignore_failure_option() {
     hyperfine()
         .arg("false")
