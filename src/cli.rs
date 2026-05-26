@@ -87,6 +87,21 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("discard_outliers")
+                .long("discard-outliers")
+                .action(ArgAction::SetTrue)
+                .help(
+                    "Discard statistical outliers before computing summary statistics",
+                )
+                .long_help(
+                    "Discard statistical outliers before computing summary statistics.\n\n\
+                     Outliers are detected using the same modified Z-score method that is used \
+                     for the outlier warnings. Discarded runs are excluded from mean, median, \
+                     standard deviation, and exported timing data.\n\n\
+                     If more than 5% of runs are discarded, an additional warning is shown.",
+                ),
+        )
+        .arg(
             Arg::new("reference")
                 .long("reference")
                 .action(ArgAction::Set)

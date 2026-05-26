@@ -246,6 +246,9 @@ pub struct Options {
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// Whether to discard statistical outliers before computing summary statistics
+    pub discard_outliers: bool,
 }
 
 impl Default for Options {
@@ -268,6 +271,7 @@ impl Default for Options {
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
+            discard_outliers: false,
         }
     }
 }
@@ -463,6 +467,8 @@ impl Options {
         } else {
             CommandInputPolicy::Null
         };
+
+        options.discard_outliers = matches.get_flag("discard_outliers");
 
         Ok(options)
     }
