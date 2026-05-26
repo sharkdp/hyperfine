@@ -4,9 +4,10 @@
 )]
 
 use std::env;
+use std::io;
 
 use benchmark::scheduler::Scheduler;
-use cli::get_cli_arguments;
+use cli::{get_cli_arguments, print_completions};
 use command::Commands;
 use export::ExportManager;
 use options::Options;
@@ -32,6 +33,12 @@ fn run() -> Result<()> {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let cli_arguments = get_cli_arguments(env::args_os());
+
+    if let Some(shell) = cli_arguments.get_one::<String>("gen-completions") {
+        print_completions(shell, &mut io::stdout())?;
+        return Ok(());
+    }
+
     let mut options = Options::from_cli_arguments(&cli_arguments)?;
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
     let export_manager = ExportManager::from_cli_arguments(

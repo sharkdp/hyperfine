@@ -1,9 +1,11 @@
 use std::ffi::OsString;
+use std::io;
 
 use clap::{
     builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
     ValueHint,
 };
+use clap_complete::{generate, Shell};
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
@@ -14,8 +16,26 @@ where
     command.get_matches_from(args)
 }
 
+pub fn print_completions(shell: &str, dest: &mut dyn io::Write) -> io::Result<()> {
+    let shell = match shell {
+        "bash" => Shell::Bash,
+        "fish" => Shell::Fish,
+        "zsh" => Shell::Zsh,
+        "powershell" => Shell::PowerShell,
+        "elvish" => Shell::Elvish,
+        other => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("unknown shell for completions: {other}"),
+            ));
+        }
+    };
+    generate(shell, &mut build_command(), "hyperfine", dest);
+    Ok(())
+}
+
 /// Build the clap command for parsing command line arguments
-fn build_command() -> Command {
+pub fn build_command() -> Command {
     Command::new("hyperfine")
         .version(crate_version!())
         .next_line_help(true)
@@ -24,13 +44,25 @@ fn build_command() -> Command {
         .help_expected(true)
         .max_term_width(80)
         .arg(
+            Arg::new("gen-completions")
+                .long("gen-completions")
+                .alias("generate-shell-completion")
+                .value_name("SHELL")
+                .action(ArgAction::Set)
+                .help(
+                    "Generate shell completions for SHELL to stdout. \
+                     [possible values: bash, fish, zsh, powershell, elvish]",
+                )
+                .value_parser(["bash", "fish", "zsh", "powershell", "elvish"]),
+        )
+        .arg(
             Arg::new("command")
                 .help("The command to benchmark. This can be the name of an executable, a command \
                        line like \"grep -i todo\" or a shell command like \"sleep 0.5 && echo test\". \
                        The latter is only available if the shell is not explicitly disabled via \
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
-                .required(true)
+                .required_unless_present("gen-completions")
                 .action(ArgAction::Append)
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),

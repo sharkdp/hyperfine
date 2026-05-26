@@ -2,7 +2,9 @@ use std::fs;
 
 use clap_complete::{generate_to, Shell};
 
-include!("src/cli.rs");
+mod cli {
+    include!("src/cli.rs");
+}
 
 fn main() {
     let var = std::env::var_os("SHELL_COMPLETIONS_DIR").or_else(|| std::env::var_os("OUT_DIR"));
@@ -12,7 +14,7 @@ fn main() {
     };
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut command = build_command();
+    let mut command = cli::build_command();
     for shell in [
         Shell::Bash,
         Shell::Fish,
