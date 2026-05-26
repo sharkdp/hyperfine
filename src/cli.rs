@@ -91,6 +91,7 @@ fn build_command() -> Command {
                 .long("reference")
                 .action(ArgAction::Set)
                 .value_name("CMD")
+                .value_hint(ValueHint::CommandString)
                 .help(
                     "The reference command for the relative comparison of results. \
                     If this is unset, results are compared with the fastest command as reference."
