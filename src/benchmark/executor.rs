@@ -105,7 +105,7 @@ fn run_command_and_measure_common(
                 BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
             };
             bail!(
-                "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+                "{cause} in {when}. Use the '-i'/'--ignore-exit-code'/'--ignore-failure' option if you want to ignore this. \
                 Alternatively, use the '--show-output' option to debug what went wrong.",
                 cause=result.status.code().map_or(
                     "The process has been terminated by a signal".into(),
