@@ -32,21 +32,21 @@ impl<'a> Scheduler<'a> {
     }
 
     pub fn run_benchmarks(&mut self) -> Result<()> {
-        let mut executor: Box<dyn Executor> = match self.options.executor_kind {
-            ExecutorKind::Raw => Box::new(RawExecutor::new(self.options)),
-            ExecutorKind::Mock(ref shell) => Box::new(MockExecutor::new(shell.clone())),
-            ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, self.options)),
-        };
-
         let reference = self
             .options
             .reference_command
             .as_ref()
             .map(|cmd| Command::new(self.options.reference_name.as_deref(), cmd));
 
-        executor.calibrate()?;
-
         for (number, cmd) in reference.iter().chain(self.commands.iter()).enumerate() {
+            let mut executor: Box<dyn Executor> = match &self.options.executor_kinds[number] {
+                ExecutorKind::Raw => Box::new(RawExecutor::new(self.options)),
+                ExecutorKind::Mock(ref shell) => Box::new(MockExecutor::new(shell.clone())),
+                ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, self.options)),
+            };
+
+            executor.calibrate()?;
+
             self.results
                 .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
 
@@ -168,7 +168,7 @@ fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
     let cli_arguments = get_cli_arguments(args);
     let mut options = Options::from_cli_arguments(&cli_arguments)?;
 
-    assert_eq!(options.executor_kind, ExecutorKind::Mock(None));
+    assert_eq!(options.executor_kinds, vec![ExecutorKind::Mock(None)]);
 
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
     let export_manager = ExportManager::from_cli_arguments(
