@@ -1,5 +1,6 @@
 use super::benchmark_result::BenchmarkResult;
 use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
+use super::sequential::run_sequential_benchmarks;
 use super::{relative_speed, Benchmark};
 use colored::*;
 use std::cmp::Ordering;
@@ -46,13 +47,33 @@ impl<'a> Scheduler<'a> {
 
         executor.calibrate()?;
 
-        for (number, cmd) in reference.iter().chain(self.commands.iter()).enumerate() {
-            self.results
-                .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
+        let mut number = 0;
 
-            // We export results after each individual benchmark, because
-            // we would risk losing them if a later benchmark fails.
+        if let Some(ref_cmd) = reference.as_ref() {
+            self.results
+                .push(Benchmark::new(number, ref_cmd, self.options, &*executor).run()?);
+            number += 1;
             self.export_manager.write_results(&self.results, true)?;
+        }
+
+        if self.options.run_sequentially && self.commands.iter().count() > 1 {
+            let command_refs: Vec<(usize, _)> = self
+                .commands
+                .iter()
+                .enumerate()
+                .map(|(i, cmd)| (number + i, cmd))
+                .collect();
+
+            for result in run_sequential_benchmarks(&command_refs, self.options, &*executor)? {
+                self.results.push(result);
+                self.export_manager.write_results(&self.results, true)?;
+            }
+        } else {
+            for (offset, cmd) in self.commands.iter().enumerate() {
+                self.results
+                    .push(Benchmark::new(number + offset, cmd, self.options, &*executor).run()?);
+                self.export_manager.write_results(&self.results, true)?;
+            }
         }
 
         Ok(())

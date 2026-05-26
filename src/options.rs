@@ -241,6 +241,9 @@ pub struct Options {
     /// Where input to the benchmarked command comes from
     pub command_input_policy: CommandInputPolicy,
 
+    /// Interleave benchmark runs across commands instead of running each command to completion
+    pub run_sequentially: bool,
+
     /// What to do with the output of the benchmarked commands
     pub command_output_policies: Vec<CommandOutputPolicy>,
 
@@ -268,6 +271,7 @@ impl Default for Options {
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
+            run_sequentially: false,
         }
     }
 }
@@ -463,6 +467,8 @@ impl Options {
         } else {
             CommandInputPolicy::Null
         };
+
+        options.run_sequentially = matches.get_flag("run_sequentially");
 
         Ok(options)
     }

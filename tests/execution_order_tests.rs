@@ -110,6 +110,20 @@ fn benchmarks_are_executed_sequentially_one() {
 }
 
 #[test]
+fn benchmarks_are_executed_sequentially_with_run_sequentially_flag() {
+    ExecutionOrderTest::new()
+        .arg("--run-sequentially")
+        .arg("--runs=2")
+        .command("command 1")
+        .command("command 2")
+        .expect_output("command 1")
+        .expect_output("command 2")
+        .expect_output("command 1")
+        .expect_output("command 2")
+        .run();
+}
+
+#[test]
 fn benchmarks_are_executed_sequentially() {
     ExecutionOrderTest::new()
         .arg("--runs=2")
