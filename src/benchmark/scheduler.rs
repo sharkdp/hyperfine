@@ -1,4 +1,4 @@
-use super::benchmark_result::BenchmarkResult;
+use super::benchmark_result::{merge_parameter_benchmark_results, BenchmarkResult};
 use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
 use colored::*;
@@ -45,6 +45,35 @@ impl<'a> Scheduler<'a> {
             .map(|cmd| Command::new(self.options.reference_name.as_deref(), cmd));
 
         executor.calibrate()?;
+
+        if self.options.aggregate_parameter_runs {
+            let template = self
+                .commands
+                .template_expression()
+                .expect("validated in Options::validate_against_command_list");
+
+            if let Some(ref_cmd) = reference.as_ref() {
+                self.results
+                    .push(Benchmark::new(0, ref_cmd, self.options, &*executor).run()?);
+            }
+
+            let start_index = if reference.is_some() { 1 } else { 0 };
+            let mut parameter_results = Vec::with_capacity(self.commands.num_commands(false));
+
+            for (offset, cmd) in self.commands.iter().enumerate() {
+                parameter_results.push(
+                    Benchmark::new(start_index + offset, cmd, self.options, &*executor).run()?,
+                );
+            }
+
+            self.results.push(merge_parameter_benchmark_results(
+                parameter_results,
+                template,
+            ));
+            self.export_manager.write_results(&self.results, true)?;
+
+            return Ok(());
+        }
 
         for (number, cmd) in reference.iter().chain(self.commands.iter()).enumerate() {
             self.results
@@ -223,6 +252,45 @@ fn scheduler_basic() -> Result<()> {
         - 0
         - 0
     "#);
+
+    Ok(())
+}
+
+#[test]
+fn scheduler_aggregate_parameter_runs() -> Result<()> {
+    insta::assert_yaml_snapshot!(
+        generate_results(&[
+            "--runs=1",
+            "--aggregate-parameter-runs",
+            "--parameter-scan",
+            "index",
+            "1",
+            "3",
+            "sleep {index}.123",
+        ])?,
+        @r#"
+    - command: "sleep {index}.123"
+      mean: 2.123
+      stddev: 1
+      median: 2.123
+      user: 0
+      system: 0
+      min: 1.123
+      max: 3.123
+      times:
+        - 1.123
+        - 2.123
+        - 3.123
+      memory_usage_byte:
+        - 0
+        - 0
+        - 0
+      exit_codes:
+        - 0
+        - 0
+        - 0
+    "#
+    );
 
     Ok(())
 }

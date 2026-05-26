@@ -201,6 +201,16 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("aggregate-parameter-runs")
+                .long("aggregate-parameter-runs")
+                .action(ArgAction::SetTrue)
+                .help(
+                    "Combine benchmark results from all parameter values into a single summary. \
+                     Useful when each parameter value should contribute one sample to the same \
+                     benchmark, e.g. timing transfers of different files once each.",
+                ),
+        )
+        .arg(
             Arg::new("shell")
                 .long("shell")
                 .short('S')
