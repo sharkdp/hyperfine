@@ -142,6 +142,9 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 | `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | 1.405 | 1.468 | 6.14 ± 0.13 |
 | `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | 0.230 | 0.236 | 1.00 |
 
+See [Understanding the output](#understanding-the-output) below for an explanation of the
+`±` symbol, the `[User: …, System: …]` suffix, and the *Relative* column.
+
 #### JSON
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
@@ -160,6 +163,34 @@ The following chart explains the execution order of various timing runs when usi
 like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`:
 
 ![](doc/execution-order.png)
+
+### Understanding the output
+
+After each benchmark, hyperfine prints a statistical summary. With multiple runs,
+you will see lines like:
+
+```
+  Time (mean ± σ):      12.3 ms ±  1.2 ms    [User: 1.6 ms, System: 1.5 ms]
+  Range (min … max):    10.1 ms … 14.5 ms    10 runs
+```
+
+* **mean** — average wall-clock time across all measured runs.
+* **σ** (sigma) — standard deviation of the runtimes. A smaller value indicates
+  more consistent measurements.
+* **min … max** — shortest and longest observed runtime, plus the number of runs.
+* **User / System** — mean CPU time spent in user space and in the kernel,
+  averaged across all runs (same unit as the wall-clock time).
+
+When only a single run is performed, hyperfine prints `Time (abs ≡):` instead,
+because mean and standard deviation are not available.
+
+When comparing multiple commands, hyperfine prints a relative speed summary at the
+end, for example `2.00 ± 0.05 times faster than …`. The value is the ratio of mean
+runtimes; the `±` suffix shows the standard deviation of that ratio across runs.
+
+The exported tables use the same fields: *Mean* (with optional `±` standard
+deviation), *Min*, *Max*, and *Relative* (1.00 for the fastest or reference
+command).
 
 ## Installation
 

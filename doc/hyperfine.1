@@ -321,6 +321,57 @@ Print help
 \fB\-V\fR, \fB\-\-version\fR
 .IP
 Print version
+.SH OUTPUT
+After each benchmark, \fBhyperfine\fR prints a statistical summary of the measured
+runtimes. The exact format depends on the number of runs:
+.IP
+If only a single run was performed, the line
+.RS
+Time (abs ≡): ...
+.RE
+shows the absolute wall\-clock time of that run. The symbol "≡" indicates that
+no mean or standard deviation is available.
+.IP
+If multiple runs were performed, two lines are printed:
+.RS
+.IP
+Time (mean ± σ): ...
+.IP
+Range (min … max): ...
+.RE
+The first line shows the mean wall\-clock time across all runs and the standard
+deviation (σ, sigma). The second line shows the minimum and maximum observed
+runtimes as well as the number of runs.
+.IP
+The bracketed suffix
+.RS
+[User: ..., System: ...]
+.RE
+shows the mean CPU time spent in user space and in the kernel, respectively.
+These values are averaged across all runs and use the same time unit as the
+wall\-clock time.
+.IP
+When benchmarking multiple commands, \fBhyperfine\fR prints a relative speed
+comparison at the end. Each entry shows how much slower or faster a command is
+compared to the fastest command (or the command given via \fB\-\-reference\fR).
+If multiple runs were performed, the relative speed includes a "±" suffix with
+the standard deviation of the speed ratio.
+.IP
+Exported tables (Markdown, AsciiDoc, org\-mode) use the same quantities:
+.RS
+.IP
+Mean [UNIT]
+Mean runtime. If multiple runs were performed, the standard deviation is shown
+after a "±" sign.
+.IP
+Min [UNIT], Max [UNIT]
+Minimum and maximum observed runtimes.
+.IP
+Relative
+Speed relative to the fastest command (or the reference command). Shown as
+"1.00" for the reference. Includes "±" with the standard deviation of the
+speed ratio when multiple runs were performed.
+.RE
 .SH EXAMPLES
 .LP
 Basic benchmark of 'find . -name todo.txt':
