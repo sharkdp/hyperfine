@@ -42,7 +42,8 @@ fn build_command() -> Command {
                 .value_name("NUM")
                 .action(ArgAction::Set)
                 .help(
-                    "Perform NUM warmup runs before the actual benchmark. This can be used \
+                    "Perform NUM warmup runs before the actual benchmark, or 'auto' to keep \
+                     running warmup until the last 5 runs vary by less than 1%. This can be used \
                      to fill (disk) caches for I/O-heavy programs.",
                 ),
         )

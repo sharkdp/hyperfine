@@ -194,13 +194,73 @@ impl Default for ExecutorKind {
     }
 }
 
+/// How many warmup runs to perform before benchmarking
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum WarmupOption {
+    Disabled,
+    Fixed(u64),
+    Auto {
+        stable_window: usize,
+        stability_threshold: f64,
+        max_runs: u64,
+    },
+}
+
+impl Default for WarmupOption {
+    fn default() -> Self {
+        Self::Disabled
+    }
+}
+
+impl WarmupOption {
+    pub fn is_enabled(&self) -> bool {
+        !matches!(self, Self::Disabled)
+    }
+
+    pub const AUTO_STABLE_WINDOW: usize = 5;
+    pub const AUTO_STABILITY_THRESHOLD: f64 = 0.01;
+    pub const AUTO_MAX_RUNS: u64 = 100;
+}
+
+pub fn parse_warmup_option<'a>(value: &str) -> Result<WarmupOption, OptionsError<'a>> {
+    if value.eq_ignore_ascii_case("auto") {
+        Ok(WarmupOption::Auto {
+            stable_window: WarmupOption::AUTO_STABLE_WINDOW,
+            stability_threshold: WarmupOption::AUTO_STABILITY_THRESHOLD,
+            max_runs: WarmupOption::AUTO_MAX_RUNS,
+        })
+    } else {
+        let count = value
+            .parse::<u64>()
+            .map_err(|error| OptionsError::IntParsingError("warmup", error))?;
+        Ok(WarmupOption::Fixed(count))
+    }
+}
+
+/// Returns true when the relative spread of `times` is at most `threshold`.
+pub fn is_warmup_stable(times: &[Second], threshold: f64) -> bool {
+    if times.len() < 2 {
+        return false;
+    }
+
+    let min = times.iter().cloned().fold(f64::INFINITY, f64::min);
+    let max = times.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    let mean = times.iter().sum::<Second>() / times.len() as Second;
+
+    if mean == 0.0 {
+        max - min == 0.0
+    } else {
+        (max - min) / mean <= threshold
+    }
+}
+
 /// The main settings for a hyperfine benchmark session
 pub struct Options {
     /// Upper and lower bound for the number of benchmark runs
     pub run_bounds: RunBounds,
 
-    /// Number of warmup runs
-    pub warmup_count: u64,
+    /// Warmup runs to perform before benchmarking
+    pub warmup: WarmupOption,
 
     /// Minimum benchmarking time
     pub min_benchmarking_time: Second,
@@ -252,7 +312,7 @@ impl Default for Options {
     fn default() -> Options {
         Options {
             run_bounds: RunBounds::default(),
-            warmup_count: 0,
+            warmup: WarmupOption::default(),
             min_benchmarking_time: 3.0,
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
@@ -285,7 +345,11 @@ impl Options {
                 .transpose()
         };
 
-        options.warmup_count = param_to_u64("warmup")?.unwrap_or(options.warmup_count);
+        options.warmup = matches
+            .get_one::<String>("warmup")
+            .map(|value| parse_warmup_option(value))
+            .transpose()?
+            .unwrap_or(options.warmup);
 
         let mut min_runs = param_to_u64("min-runs")?;
         let mut max_runs = param_to_u64("max-runs")?;
@@ -500,6 +564,27 @@ impl Options {
 
         Ok(())
     }
+}
+
+#[test]
+fn test_parse_warmup_option() {
+    assert_eq!(parse_warmup_option("3").unwrap(), WarmupOption::Fixed(3));
+    assert_eq!(
+        parse_warmup_option("auto").unwrap(),
+        WarmupOption::Auto {
+            stable_window: WarmupOption::AUTO_STABLE_WINDOW,
+            stability_threshold: WarmupOption::AUTO_STABILITY_THRESHOLD,
+            max_runs: WarmupOption::AUTO_MAX_RUNS,
+        }
+    );
+}
+
+#[test]
+fn test_is_warmup_stable() {
+    assert!(!is_warmup_stable(&[1.0], 0.01));
+    assert!(is_warmup_stable(&[1.0, 1.0, 1.0, 1.0, 1.0], 0.01));
+    assert!(!is_warmup_stable(&[1.0, 1.0, 1.0, 1.0, 1.2], 0.01));
+    assert!(is_warmup_stable(&[1.0, 1.005, 0.995, 1.002, 0.998], 0.01));
 }
 
 #[test]
