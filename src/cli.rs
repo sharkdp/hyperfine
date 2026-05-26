@@ -204,9 +204,9 @@ fn build_command() -> Command {
             Arg::new("shell")
                 .long("shell")
                 .short('S')
-                .action(ArgAction::Set)
+                .action(ArgAction::Append)
+                .num_args(1)
                 .value_name("SHELL")
-                .overrides_with("shell")
                 .value_hint(ValueHint::CommandString)
                 .help("Set the shell to use for executing benchmarked commands. This can be the \
                        name or the path to the shell executable, or a full command line \
@@ -214,7 +214,10 @@ fn build_command() -> Command {
                        the default shell on this platform. Finally, this can also be set to \
                        \"none\" to disable the shell. In this case, commands will be executed \
                        directly. They can still have arguments, but more complex things like \
-                       \"sleep 0.1; sleep 0.2\" are not possible without a shell.")
+                       \"sleep 0.1; sleep 0.2\" are not possible without a shell.\n\
+                       The --shell option can be specified once for all commands or multiple \
+                       times, once for each command. In the latter case, each shell will be \
+                       used for the corresponding benchmark command.")
         )
         .arg(
             Arg::new("no-shell")

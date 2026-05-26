@@ -395,8 +395,10 @@ impl<'a> Benchmark<'a> {
         let mut warnings = vec![];
 
         // Check execution time
-        if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
-            && times_real.iter().any(|&t| t < MIN_EXECUTION_TIME)
+        if matches!(
+            self.options.executor_kinds[self.number],
+            ExecutorKind::Shell(_)
+        ) && times_real.iter().any(|&t| t < MIN_EXECUTION_TIME)
         {
             warnings.push(Warnings::FastExecutionTime);
         }

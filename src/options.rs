@@ -20,7 +20,7 @@ pub const DEFAULT_SHELL: &str = "sh";
 pub const DEFAULT_SHELL: &str = "cmd.exe";
 
 /// Shell to use for executing benchmarked commands
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Shell {
     /// Default shell command
     Default(&'static str),
@@ -181,7 +181,7 @@ impl CommandOutputPolicy {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExecutorKind {
     Raw,
     Shell(Shell),
@@ -235,8 +235,8 @@ pub struct Options {
     /// How to order benchmarks in the markup format exports
     pub sort_order_exports: SortOrder,
 
-    /// Determines how we run commands
-    pub executor_kind: ExecutorKind,
+    /// Determines how we run commands (one entry per benchmark, including reference)
+    pub executor_kinds: Vec<ExecutorKind>,
 
     /// Where input to the benchmarked command comes from
     pub command_input_policy: CommandInputPolicy,
@@ -264,7 +264,7 @@ impl Default for Options {
             output_style: OutputStyleOption::Full,
             sort_order_speed_comparison: SortOrder::MeanTime,
             sort_order_exports: SortOrder::Command,
-            executor_kind: ExecutorKind::default(),
+            executor_kinds: vec![ExecutorKind::default()],
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
@@ -402,19 +402,21 @@ impl Options {
             Some(_) => unreachable!("Unknown sort order"),
         };
 
-        options.executor_kind = if matches.get_flag("no-shell") {
-            ExecutorKind::Raw
+        options.executor_kinds = if matches.get_flag("no-shell") {
+            vec![ExecutorKind::Raw]
+        } else if matches.get_flag("debug-mode") {
+            match matches.get_many::<String>("shell") {
+                Some(shells) => shells
+                    .map(|shell| ExecutorKind::Mock(Some(shell.clone())))
+                    .collect(),
+                None => vec![ExecutorKind::Mock(None)],
+            }
         } else {
-            match (
-                matches.get_flag("debug-mode"),
-                matches.get_one::<String>("shell"),
-            ) {
-                (false, Some(shell)) if shell == "default" => ExecutorKind::Shell(Shell::default()),
-                (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
-                (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
-                (false, None) => ExecutorKind::Shell(Shell::default()),
-                (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
-                (true, None) => ExecutorKind::Mock(None),
+            match matches.get_many::<String>("shell") {
+                Some(shells) => shells
+                    .map(|shell| parse_executor_kind_from_shell(shell, false))
+                    .collect::<Result<Vec<_>, _>>()?,
+                None => vec![ExecutorKind::Shell(Shell::default())],
             }
         };
 
@@ -498,19 +500,33 @@ impl Options {
             );
         }
 
+        if self.executor_kinds.len() == 1 {
+            self.executor_kinds = vec![self.executor_kinds[0].clone(); num_commands];
+        } else {
+            ensure!(
+                self.executor_kinds.len() == num_commands,
+                "The '--shell' option has to be provided just once or N times, where N={num_commands} is the \
+                 number of benchmark commands (including a potential reference)."
+            );
+        }
+
         Ok(())
     }
 }
 
-#[test]
-fn test_default_shell() {
-    let shell = Shell::default();
-
-    let s = format!("{shell}");
-    assert_eq!(&s, DEFAULT_SHELL);
-
-    let cmd = shell.command();
-    assert_eq!(cmd.get_program(), DEFAULT_SHELL);
+fn parse_executor_kind_from_shell<'a>(
+    shell: &str,
+    debug_mode: bool,
+) -> Result<ExecutorKind, OptionsError<'a>> {
+    if debug_mode {
+        Ok(ExecutorKind::Mock(Some(shell.into())))
+    } else if shell == "default" {
+        Ok(ExecutorKind::Shell(Shell::default()))
+    } else if shell == "none" {
+        Ok(ExecutorKind::Raw)
+    } else {
+        Ok(ExecutorKind::Shell(Shell::parse_from_str(shell)?))
+    }
 }
 
 #[test]
@@ -544,4 +560,31 @@ fn test_can_parse_shell_command_line_from_str() {
         Shell::parse_from_str("''").unwrap_err(),
         OptionsError::EmptyShell
     ));
+}
+
+#[test]
+fn test_default_shell() {
+    let shell = Shell::default();
+
+    let s = format!("{shell}");
+    assert_eq!(&s, DEFAULT_SHELL);
+
+    let cmd = shell.command();
+    assert_eq!(cmd.get_program(), DEFAULT_SHELL);
+}
+
+#[test]
+fn test_parse_executor_kind_from_shell() {
+    assert_eq!(
+        parse_executor_kind_from_shell("default", false).unwrap(),
+        ExecutorKind::Shell(Shell::default())
+    );
+    assert_eq!(
+        parse_executor_kind_from_shell("none", false).unwrap(),
+        ExecutorKind::Raw
+    );
+    assert_eq!(
+        parse_executor_kind_from_shell("bash", false).unwrap(),
+        ExecutorKind::Shell(Shell::Custom(vec!["bash".into()]))
+    );
 }

@@ -46,6 +46,71 @@ fn can_run_commands_without_a_shell() {
 }
 
 #[test]
+fn per_command_shell_allows_different_executors() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--show-output")
+        .arg("--shell=default")
+        .arg("echo before && echo after")
+        .arg("--shell=none")
+        .arg("echo no-shell")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("before"))
+        .stdout(predicate::str::contains("after"))
+        .stdout(predicate::str::contains("no-shell"));
+}
+
+#[test]
+fn fails_with_wrong_number_of_shell_options() {
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--shell=none")
+        .arg("--shell=default")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--shell=none")
+        .arg("--shell=default")
+        .arg("--shell=none")
+        .arg("--reference=echo ref")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .success();
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--shell=none")
+        .arg("--shell=default")
+        .arg("echo a")
+        .arg("echo b")
+        .arg("echo c")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The '--shell' option has to be provided",
+        ));
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--shell=none")
+        .arg("--shell=default")
+        .arg("--reference=echo ref")
+        .arg("echo a")
+        .arg("echo b")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The '--shell' option has to be provided",
+        ));
+}
+
+#[test]
 fn fails_with_wrong_number_of_command_name_arguments() {
     hyperfine()
         .arg("--command-name=a")
