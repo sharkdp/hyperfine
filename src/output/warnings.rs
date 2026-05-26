@@ -15,6 +15,11 @@ pub enum Warnings {
     NonZeroExitCode,
     SlowInitialRun(Second, OutlierWarningOptions),
     OutliersDetected(OutlierWarningOptions),
+    OutliersDiscarded {
+        discarded: usize,
+        total: usize,
+        high_fraction: bool,
+    },
 }
 
 impl fmt::Display for Warnings {
@@ -62,6 +67,21 @@ impl fmt::Display for Warnings {
                     ""
                 } else {
                     " It might help to use the '--warmup' or '--prepare' options."
+                }
+            ),
+            Warnings::OutliersDiscarded {
+                discarded,
+                total,
+                high_fraction,
+            } => write!(
+                f,
+                "Discarded {discarded} of {total} benchmark runs as statistical outliers before \
+                 computing the summary.{extra}",
+                extra=if high_fraction {
+                    " More than 5% of runs were discarded; the result distribution might be \
+                     multi-modal or affected by interference."
+                } else {
+                    ""
                 }
             ),
         }

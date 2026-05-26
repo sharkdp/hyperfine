@@ -11,7 +11,7 @@ use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
-use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use crate::outlier_detection::{filter_outliers, modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
@@ -333,6 +333,51 @@ impl<'a> Benchmark<'a> {
             bar.finish_and_clear()
         }
 
+        let original_run_count = times_real.len();
+        let mut num_discarded = 0;
+
+        let outlier_warning_options = OutlierWarningOptions {
+            warmup_in_use: self.options.warmup_count > 0,
+            prepare_in_use: self
+                .options
+                .preparation_command
+                .as_ref()
+                .map(|v| v.len())
+                .unwrap_or(0)
+                > 0,
+        };
+
+        let outlier_scores = modified_zscores(&times_real);
+
+        if self.options.discard_outliers && times_real.len() > 1 {
+            let filter_result = filter_outliers(&times_real, OUTLIER_THRESHOLD);
+            num_discarded = filter_result.num_discarded;
+
+            if num_discarded > 0 {
+                let keep_indices = filter_result.keep_indices;
+                times_real = keep_indices
+                    .iter()
+                    .map(|&index| times_real[index])
+                    .collect();
+                times_user = keep_indices
+                    .iter()
+                    .map(|&index| times_user[index])
+                    .collect();
+                times_system = keep_indices
+                    .iter()
+                    .map(|&index| times_system[index])
+                    .collect();
+                memory_usage_byte = keep_indices
+                    .iter()
+                    .map(|&index| memory_usage_byte[index])
+                    .collect();
+                exit_codes = keep_indices
+                    .iter()
+                    .map(|&index| exit_codes[index])
+                    .collect();
+            }
+        }
+
         // Compute statistical quantities
         let t_num = times_real.len();
         let t_mean = mean(&times_real);
@@ -352,7 +397,11 @@ impl<'a> Benchmark<'a> {
         let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
         let min_str = format_duration(t_min, Some(time_unit));
         let max_str = format_duration(t_max, Some(time_unit));
-        let num_str = format!("{t_num} runs");
+        let num_str = if num_discarded > 0 {
+            format!("{t_num} runs ({num_discarded} outliers discarded)")
+        } else {
+            format!("{t_num} runs")
+        };
 
         let user_str = format_duration(user_mean, Some(time_unit));
         let system_str = format_duration(system_mean, Some(time_unit));
@@ -407,25 +456,23 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = modified_zscores(&times_real);
-
-        let outlier_warning_options = OutlierWarningOptions {
-            warmup_in_use: self.options.warmup_count > 0,
-            prepare_in_use: self
-                .options
-                .preparation_command
-                .as_ref()
-                .map(|v| v.len())
-                .unwrap_or(0)
-                > 0,
-        };
-
-        if scores[0] > OUTLIER_THRESHOLD {
+        if self.options.discard_outliers {
+            if num_discarded > 0 {
+                warnings.push(Warnings::OutliersDiscarded {
+                    discarded: num_discarded,
+                    total: original_run_count,
+                    high_fraction: num_discarded as f64 / original_run_count as f64 > 0.05,
+                });
+            }
+        } else if outlier_scores[0] > OUTLIER_THRESHOLD {
             warnings.push(Warnings::SlowInitialRun(
                 times_real[0],
                 outlier_warning_options,
             ));
-        } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
+        } else if outlier_scores
+            .iter()
+            .any(|&score| score.abs() > OUTLIER_THRESHOLD)
+        {
             warnings.push(Warnings::OutliersDetected(outlier_warning_options));
         }
 

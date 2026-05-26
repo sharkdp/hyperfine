@@ -39,17 +39,80 @@ pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
 
 /// Return the number of outliers in a given sample. Outliers are defined as data points with a
 /// modified Z-score that is larger than `OUTLIER_THRESHOLD`.
-#[cfg(test)]
 pub fn num_outliers(xs: &[f64]) -> usize {
+    count_outliers(xs, OUTLIER_THRESHOLD)
+}
+
+/// Return the number of outliers in a given sample for a custom threshold.
+pub fn count_outliers(xs: &[f64], threshold: f64) -> usize {
     if xs.is_empty() {
         return 0;
     }
 
-    let scores = modified_zscores(xs);
-    scores
+    modified_zscores(xs)
         .iter()
-        .filter(|&&s| s.abs() > OUTLIER_THRESHOLD)
+        .filter(|&&s| s.abs() > threshold)
         .count()
+}
+
+/// Result of filtering outliers from a sample.
+pub struct OutlierFilterResult {
+    /// Indices of samples that should be kept (sorted).
+    pub keep_indices: Vec<usize>,
+    /// Number of discarded samples.
+    pub num_discarded: usize,
+}
+
+/// Remove statistical outliers from a sample, using the same modified Z-score method as the
+/// outlier warnings. At least one sample is always kept.
+pub fn filter_outliers(xs: &[f64], threshold: f64) -> OutlierFilterResult {
+    if xs.is_empty() {
+        return OutlierFilterResult {
+            keep_indices: vec![],
+            num_discarded: 0,
+        };
+    }
+
+    if xs.len() == 1 {
+        return OutlierFilterResult {
+            keep_indices: vec![0],
+            num_discarded: 0,
+        };
+    }
+
+    let scores = modified_zscores(xs);
+    let keep_indices: Vec<usize> = scores
+        .iter()
+        .enumerate()
+        .filter(|&(_, score)| score.abs() <= threshold)
+        .map(|(index, _)| index)
+        .collect();
+
+    if keep_indices.is_empty() {
+        let x_median = median(xs);
+        let best_index = xs
+            .iter()
+            .enumerate()
+            .min_by(|(_, a), (_, b)| {
+                (*a - x_median)
+                    .abs()
+                    .partial_cmp(&(*b - x_median).abs())
+                    .unwrap()
+            })
+            .map(|(index, _)| index)
+            .unwrap();
+
+        return OutlierFilterResult {
+            keep_indices: vec![best_index],
+            num_discarded: xs.len() - 1,
+        };
+    }
+
+    let num_discarded = xs.len() - keep_indices.len();
+    OutlierFilterResult {
+        keep_indices,
+        num_discarded,
+    }
 }
 
 #[test]
@@ -112,4 +175,18 @@ fn test_detect_outliers_if_mad_becomes_0() {
 
     let xs = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 100.0, 100.0];
     assert_eq!(2, num_outliers(&xs));
+}
+
+#[test]
+fn test_filter_outliers() {
+    let xs = [0.30, 0.29, 0.31, 0.30, 0.30, 4.0];
+    let result = filter_outliers(&xs, OUTLIER_THRESHOLD);
+    assert_eq!(result.num_discarded, 1);
+    assert_eq!(result.keep_indices.len(), 5);
+    assert!(!result.keep_indices.contains(&5));
+
+    let xs = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 100.0];
+    let result = filter_outliers(&xs, OUTLIER_THRESHOLD);
+    assert_eq!(result.num_discarded, 1);
+    assert_eq!(result.keep_indices.len(), 7);
 }

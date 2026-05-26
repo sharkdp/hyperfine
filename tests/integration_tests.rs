@@ -34,6 +34,16 @@ fn one_run_is_supported() {
 }
 
 #[test]
+fn discard_outliers_option_is_supported() {
+    hyperfine()
+        .arg("--discard-outliers")
+        .arg("--runs=2")
+        .arg("echo dummy benchmark")
+        .assert()
+        .success();
+}
+
+#[test]
 fn can_run_commands_without_a_shell() {
     hyperfine()
         .arg("--runs=1")
