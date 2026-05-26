@@ -55,4 +55,9 @@ pub enum OptionsError<'a> {
     UnknownOutputPolicy(String),
     #[error("The file '{0}' specified as '--input' does not exist")]
     StdinDataFileDoesNotExist(String),
+    #[error(
+        "The '--omit-failed-runs' option requires '--ignore-failure' to be set, otherwise \
+         hyperfine aborts on the first failed run"
+    )]
+    OmitFailedRunsRequiresIgnoreFailure,
 }

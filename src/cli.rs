@@ -237,6 +237,23 @@ fn build_command() -> Command {
                        a comma-separated list of exit codes to ignore (e.g., --ignore-failure=1,2)."),
         )
         .arg(
+            Arg::new("omit_failed_runs")
+                .long("omit-failed-runs")
+                .action(ArgAction::SetTrue)
+                .requires("ignore-failure")
+                .help(
+                    "Exclude failed runs from summary statistics while still reporting how many failed",
+                )
+                .long_help(
+                    "Exclude failed runs from summary statistics while still reporting how many failed.\n\n\
+                     Requires '--ignore-failure' so that benchmark runs with non-zero exit codes \
+                     can complete. Failed runs are omitted from mean, median, standard deviation, \
+                     and exported timing data.\n\n\
+                     Example:\n\n  \
+                       hyperfine --ignore-failure --omit-failed-runs --runs 20 './flaky-test.sh'",
+                ),
+        )
+        .arg(
             Arg::new("style")
                 .long("style")
                 .action(ArgAction::Set)

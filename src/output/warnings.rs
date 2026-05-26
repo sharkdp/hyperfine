@@ -15,6 +15,7 @@ pub enum Warnings {
     NonZeroExitCode,
     SlowInitialRun(Second, OutlierWarningOptions),
     OutliersDetected(OutlierWarningOptions),
+    FailedRunsOmitted { omitted: usize, total: usize },
 }
 
 impl fmt::Display for Warnings {
@@ -63,6 +64,11 @@ impl fmt::Display for Warnings {
                 } else {
                     " It might help to use the '--warmup' or '--prepare' options."
                 }
+            ),
+            Warnings::FailedRunsOmitted { omitted, total } => write!(
+                f,
+                "Omitted {omitted} of {total} benchmark runs with non-zero exit codes from the \
+                 summary statistics."
             ),
         }
     }

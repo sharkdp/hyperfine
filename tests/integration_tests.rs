@@ -260,6 +260,35 @@ fn fails_for_unknown_conclude_command() {
 
 #[cfg(unix)]
 #[test]
+fn omit_failed_runs_requires_ignore_failure() {
+    hyperfine()
+        .arg("--omit-failed-runs")
+        .arg("true")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("--ignore-failure"));
+}
+
+#[cfg(unix)]
+#[test]
+fn omit_failed_runs_excludes_failures_from_statistics() {
+    hyperfine()
+        .arg("--ignore-failure")
+        .arg("--omit-failed-runs")
+        .arg("--runs=5")
+        .arg(
+            "bash -c 'if [ \"$HYPERFINE_ITERATION\" = \"2\" ] || [ \"$HYPERFINE_ITERATION\" = \"4\" ]; then exit 1; else sleep 0.01; fi'",
+        )
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("2 failed runs omitted"))
+        .stderr(predicate::str::contains(
+            "Omitted 2 of 5 benchmark runs with non-zero exit codes",
+        ));
+}
+
+#[cfg(unix)]
+#[test]
 fn can_run_failing_commands_with_ignore_failure_option() {
     hyperfine()
         .arg("false")
