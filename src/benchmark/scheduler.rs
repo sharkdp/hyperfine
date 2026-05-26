@@ -31,6 +31,11 @@ impl<'a> Scheduler<'a> {
         }
     }
 
+    pub fn prepend_results(&mut self, mut imported_results: Vec<BenchmarkResult>) {
+        imported_results.append(&mut self.results);
+        self.results = imported_results;
+    }
+
     pub fn run_benchmarks(&mut self) -> Result<()> {
         let mut executor: Box<dyn Executor> = match self.options.executor_kind {
             ExecutorKind::Raw => Box::new(RawExecutor::new(self.options)),

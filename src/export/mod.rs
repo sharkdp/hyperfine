@@ -16,6 +16,8 @@ use self::json::JsonExporter;
 use self::markdown::MarkdownExporter;
 use self::orgmode::OrgmodeExporter;
 
+pub use self::json::load_benchmark_results;
+
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
 use crate::util::units::Unit;

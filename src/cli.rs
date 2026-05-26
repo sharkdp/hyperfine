@@ -299,6 +299,18 @@ fn build_command() -> Command {
                        The output time unit is always seconds."),
         )
         .arg(
+            Arg::new("import-json")
+                .long("import-json")
+                .action(ArgAction::Set)
+                .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
+                .help(
+                    "Import benchmark results from a previous JSON export (as produced by \
+                     --export-json) and include them in the summary and relative speed comparison \
+                     for this run.",
+                ),
+        )
+        .arg(
             Arg::new("export-json")
                 .long("export-json")
                 .action(ArgAction::Set)
