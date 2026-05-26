@@ -9,7 +9,7 @@ use std::cmp;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{
-    CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
+    CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption, WarmupOption,
 };
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
 use crate::output::format::{format_duration, format_duration_unit};
@@ -51,6 +51,142 @@ impl<'a> Benchmark<'a> {
             options,
             executor,
         }
+    }
+
+    /// Run warmup iterations before the actual benchmark.
+    fn perform_warmup_runs(
+        &self,
+        run_preparation_command: &impl Fn() -> Result<Option<TimingResult>>,
+        run_conclusion_command: &impl Fn() -> Result<Option<TimingResult>>,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<()> {
+        match self.options.warmup {
+            WarmupOption::Disabled => Ok(()),
+            WarmupOption::Fixed(count) => self.perform_fixed_warmup_runs(
+                count,
+                run_preparation_command,
+                run_conclusion_command,
+                output_policy,
+            ),
+            WarmupOption::Auto {
+                stable_window,
+                stability_threshold,
+                max_runs,
+            } => self.perform_auto_warmup_runs(
+                stable_window,
+                stability_threshold,
+                max_runs,
+                run_preparation_command,
+                run_conclusion_command,
+                output_policy,
+            ),
+        }
+    }
+
+    fn perform_fixed_warmup_runs(
+        &self,
+        count: u64,
+        run_preparation_command: &impl Fn() -> Result<Option<TimingResult>>,
+        run_conclusion_command: &impl Fn() -> Result<Option<TimingResult>>,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<()> {
+        let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
+            Some(get_progress_bar(
+                count,
+                "Performing warmup runs",
+                self.options.output_style,
+            ))
+        } else {
+            None
+        };
+
+        for i in 0..count {
+            self.run_single_warmup_iteration(
+                i,
+                run_preparation_command,
+                run_conclusion_command,
+                output_policy,
+            )?;
+            if let Some(bar) = progress_bar.as_ref() {
+                bar.inc(1);
+            }
+        }
+
+        if let Some(bar) = progress_bar.as_ref() {
+            bar.finish_and_clear();
+        }
+
+        Ok(())
+    }
+
+    fn perform_auto_warmup_runs(
+        &self,
+        stable_window: usize,
+        stability_threshold: f64,
+        max_runs: u64,
+        run_preparation_command: &impl Fn() -> Result<Option<TimingResult>>,
+        run_conclusion_command: &impl Fn() -> Result<Option<TimingResult>>,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<()> {
+        let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
+            Some(get_progress_bar(
+                max_runs,
+                "Performing warmup runs (auto)",
+                self.options.output_style,
+            ))
+        } else {
+            None
+        };
+
+        let mut recent_times = Vec::with_capacity(stable_window);
+
+        for i in 0..max_runs {
+            let (timing, _) = self.run_single_warmup_iteration(
+                i,
+                run_preparation_command,
+                run_conclusion_command,
+                output_policy,
+            )?;
+
+            recent_times.push(timing.time_real + self.executor.time_overhead());
+            if recent_times.len() > stable_window {
+                recent_times.remove(0);
+            }
+
+            if let Some(bar) = progress_bar.as_ref() {
+                bar.inc(1);
+            }
+
+            if recent_times.len() >= stable_window
+                && crate::options::is_warmup_stable(&recent_times, stability_threshold)
+            {
+                break;
+            }
+        }
+
+        if let Some(bar) = progress_bar.as_ref() {
+            bar.finish_and_clear();
+        }
+
+        Ok(())
+    }
+
+    fn run_single_warmup_iteration(
+        &self,
+        iteration: u64,
+        run_preparation_command: &impl Fn() -> Result<Option<TimingResult>>,
+        run_conclusion_command: &impl Fn() -> Result<Option<TimingResult>>,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<(TimingResult, std::process::ExitStatus)> {
+        let _ = run_preparation_command()?;
+        let result = self.executor.run_command_and_measure(
+            self.command,
+            BenchmarkIteration::Warmup(iteration),
+            None,
+            output_policy,
+        )?;
+        let _ = run_conclusion_command()?;
+        Ok(result)
     }
 
     /// Run setup, cleanup, or preparation commands
@@ -199,33 +335,12 @@ impl<'a> Benchmark<'a> {
         self.run_setup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
         // Warmup phase
-        if self.options.warmup_count > 0 {
-            let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
-                Some(get_progress_bar(
-                    self.options.warmup_count,
-                    "Performing warmup runs",
-                    self.options.output_style,
-                ))
-            } else {
-                None
-            };
-
-            for i in 0..self.options.warmup_count {
-                let _ = run_preparation_command()?;
-                let _ = self.executor.run_command_and_measure(
-                    self.command,
-                    BenchmarkIteration::Warmup(i),
-                    None,
-                    output_policy,
-                )?;
-                let _ = run_conclusion_command()?;
-                if let Some(bar) = progress_bar.as_ref() {
-                    bar.inc(1)
-                }
-            }
-            if let Some(bar) = progress_bar.as_ref() {
-                bar.finish_and_clear()
-            }
+        if self.options.warmup.is_enabled() {
+            self.perform_warmup_runs(
+                &run_preparation_command,
+                &run_conclusion_command,
+                output_policy,
+            )?;
         }
 
         // Set up progress bar (and spinner for initial measurement)
@@ -410,7 +525,7 @@ impl<'a> Benchmark<'a> {
         let scores = modified_zscores(&times_real);
 
         let outlier_warning_options = OutlierWarningOptions {
-            warmup_in_use: self.options.warmup_count > 0,
+            warmup_in_use: self.options.warmup.is_enabled(),
             prepare_in_use: self
                 .options
                 .preparation_command

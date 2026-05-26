@@ -561,3 +561,14 @@ fn setup_separate_prepare_reference_separate_conclude_cleanup_combined() {
         .expect_output("cleanup")
         .run();
 }
+
+#[test]
+fn auto_warmup_option_is_accepted() {
+    hyperfine()
+        .arg("--warmup=auto")
+        .arg("--runs=1")
+        .arg("--style=none")
+        .arg("true")
+        .assert()
+        .success();
+}
