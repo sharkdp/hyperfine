@@ -78,6 +78,10 @@ impl<'a> Command<'a> {
         self.replace_parameters_in(self.expression)
     }
 
+    pub fn expression(&self) -> &'a str {
+        self.expression
+    }
+
     pub fn get_command(&self) -> Result<std::process::Command> {
         let command_line = self.get_command_line();
         let mut tokens = shell_words::split(&command_line)
@@ -253,6 +257,26 @@ impl<'a> Commands<'a> {
 
     pub fn num_commands(&self, has_reference_command: bool) -> usize {
         self.0.len() + if has_reference_command { 1 } else { 0 }
+    }
+
+    /// Whether all commands share the same template expression (parameter scan/list).
+    pub fn supports_parameter_aggregation(&self) -> bool {
+        if self.0.len() <= 1 {
+            return false;
+        }
+
+        let template = self.0[0].expression();
+        self.0
+            .iter()
+            .all(|command| command.expression() == template)
+    }
+
+    pub fn template_expression(&self) -> Option<&'a str> {
+        if self.supports_parameter_aggregation() {
+            Some(self.0[0].expression())
+        } else {
+            None
+        }
     }
 
     /// Finds all the strings that appear multiple times in the input iterator, returning them in

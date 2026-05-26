@@ -246,6 +246,9 @@ pub struct Options {
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// Combine results from parameter scan/list commands into one summary
+    pub aggregate_parameter_runs: bool,
 }
 
 impl Default for Options {
@@ -268,6 +271,7 @@ impl Default for Options {
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
+            aggregate_parameter_runs: false,
         }
     }
 }
@@ -464,6 +468,8 @@ impl Options {
             CommandInputPolicy::Null
         };
 
+        options.aggregate_parameter_runs = matches.get_flag("aggregate-parameter-runs");
+
         Ok(options)
     }
 
@@ -495,6 +501,18 @@ impl Options {
                 self.command_output_policies.len() == num_commands,
                 "The '--output' option has to be provided just once or N times, where N={num_commands} is the \
                  number of benchmark commands (including a potential reference)."
+            );
+        }
+
+        if self.aggregate_parameter_runs {
+            ensure!(
+                !has_reference_command,
+                "The '--aggregate-parameter-runs' option cannot be combined with '--reference'."
+            );
+            ensure!(
+                commands.supports_parameter_aggregation(),
+                "The '--aggregate-parameter-runs' option requires multiple commands that share \
+                 the same template (from --parameter-scan or --parameter-list)."
             );
         }
 
