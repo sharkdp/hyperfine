@@ -22,7 +22,7 @@ use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use colored::*;
 use statistical::{mean, median, standard_deviation};
 
@@ -333,6 +333,47 @@ impl<'a> Benchmark<'a> {
             bar.finish_and_clear()
         }
 
+        let original_run_count = times_real.len();
+        let mut num_omitted_failed_runs = 0;
+
+        if self.options.omit_failed_runs {
+            let keep_indices: Vec<usize> = exit_codes
+                .iter()
+                .enumerate()
+                .filter(|&(_, exit_code)| exit_code == &Some(0))
+                .map(|(index, _)| index)
+                .collect();
+
+            num_omitted_failed_runs = original_run_count.saturating_sub(keep_indices.len());
+
+            if keep_indices.is_empty() {
+                bail!("All benchmark runs failed. No successful runs to compute statistics from.");
+            }
+
+            if num_omitted_failed_runs > 0 {
+                times_real = keep_indices
+                    .iter()
+                    .map(|&index| times_real[index])
+                    .collect();
+                times_user = keep_indices
+                    .iter()
+                    .map(|&index| times_user[index])
+                    .collect();
+                times_system = keep_indices
+                    .iter()
+                    .map(|&index| times_system[index])
+                    .collect();
+                memory_usage_byte = keep_indices
+                    .iter()
+                    .map(|&index| memory_usage_byte[index])
+                    .collect();
+                exit_codes = keep_indices
+                    .iter()
+                    .map(|&index| exit_codes[index])
+                    .collect();
+            }
+        }
+
         // Compute statistical quantities
         let t_num = times_real.len();
         let t_mean = mean(&times_real);
@@ -352,7 +393,11 @@ impl<'a> Benchmark<'a> {
         let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
         let min_str = format_duration(t_min, Some(time_unit));
         let max_str = format_duration(t_max, Some(time_unit));
-        let num_str = format!("{t_num} runs");
+        let num_str = if num_omitted_failed_runs > 0 {
+            format!("{t_num} runs ({num_omitted_failed_runs} failed runs omitted)")
+        } else {
+            format!("{t_num} runs")
+        };
 
         let user_str = format_duration(user_mean, Some(time_unit));
         let system_str = format_duration(system_mean, Some(time_unit));
@@ -404,6 +449,13 @@ impl<'a> Benchmark<'a> {
         // Check program exit codes
         if !all_succeeded {
             warnings.push(Warnings::NonZeroExitCode);
+        }
+
+        if num_omitted_failed_runs > 0 {
+            warnings.push(Warnings::FailedRunsOmitted {
+                omitted: num_omitted_failed_runs,
+                total: original_run_count,
+            });
         }
 
         // Run outlier detection

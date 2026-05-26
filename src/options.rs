@@ -246,6 +246,9 @@ pub struct Options {
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// Whether to exclude failed runs from summary statistics
+    pub omit_failed_runs: bool,
 }
 
 impl Default for Options {
@@ -268,6 +271,7 @@ impl Default for Options {
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
+            omit_failed_runs: false,
         }
     }
 }
@@ -463,6 +467,14 @@ impl Options {
         } else {
             CommandInputPolicy::Null
         };
+
+        options.omit_failed_runs = matches.get_flag("omit_failed_runs");
+
+        if options.omit_failed_runs
+            && options.command_failure_action == CmdFailureAction::RaiseError
+        {
+            return Err(OptionsError::OmitFailedRunsRequiresIgnoreFailure);
+        }
 
         Ok(options)
     }
