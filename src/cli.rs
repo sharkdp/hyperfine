@@ -73,6 +73,29 @@ fn build_command() -> Command {
                        hyperfine automatically determines the number of runs."),
         )
         .arg(
+            Arg::new("run_sequentially")
+                .long("run-sequentially")
+                .action(ArgAction::SetTrue)
+                .help(
+                    "Interleave benchmark runs across commands instead of running each command \
+                     to completion before starting the next one.",
+                )
+                .long_help(
+                    "Interleave benchmark runs across commands instead of running each command \
+                     to completion before starting the next one.\n\n\
+                     By default, hyperfine runs all timing iterations for the first command, then \
+                     all iterations for the second command, and so on. With this option, timing \
+                     runs are performed in rounds: the first command, then the second, and so on, \
+                     before repeating for the next round.\n\n\
+                     This is useful when benchmarking sequential pipeline steps that depend on each \
+                     other, or when trying to reduce temporal bias from varying system load.\n\n\
+                     Example:\n\n  \
+                       hyperfine --run-sequentially --runs 3 './step1.sh' './step2.sh'\n\n\
+                     This executes './step1.sh', './step2.sh', './step1.sh', './step2.sh', \
+                     './step1.sh', './step2.sh'.",
+                ),
+        )
+        .arg(
             Arg::new("setup")
                 .long("setup")
                 .short('s')

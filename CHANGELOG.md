@@ -2,6 +2,7 @@
 
 ## Features
 
+- Add `--run-sequentially` option to interleave benchmark runs across commands, see #822
 - Add `--reference-name` option to give a meaningful name to the reference command, see #808 (@niklasdewally)
 - The `--ignore-failure` option now supports a comma-separated list of exit codes to ignore (e.g., `--ignore-failure=1,2`), see #836 (@sharkdp)
 - Python scripts: Add `--time-unit` option to `advanced_statistics.py` (@sharkdp)
