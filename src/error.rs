@@ -55,4 +55,6 @@ pub enum OptionsError<'a> {
     UnknownOutputPolicy(String),
     #[error("The file '{0}' specified as '--input' does not exist")]
     StdinDataFileDoesNotExist(String),
+    #[error("The file '{0}' specified as '--import-json' does not exist")]
+    ImportJsonFileDoesNotExist(String),
 }

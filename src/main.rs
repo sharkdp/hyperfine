@@ -8,6 +8,7 @@ use std::env;
 use benchmark::scheduler::Scheduler;
 use cli::get_cli_arguments;
 use command::Commands;
+use export::load_benchmark_results;
 use export::ExportManager;
 use options::Options;
 
@@ -43,6 +44,9 @@ fn run() -> Result<()> {
     options.validate_against_command_list(&commands)?;
 
     let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
+    if let Some(path) = &options.import_json {
+        scheduler.prepend_results(load_benchmark_results(path)?);
+    }
     scheduler.run_benchmarks()?;
     scheduler.print_relative_speed_comparison();
     scheduler.final_export()?;

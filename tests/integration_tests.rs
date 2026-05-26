@@ -722,3 +722,41 @@ fn windows_quote_before_quote_args() {
         .assert()
         .success();
 }
+
+#[test]
+fn imports_json_export_for_relative_comparison() {
+    use tempfile::NamedTempFile;
+
+    let json_file = NamedTempFile::new().unwrap();
+    let json_path = json_file.path().to_path_buf();
+
+    hyperfine_debug()
+        .arg("--runs=1")
+        .arg(format!("--export-json={}", json_path.display()))
+        .arg("sleep 2.0")
+        .assert()
+        .success();
+
+    hyperfine_debug()
+        .arg("--runs=1")
+        .arg(format!("--import-json={}", json_path.display()))
+        .arg("sleep 1.0")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("sleep 2.0")
+                .and(predicate::str::contains("2.00 times faster than sleep 2.0")),
+        );
+}
+
+#[test]
+fn fails_when_import_json_file_does_not_exist() {
+    hyperfine()
+        .arg("--import-json=does-not-exist.json")
+        .arg("echo test")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "The file 'does-not-exist.json' specified as '--import-json' does not exist",
+        ));
+}

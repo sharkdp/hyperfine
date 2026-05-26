@@ -246,6 +246,9 @@ pub struct Options {
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// Previously exported results to include in comparison output
+    pub import_json: Option<PathBuf>,
 }
 
 impl Default for Options {
@@ -268,6 +271,7 @@ impl Default for Options {
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
+            import_json: None,
         }
     }
 }
@@ -463,6 +467,16 @@ impl Options {
         } else {
             CommandInputPolicy::Null
         };
+
+        options.import_json = matches.get_one::<String>("import-json").map(PathBuf::from);
+
+        if let Some(path) = &options.import_json {
+            if !path.exists() {
+                return Err(OptionsError::ImportJsonFileDoesNotExist(
+                    path.display().to_string(),
+                ));
+            }
+        }
 
         Ok(options)
     }
