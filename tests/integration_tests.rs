@@ -36,10 +36,7 @@ fn gen_completions_fish() {
 
 #[test]
 fn gen_completions_requires_shell() {
-    hyperfine()
-        .arg("--gen-completions")
-        .assert()
-        .failure();
+    hyperfine().arg("--gen-completions").assert().failure();
 }
 
 #[test]
