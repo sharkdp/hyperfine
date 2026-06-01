@@ -87,6 +87,20 @@ option:
 hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
 ```
 
+A common use case is comparing the same command across multiple Git branches. Use `--setup`
+to switch branches once before each set of timing runs, so the branch switch is not part of
+the measured command:
+```sh
+hyperfine \
+    --parameter-list branch main,performance-improvements \
+    --setup 'git switch {branch}' \
+    'rails runner true'
+```
+
+Make sure your working tree is clean before switching branches. If you want to benchmark
+uncommitted changes, consider using `git worktree` and benchmarking the same command in each
+worktree instead.
+
 ### Intermediate shell
 
 By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).
