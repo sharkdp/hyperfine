@@ -24,7 +24,16 @@ impl Exporter for CsvExporter {
         {
             let mut headers: Vec<Cow<[u8]>> = [
                 // The list of times and exit codes cannot be exported to the CSV file - omit them.
-                "command", "mean", "stddev", "median", "user", "system", "min", "max",
+                "command",
+                "mean",
+                "stddev",
+                "median",
+                "user",
+                "system",
+                "min",
+                "max",
+                "memory_min",
+                "memory_max",
             ]
             .iter()
             .map(|x| Cow::Borrowed(x.as_bytes()))
@@ -50,6 +59,19 @@ impl Exporter for CsvExporter {
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
+            // Add memory_min and memory_max (empty string if not available)
+            fields.push(Cow::Owned(
+                res.memory_min
+                    .map(|m| m.to_string())
+                    .unwrap_or_default()
+                    .into_bytes(),
+            ));
+            fields.push(Cow::Owned(
+                res.memory_max
+                    .map(|m| m.to_string())
+                    .unwrap_or_default()
+                    .into_bytes(),
+            ));
             for v in res.parameters.values() {
                 fields.push(Cow::Borrowed(v.as_bytes()))
             }
@@ -78,6 +100,8 @@ fn test_csv() {
             max: 6.0,
             times: Some(vec![7.0, 8.0, 9.0]),
             memory_usage_byte: None,
+            memory_min: Some(1000000), // ~1 MB
+            memory_max: Some(1048576), // 1 MB
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -98,6 +122,8 @@ fn test_csv() {
             max: 16.5,
             times: Some(vec![17.0, 18.0, 19.0]),
             memory_usage_byte: None,
+            memory_min: Some(2000000), // ~2 MB
+            memory_max: Some(2097152), // 2 MB
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
@@ -116,8 +142,8 @@ fn test_csv() {
     .unwrap();
 
     insta::assert_snapshot!(actual, @r#"
-    command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,1,2,1,3,4,5,6,two,one
-    command_b,11,12,11,13,14,15,16.5,seven,one
+    command,mean,stddev,median,user,system,min,max,memory_min,memory_max,parameter_bar,parameter_foo
+    command_a,1,2,1,3,4,5,6,1000000,1048576,two,one
+    command_b,11,12,11,13,14,15,16.5,2000000,2097152,seven,one
     "#);
 }

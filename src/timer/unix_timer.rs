@@ -1,4 +1,4 @@
-#![cfg(not(windows))]
+#![cfg(all(unix, not(target_os = "linux")))]
 
 use std::convert::TryFrom;
 use std::mem;

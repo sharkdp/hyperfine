@@ -134,30 +134,58 @@ impl<'a> Command<'a> {
 pub struct Commands<'a>(Vec<Command<'a>>);
 
 impl<'a> Commands<'a> {
-    pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'a>> {
-        let command_names = matches.get_many::<String>("command-name");
-        let command_strings = matches
+    pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'static>> {
+        // Get the command suffix (everything after --)
+        let command_suffix: String = matches
+            .get_many::<String>("command-suffix")
+            .map(|args| {
+                args.map(|s| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .unwrap_or_default();
+
+        // Build command strings, appending suffix if present
+        let command_strings: Vec<&'static str> = matches
             .get_many::<String>("command")
             .unwrap_or_default()
-            .map(|v| v.as_str())
-            .collect::<Vec<_>>();
+            .map(|v| {
+                let s = if command_suffix.is_empty() {
+                    v.clone()
+                } else {
+                    format!("{} {}", v, command_suffix)
+                };
+                // Leak the strings to get 'static lifetime (simple approach as requested)
+                &*Box::leak(s.into_boxed_str())
+            })
+            .collect();
+
+        // Also leak command names for consistent 'static lifetime
+        let command_names: Vec<&'static str> = matches
+            .get_many::<String>("command-name")
+            .map(|names| {
+                names
+                    .map(|v| -> &'static str { &*Box::leak(v.clone().into_boxed_str()) })
+                    .collect()
+            })
+            .unwrap_or_default();
 
         if let Some(args) = matches.get_many::<String>("parameter-scan") {
             let step_size = matches
                 .get_one::<String>("parameter-step-size")
                 .map(|s| s.as_str());
-            Ok(Self(Self::get_parameter_scan_commands(
+            Ok(Commands(Self::get_parameter_scan_commands_static(
                 command_names,
                 command_strings,
                 args,
                 step_size,
             )?))
         } else if let Some(args) = matches.get_many::<String>("parameter-list") {
-            let command_names = command_names.map_or(vec![], |names| {
-                names.map(|v| v.as_str()).collect::<Vec<_>>()
-            });
-            let args: Vec<_> = args.map(|v| v.as_str()).collect::<Vec<_>>();
-            let param_names_and_values: Vec<(&str, Vec<String>)> = args
+            // Leak parameter names to get 'static lifetime
+            let args: Vec<&'static str> = args
+                .map(|v| -> &'static str { &*Box::leak(v.clone().into_boxed_str()) })
+                .collect();
+            let param_names_and_values: Vec<(&'static str, Vec<String>)> = args
                 .chunks_exact(2)
                 .map(|pair| {
                     let name = pair[0];
@@ -182,7 +210,7 @@ impl<'a> Commands<'a> {
                 .collect();
             let param_space_size = dimensions.iter().product();
             if param_space_size == 0 {
-                return Ok(Self(Vec::new()));
+                return Ok(Commands(Vec::new()));
             }
 
             // `--command-name` should appear exactly once or exactly B times,
@@ -230,11 +258,8 @@ impl<'a> Commands<'a> {
                 break 'outer;
             }
 
-            Ok(Self(commands))
+            Ok(Commands(commands))
         } else {
-            let command_names = command_names.map_or(vec![], |names| {
-                names.map(|v| v.as_str()).collect::<Vec<_>>()
-            });
             if command_names.len() > command_strings.len() {
                 return Err(OptionsError::TooManyCommandNames(command_strings.len()).into());
             }
@@ -243,7 +268,7 @@ impl<'a> Commands<'a> {
             for (i, s) in command_strings.iter().enumerate() {
                 commands.push(Command::new(command_names.get(i).copied(), s));
             }
-            Ok(Self(commands))
+            Ok(Commands(commands))
         }
     }
 
@@ -319,6 +344,54 @@ impl<'a> Commands<'a> {
             names.map(|v| v.as_str()).collect::<Vec<_>>()
         });
         let param_name = vals.next().unwrap().as_str();
+        let param_min = vals.next().unwrap().as_str();
+        let param_max = vals.next().unwrap().as_str();
+
+        // attempt to parse as integers
+        if let (Ok(param_min), Ok(param_max), Ok(step)) = (
+            param_min.parse::<i32>(),
+            param_max.parse::<i32>(),
+            step.unwrap_or("1").parse::<i32>(),
+        ) {
+            return Self::build_parameter_scan_commands(
+                param_name,
+                param_min,
+                param_max,
+                step,
+                command_names,
+                command_strings,
+            );
+        }
+
+        // try parsing them as decimals
+        let param_min = Decimal::from_str(param_min)?;
+        let param_max = Decimal::from_str(param_max)?;
+
+        if step.is_none() {
+            return Err(ParameterScanError::StepRequired);
+        }
+
+        let step = Decimal::from_str(step.unwrap())?;
+        Self::build_parameter_scan_commands(
+            param_name,
+            param_min,
+            param_max,
+            step,
+            command_names,
+            command_strings,
+        )
+    }
+
+    /// Version of get_parameter_scan_commands that works with 'static lifetimes
+    fn get_parameter_scan_commands_static(
+        command_names: Vec<&'static str>,
+        command_strings: Vec<&'static str>,
+        mut vals: ValuesRef<'_, String>,
+        step: Option<&str>,
+    ) -> Result<Vec<Command<'static>>, ParameterScanError> {
+        // Leak the parameter name to get 'static lifetime
+        let param_name: &'static str =
+            &*Box::leak(vals.next().unwrap().clone().into_boxed_str());
         let param_min = vals.next().unwrap().as_str();
         let param_max = vals.next().unwrap().as_str();
 

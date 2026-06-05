@@ -12,9 +12,9 @@ use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
-use crate::output::format::{format_duration, format_duration_unit};
+use crate::output::format::{format_duration, format_duration_unit, format_memory_value};
 use crate::output::progress_bar::get_progress_bar;
-use crate::output::warnings::{OutlierWarningOptions, Warnings};
+use crate::output::warnings::{OffCpuSeverity, OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
@@ -30,6 +30,15 @@ use self::executor::Executor;
 
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Second = 5e-3;
+
+/// Minimum wall time (in seconds) before off-CPU warnings are considered.
+/// Below this, timing resolution makes ratio calculations unreliable.
+const OFF_CPU_WARNING_MIN_WALL_TIME: Second = 0.005; // 5ms
+
+/// Ratio thresholds for off-CPU time warnings (wall time / CPU time)
+const OFF_CPU_RATIO_NOTE: f64 = 2.0; // 2× triggers a note
+const OFF_CPU_RATIO_WARNING: f64 = 3.0; // 3× triggers a warning
+const OFF_CPU_RATIO_SEVERE: f64 = 5.0; // 5× triggers severe warning
 
 pub struct Benchmark<'a> {
     number: usize,
@@ -257,8 +266,9 @@ impl<'a> Benchmark<'a> {
             conclusion_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
 
         // Determine number of benchmark runs
+        // Use time_real_full (includes fork overhead) for scheduling purposes
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real
+            / (res.time_real_full
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead)) as u64;
@@ -348,6 +358,15 @@ impl<'a> Benchmark<'a> {
         let user_mean = mean(&times_user);
         let system_mean = mean(&times_system);
 
+        // Compute memory usage statistics (filter out zero values for platforms that don't support it)
+        let memory_values: Vec<u64> = memory_usage_byte
+            .iter()
+            .copied()
+            .filter(|&m| m > 0)
+            .collect();
+        let memory_min = memory_values.iter().copied().min();
+        let memory_max = memory_values.iter().copied().max();
+
         // Formatting and console output
         let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
         let min_str = format_duration(t_min, Some(time_unit));
@@ -389,6 +408,25 @@ impl<'a> Benchmark<'a> {
                     num_str.dimmed()
                 );
             }
+
+            // Display memory usage if available (> 0)
+            if let (Some(mem_min), Some(mem_max)) = (memory_min, memory_max) {
+                if mem_min == mem_max {
+                    // All runs used the same amount of memory
+                    println!(
+                        "  Memory:              {}",
+                        format_memory_value(mem_max, Some(8)).yellow()
+                    );
+                } else {
+                    println!(
+                        "  Memory ({} … {}):   {} … {}",
+                        "min".cyan(),
+                        "max".purple(),
+                        format_memory_value(mem_min, Some(8)).cyan(),
+                        format_memory_value(mem_max, Some(8)).purple()
+                    );
+                }
+            }
         }
 
         // Warnings
@@ -429,6 +467,30 @@ impl<'a> Benchmark<'a> {
             warnings.push(Warnings::OutliersDetected(outlier_warning_options));
         }
 
+        // Check for significant off-CPU time (wall time >> user + system time)
+        let cpu_time = user_mean + system_mean;
+        if t_mean >= OFF_CPU_WARNING_MIN_WALL_TIME && cpu_time > 0.0 {
+            let ratio = t_mean / cpu_time;
+            let severity = if ratio >= OFF_CPU_RATIO_SEVERE {
+                Some(OffCpuSeverity::Severe)
+            } else if ratio >= OFF_CPU_RATIO_WARNING {
+                Some(OffCpuSeverity::Warning)
+            } else if ratio >= OFF_CPU_RATIO_NOTE {
+                Some(OffCpuSeverity::Note)
+            } else {
+                None
+            };
+
+            if let Some(severity) = severity {
+                warnings.push(Warnings::OffCpuTimeDetected {
+                    wall_time: t_mean,
+                    cpu_time,
+                    ratio,
+                    severity,
+                });
+            }
+        }
+
         if !warnings.is_empty() {
             eprintln!(" ");
 
@@ -455,6 +517,8 @@ impl<'a> Benchmark<'a> {
             max: t_max,
             times: Some(times_real),
             memory_usage_byte: Some(memory_usage_byte),
+            memory_min,
+            memory_max,
             exit_codes,
             parameters: self
                 .command

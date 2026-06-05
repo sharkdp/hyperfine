@@ -134,6 +134,8 @@ fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
         max: mean,
         times: None,
         memory_usage_byte: None,
+        memory_min: None,
+        memory_max: None,
         exit_codes: Vec::new(),
         parameters: BTreeMap::new(),
     }

@@ -2,9 +2,13 @@
 use std::os::windows::process::CommandExt;
 use std::process::ExitStatus;
 
+#[cfg(target_os = "linux")]
+use std::os::unix::process::CommandExt;
+
 use crate::command::Command;
 use crate::options::{
-    CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
+    CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption,
+    SchedulingPolicy, Shell,
 };
 use crate::output::progress_bar::get_progress_bar;
 use crate::timer::{execute_and_measure, TimerResult};
@@ -15,6 +19,54 @@ use super::timing_result::TimingResult;
 
 use anyhow::{bail, Context, Result};
 use statistical::mean;
+
+/// Set CPU affinity and scheduling policy in the child process before exec.
+/// This runs after fork() but before exec().
+#[cfg(target_os = "linux")]
+fn setup_process_priority(
+    cpu_affinity: Option<usize>,
+    scheduling_priority: Option<SchedulingPolicy>,
+) -> impl FnMut() -> std::io::Result<()> {
+    move || {
+        if let Some(cpu) = cpu_affinity {
+            unsafe {
+                let mut set: libc::cpu_set_t = std::mem::zeroed();
+                libc::CPU_SET(cpu, &mut set);
+                if libc::sched_setaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &set) != 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+            }
+        }
+
+        if let Some(policy) = scheduling_priority {
+            unsafe {
+                let (sched_policy, priority) = match policy {
+                    SchedulingPolicy::Realtime => (libc::SCHED_FIFO, 99),
+                    SchedulingPolicy::Idle => (libc::SCHED_IDLE, 0),
+                };
+                let param = libc::sched_param {
+                    sched_priority: priority,
+                };
+                if libc::sched_setscheduler(0, sched_policy, &param) != 0 {
+                    let err = std::io::Error::last_os_error();
+                    if err.raw_os_error() == Some(libc::EPERM) {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::PermissionDenied,
+                            format!(
+                                "Permission denied setting {:?} scheduler. \
+                                 Try: sudo setcap cap_sys_nice+ep $(which hyperfine)",
+                                policy
+                            ),
+                        ));
+                    }
+                    return Err(err);
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
 
 pub enum BenchmarkIteration {
     NonBenchmarkRun,
@@ -70,6 +122,8 @@ fn run_command_and_measure_common(
     command_input_policy: &CommandInputPolicy,
     command_output_policy: &CommandOutputPolicy,
     command_name: &str,
+    cpu_affinity: Option<usize>,
+    scheduling_priority: Option<SchedulingPolicy>,
 ) -> Result<TimerResult> {
     let stdin = command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
@@ -88,6 +142,14 @@ fn run_command_and_measure_common(
 
     if let Some(value) = iteration.to_env_var_value() {
         command.env("HYPERFINE_ITERATION", value);
+    }
+
+    // Set CPU affinity and scheduling policy in child process before exec
+    #[cfg(target_os = "linux")]
+    if cpu_affinity.is_some() || scheduling_priority.is_some() {
+        unsafe {
+            command.pre_exec(setup_process_priority(cpu_affinity, scheduling_priority));
+        }
     }
 
     let result = execute_and_measure(command, until_text)
@@ -158,11 +220,14 @@ impl Executor for RawExecutor<'_> {
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
+            self.options.cpu_affinity,
+            self.options.scheduling_priority,
         )?;
 
         Ok((
             TimingResult {
                 time_real: result.time_real,
+                time_real_full: result.time_real_full,
                 time_user: result.time_user,
                 time_system: result.time_system,
                 memory_usage_byte: result.memory_usage_byte,
@@ -223,11 +288,14 @@ impl Executor for ShellExecutor<'_> {
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
+            self.options.cpu_affinity,
+            self.options.scheduling_priority,
         )?;
 
         // Subtract shell spawning time
         if let Some(spawning_time) = self.shell_spawning_time {
             result.time_real = (result.time_real - spawning_time.time_real).max(0.0);
+            result.time_real_full = (result.time_real_full - spawning_time.time_real_full).max(0.0);
             result.time_user = (result.time_user - spawning_time.time_user).max(0.0);
             result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
         }
@@ -235,6 +303,7 @@ impl Executor for ShellExecutor<'_> {
         Ok((
             TimingResult {
                 time_real: result.time_real,
+                time_real_full: result.time_real_full,
                 time_user: result.time_user,
                 time_system: result.time_system,
                 memory_usage_byte: result.memory_usage_byte,
@@ -298,8 +367,10 @@ impl Executor for ShellExecutor<'_> {
             bar.finish_and_clear()
         }
 
+        let mean_time_real = mean(&times_real);
         self.shell_spawning_time = Some(TimingResult {
-            time_real: mean(&times_real),
+            time_real: mean_time_real,
+            time_real_full: mean_time_real,
             time_user: mean(&times_user),
             time_system: mean(&times_system),
             memory_usage_byte: 0,
@@ -353,9 +424,11 @@ impl Executor for MockExecutor {
             ExitStatus::from_raw(0)
         };
 
+        let time_real = Self::extract_time(command.get_command_line());
         Ok((
             TimingResult {
-                time_real: Self::extract_time(command.get_command_line()),
+                time_real,
+                time_real_full: time_real,
                 time_user: 0.0,
                 time_system: 0.0,
                 memory_usage_byte: 0,

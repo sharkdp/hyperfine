@@ -416,6 +416,35 @@ fn build_command() -> Command {
             .hide(true)
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
         )
+        .arg(
+            Arg::new("cpu")
+            .long("cpu")
+            .action(ArgAction::Set)
+            .value_name("CPU")
+            .help("Pin the benchmarked command to a specific CPU core (Linux only). \
+                   This uses sched_setaffinity to set CPU affinity before exec.")
+        )
+        .arg(
+            Arg::new("priority")
+            .long("priority")
+            .action(ArgAction::Set)
+            .value_name("POLICY")
+            .value_parser(["realtime", "idle"])
+            .help("Set the scheduling priority of the benchmarked command (Linux only). \
+                   'realtime' uses SCHED_FIFO with priority 99 for minimal scheduler noise. \
+                   'idle' uses SCHED_IDLE for background execution. \
+                   Note: 'realtime' requires CAP_SYS_NICE capability or root.")
+        )
+        .arg(
+            Arg::new("command-suffix")
+            .last(true)
+            .action(ArgAction::Append)
+            .value_name("ARGS")
+            .help("Arguments to append to each command. Everything after '--' will be \
+                   appended to each benchmarked command.\n\n  \
+                   Example: hyperfine 'gcc -O2 main.c' 'clang -O2 main.c' -- -o /dev/null\n\n\
+                   This runs 'gcc -O2 main.c -o /dev/null' and 'clang -O2 main.c -o /dev/null'.")
+        )
 }
 
 #[test]

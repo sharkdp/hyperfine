@@ -1,5 +1,69 @@
 use crate::util::units::{Second, Unit};
 
+/// Unit for memory formatting
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MemoryUnit {
+    Byte,
+    KiloByte,
+    MegaByte,
+    GigaByte,
+}
+
+impl MemoryUnit {
+    fn short_name(&self) -> &'static str {
+        match self {
+            MemoryUnit::Byte => "B",
+            MemoryUnit::KiloByte => "KB",
+            MemoryUnit::MegaByte => "MB",
+            MemoryUnit::GigaByte => "GB",
+        }
+    }
+
+    fn bytes_per_unit(&self) -> f64 {
+        match self {
+            MemoryUnit::Byte => 1.0,
+            MemoryUnit::KiloByte => 1024.0,
+            MemoryUnit::MegaByte => 1024.0 * 1024.0,
+            MemoryUnit::GigaByte => 1024.0 * 1024.0 * 1024.0,
+        }
+    }
+}
+
+/// Format memory size in bytes to a human-readable string with automatic unit selection.
+pub fn format_memory(bytes: u64) -> String {
+    format_memory_value(bytes, None)
+}
+
+/// Format memory size with optional right-padding to specified width.
+pub fn format_memory_value(bytes: u64, width: Option<usize>) -> String {
+    let bytes_f = bytes as f64;
+
+    let (value, unit) = if bytes_f >= MemoryUnit::GigaByte.bytes_per_unit() {
+        (
+            bytes_f / MemoryUnit::GigaByte.bytes_per_unit(),
+            MemoryUnit::GigaByte,
+        )
+    } else if bytes_f >= MemoryUnit::MegaByte.bytes_per_unit() {
+        (
+            bytes_f / MemoryUnit::MegaByte.bytes_per_unit(),
+            MemoryUnit::MegaByte,
+        )
+    } else if bytes_f >= MemoryUnit::KiloByte.bytes_per_unit() {
+        (
+            bytes_f / MemoryUnit::KiloByte.bytes_per_unit(),
+            MemoryUnit::KiloByte,
+        )
+    } else {
+        (bytes_f, MemoryUnit::Byte)
+    };
+
+    let formatted = format!("{:.1} {}", value, unit.short_name());
+    match width {
+        Some(w) => format!("{:>width$}", formatted, width = w),
+        None => formatted,
+    }
+}
+
 /// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
 /// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
 pub fn format_duration(duration: Second, unit: Option<Unit>) -> String {
@@ -74,4 +138,17 @@ fn test_format_duration_unit_with_unit() {
 
     assert_eq!("1300000.0 µs", out_str);
     assert_eq!(Unit::MicroSecond, out_unit);
+}
+
+#[test]
+fn test_format_memory() {
+    assert_eq!(format_memory(0), "0.0 B");
+    assert_eq!(format_memory(512), "512.0 B");
+    assert_eq!(format_memory(1023), "1023.0 B");
+    assert_eq!(format_memory(1024), "1.0 KB");
+    assert_eq!(format_memory(1536), "1.5 KB");
+    assert_eq!(format_memory(1024 * 1024), "1.0 MB");
+    assert_eq!(format_memory(44_564_480), "42.5 MB");
+    assert_eq!(format_memory(1024 * 1024 * 1024), "1.0 GB");
+    assert_eq!(format_memory(2 * 1024 * 1024 * 1024), "2.0 GB");
 }

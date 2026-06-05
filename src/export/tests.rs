@@ -36,6 +36,8 @@ fn test_markup_export_auto_ms() {
             max: 0.1080,
             times: Some(vec![0.1, 0.1, 0.1]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -51,6 +53,8 @@ fn test_markup_export_auto_ms() {
             max: 2.0080,
             times: Some(vec![2.0, 2.0, 2.0]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -111,6 +115,8 @@ fn test_markup_export_auto_s() {
             max: 2.0080,
             times: Some(vec![2.0, 2.0, 2.0]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -126,6 +132,8 @@ fn test_markup_export_auto_s() {
             max: 0.1080,
             times: Some(vec![0.1, 0.1, 0.1]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -186,6 +194,8 @@ fn test_markup_export_manual_ms() {
             max: 2.0080,
             times: Some(vec![2.0, 2.0, 2.0]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -201,6 +211,8 @@ fn test_markup_export_manual_ms() {
             max: 0.1080,
             times: Some(vec![0.1, 0.1, 0.1]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -260,6 +272,8 @@ fn test_markup_export_manual_s() {
             max: 2.0080,
             times: Some(vec![2.0, 2.0, 2.0]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -275,6 +289,8 @@ fn test_markup_export_manual_s() {
             max: 0.1080,
             times: Some(vec![0.1, 0.1, 0.1]),
             memory_usage_byte: None,
+            memory_min: None,
+            memory_max: None,
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
@@ -315,5 +331,53 @@ fn test_markup_export_manual_s() {
     | 0.108 
     | 1.00 
     |===
+    "#);
+}
+
+/// Tests that the markup exports include Peak RSS column when memory data is available
+#[test]
+fn test_markup_export_with_memory() {
+    let results = [
+        BenchmarkResult {
+            command: String::from("sleep 0.1"),
+            command_with_unused_parameters: String::from("sleep 0.1"),
+            mean: 0.1057,
+            stddev: Some(0.0016),
+            median: 0.1057,
+            user: 0.0009,
+            system: 0.0011,
+            min: 0.1023,
+            max: 0.1080,
+            times: Some(vec![0.1, 0.1, 0.1]),
+            memory_usage_byte: None,
+            memory_min: Some(44_564_480), // 42.5 MB
+            memory_max: Some(44_564_480), // 42.5 MB
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+        BenchmarkResult {
+            command: String::from("sleep 2"),
+            command_with_unused_parameters: String::from("sleep 2"),
+            mean: 2.0050,
+            stddev: Some(0.0020),
+            median: 2.0050,
+            user: 0.0009,
+            system: 0.0012,
+            min: 2.0020,
+            max: 2.0080,
+            times: Some(vec![2.0, 2.0, 2.0]),
+            memory_usage_byte: None,
+            memory_min: Some(104_857_600), // 100 MB
+            memory_max: Some(104_857_600), // 100 MB
+            exit_codes: vec![Some(0), Some(0), Some(0)],
+            parameters: BTreeMap::new(),
+        },
+    ];
+
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None, SortOrder::Command), @r#"
+    | Command | Mean [ms] | Min [ms] | Max [ms] | Memory | Relative |
+    |:---|---:|---:|---:|---:|---:|
+    | `sleep 0.1` | 105.7 ± 1.6 | 102.3 | 108.0 | 42.5 MB | 1.00 |
+    | `sleep 2` | 2005.0 ± 2.0 | 2002.0 | 2008.0 | 100.0 MB | 18.97 ± 0.29 |
     "#);
 }

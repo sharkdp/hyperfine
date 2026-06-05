@@ -5,6 +5,34 @@
 
 A command-line benchmarking tool.
 
+## Personal Fork Changes
+
+This fork includes the following modifications for more accurate low-level benchmarking:
+
+### CPU Pinning (`--cpu`)
+Pin the benchmarked command to a specific CPU core using `sched_setaffinity`. This reduces noise from CPU migration during benchmarks.
+```sh
+hyperfine --cpu 0 --shell=none './my_program'
+```
+
+### Scheduling Priority (`--priority`)
+Set the scheduling policy of the benchmarked command to `realtime` (SCHED_FIFO) or `idle` (SCHED_IDLE) for reduced scheduler interference.
+```sh
+hyperfine --priority realtime --shell=none './my_program'
+```
+Note: Realtime priority requires `CAP_SYS_NICE` capability or root. Grant it with:
+```sh
+sudo setcap cap_sys_nice+ep $(which hyperfine)
+```
+
+### Post-Fork Timing (Linux)
+Timing now starts after `fork()` but before `exec()`, excluding fork overhead from measurements. This provides more accurate timing for fast-starting programs.
+
+### Per-Child Memory Measurement (Linux)
+Uses `wait4()` syscall to get per-child `rusage` instead of cumulative `getrusage(RUSAGE_CHILDREN)`, fixing memory reporting accuracy when running multiple benchmarks.
+
+---
+
 **Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and
 [`find`](https://www.gnu.org/software/findutils/):
 

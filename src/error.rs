@@ -55,4 +55,15 @@ pub enum OptionsError<'a> {
     UnknownOutputPolicy(String),
     #[error("The file '{0}' specified as '--input' does not exist")]
     StdinDataFileDoesNotExist(String),
+    #[error("CPU {0} is out of range. This system has {1} CPUs (0-{2})")]
+    CpuOutOfRange(usize, usize, usize),
+    #[error(
+        "Permission denied for realtime scheduling. \
+         Try: sudo setcap cap_sys_nice+ep $(which hyperfine)"
+    )]
+    RealtimePermissionDenied,
+    #[error("--cpu is only supported on Linux")]
+    CpuAffinityNotSupported,
+    #[error("--priority is only supported on Linux")]
+    SchedulingPriorityNotSupported,
 }

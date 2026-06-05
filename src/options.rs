@@ -259,6 +259,21 @@ pub struct Options {
 
     /// Which time unit to use when displaying results
     pub time_unit: Option<Unit>,
+
+    /// CPU core to pin benchmarked commands to (Linux only)
+    pub cpu_affinity: Option<usize>,
+
+    /// Scheduling priority policy (Linux only)
+    pub scheduling_priority: Option<SchedulingPolicy>,
+}
+
+/// Scheduling policy for benchmarked commands
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SchedulingPolicy {
+    /// SCHED_FIFO with priority 99 - minimal scheduler interruption
+    Realtime,
+    /// SCHED_IDLE - run only when system is idle
+    Idle,
 }
 
 impl Default for Options {
@@ -281,6 +296,8 @@ impl Default for Options {
             command_output_policies: vec![CommandOutputPolicy::Null],
             time_unit: None,
             command_input_policy: CommandInputPolicy::Null,
+            cpu_affinity: None,
+            scheduling_priority: None,
         }
     }
 }
@@ -478,6 +495,62 @@ impl Options {
         } else {
             CommandInputPolicy::Null
         };
+
+        options.cpu_affinity = matches
+            .get_one::<String>("cpu")
+            .map(|s| {
+                s.parse::<usize>()
+                    .map_err(|e| OptionsError::IntParsingError("cpu", e))
+            })
+            .transpose()?;
+
+        options.scheduling_priority = match matches.get_one::<String>("priority").map(|s| s.as_str()) {
+            Some("realtime") => Some(SchedulingPolicy::Realtime),
+            Some("idle") => Some(SchedulingPolicy::Idle),
+            _ => None,
+        };
+
+        // Validate CPU affinity and scheduling options early
+        #[cfg(target_os = "linux")]
+        {
+            if let Some(cpu) = options.cpu_affinity {
+                let num_cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+                if num_cpus > 0 && cpu >= num_cpus as usize {
+                    return Err(OptionsError::CpuOutOfRange(
+                        cpu,
+                        num_cpus as usize,
+                        num_cpus as usize - 1,
+                    ));
+                }
+            }
+
+            if options.scheduling_priority == Some(SchedulingPolicy::Realtime) {
+                // Check if we have CAP_SYS_NICE capability
+                unsafe {
+                    let param = libc::sched_param { sched_priority: 99 };
+                    if libc::sched_setscheduler(0, libc::SCHED_FIFO, &param) != 0 {
+                        let err = std::io::Error::last_os_error();
+                        if err.raw_os_error() == Some(libc::EPERM) {
+                            return Err(OptionsError::RealtimePermissionDenied);
+                        }
+                    } else {
+                        // Reset to normal scheduler
+                        let param = libc::sched_param { sched_priority: 0 };
+                        libc::sched_setscheduler(0, libc::SCHED_OTHER, &param);
+                    }
+                }
+            }
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            if options.cpu_affinity.is_some() {
+                return Err(OptionsError::CpuAffinityNotSupported);
+            }
+            if options.scheduling_priority.is_some() {
+                return Err(OptionsError::SchedulingPriorityNotSupported);
+            }
+        }
 
         Ok(options)
     }

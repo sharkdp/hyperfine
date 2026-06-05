@@ -42,9 +42,17 @@ pub struct BenchmarkResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub times: Option<Vec<Second>>,
 
-    /// Maximum memory usage of the process, in bytes
+    /// Memory usage measurements of the process, in bytes (one per run)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memory_usage_byte: Option<Vec<u64>>,
+
+    /// Minimum memory usage across all runs, in bytes
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory_min: Option<u64>,
+
+    /// Peak memory usage (max across all runs), in bytes
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory_max: Option<u64>,
 
     /// Exit codes of all command invocations
     pub exit_codes: Vec<Option<i32>>,

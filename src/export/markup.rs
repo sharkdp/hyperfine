@@ -1,7 +1,7 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::options::SortOrder;
-use crate::output::format::format_duration_value;
+use crate::output::format::{format_duration_value, format_memory};
 use crate::util::units::Unit;
 
 use super::Exporter;
@@ -17,26 +17,55 @@ pub trait MarkupExporter {
         // prepare table header strings
         let notation = format!("[{}]", unit.short_name());
 
+        // Check if any entry has memory data
+        let has_memory_data = entries
+            .iter()
+            .any(|e| e.result.memory_max.map(|m| m > 0).unwrap_or(false));
+
         // prepare table cells alignment
-        let cells_alignment = [
-            Alignment::Left,
-            Alignment::Right,
-            Alignment::Right,
-            Alignment::Right,
-            Alignment::Right,
-        ];
+        let cells_alignment: Vec<Alignment> = if has_memory_data {
+            vec![
+                Alignment::Left,
+                Alignment::Right,
+                Alignment::Right,
+                Alignment::Right,
+                Alignment::Right,
+                Alignment::Right,
+            ]
+        } else {
+            vec![
+                Alignment::Left,
+                Alignment::Right,
+                Alignment::Right,
+                Alignment::Right,
+                Alignment::Right,
+            ]
+        };
 
         // emit table header format
         let mut table = self.table_header(&cells_alignment);
 
         // emit table header data
-        table.push_str(&self.table_row(&[
-            "Command",
-            &format!("Mean {notation}"),
-            &format!("Min {notation}"),
-            &format!("Max {notation}"),
-            "Relative",
-        ]));
+        let header_row: Vec<String> = if has_memory_data {
+            vec![
+                "Command".to_string(),
+                format!("Mean {notation}"),
+                format!("Min {notation}"),
+                format!("Max {notation}"),
+                "Memory".to_string(),
+                "Relative".to_string(),
+            ]
+        } else {
+            vec![
+                "Command".to_string(),
+                format!("Mean {notation}"),
+                format!("Min {notation}"),
+                format!("Max {notation}"),
+                "Relative".to_string(),
+            ]
+        };
+        let header_refs: Vec<&str> = header_row.iter().map(|s| s.as_str()).collect();
+        table.push_str(&self.table_row(&header_refs));
 
         // emit horizontal line
         table.push_str(&self.table_divider(&cells_alignment));
@@ -55,6 +84,16 @@ pub trait MarkupExporter {
             };
             let min_str = format_duration_value(measurement.min, Some(unit)).0;
             let max_str = format_duration_value(measurement.max, Some(unit)).0;
+            let memory_str = match (measurement.memory_min, measurement.memory_max) {
+                (Some(mem_min), Some(mem_max)) if mem_min > 0 && mem_max > 0 => {
+                    if mem_min == mem_max {
+                        format_memory(mem_max)
+                    } else {
+                        format!("{} … {}", format_memory(mem_min), format_memory(mem_max))
+                    }
+                }
+                _ => String::new(),
+            };
             let rel_str = format!("{:.2}", entry.relative_speed);
             let rel_stddev_str = if entry.is_reference {
                 "".into()
@@ -65,13 +104,26 @@ pub trait MarkupExporter {
             };
 
             // prepare table row entries
-            table.push_str(&self.table_row(&[
-                &self.command(&cmd_str),
-                &format!("{mean_str}{stddev_str}"),
-                &min_str,
-                &max_str,
-                &format!("{rel_str}{rel_stddev_str}"),
-            ]))
+            let row: Vec<String> = if has_memory_data {
+                vec![
+                    self.command(&cmd_str),
+                    format!("{mean_str}{stddev_str}"),
+                    min_str,
+                    max_str,
+                    memory_str,
+                    format!("{rel_str}{rel_stddev_str}"),
+                ]
+            } else {
+                vec![
+                    self.command(&cmd_str),
+                    format!("{mean_str}{stddev_str}"),
+                    min_str,
+                    max_str,
+                    format!("{rel_str}{rel_stddev_str}"),
+                ]
+            };
+            let row_refs: Vec<&str> = row.iter().map(|s| s.as_str()).collect();
+            table.push_str(&self.table_row(&row_refs));
         }
 
         // emit table footer format
