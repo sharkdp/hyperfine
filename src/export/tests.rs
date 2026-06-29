@@ -1,10 +1,22 @@
-use super::Exporter;
+use super::{write_to_file, Exporter};
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
 use crate::util::units::Unit;
 use crate::{export::markdown::MarkdownExporter, options::SortOrder};
 use std::collections::BTreeMap;
+
+#[test]
+fn write_to_file_truncates_existing_content() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("results.md");
+    let filename = path.to_str().unwrap();
+
+    write_to_file(filename, b"long benchmark export").unwrap();
+    write_to_file(filename, b"short").unwrap();
+
+    assert_eq!(std::fs::read_to_string(path).unwrap(), "short");
+}
 
 fn get_output<E: Exporter + Default>(
     results: &[BenchmarkResult],
