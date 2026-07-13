@@ -35,6 +35,9 @@ pub struct RangeStep<T> {
     state: T,
     end: T,
     step: T,
+    /// Set once the final in-range value has been yielded, so the iterator stops
+    /// without ever incrementing `state` past `end` (which could overflow `T`).
+    done: bool,
 }
 
 impl<T: Numeric> RangeStep<T> {
@@ -53,6 +56,7 @@ impl<T: Numeric> RangeStep<T> {
                 state: start,
                 end,
                 step,
+                done: false,
             }),
             _ => Err(ParameterScanError::TooLarge),
         }
@@ -63,11 +67,19 @@ impl<T: Numeric> Iterator for RangeStep<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.state > self.end {
+        if self.done || self.state > self.end {
             return None;
         }
         let return_val = self.state;
-        self.state += self.step;
+        // Only advance when `state + step` stays within `end`; otherwise this is
+        // the last element and incrementing could overflow the numeric type.
+        // `end - state` is non-negative here (state <= end) and `step` is
+        // positive (validated in `new`), so neither operation overflows.
+        if self.end - self.state < self.step {
+            self.done = true;
+        } else {
+            self.state += self.step;
+        }
 
         Some(return_val)
     }
@@ -118,6 +130,14 @@ mod tests {
         assert_eq!(param_range.len(), 11);
         assert_eq!(param_range[0], Decimal::from(0));
         assert_eq!(param_range[10], Decimal::from(1));
+    }
+
+    #[test]
+    fn test_range_reaching_type_max_terminates() {
+        // A range whose end is the numeric type's maximum must terminate after
+        // the last in-range value instead of overflowing on the final increment.
+        let range: Vec<i32> = RangeStep::new(i32::MAX - 2, i32::MAX, 1).unwrap().collect();
+        assert_eq!(range, vec![i32::MAX - 2, i32::MAX - 1, i32::MAX]);
     }
 
     #[test]
