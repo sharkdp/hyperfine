@@ -46,14 +46,25 @@ impl<'a> Scheduler<'a> {
 
         executor.calibrate()?;
 
-        for (number, cmd) in reference.iter().chain(self.commands.iter()).enumerate() {
-            self.results
-                .push(Benchmark::new(number, cmd, self.options, &*executor).run()?);
+        let mut number = 0;
+        let results = &mut self.results;
+        let options = self.options;
+        let export_manager = self.export_manager;
+        let mut run_command = |cmd: &Command<'a>| -> Result<()> {
+            results.push(Benchmark::new(number, cmd, options, &*executor).run()?);
 
             // We export results after each individual benchmark, because
             // we would risk losing them if a later benchmark fails.
-            self.export_manager.write_results(&self.results, true)?;
+            export_manager.write_results(results, true)?;
+            number += 1;
+
+            Ok(())
+        };
+
+        if let Some(reference) = reference.as_ref() {
+            run_command(reference)?;
         }
+        self.commands.try_for_each(run_command)?;
 
         Ok(())
     }
