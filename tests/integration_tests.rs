@@ -170,6 +170,27 @@ fn fails_with_duplicate_parameter_names() {
 }
 
 #[test]
+fn fails_with_duplicate_parameter_names_across_list_and_file() {
+    use std::io::Write;
+
+    let mut values = tempfile::NamedTempFile::new().unwrap();
+    values.write_all(b"a\nb\n").unwrap();
+    values.flush().unwrap();
+
+    hyperfine()
+        .arg("--parameter-list")
+        .arg("x")
+        .arg("1,2,3")
+        .arg("--parameter-file")
+        .arg("x")
+        .arg(values.path())
+        .arg("echo test")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Duplicate parameter names: x"));
+}
+
+#[test]
 fn fails_for_unknown_command() {
     hyperfine()
         .arg("--runs=1")

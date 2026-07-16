@@ -87,6 +87,13 @@ option:
 hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
 ```
 
+Values can also be read one line at a time from a file with `--parameter-file`. LF and CRLF line
+endings are supported, and the option can be combined with `--parameter-list`:
+```sh
+hyperfine --parameter-file compiler compilers.txt -L optimization O2,O3 \
+  '{compiler} -{optimization} main.cpp'
+```
+
 ### Intermediate shell
 
 By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).

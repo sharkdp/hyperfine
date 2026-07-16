@@ -29,6 +29,9 @@ hyperfine \- command\-line benchmarking tool
 .RB [ \-\-parameter\-list
 .IR VAR
 .IR VALUES ]
+.RB [ \-\-parameter\-file
+.IR VAR
+.IR FILE ]
 .RB [ \-\-shell
 .IR SHELL ]
 .RB [ \-\-style
@@ -192,6 +195,16 @@ This performs benchmarks for 'gcc \-O2 main.cpp' and 'clang \-O2 main.cpp'.
 .IP
 The option can be specified multiple times to run benchmarks for all
 possible parameter combinations.
+.HP
+\fB\-\-parameter\-file\fR \fIVAR\fP \fIFILE\fP
+.IP
+Perform benchmark runs for each line in \fIFILE\fP. Replaces the string
+'{\fIVAR\fP}' in each command by the current line. LF and CRLF line endings
+are supported, and values are read one line at a time.
+.IP
+The option can be specified multiple times and combined with
+\fB\-\-parameter\-list\fR to run benchmarks for all possible parameter
+combinations.
 .HP
 \fB\-S\fR, \fB\-\-shell\fR \fISHELL\fP
 .IP

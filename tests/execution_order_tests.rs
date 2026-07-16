@@ -1,6 +1,10 @@
-use std::{fs::File, io::Read, path::PathBuf};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::PathBuf,
+};
 
-use tempfile::{tempdir, TempDir};
+use tempfile::{tempdir, NamedTempFile, TempDir};
 
 mod common;
 use common::hyperfine;
@@ -367,6 +371,28 @@ fn multiple_parameter_values() {
         .expect_output("command 2 b")
         .expect_output("command 3 b")
         .expect_output("command 3 b")
+        .run();
+}
+
+#[test]
+fn parameter_file_values_are_executed_in_cli_product_order() {
+    let mut values = NamedTempFile::new().unwrap();
+    values.write_all(b"1\r\n2\n").unwrap();
+    values.flush().unwrap();
+
+    ExecutionOrderTest::new()
+        .arg("--runs=1")
+        .arg("--parameter-file")
+        .arg("number")
+        .arg(values.path().to_string_lossy())
+        .arg("--parameter-list")
+        .arg("letter")
+        .arg("a,b")
+        .command("command {number} {letter}")
+        .expect_output("command 1 a")
+        .expect_output("command 2 a")
+        .expect_output("command 1 b")
+        .expect_output("command 2 b")
         .run();
 }
 

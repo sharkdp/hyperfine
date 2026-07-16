@@ -17,6 +17,7 @@ use colored::*;
 pub mod benchmark;
 pub mod cli;
 pub mod command;
+pub mod command_product;
 pub mod error;
 pub mod export;
 pub mod options;

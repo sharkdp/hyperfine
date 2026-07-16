@@ -201,6 +201,21 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("parameter-file")
+                .long("parameter-file")
+                .action(ArgAction::Append)
+                .allow_hyphen_values(true)
+                .value_names(["VAR", "FILE"])
+                .value_hint(ValueHint::FilePath)
+                .conflicts_with_all(["parameter-scan", "parameter-step-size"])
+                .help(
+                    "Perform benchmark runs for each line in FILE. Replaces the string '{VAR}' \
+                     in each command by the current line. LF and CRLF line endings are supported, \
+                     and values are read one line at a time. The option can be specified multiple \
+                     times and combined with --parameter-list.",
+                ),
+        )
+        .arg(
             Arg::new("shell")
                 .long("shell")
                 .short('S')

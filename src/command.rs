@@ -1,20 +1,22 @@
 use std::collections::BTreeMap;
 use std::fmt;
+use std::slice;
 use std::str::FromStr;
 
-use crate::parameter::tokenize::tokenize;
+use crate::command_product::{LazyCommandProduct, LazyCommandProductIter};
 use crate::parameter::ParameterValue;
 use crate::{
     error::{OptionsError, ParameterScanError},
     parameter::{
         range_step::{Numeric, RangeStep},
+        sources::product_from_cli_arguments,
         ParameterNameAndValue,
     },
 };
 
 use clap::{parser::ValuesRef, ArgMatches};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use rust_decimal::Decimal;
 
 /// A command that should be benchmarked.
@@ -130,8 +132,33 @@ impl<'a> Command<'a> {
     }
 }
 
-/// A collection of commands that should be benchmarked
-pub struct Commands<'a>(Vec<Command<'a>>);
+enum CommandSource<'a> {
+    Eager(Vec<Command<'a>>),
+    Lazy(LazyCommandProduct<'a>),
+}
+
+/// A collection of commands that should be benchmarked.
+///
+/// Existing plain-command and numeric-scan paths stay eager. Text parameter
+/// lists and files share a restartable lazy product so file-backed values are
+/// not retained for every generated command.
+pub struct Commands<'a>(CommandSource<'a>);
+
+pub enum CommandsIter<'commands, 'name> {
+    Eager(slice::Iter<'commands, Command<'name>>),
+    Lazy(LazyCommandProductIter<'commands, 'name>),
+}
+
+impl<'name> Iterator for CommandsIter<'_, 'name> {
+    type Item = Result<Command<'name>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Eager(commands) => commands.next().cloned().map(Ok),
+            Self::Lazy(commands) => commands.next().map(|command| command.map_err(Into::into)),
+        }
+    }
+}
 
 impl<'a> Commands<'a> {
     pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'a>> {
@@ -146,44 +173,20 @@ impl<'a> Commands<'a> {
             let step_size = matches
                 .get_one::<String>("parameter-step-size")
                 .map(|s| s.as_str());
-            Ok(Self(Self::get_parameter_scan_commands(
-                command_names,
-                command_strings,
-                args,
-                step_size,
-            )?))
-        } else if let Some(args) = matches.get_many::<String>("parameter-list") {
+            Ok(Self(CommandSource::Eager(
+                Self::get_parameter_scan_commands(command_names, command_strings, args, step_size)?,
+            )))
+        } else if matches.get_many::<String>("parameter-list").is_some()
+            || matches.get_many::<String>("parameter-file").is_some()
+        {
             let command_names = command_names.map_or(vec![], |names| {
                 names.map(|v| v.as_str()).collect::<Vec<_>>()
             });
-            let args: Vec<_> = args.map(|v| v.as_str()).collect::<Vec<_>>();
-            let param_names_and_values: Vec<(&str, Vec<String>)> = args
-                .chunks_exact(2)
-                .map(|pair| {
-                    let name = pair[0];
-                    let list_str = pair[1];
-                    (name, tokenize(list_str))
-                })
-                .collect();
-            {
-                let duplicates =
-                    Self::find_duplicates(param_names_and_values.iter().map(|(name, _)| *name));
-                if !duplicates.is_empty() {
-                    bail!("Duplicate parameter names: {}", &duplicates.join(", "));
-                }
-            }
-
-            let dimensions: Vec<usize> = std::iter::once(command_strings.len())
-                .chain(
-                    param_names_and_values
-                        .iter()
-                        .map(|(_, values)| values.len()),
-                )
-                .collect();
-            let param_space_size = dimensions.iter().product();
-            if param_space_size == 0 {
-                return Ok(Self(Vec::new()));
-            }
+            let parameters = product_from_cli_arguments(matches)?;
+            let param_space_size = command_strings
+                .len()
+                .checked_mul(parameters.len())
+                .ok_or_else(|| anyhow!("command product is too large"))?;
 
             // `--command-name` should appear exactly once or exactly B times,
             // where B is the total number of benchmarks.
@@ -196,41 +199,11 @@ impl<'a> Commands<'a> {
                 .into());
             }
 
-            let mut i = 0;
-            let mut commands = Vec::with_capacity(param_space_size);
-            let mut index = vec![0usize; dimensions.len()];
-            'outer: loop {
-                let name = command_names
-                    .get(i)
-                    .or_else(|| command_names.first())
-                    .copied();
-                i += 1;
-
-                let (command_index, params_indices) = index.split_first().unwrap();
-                let parameters: Vec<_> = param_names_and_values
-                    .iter()
-                    .zip(params_indices)
-                    .map(|((name, values), i)| (*name, ParameterValue::Text(values[*i].clone())))
-                    .collect();
-                commands.push(Command::new_parametrized(
-                    name,
-                    command_strings[*command_index],
-                    parameters,
-                ));
-
-                // Increment index, exiting loop on overflow.
-                for (i, n) in index.iter_mut().zip(dimensions.iter()) {
-                    *i += 1;
-                    if *i < *n {
-                        continue 'outer;
-                    } else {
-                        *i = 0;
-                    }
-                }
-                break 'outer;
-            }
-
-            Ok(Self(commands))
+            Ok(Self(CommandSource::Lazy(LazyCommandProduct::new(
+                command_names,
+                command_strings,
+                parameters,
+            )?)))
         } else {
             let command_names = command_names.map_or(vec![], |names| {
                 names.map(|v| v.as_str()).collect::<Vec<_>>()
@@ -243,29 +216,23 @@ impl<'a> Commands<'a> {
             for (i, s) in command_strings.iter().enumerate() {
                 commands.push(Command::new(command_names.get(i).copied(), s));
             }
-            Ok(Self(commands))
+            Ok(Self(CommandSource::Eager(commands)))
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Command<'a>> {
-        self.0.iter()
+    pub fn iter(&self) -> Result<CommandsIter<'_, 'a>> {
+        match &self.0 {
+            CommandSource::Eager(commands) => Ok(CommandsIter::Eager(commands.iter())),
+            CommandSource::Lazy(commands) => Ok(CommandsIter::Lazy(commands.iter()?)),
+        }
     }
 
     pub fn num_commands(&self, has_reference_command: bool) -> usize {
-        self.0.len() + if has_reference_command { 1 } else { 0 }
-    }
-
-    /// Finds all the strings that appear multiple times in the input iterator, returning them in
-    /// sorted order. If no string appears more than once, the result is an empty vector.
-    fn find_duplicates<'b, I: IntoIterator<Item = &'b str>>(i: I) -> Vec<&'b str> {
-        let mut counts = BTreeMap::<&'b str, usize>::new();
-        for s in i {
-            *counts.entry(s).or_default() += 1;
-        }
-        counts
-            .into_iter()
-            .filter_map(|(k, n)| if n > 1 { Some(k) } else { None })
-            .collect()
+        let command_count = match &self.0 {
+            CommandSource::Eager(commands) => commands.len(),
+            CommandSource::Lazy(commands) => commands.len(),
+        };
+        command_count + if has_reference_command { 1 } else { 0 }
     }
 
     fn build_parameter_scan_commands<'b, T: Numeric>(
@@ -405,7 +372,12 @@ fn test_build_commands_cross_product() {
         "echo {par1} {par2}",
         "printf '%s\n' {par1} {par2}",
     ]);
-    let result = Commands::from_cli_arguments(&matches).unwrap().0;
+    let result = Commands::from_cli_arguments(&matches)
+        .unwrap()
+        .iter()
+        .unwrap()
+        .collect::<Result<Vec<_>>>()
+        .unwrap();
 
     // Iteration order: command list first, then parameters in listed order (here, "par1" before
     // "par2", which is distinct from their sorted order), with parameter values in listed order.
@@ -441,7 +413,12 @@ fn test_build_parameter_list_commands() {
         "--command-name",
         "name-{foo}",
     ]);
-    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    let commands = Commands::from_cli_arguments(&matches)
+        .unwrap()
+        .iter()
+        .unwrap()
+        .collect::<Result<Vec<_>>>()
+        .unwrap();
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");
@@ -464,7 +441,12 @@ fn test_build_parameter_scan_commands() {
         "--command-name",
         "name-{val}",
     ]);
-    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    let commands = Commands::from_cli_arguments(&matches)
+        .unwrap()
+        .iter()
+        .unwrap()
+        .collect::<Result<Vec<_>>>()
+        .unwrap();
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");
@@ -494,7 +476,12 @@ fn test_build_parameter_scan_commands_named() {
         "--command-name",
         "sleep-2",
     ]);
-    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    let commands = Commands::from_cli_arguments(&matches)
+        .unwrap()
+        .iter()
+        .unwrap()
+        .collect::<Result<Vec<_>>>()
+        .unwrap();
     assert_eq!(commands.len(), 4);
     assert_eq!(commands[0].get_name(), "echo-1");
     assert_eq!(commands[0].get_command_line(), "echo 1");
