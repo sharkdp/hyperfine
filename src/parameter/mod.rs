@@ -1,7 +1,10 @@
 use crate::util::number::Number;
 use std::fmt::Display;
 
+pub mod file_values;
+pub mod product;
 pub mod range_step;
+pub mod sources;
 pub mod tokenize;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

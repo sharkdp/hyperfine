@@ -155,7 +155,7 @@ impl<'a> Benchmark<'a> {
         let mut exit_codes: Vec<Option<i32>> = vec![];
         let mut all_succeeded = true;
 
-        let output_policy = &self.options.command_output_policies[self.number];
+        let output_policy = self.options.command_output_policy(self.number);
 
         let preparation_command = self.options.preparation_command.as_ref().map(|values| {
             let preparation_command = if values.len() == 1 {

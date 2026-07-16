@@ -487,18 +487,22 @@ impl Options {
             );
         }
 
-        if self.command_output_policies.len() == 1 {
-            self.command_output_policies =
-                vec![self.command_output_policies[0].clone(); num_commands];
-        } else {
-            ensure!(
-                self.command_output_policies.len() == num_commands,
-                "The '--output' option has to be provided just once or N times, where N={num_commands} is the \
-                 number of benchmark commands (including a potential reference)."
-            );
-        }
+        ensure!(
+            self.command_output_policies.len() == 1
+                || self.command_output_policies.len() == num_commands,
+            "The '--output' option has to be provided just once or N times, where N={num_commands} is the \
+             number of benchmark commands (including a potential reference)."
+        );
 
         Ok(())
+    }
+
+    pub fn command_output_policy(&self, command_index: usize) -> &CommandOutputPolicy {
+        if self.command_output_policies.len() == 1 {
+            &self.command_output_policies[0]
+        } else {
+            &self.command_output_policies[command_index]
+        }
     }
 }
 
@@ -544,4 +548,46 @@ fn test_can_parse_shell_command_line_from_str() {
         Shell::parse_from_str("''").unwrap_err(),
         OptionsError::EmptyShell
     ));
+}
+
+#[test]
+fn singleton_output_policy_is_not_expanded_per_command() {
+    use crate::{cli::get_cli_arguments, command::Commands};
+
+    let matches = get_cli_arguments(["hyperfine", "echo first", "echo second", "--output=inherit"]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap();
+    let mut options = Options::from_cli_arguments(&matches).unwrap();
+
+    options.validate_against_command_list(&commands).unwrap();
+
+    assert_eq!(options.command_output_policies.len(), 1);
+    assert_eq!(
+        options.command_output_policy(0),
+        &CommandOutputPolicy::Inherit
+    );
+    assert_eq!(
+        options.command_output_policy(1),
+        &CommandOutputPolicy::Inherit
+    );
+}
+
+#[test]
+fn per_command_output_policies_keep_their_existing_indices() {
+    use crate::{cli::get_cli_arguments, command::Commands};
+
+    let matches = get_cli_arguments([
+        "hyperfine",
+        "echo first",
+        "echo second",
+        "--output=null",
+        "--output=pipe",
+    ]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap();
+    let mut options = Options::from_cli_arguments(&matches).unwrap();
+
+    options.validate_against_command_list(&commands).unwrap();
+
+    assert_eq!(options.command_output_policies.len(), 2);
+    assert_eq!(options.command_output_policy(0), &CommandOutputPolicy::Null);
+    assert_eq!(options.command_output_policy(1), &CommandOutputPolicy::Pipe);
 }
