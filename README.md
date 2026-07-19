@@ -87,6 +87,44 @@ option:
 hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
 ```
 
+### Relative comparisons with a fixed reference
+
+By default, hyperfine compares every benchmark against the **fastest** command.
+Use `--reference <cmd>` when you want a fixed baseline instead (for example, a
+known-good binary or a specific configuration). Optionally name it with
+`--reference-name`.
+
+```sh
+hyperfine --reference 'python3 old_script.py' 'python3 new_script.py'
+```
+
+#### Combining `--reference` with `--prepare` and parameters
+
+`--reference` is a **separate** command string. It is **not** a selector for one
+of the parameterized benchmark variants produced by `--parameter-list` /
+`--parameter-scan`.
+
+Preparation commands substitute parameters from the command they prepare:
+
+- With a single `--prepare '… {param} …'`, parameter substitution works for the
+  parameterized benchmarks, but the reference command has **no** parameters, so
+  placeholders like `{delay}` stay literal and typically fail.
+- To give the reference its own preparation (and keep parameterized prepares for
+  the other commands), pass one `--prepare` per command **including** the
+  reference. The reference is always the first command in that sequence:
+
+```sh
+# reference prepare first, then one prepare template for each parameterized run
+hyperfine -L delay 0.2,0.4,0.6 \
+  --prepare 'sleep 0.4' \
+  --prepare 'sleep {delay}' \
+  --reference 'echo baseline' \
+  'echo a'
+```
+
+If you only need relative speeds among the parameterized commands, omit
+`--reference` and let hyperfine use the fastest run as the baseline.
+
 ### Intermediate shell
 
 By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).
