@@ -44,6 +44,18 @@ If you want to compare the runtimes of different programs, you can pass multiple
 hyperfine 'hexdump file' 'xxd file'
 ```
 
+### Interpreting benchmark results
+
+The summary for each command combines measurements from all timed benchmark runs.
+`Time (mean ± σ)` reports the mean elapsed (wall-clock) time and the corrected
+sample [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) `σ`
+of those times. A smaller `σ` means that the measured runtimes were more tightly
+clustered around the mean.
+
+`User` and `System` report the mean CPU time per run spent in user mode and
+kernel/system mode, respectively. They are CPU-time components and do not need
+to add up to the elapsed time.
+
 ### Warmup runs and preparation commands
 
 For programs that perform a lot of disk I/O, the benchmarking results can be heavily influenced
