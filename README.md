@@ -107,6 +107,10 @@ produce a significant amount of noise. Note that you cannot use shell syntax lik
 hyperfine -N 'grep TODO /home/user'
 ```
 
+On Windows with `--shell=none`, prefer forward slashes in executable paths
+(for example `Downloads/app.exe` or `C:/Tools/app.exe`). Backslashes can be
+treated as escape sequences and may yield a “program not found” error.
+
 
 ### Shell functions and aliases
 
