@@ -9,6 +9,16 @@ use crate::util::units::Unit;
 
 use anyhow::Result;
 
+/// Prefix values that a spreadsheet application would evaluate as a formula with
+/// a single quote, so that they are displayed as literal text instead (CWE-1236).
+fn escape_formula(value: &str) -> Cow<'_, [u8]> {
+    if value.starts_with(['=', '+', '-', '@', '\t', '\r']) {
+        Cow::Owned(format!("'{value}").into_bytes())
+    } else {
+        Cow::Borrowed(value.as_bytes())
+    }
+}
+
 #[derive(Default)]
 pub struct CsvExporter {}
 
@@ -38,7 +48,7 @@ impl Exporter for CsvExporter {
         }
 
         for res in results {
-            let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
+            let mut fields = vec![escape_formula(&res.command)];
             for f in &[
                 res.mean,
                 res.stddev.unwrap_or(0.0),
@@ -51,7 +61,7 @@ impl Exporter for CsvExporter {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
             for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.as_bytes()))
+                fields.push(escape_formula(v))
             }
             writer.write_record(fields)?;
         }
@@ -119,5 +129,46 @@ fn test_csv() {
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
     command_a,1,2,1,3,4,5,6,two,one
     command_b,11,12,11,13,14,15,16.5,seven,one
+    "#);
+}
+
+#[test]
+fn test_csv_escapes_spreadsheet_formulas() {
+    use std::collections::BTreeMap;
+    let exporter = CsvExporter::default();
+
+    let results = vec![BenchmarkResult {
+        command: String::from("=1+1"),
+        command_with_unused_parameters: String::from("=1+1"),
+        mean: 1.0,
+        stddev: Some(2.0),
+        median: 1.0,
+        user: 3.0,
+        system: 4.0,
+        min: 5.0,
+        max: 6.0,
+        times: Some(vec![7.0]),
+        memory_usage_byte: None,
+        exit_codes: vec![Some(0)],
+        parameters: {
+            let mut params = BTreeMap::new();
+            params.insert("a".into(), "@SUM(1,2)".into());
+            params.insert("b".into(), "-2+3".into());
+            params.insert("c".into(), "+1".into());
+            params.insert("d".into(), "harmless".into());
+            params
+        },
+    }];
+
+    let actual = String::from_utf8(
+        exporter
+            .serialize(&results, Some(Unit::Second), SortOrder::Command)
+            .unwrap(),
+    )
+    .unwrap();
+
+    insta::assert_snapshot!(actual, @r#"
+    command,mean,stddev,median,user,system,min,max,parameter_a,parameter_b,parameter_c,parameter_d
+    '=1+1,1,2,1,3,4,5,6,"'@SUM(1,2)",'-2+3,'+1,harmless
     "#);
 }
