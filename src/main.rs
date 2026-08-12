@@ -6,7 +6,9 @@
 use std::env;
 
 use benchmark::scheduler::Scheduler;
-use cli::get_cli_arguments;
+use clap::ArgMatches;
+use clap_complete::Shell;
+use cli::{build_command, get_cli_arguments};
 use command::Commands;
 use export::ExportManager;
 use options::Options;
@@ -32,10 +34,22 @@ fn run() -> Result<()> {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let cli_arguments = get_cli_arguments(env::args_os());
-    let mut options = Options::from_cli_arguments(&cli_arguments)?;
-    let commands = Commands::from_cli_arguments(&cli_arguments)?;
+
+    if let Some(shell) = cli_arguments.get_one::<String>("generate-completions") {
+        let shell = parse_shell(shell)?;
+        let mut command = build_command();
+        clap_complete::generate(shell, &mut command, "hyperfine", &mut std::io::stdout());
+        return Ok(());
+    }
+
+    run_benchmarks(&cli_arguments)
+}
+
+fn run_benchmarks(cli_arguments: &ArgMatches) -> Result<()> {
+    let mut options = Options::from_cli_arguments(cli_arguments)?;
+    let commands = Commands::from_cli_arguments(cli_arguments)?;
     let export_manager = ExportManager::from_cli_arguments(
-        &cli_arguments,
+        cli_arguments,
         options.time_unit,
         options.sort_order_exports,
     )?;
@@ -48,6 +62,17 @@ fn run() -> Result<()> {
     scheduler.final_export()?;
 
     Ok(())
+}
+
+fn parse_shell(name: &str) -> Result<Shell> {
+    match name {
+        "bash" => Ok(Shell::Bash),
+        "zsh" => Ok(Shell::Zsh),
+        "fish" => Ok(Shell::Fish),
+        "powershell" => Ok(Shell::PowerShell),
+        "elvish" => Ok(Shell::Elvish),
+        other => Err(anyhow::anyhow!("unsupported shell: {other}")),
+    }
 }
 
 fn main() {
