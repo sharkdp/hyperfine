@@ -60,6 +60,9 @@ features = [
     "error-context",
 ]
 
+[dependencies.clap_complete]
+version = "4.2.1"
+
 [dev-dependencies]
 approx = "0.5"
 assert_cmd = "2.0"

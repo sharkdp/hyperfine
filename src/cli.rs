@@ -1,9 +1,11 @@
 use std::ffi::OsString;
 
 use clap::{
-    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
-    ValueHint,
+    builder::{NonEmptyStringValueParser, PossibleValuesParser},
+    crate_version, Arg, ArgAction, ArgMatches, Command, ValueHint,
 };
+
+const SHELLS: [&str; 5] = ["bash", "zsh", "fish", "powershell", "elvish"];
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
@@ -15,7 +17,7 @@ where
 }
 
 /// Build the clap command for parsing command line arguments
-fn build_command() -> Command {
+pub fn build_command() -> Command {
     Command::new("hyperfine")
         .version(crate_version!())
         .next_line_help(true)
@@ -30,7 +32,7 @@ fn build_command() -> Command {
                        The latter is only available if the shell is not explicitly disabled via \
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
-                .required(true)
+                .required_unless_present("generate-completions")
                 .action(ArgAction::Append)
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
@@ -405,6 +407,15 @@ fn build_command() -> Command {
             .action(ArgAction::SetTrue)
             .hide(true)
             .help("Enable debug mode which does not actually run commands, but returns fake times when the command is 'sleep <time>'.")
+        )
+        .arg(
+            Arg::new("generate-completions")
+                .long("generate-completions")
+                .action(ArgAction::Set)
+                .value_name("SHELL")
+                .value_parser(PossibleValuesParser::new(SHELLS))
+                .hide(true)
+                .help("Generate a shell completions script for the given shell and print it to stdout.")
         )
 }
 

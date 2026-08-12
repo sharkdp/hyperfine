@@ -722,3 +722,45 @@ fn windows_quote_before_quote_args() {
         .assert()
         .success();
 }
+
+#[test]
+fn generates_fish_completions() {
+    hyperfine()
+        .arg("--generate-completions")
+        .arg("fish")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with("complete -c hyperfine"));
+}
+
+#[test]
+fn generates_bash_completions() {
+    hyperfine()
+        .arg("--generate-completions")
+        .arg("bash")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("_hyperfine"));
+}
+
+#[test]
+fn generates_zsh_completions() {
+    hyperfine()
+        .arg("--generate-completions")
+        .arg("zsh")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("#compdef"));
+}
+
+#[test]
+fn rejects_unknown_shell() {
+    hyperfine()
+        .arg("--generate-completions")
+        .arg("csh")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "invalid value 'csh' for '--generate-completions <SHELL>'",
+        ));
+}
