@@ -35,6 +35,7 @@ pub struct RangeStep<T> {
     state: T,
     end: T,
     step: T,
+    finished: bool,
 }
 
 impl<T: Numeric> RangeStep<T> {
@@ -53,6 +54,7 @@ impl<T: Numeric> RangeStep<T> {
                 state: start,
                 end,
                 step,
+                finished: false,
             }),
             _ => Err(ParameterScanError::TooLarge),
         }
@@ -63,11 +65,16 @@ impl<T: Numeric> Iterator for RangeStep<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.state > self.end {
+        if self.finished || self.state > self.end {
             return None;
         }
         let return_val = self.state;
-        self.state += self.step;
+        // `end - state` never overflows here (state <= end), unlike `state + step`.
+        if self.end - self.state < self.step {
+            self.finished = true;
+        } else {
+            self.state += self.step;
+        }
 
         Some(return_val)
     }
@@ -118,6 +125,12 @@ mod tests {
         assert_eq!(param_range.len(), 11);
         assert_eq!(param_range[0], Decimal::from(0));
         assert_eq!(param_range[10], Decimal::from(1));
+    }
+
+    #[test]
+    fn does_not_overflow_near_type_max() {
+        let param_range: Vec<i32> = RangeStep::new(i32::MAX - 1, i32::MAX, 1).unwrap().collect();
+        assert_eq!(param_range, vec![i32::MAX - 1, i32::MAX]);
     }
 
     #[test]
