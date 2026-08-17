@@ -291,8 +291,13 @@ impl Options {
         let mut max_runs = param_to_u64("max-runs")?;
 
         if let Some(runs) = param_to_u64("runs")? {
+            if runs == 0 {
+                return Err(OptionsError::ZeroRuns("runs"));
+            }
             min_runs = Some(runs);
             max_runs = Some(runs);
+        } else if max_runs == Some(0) {
+            return Err(OptionsError::ZeroRuns("max-runs"));
         }
 
         match (min_runs, max_runs) {

@@ -39,6 +39,10 @@ pub enum OptionsError<'a> {
         "Conflicting requirements for the number of runs (empty range, min is larger than max)"
     )]
     EmptyRunsRange,
+    #[error(
+        "At least one run has to be performed. Please specify a value larger than zero for '--{0}'"
+    )]
+    ZeroRuns(&'a str),
     #[error("Too many --command-name options: Expected {0} at most")]
     TooManyCommandNames(usize),
     #[error("'--command-name' has been specified {0} times. It has to appear exactly once, or exactly {1} times (number of benchmarks)")]

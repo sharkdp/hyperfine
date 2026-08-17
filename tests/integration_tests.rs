@@ -34,6 +34,30 @@ fn one_run_is_supported() {
 }
 
 #[test]
+fn fails_with_zero_runs() {
+    for option in ["--runs=0", "--max-runs=0"] {
+        hyperfine()
+            .arg(option)
+            .arg("echo dummy benchmark")
+            .assert()
+            .failure()
+            .stderr(predicate::str::contains(
+                "At least one run has to be performed",
+            ));
+    }
+}
+
+#[test]
+fn min_runs_of_zero_still_performs_one_run() {
+    hyperfine_debug()
+        .arg("--min-runs=0")
+        .arg("sleep 4")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Time (abs ≡)"));
+}
+
+#[test]
 fn can_run_commands_without_a_shell() {
     hyperfine()
         .arg("--runs=1")
