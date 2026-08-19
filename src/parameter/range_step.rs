@@ -69,7 +69,8 @@ impl<T: Numeric> Iterator for RangeStep<T> {
             return None;
         }
         let return_val = self.state;
-        // `end - state` never overflows here (state <= end), unlike `state + step`.
+        // new() capped the range at MAX_PARAMETERS steps, so `end - state` stays
+        // small and cannot overflow here, unlike a speculative `state + step`.
         if self.end - self.state < self.step {
             self.finished = true;
         } else {
@@ -80,6 +81,9 @@ impl<T: Numeric> Iterator for RangeStep<T> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.finished {
+            return (0, Some(0));
+        }
         range_step_size_hint(self.state, self.end, self.step)
     }
 }
@@ -131,6 +135,16 @@ mod tests {
     fn does_not_overflow_near_type_max() {
         let param_range: Vec<i32> = RangeStep::new(i32::MAX - 1, i32::MAX, 1).unwrap().collect();
         assert_eq!(param_range, vec![i32::MAX - 1, i32::MAX]);
+    }
+
+    #[test]
+    fn size_hint_is_zero_once_exhausted() {
+        let mut it = RangeStep::new(i32::MAX - 1, i32::MAX, 1).unwrap();
+        assert_eq!(it.size_hint(), (2, Some(2)));
+        assert_eq!(it.next(), Some(i32::MAX - 1));
+        assert_eq!(it.next(), Some(i32::MAX));
+        assert_eq!(it.next(), None);
+        assert_eq!(it.size_hint(), (0, Some(0)));
     }
 
     #[test]
