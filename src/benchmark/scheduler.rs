@@ -125,8 +125,21 @@ impl<'a> Scheduler<'a> {
                     println!("{}", "Relative speed comparison".bold());
 
                     for item in annotated_results {
+                        let comparison = if self.options.reference_command.is_some() {
+                            if item.is_reference {
+                                "reference"
+                            } else {
+                                match item.relative_ordering {
+                                    Ordering::Less => "times faster than reference",
+                                    Ordering::Greater => "times slower than reference",
+                                    Ordering::Equal => "as fast as reference",
+                                }
+                            }
+                        } else {
+                            ""
+                        };
                         println!(
-                            "  {}{}  {}",
+                            "  {}{}  {}{}",
                             format!("{:10.2}", item.relative_speed).bold().green(),
                             if item.is_reference {
                                 "        ".into()
@@ -134,6 +147,11 @@ impl<'a> Scheduler<'a> {
                                 format!(" ± {}", format!("{stddev:5.2}").green())
                             } else {
                                 "        ".into()
+                            },
+                            if comparison.is_empty() {
+                                String::new()
+                            } else {
+                                format!("{comparison:28}  ")
                             },
                             &item.result.command_with_unused_parameters,
                         );
