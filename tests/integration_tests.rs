@@ -584,6 +584,42 @@ fn shows_reference_name() {
 }
 
 #[test]
+fn command_sorted_comparison_labels_reference_and_direction() {
+    for runs in ["1", "2"] {
+        let output = hyperfine_debug()
+            .args(["--runs", runs, "--sort=command"])
+            .args(["--reference=sleep 2", "--reference-name=baseline"])
+            .args([
+                "--command-name=slower",
+                "--command-name=faster",
+                "--command-name=equal",
+            ])
+            .args(["sleep 3", "sleep 1", "sleep 2"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout
+            .clone();
+        let output = String::from_utf8(output).unwrap();
+        let comparison = output.split("Relative speed comparison\n").nth(1).unwrap();
+        let lines: Vec<_> = comparison
+            .lines()
+            .map(|line| line.split_whitespace().collect::<Vec<_>>().join(" "))
+            .collect();
+        let uncertainty = if runs == "2" { " ± 0.00" } else { "" };
+        assert_eq!(
+            lines,
+            vec![
+                "1.00 reference baseline".to_string(),
+                format!("1.50{uncertainty} times slower than reference slower"),
+                format!("2.00{uncertainty} times faster than reference faster"),
+                format!("1.00{uncertainty} as fast as reference equal"),
+            ]
+        );
+    }
+}
+
+#[test]
 fn performs_all_benchmarks_in_parameter_scan() {
     hyperfine_debug()
         .arg("--parameter-scan")
