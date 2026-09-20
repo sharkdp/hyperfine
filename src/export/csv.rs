@@ -207,10 +207,7 @@ fn test_sanitize_csv_value() {
         sanitize_csv_value("echo hello").as_ref(),
         "echo hello".as_bytes()
     );
-    assert_eq!(
-        sanitize_csv_value("value").as_ref(),
-        b"value".as_slice()
-    );
+    assert_eq!(sanitize_csv_value("value").as_ref(), b"value".as_slice());
     assert_eq!(sanitize_csv_value("").as_ref(), b"".as_slice());
     assert_eq!(
         sanitize_csv_value("normal-param").as_ref(),
