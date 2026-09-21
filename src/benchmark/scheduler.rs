@@ -1,12 +1,13 @@
 use super::benchmark_result::BenchmarkResult;
 use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
-use colored::*;
+use colored::Colorize as _;
 use std::cmp::Ordering;
 
 use crate::command::{Command, Commands};
 use crate::export::ExportManager;
 use crate::options::{ExecutorKind, Options, OutputStyleOption, SortOrder};
+use crate::output::colors;
 
 use anyhow::Result;
 
@@ -88,36 +89,36 @@ impl<'a> Scheduler<'a> {
 
                     println!(
                         "  {} ran",
-                        reference.result.command_with_unused_parameters.cyan()
+                        colors::cyan(&reference.result.command_with_unused_parameters)
                     );
 
                     for item in others {
                         let stddev = if let Some(stddev) = item.relative_speed_stddev {
-                            format!(" ± {}", format!("{:.2}", stddev).green())
+                            format!(" ± {}", colors::green(format!("{:.2}", stddev)))
                         } else {
                             "".into()
                         };
                         let comparator = match item.relative_ordering {
                             Ordering::Less => format!(
                                 "{}{} times slower than",
-                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                colors::green(format!("{:8.2}", item.relative_speed)).bold(),
                                 stddev
                             ),
                             Ordering::Greater => format!(
                                 "{}{} times faster than",
-                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                colors::green(format!("{:8.2}", item.relative_speed)).bold(),
                                 stddev
                             ),
                             Ordering::Equal => format!(
                                 "    As fast ({}{}) as",
-                                format!("{:.2}", item.relative_speed).bold().green(),
+                                colors::green(format!("{:.2}", item.relative_speed)).bold(),
                                 stddev
                             ),
                         };
                         println!(
                             "{} {}",
                             comparator,
-                            &item.result.command_with_unused_parameters.magenta()
+                            colors::magenta(&item.result.command_with_unused_parameters)
                         );
                     }
                 }
@@ -127,11 +128,11 @@ impl<'a> Scheduler<'a> {
                     for item in annotated_results {
                         println!(
                             "  {}{}  {}",
-                            format!("{:10.2}", item.relative_speed).bold().green(),
+                            colors::green(format!("{:10.2}", item.relative_speed)).bold(),
                             if item.is_reference {
                                 "        ".into()
                             } else if let Some(stddev) = item.relative_speed_stddev {
-                                format!(" ± {}", format!("{stddev:5.2}").green())
+                                format!(" ± {}", colors::green(format!("{stddev:5.2}")))
                             } else {
                                 "        ".into()
                             },
@@ -148,7 +149,7 @@ impl<'a> Scheduler<'a> {
                  Try to re-run the benchmark on a quiet system. If you did not do so already, try the \
                  --shell=none/-N option. If it does not help either, you command is most likely too fast \
                  to be accurately benchmarked by hyperfine.",
-                 "Note".bold().red()
+                 colors::red("Note").bold()
             );
         }
     }

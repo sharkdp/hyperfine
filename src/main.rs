@@ -10,9 +10,9 @@ use cli::get_cli_arguments;
 use command::Commands;
 use export::ExportManager;
 use options::Options;
+use output::colors;
 
 use anyhow::Result;
-use colored::*;
 
 pub mod benchmark;
 pub mod cli;
@@ -54,7 +54,7 @@ fn main() {
     match run() {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{} {:#}", "Error:".red(), e);
+            eprintln!("{} {:#}", colors::red("Error:"), e);
             std::process::exit(1);
         }
     }

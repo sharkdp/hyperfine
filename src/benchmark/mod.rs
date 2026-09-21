@@ -12,6 +12,7 @@ use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use crate::output::colors;
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
@@ -23,7 +24,7 @@ use benchmark_result::BenchmarkResult;
 use timing_result::TimingResult;
 
 use anyhow::{anyhow, Result};
-use colored::*;
+use colored::Colorize as _;
 use statistical::{mean, median, standard_deviation};
 
 use self::executor::Executor;
@@ -299,7 +300,7 @@ impl<'a> Benchmark<'a> {
 
             let msg = {
                 let mean = format_duration(mean(&times_real), self.options.time_unit);
-                format!("Current estimate: {}", mean.to_string().green())
+                format!("Current estimate: {}", colors::green(mean.to_string()))
             };
 
             if let Some(bar) = progress_bar.as_ref() {
@@ -361,31 +362,31 @@ impl<'a> Benchmark<'a> {
             if times_real.len() == 1 {
                 println!(
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
-                    "abs".green().bold(),
-                    mean_str.green().bold(),
+                    colors::green("abs").bold(),
+                    colors::green(mean_str).bold(),
                     "        ", // alignment
-                    user_str.blue(),
-                    system_str.blue()
+                    colors::blue(user_str),
+                    colors::blue(system_str)
                 );
             } else {
                 let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
 
                 println!(
                     "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-                    "mean".green().bold(),
-                    "σ".green(),
-                    mean_str.green().bold(),
-                    stddev_str.green(),
-                    user_str.blue(),
-                    system_str.blue()
+                    colors::green("mean").bold(),
+                    colors::green("σ"),
+                    colors::green(mean_str).bold(),
+                    colors::green(stddev_str),
+                    colors::blue(user_str),
+                    colors::blue(system_str)
                 );
 
                 println!(
                     "  Range ({} … {}):   {:>8} … {:>8}    {}",
-                    "min".cyan(),
-                    "max".purple(),
-                    min_str.cyan(),
-                    max_str.purple(),
+                    colors::cyan("min"),
+                    colors::purple("max"),
+                    colors::cyan(min_str),
+                    colors::purple(max_str),
                     num_str.dimmed()
                 );
             }
@@ -433,7 +434,7 @@ impl<'a> Benchmark<'a> {
             eprintln!(" ");
 
             for warning in &warnings {
-                eprintln!("  {}: {}", "Warning".yellow(), warning);
+                eprintln!("  {}: {}", colors::yellow("Warning"), warning);
             }
         }
 
