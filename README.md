@@ -124,8 +124,12 @@ Otherwise, inline them into or source them from the benchmarked program:
 hyperfine 'my_function() { sleep 1; }; my_function'
 
 echo 'alias my_alias="sleep 1"' > /tmp/my_alias.sh
-hyperfine '. /tmp/my_alias.sh; my_alias'
+hyperfine '. /tmp/my_alias.sh
+my_alias'
 ```
+
+Keep the alias invocation on a separate line so the shell parses it after the alias
+definition has been sourced.
 
 ### Exporting results
 
