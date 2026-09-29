@@ -1020,6 +1020,19 @@ fn speed_comparison_sort_order() {
     ");
 }
 
+#[test]
+fn parameter_scan_full_i32_range_is_rejected() {
+    hyperfine()
+        .arg("--parameter-scan")
+        .arg("x")
+        .arg("-2147483648")
+        .arg("2147483647")
+        .arg("true")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Parameter range is too large"));
+}
+
 #[cfg(windows)]
 #[test]
 fn windows_quote_args() {
