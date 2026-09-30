@@ -5,6 +5,7 @@ pub mod scheduler;
 pub mod timing_result;
 
 use std::cmp;
+use std::io::{self, Write};
 
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
@@ -140,12 +141,13 @@ impl<'a> Benchmark<'a> {
     /// Run the benchmark for a single command
     pub fn run(&self) -> Result<BenchmarkResult> {
         if self.options.output_style != OutputStyleOption::Disabled {
-            println!(
+            writeln!(
+                io::stdout(),
                 "{}{}: {}",
                 "Benchmark ".bold(),
                 (self.number + 1).to_string().bold(),
                 self.command.get_name_with_unused_parameters(),
-            );
+            )?;
         }
 
         let mut times_real: Vec<Second> = vec![];
@@ -359,18 +361,20 @@ impl<'a> Benchmark<'a> {
 
         if self.options.output_style != OutputStyleOption::Disabled {
             if times_real.len() == 1 {
-                println!(
+                writeln!(
+                    io::stdout(),
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
                     "abs".green().bold(),
                     mean_str.green().bold(),
                     "        ", // alignment
                     user_str.blue(),
                     system_str.blue()
-                );
+                )?;
             } else {
                 let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
 
-                println!(
+                writeln!(
+                    io::stdout(),
                     "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
                     "mean".green().bold(),
                     "σ".green(),
@@ -378,16 +382,17 @@ impl<'a> Benchmark<'a> {
                     stddev_str.green(),
                     user_str.blue(),
                     system_str.blue()
-                );
+                )?;
 
-                println!(
+                writeln!(
+                    io::stdout(),
                     "  Range ({} … {}):   {:>8} … {:>8}    {}",
                     "min".cyan(),
                     "max".purple(),
                     min_str.cyan(),
                     max_str.purple(),
                     num_str.dimmed()
-                );
+                )?;
             }
         }
 
@@ -430,15 +435,15 @@ impl<'a> Benchmark<'a> {
         }
 
         if !warnings.is_empty() {
-            eprintln!(" ");
+            writeln!(io::stderr(), " ")?;
 
             for warning in &warnings {
-                eprintln!("  {}: {}", "Warning".yellow(), warning);
+                writeln!(io::stderr(), "  {}: {}", "Warning".yellow(), warning)?;
             }
         }
 
         if self.options.output_style != OutputStyleOption::Disabled {
-            println!(" ");
+            writeln!(io::stdout(), " ")?;
         }
 
         self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;

@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::Write;
+use std::io::{self, Write};
 
 mod asciidoc;
 mod csv;
@@ -144,8 +144,8 @@ impl ExportManager {
                 }
                 ExportTarget::Stdout => {
                     if !intermediate {
-                        println!();
-                        println!("{}", String::from_utf8(content()?).unwrap());
+                        writeln!(io::stdout())?;
+                        writeln!(io::stdout(), "{}", String::from_utf8(content()?).unwrap())?;
                     }
                 }
             }

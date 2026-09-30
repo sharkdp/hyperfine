@@ -1,5 +1,5 @@
 mod common;
-use common::hyperfine;
+use common::{hyperfine, hyperfine_raw_command};
 
 use predicates::prelude::*;
 
@@ -31,6 +31,47 @@ fn one_run_is_supported() {
         .arg("echo dummy benchmark")
         .assert()
         .success();
+}
+
+/// Regression test: hyperfine must not panic when writing to a closed
+/// stdout pipe (e.g. `hyperfine ... | head -n 1` or a downstream process
+/// that terminates early). A `BrokenPipe` error should result in a quiet
+/// exit with code 0 instead of a `println!` panic.
+#[test]
+fn exits_quietly_when_stdout_is_closed() {
+    use std::process::Stdio;
+
+    for args in [
+        vec!["--runs=1", "echo dummy benchmark"],
+        vec!["--runs=1", "--export-json=-", "echo dummy benchmark"],
+        vec!["--runs=1", "echo dummy benchmark", "echo second benchmark"],
+    ] {
+        // A pipe whose read end has been closed before hyperfine is even
+        // started: every write to it will fail with `BrokenPipe`.
+        let (reader, writer) = std::io::pipe().expect("failed to create pipe");
+        drop(reader);
+
+        let output = hyperfine_raw_command()
+            .args(&args)
+            .stdout(writer)
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("failed to spawn hyperfine")
+            .wait_with_output()
+            .expect("failed to wait for hyperfine");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        assert!(
+            !stderr.contains("panicked"),
+            "hyperfine panicked while writing to a closed pipe:\n{}",
+            stderr
+        );
+        assert!(
+            output.status.success(),
+            "hyperfine did not exit cleanly; stderr:\n{}",
+            stderr
+        );
+    }
 }
 
 #[test]
