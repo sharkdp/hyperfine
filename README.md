@@ -90,7 +90,7 @@ hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'
 
 ### Intermediate shell
 
-By default, commands are executed using a predefined shell (`/bin/sh` on Unix, `cmd.exe` on Windows).
+By default, commands are executed using `sh` on Unix (resolved through `PATH`) or `cmd.exe` on Windows.
 If you want to use a different shell, you can use the `-S, --shell <SHELL>` option:
 ```sh
 hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
