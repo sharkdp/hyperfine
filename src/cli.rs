@@ -161,7 +161,7 @@ fn build_command() -> Command {
                 .help(
                     "Perform benchmark runs for each value in the range MIN..MAX. Replaces the \
                      string '{VAR}' in each command by the current parameter value.\n\n  \
-                     Example:  hyperfine -P threads 1 8 'make -j {threads}'\n\n\
+                     Example:  hyperfine --prepare 'make clean' -P threads 1 8 'make -j {threads}'\n\n\
                      This performs benchmarks for 'make -j 1', 'make -j 2', …, 'make -j 8'.\n\n\
                      To have the value increase following different patterns, use shell arithmetics.\n\n  \
                      Example: hyperfine -P size 0 3 'sleep $((2**{size}))'\n\n\
