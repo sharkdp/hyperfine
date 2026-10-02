@@ -56,8 +56,8 @@ hyperfine --warmup 3 'grep -R TODO *'
 ```
 
 Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
-option to run a special command before *each* timing run. For example, to clear harddisk caches
-on Linux, you can run
+option to run a special command before *each* timing run. For example, to clear Linux filesystem caches,
+you can run
 ```sh
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 ```
