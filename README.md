@@ -212,13 +212,6 @@ cave resolve -x repository/rust
 cave resolve -x hyperfine
 ```
 
-### On Funtoo Linux
-
-On Funtoo Linux, hyperfine can be installed [from core-kit](https://github.com/funtoo/core-kit/tree/1.4-release/app-benchmarks/hyperfine):
-```
-emerge app-benchmarks/hyperfine
-```
-
 ### On NixOS
 
 On NixOS, hyperfine can be installed [from the official repositories](https://nixos.org/nixos/packages.html?query=hyperfine):
