@@ -164,7 +164,7 @@ fn build_command() -> Command {
                      Example:  hyperfine -P threads 1 8 'make -j {threads}'\n\n\
                      This performs benchmarks for 'make -j 1', 'make -j 2', …, 'make -j 8'.\n\n\
                      To have the value increase following different patterns, use shell arithmetics.\n\n  \
-                     Example: hyperfine -P size 0 3 'sleep $((2**{size}))'\n\n\
+                     Example: hyperfine -P size 0 3 'sleep $((1 << {size}))'\n\n\
                      This performs benchmarks with power of 2 increases: 'sleep 1', 'sleep 2', 'sleep 4', …\n\
                      The exact syntax may vary depending on your shell and OS."
                 ),
