@@ -3,7 +3,8 @@
 hyperfine \- command\-line benchmarking tool
 .SH SYNOPSIS
 .B hyperfine
-.RB [ \-ihVN ]
+.RB [ \-hVN ]
+.RB [ \-\-ignore\-failure[=MODE] ]
 .RB [ \-\-warmup
 .IR NUM ]
 .RB [ \-\-min\-runs
@@ -14,6 +15,10 @@ hyperfine \- command\-line benchmarking tool
 .IR NUM ]
 .RB [ \-\-setup
 .IR CMD ]
+.RB [ \-\-reference
+.IR CMD ]
+.RB [ \-\-reference\-name
+.IR NAME ]
 .RB [ \-\-prepare
 .IR CMD ]
 .RB [ \-\-conclude
@@ -108,6 +113,16 @@ Execute \fICMD\fP once before each set of timing runs. This is useful
 for compiling your software or with the provided parameters, or to do any
 other work that should happen once before a series of benchmark runs,
 not every time as would happen with the \fB\-\-prepare\fR option.
+.HP
+\fB\-\-reference\fR \fICMD\fP
+.IP
+Benchmark \fICMD\fP as the reference for the relative comparison of results.
+If this option is not specified, the fastest command is used as the reference.
+.HP
+\fB\-\-reference\-name\fR \fINAME\fP
+.IP
+Give a meaningful \fINAME\fP to the reference command.
+Requires \fB\-\-reference\fR.
 .HP
 \fB\-p\fR, \fB\-\-prepare\fR \fICMD...\fP
 .IP
@@ -207,9 +222,13 @@ things like "sleep 0.1; sleep 0.2" are not possible without a shell.
 .IP
 An alias for '\-\-shell=none'.
 .HP
-\fB\-i\fR, \fB\-\-ignore\-failure\fR
+\fB\-i\fR, \fB\-\-ignore\-failure\fR[=\fIMODE\fP]
 .IP
-Ignore non\-zero exit codes of the benchmarked programs.
+Ignore failures of the benchmarked programs. Without a value or with
+\fBall\-non\-zero\fR, all non\-zero exit codes are ignored.
+Alternatively, provide a comma\-separated list of exit codes to ignore,
+for example \fB\-\-ignore\-failure=1,2\fR.
+An explicit value must be attached to the option with an equals sign.
 .HP
 \fB\-\-style\fR \fITYPE\fP
 .IP
