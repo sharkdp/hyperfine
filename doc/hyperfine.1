@@ -141,7 +141,7 @@ string '{\fIVAR\fP}' in each command by the current parameter value.
 .RS
 Example:
 .RS
-\fBhyperfine\fR \fB\-P\fR threads 1 8 'make \-j {threads}'
+\fBhyperfine\fR \fB\-\-prepare\fR 'make clean' \fB\-P\fR threads 1 8 'make \-j {threads}'
 .RE
 .RE
 .IP
