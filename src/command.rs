@@ -158,7 +158,9 @@ impl<'a> Commands<'a> {
             });
             let args: Vec<_> = args.map(|v| v.as_str()).collect::<Vec<_>>();
             let param_names_and_values: Vec<(&str, Vec<String>)> = args
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| {
                     let name = pair[0];
                     let list_str = pair[1];
@@ -169,7 +171,7 @@ impl<'a> Commands<'a> {
                 let duplicates =
                     Self::find_duplicates(param_names_and_values.iter().map(|(name, _)| *name));
                 if !duplicates.is_empty() {
-                    bail!("Duplicate parameter names: {}", &duplicates.join(", "));
+                    bail!("Duplicate parameter names: {}", duplicates.join(", "));
                 }
             }
 

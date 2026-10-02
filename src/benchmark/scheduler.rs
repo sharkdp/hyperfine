@@ -117,7 +117,7 @@ impl<'a> Scheduler<'a> {
                         println!(
                             "{} {}",
                             comparator,
-                            &item.result.command_with_unused_parameters.magenta()
+                            item.result.command_with_unused_parameters.magenta()
                         );
                     }
                 }
@@ -135,7 +135,7 @@ impl<'a> Scheduler<'a> {
                             } else {
                                 "        ".into()
                             },
-                            &item.result.command_with_unused_parameters,
+                            item.result.command_with_unused_parameters,
                         );
                     }
                 }
