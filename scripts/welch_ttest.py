@@ -7,8 +7,7 @@
 # ///
 
 """This script performs Welch's t-test on a JSON export file with two
-benchmark results to test whether or not the two distributions are
-the same."""
+benchmark results to test for a difference in their population mean runtimes."""
 
 import argparse
 import json
@@ -40,6 +39,10 @@ print(f"t = {t:.3}, p = {p:.3}")
 print()
 
 if dispose:
-    print(f"There is a difference between the two benchmarks (p < {th}).")
+    print(
+        f"A statistically significant difference in mean runtime was detected (p < {th})."
+    )
 else:
-    print(f"The two benchmarks are almost the same (p >= {th}).")
+    print(
+        f"No statistically significant difference in mean runtime was detected (p >= {th})."
+    )
