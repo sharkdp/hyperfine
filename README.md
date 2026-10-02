@@ -104,7 +104,7 @@ If you want to run a benchmark *without an intermediate shell*, you can use the 
 option. This is helpful for very fast commands (< 5 ms) where the shell startup overhead correction would
 produce a significant amount of noise. Note that you cannot use shell syntax like `*` or `~` in this case.
 ```
-hyperfine -N 'grep TODO /home/user'
+hyperfine -N 'grep TODO /path/to/file'
 ```
 
 
