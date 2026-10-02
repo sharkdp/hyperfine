@@ -86,6 +86,18 @@ A command\-line benchmarking tool which includes:
 .RS
 * Parameterized benchmarks (e.g. vary the number of threads)
 .RE
+.SH BENCHMARK OUTPUT
+The summary for each command combines measurements from all timed benchmark
+runs.
+.PP
+\fBTime (mean \(+- sigma)\fP reports the mean elapsed (wall\-clock) time and
+the corrected sample standard deviation, sigma, of those times. A smaller
+standard deviation means that the measured runtimes were more tightly
+clustered around the mean.
+.PP
+\fBUser\fP and \fBSystem\fP report the mean CPU time per run spent in user
+mode and kernel/system mode, respectively. They are CPU\-time components and
+do not need to add up to the elapsed time.
 .SH OPTIONS
 .HP
 \fB\-w\fR, \fB\-\-warmup\fR \fINUM\fP
