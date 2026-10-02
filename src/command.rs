@@ -1,5 +1,8 @@
 use std::collections::BTreeMap;
 use std::fmt;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use crate::parameter::tokenize::tokenize;
@@ -131,7 +134,22 @@ impl<'a> Command<'a> {
 }
 
 /// A collection of commands that should be benchmarked
-pub struct Commands<'a>(Vec<Command<'a>>);
+pub struct Commands<'a> {
+    source: CommandSource<'a>,
+    len: usize,
+}
+
+enum CommandSource<'a> {
+    Materialized(Vec<Command<'a>>),
+    ParameterFile(ParameterFileCommands<'a>),
+}
+
+struct ParameterFileCommands<'a> {
+    parameter_name: &'a str,
+    path: PathBuf,
+    command_names: Vec<&'a str>,
+    command_strings: Vec<&'a str>,
+}
 
 impl<'a> Commands<'a> {
     pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'a>> {
@@ -146,12 +164,45 @@ impl<'a> Commands<'a> {
             let step_size = matches
                 .get_one::<String>("parameter-step-size")
                 .map(|s| s.as_str());
-            Ok(Self(Self::get_parameter_scan_commands(
-                command_names,
-                command_strings,
-                args,
-                step_size,
-            )?))
+            let commands =
+                Self::get_parameter_scan_commands(command_names, command_strings, args, step_size)?;
+            let len = commands.len();
+            Ok(Self {
+                source: CommandSource::Materialized(commands),
+                len,
+            })
+        } else if let Some(mut args) = matches.get_many::<String>("parameter-file") {
+            let parameter_name = args.next().unwrap().as_str();
+            let path = PathBuf::from(args.next().unwrap().as_str());
+            let line_count = Self::count_parameter_file_lines(&path)?;
+            let len = command_strings
+                .len()
+                .checked_mul(line_count)
+                .ok_or_else(|| {
+                    anyhow::anyhow!("The parameter file produces too many benchmark commands")
+                })?;
+            let command_names = command_names.map_or(vec![], |names| {
+                names.map(|v| v.as_str()).collect::<Vec<_>>()
+            });
+
+            // `--command-name` should appear exactly once or exactly B times,
+            // where B is the total number of benchmarks.
+            let command_name_count = command_names.len();
+            if command_name_count > 1 && command_name_count != len {
+                return Err(
+                    OptionsError::UnexpectedCommandNameCount(command_name_count, len).into(),
+                );
+            }
+
+            Ok(Self {
+                source: CommandSource::ParameterFile(ParameterFileCommands {
+                    parameter_name,
+                    path,
+                    command_names,
+                    command_strings,
+                }),
+                len,
+            })
         } else if let Some(args) = matches.get_many::<String>("parameter-list") {
             let command_names = command_names.map_or(vec![], |names| {
                 names.map(|v| v.as_str()).collect::<Vec<_>>()
@@ -184,7 +235,10 @@ impl<'a> Commands<'a> {
                 .collect();
             let param_space_size = dimensions.iter().product();
             if param_space_size == 0 {
-                return Ok(Self(Vec::new()));
+                return Ok(Self {
+                    source: CommandSource::Materialized(Vec::new()),
+                    len: 0,
+                });
             }
 
             // `--command-name` should appear exactly once or exactly B times,
@@ -232,7 +286,11 @@ impl<'a> Commands<'a> {
                 break 'outer;
             }
 
-            Ok(Self(commands))
+            let len = commands.len();
+            Ok(Self {
+                source: CommandSource::Materialized(commands),
+                len,
+            })
         } else {
             let command_names = command_names.map_or(vec![], |names| {
                 names.map(|v| v.as_str()).collect::<Vec<_>>()
@@ -245,16 +303,102 @@ impl<'a> Commands<'a> {
             for (i, s) in command_strings.iter().enumerate() {
                 commands.push(Command::new(command_names.get(i).copied(), s));
             }
-            Ok(Self(commands))
+            let len = commands.len();
+            Ok(Self {
+                source: CommandSource::Materialized(commands),
+                len,
+            })
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Command<'a>> {
-        self.0.iter()
+    /// Calls `f` for each command without materializing parameter-file values in memory.
+    pub fn try_for_each<F>(&self, mut f: F) -> Result<()>
+    where
+        F: FnMut(&Command<'a>) -> Result<()>,
+    {
+        match &self.source {
+            CommandSource::Materialized(commands) => {
+                for command in commands {
+                    f(command)?;
+                }
+            }
+            CommandSource::ParameterFile(parameter_file) => {
+                let file = File::open(&parameter_file.path).with_context(|| {
+                    format!(
+                        "Failed to open parameter file '{}'",
+                        parameter_file.path.display()
+                    )
+                })?;
+                let mut benchmark_index = 0;
+
+                for line in BufReader::new(file).lines() {
+                    let line = line.with_context(|| {
+                        format!(
+                            "Failed to read parameter file '{}'",
+                            parameter_file.path.display()
+                        )
+                    })?;
+
+                    for command_string in &parameter_file.command_strings {
+                        let name = parameter_file
+                            .command_names
+                            .get(benchmark_index)
+                            .or_else(|| parameter_file.command_names.first())
+                            .copied();
+                        let command = Command::new_parametrized(
+                            name,
+                            command_string,
+                            [(
+                                parameter_file.parameter_name,
+                                ParameterValue::Text(line.clone()),
+                            )],
+                        );
+                        f(&command)?;
+                        benchmark_index += 1;
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 
     pub fn num_commands(&self, has_reference_command: bool) -> usize {
-        self.0.len() + if has_reference_command { 1 } else { 0 }
+        self.len + if has_reference_command { 1 } else { 0 }
+    }
+
+    fn count_parameter_file_lines(path: &Path) -> Result<usize> {
+        let file = File::open(path)
+            .with_context(|| format!("Failed to open parameter file '{}'", path.display()))?;
+        let mut reader = BufReader::new(file);
+        let mut buffer = Vec::new();
+        let mut count = 0usize;
+
+        loop {
+            buffer.clear();
+            if reader
+                .read_until(b'\n', &mut buffer)
+                .with_context(|| format!("Failed to read parameter file '{}'", path.display()))?
+                == 0
+            {
+                break;
+            }
+            count = count
+                .checked_add(1)
+                .ok_or_else(|| anyhow::anyhow!("The parameter file contains too many lines"))?;
+        }
+
+        Ok(count)
+    }
+
+    #[cfg(test)]
+    fn materialized(&self) -> &[Command<'a>] {
+        match &self.source {
+            CommandSource::Materialized(commands) => commands,
+            CommandSource::ParameterFile(_) => {
+                panic!("parameter-file commands are generated lazily")
+            }
+        }
     }
 
     /// Finds all the strings that appear multiple times in the input iterator, returning them in
@@ -407,7 +551,8 @@ fn test_build_commands_cross_product() {
         "echo {par1} {par2}",
         "printf '%s\n' {par1} {par2}",
     ]);
-    let result = Commands::from_cli_arguments(&matches).unwrap().0;
+    let commands = Commands::from_cli_arguments(&matches).unwrap();
+    let result = commands.materialized();
 
     // Iteration order: command list first, then parameters in listed order (here, "par1" before
     // "par2", which is distinct from their sorted order), with parameter values in listed order.
@@ -443,12 +588,89 @@ fn test_build_parameter_list_commands() {
         "--command-name",
         "name-{foo}",
     ]);
-    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    let command_source = Commands::from_cli_arguments(&matches).unwrap();
+    let commands = command_source.materialized();
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");
     assert_eq!(commands[0].get_command_line(), "echo 1");
     assert_eq!(commands[1].get_command_line(), "echo 2");
+}
+
+#[test]
+fn test_build_parameter_file_commands_lazily() {
+    use crate::cli::get_cli_arguments;
+    use std::io::Write;
+
+    let mut parameters = tempfile::NamedTempFile::new().unwrap();
+    parameters.write_all(b"alpha\r\nbeta\nlast").unwrap();
+
+    let matches = get_cli_arguments(vec![
+        "hyperfine",
+        "echo {value}",
+        "print {value}",
+        "--parameter-file",
+        "value",
+        parameters.path().to_str().unwrap(),
+    ]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap();
+    assert_eq!(commands.num_commands(false), 6);
+
+    let mut command_lines = Vec::new();
+    commands
+        .try_for_each(|command| {
+            command_lines.push(command.get_command_line());
+            Ok(())
+        })
+        .unwrap();
+
+    assert_eq!(
+        command_lines,
+        [
+            "echo alpha",
+            "print alpha",
+            "echo beta",
+            "print beta",
+            "echo last",
+            "print last",
+        ]
+    );
+}
+
+#[test]
+fn test_parameter_file_large_input_is_processed_line_by_line() {
+    use crate::cli::get_cli_arguments;
+    use std::io::Write;
+
+    let mut parameters = tempfile::NamedTempFile::new().unwrap();
+    for i in 0..10_000 {
+        writeln!(parameters, "{i}").unwrap();
+    }
+
+    let matches = get_cli_arguments(vec![
+        "hyperfine",
+        "echo {value}",
+        "--parameter-file",
+        "value",
+        parameters.path().to_str().unwrap(),
+    ]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap();
+    assert_eq!(commands.num_commands(false), 10_000);
+
+    let mut seen = 0;
+    commands
+        .try_for_each(|command| {
+            if seen == 0 {
+                assert_eq!(command.get_command_line(), "echo 0");
+            }
+            if seen == 9_999 {
+                assert_eq!(command.get_command_line(), "echo 9999");
+            }
+            seen += 1;
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(seen, 10_000);
 }
 
 #[test]
@@ -466,7 +688,8 @@ fn test_build_parameter_scan_commands() {
         "--command-name",
         "name-{val}",
     ]);
-    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    let command_source = Commands::from_cli_arguments(&matches).unwrap();
+    let commands = command_source.materialized();
     assert_eq!(commands.len(), 2);
     assert_eq!(commands[0].get_name(), "name-1");
     assert_eq!(commands[1].get_name(), "name-2");
@@ -496,7 +719,8 @@ fn test_build_parameter_scan_commands_named() {
         "--command-name",
         "sleep-2",
     ]);
-    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    let command_source = Commands::from_cli_arguments(&matches).unwrap();
+    let commands = command_source.materialized();
     assert_eq!(commands.len(), 4);
     assert_eq!(commands[0].get_name(), "echo-1");
     assert_eq!(commands[0].get_command_line(), "echo 1");

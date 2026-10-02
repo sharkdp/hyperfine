@@ -205,6 +205,26 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("parameter-file")
+                .long("parameter-file")
+                .action(ArgAction::Set)
+                .allow_hyphen_values(true)
+                .value_names(["VAR", "FILE"])
+                .conflicts_with_all([
+                    "parameter-scan",
+                    "parameter-step-size",
+                    "parameter-list",
+                ])
+                .help(
+                    "Perform benchmark runs for each line in FILE. Replaces the string '{VAR}' \
+                     in each command by the current line. FILE is processed line by line, so its \
+                     full contents are not held in memory.\n\n  Example:  hyperfine \
+                     --parameter-file compiler compilers.txt '{compiler} -O2 main.cpp'\n\nThis \
+                     performs benchmarks for 'gcc -O2 main.cpp' and 'clang -O2 main.cpp' if FILE \
+                     contains the lines 'gcc' and 'clang'.",
+                ),
+        )
+        .arg(
             Arg::new("shell")
                 .long("shell")
                 .short('S')

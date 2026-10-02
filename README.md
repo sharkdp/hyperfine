@@ -88,6 +88,15 @@ option:
 hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'
 ```
 
+For large parameter sets, values can be read one line at a time from a file with
+`--parameter-file`:
+
+```
+hyperfine --parameter-file compiler compilers.txt '{compiler} -O2 main.cpp'
+```
+Both LF and CRLF line endings are supported. The file is processed with a buffered reader, so its
+full contents are not held in memory.
+
 ### Intermediate shell
 
 By default, commands are executed using `sh` on Unix (resolved through `PATH`) or `cmd.exe` on Windows.
