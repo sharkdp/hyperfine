@@ -33,8 +33,9 @@ hyperfine 'sleep 0.3'
 ```
 
 Hyperfine will automatically determine the number of runs to perform for each command. By default,
-it will perform *at least* 10 benchmarking runs and measure for at least 3 seconds. To change this,
-you can use the `-r`/`--runs` option:
+it will perform *at least* 10 benchmarking runs and estimate a run count targeting roughly
+3 seconds, including shell overhead and preparation and conclusion commands. To set an exact
+number of runs, you can use the `-r`/`--runs` option:
 ```sh
 hyperfine --runs 5 'sleep 0.3'
 ```
