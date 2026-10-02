@@ -29,6 +29,7 @@ rand = "0.10"
 shell-words = "1.1"
 thiserror = "2.0"
 anyhow = "1.0"
+clap_complete = "4.2.1"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"
