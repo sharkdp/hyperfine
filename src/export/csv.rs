@@ -21,6 +21,7 @@ impl Exporter for CsvExporter {
     ) -> Result<Vec<u8>> {
         let mut writer = WriterBuilder::new().from_writer(vec![]);
 
+        let mut num_params = 0;
         {
             let mut headers: Vec<Cow<[u8]>> = [
                 // The list of times and exit codes cannot be exported to the CSV file - omit them.
@@ -29,7 +30,11 @@ impl Exporter for CsvExporter {
             .iter()
             .map(|x| Cow::Borrowed(x.as_bytes()))
             .collect();
-            if let Some(res) = results.first() {
+
+            // Use param column names from the first non-reference command
+            let non_ref = results.iter().find(|res| !res.parameters.is_empty());
+            if let Some(res) = non_ref {
+                num_params = res.parameters.len();
                 for param_name in res.parameters.keys() {
                     headers.push(Cow::Owned(format!("parameter_{param_name}").into_bytes()));
                 }
@@ -50,8 +55,14 @@ impl Exporter for CsvExporter {
             ] {
                 fields.push(Cow::Owned(f.to_string().into_bytes()))
             }
-            for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.as_bytes()))
+            if res.parameters.is_empty() && num_params > 0 {
+                // Reference command, insert an empty column for each param
+                let mut empties = vec![Cow::Borrowed("".as_bytes()); num_params];
+                fields.append(&mut empties);
+            } else {
+                for v in res.parameters.values() {
+                    fields.push(Cow::Borrowed(v.as_bytes()))
+                }
             }
             writer.write_record(fields)?;
         }

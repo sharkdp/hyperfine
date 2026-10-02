@@ -705,6 +705,29 @@ fn speed_comparison_sort_order() {
         ));
 }
 
+// Regression test for https://github.com/sharkdp/hyperfine/issues/852
+#[test]
+fn csv_export_reference_command_with_parameters() {
+    hyperfine_debug()
+        .arg("--style=none")
+        .arg("--runs=1")
+        .arg("--reference=sleep 1")
+        .arg("--parameter-scan")
+        .arg("secs")
+        .arg("2")
+        .arg("3")
+        .arg("--export-csv")
+        .arg("-")
+        .arg("sleep {secs}")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with(
+            r#"
+command,mean,stddev,median,user,system,min,max,parameter_secs
+sleep 1,1,0,1,0,0,1,1,"#, // Ends in empty value
+        ));
+}
+
 #[cfg(windows)]
 #[test]
 fn windows_quote_args() {
