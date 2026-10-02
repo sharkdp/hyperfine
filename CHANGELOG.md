@@ -5,7 +5,7 @@
 - Add `--reference-name` option to give a meaningful name to the reference command, see #808 (@niklasdewally)
 - The `--ignore-failure` option now supports a comma-separated list of exit codes to ignore (e.g., `--ignore-failure=1,2`), see #836 (@sharkdp)
 - Python scripts: Add `--time-unit` option to `advanced_statistics.py` (@sharkdp)
-- Python scripts: Add new `plot_benchmarks.py` script for plotting collections of benchmarks, see #806 (@marxin)
+- Python scripts: Add new `plot_benchmark_comparison.py` script for plotting collections of benchmarks, see #806 (@marxin)
 
 ## Bugfixes
 
@@ -99,7 +99,7 @@
 ## Other
 
 - Thanks to @berombau for working on dependency upgrades, see #584
-- Fixed installationm on Windows, see #595 and #596 (@AntoniosBarotsis)
+- Fixed installation on Windows, see #595 and #596 (@AntoniosBarotsis)
 
 
 # v1.15.0
@@ -244,7 +244,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 - The new `--parameter-list <VAR> <VALUES>` option can be used to run
   a parametrized benchmark on a user-specified list of values.
   This is similar to `--parameter-scan <VAR> <MIN> <MAX>`, but doesn't
-  necessarily required numeric arguments.
+  necessarily require numeric arguments.
 
   ``` bash
   hyperfine --parameter-list compiler "gcc,clang" \
@@ -415,7 +415,7 @@ for reviewing pull requests and for giving very valuable feedback.
 ## Other
 
 - [Arch Linux package](https://aur.archlinux.org/packages/hyperfine) for Hyperfine (@jD91mZM2).
-- Ubuntu/Debian packages are now are available.
+- Ubuntu/Debian packages are now available.
 
 # v0.2.0
 
