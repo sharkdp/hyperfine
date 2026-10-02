@@ -108,7 +108,7 @@ hyperfine -N 'grep TODO /home/user'
 ```
 
 
-### Shell functions and aliases
+### Shell functions
 
 If you are using bash, you can export shell functions to directly benchmark them with hyperfine:
 
@@ -118,13 +118,10 @@ export -f my_function
 hyperfine --shell=bash my_function
 ```
 
-Otherwise, inline them into or source them from the benchmarked program:
+Otherwise, inline the function into the benchmarked command:
 
 ```sh
 hyperfine 'my_function() { sleep 1; }; my_function'
-
-echo 'alias my_alias="sleep 1"' > /tmp/my_alias.sh
-hyperfine '. /tmp/my_alias.sh; my_alias'
 ```
 
 ### Exporting results
