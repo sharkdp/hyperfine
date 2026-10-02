@@ -194,8 +194,8 @@ fn build_command() -> Command {
                 .help(
                     "Perform benchmark runs for each value in the comma-separated list VALUES. \
                      Replaces the string '{VAR}' in each command by the current parameter value\
-                     .\n\nExample:  hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'\n\n\
-                     This performs benchmarks for 'gcc -O2 main.cpp' and 'clang -O2 main.cpp'.\n\n\
+                     .\n\nExample:  hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'\n\n\
+                     This performs benchmarks for 'g++ -O2 main.cpp' and 'clang++ -O2 main.cpp'.\n\n\
                      The option can be specified multiple times to run benchmarks for all \
                      possible parameter combinations.\n"
                 ),
