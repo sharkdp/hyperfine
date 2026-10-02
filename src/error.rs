@@ -4,6 +4,10 @@ use rust_decimal::Error as DecimalError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[error(transparent)]
+pub struct ConsoleOutputError(pub std::io::Error);
+
+#[derive(Debug, Error)]
 pub enum ParameterScanError {
     #[error("Error while parsing parameter scan arguments ({0})")]
     ParseIntError(num::ParseIntError),

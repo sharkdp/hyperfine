@@ -3,10 +3,12 @@ use super::executor::{Executor, MockExecutor, RawExecutor, ShellExecutor};
 use super::{relative_speed, Benchmark};
 use colored::*;
 use std::cmp::Ordering;
+use std::io::{self, Write};
 
 use crate::command::{Command, Commands};
 use crate::export::ExportManager;
 use crate::options::{ExecutorKind, Options, OutputStyleOption, SortOrder};
+use crate::output::console_writeln;
 
 use anyhow::Result;
 
@@ -58,13 +60,13 @@ impl<'a> Scheduler<'a> {
         Ok(())
     }
 
-    pub fn print_relative_speed_comparison(&self) {
+    pub fn print_relative_speed_comparison(&self) -> Result<()> {
         if self.options.output_style == OutputStyleOption::Disabled {
-            return;
+            return Ok(());
         }
 
         if self.results.len() < 2 {
-            return;
+            return Ok(());
         }
 
         let reference = self
@@ -79,17 +81,19 @@ impl<'a> Scheduler<'a> {
             reference,
             self.options.sort_order_speed_comparison,
         ) {
+            let mut stdout = io::stdout().lock();
             match self.options.sort_order_speed_comparison {
                 SortOrder::MeanTime => {
-                    println!("{}", "Summary".bold());
+                    console_writeln!(stdout, "{}", "Summary".bold())?;
 
                     let reference = annotated_results.iter().find(|r| r.is_reference).unwrap();
                     let others = annotated_results.iter().filter(|r| !r.is_reference);
 
-                    println!(
+                    console_writeln!(
+                        stdout,
                         "  {} ran",
                         reference.result.command_with_unused_parameters.cyan()
-                    );
+                    )?;
 
                     for item in others {
                         let stddev = if let Some(stddev) = item.relative_speed_stddev {
@@ -114,18 +118,20 @@ impl<'a> Scheduler<'a> {
                                 stddev
                             ),
                         };
-                        println!(
+                        console_writeln!(
+                            stdout,
                             "{} {}",
                             comparator,
                             item.result.command_with_unused_parameters.magenta()
-                        );
+                        )?;
                     }
                 }
                 SortOrder::Command => {
-                    println!("{}", "Relative speed comparison".bold());
+                    console_writeln!(stdout, "{}", "Relative speed comparison".bold())?;
 
                     for item in annotated_results {
-                        println!(
+                        console_writeln!(
+                            stdout,
                             "  {}{}  {}",
                             format!("{:10.2}", item.relative_speed).bold().green(),
                             if item.is_reference {
@@ -136,12 +142,13 @@ impl<'a> Scheduler<'a> {
                                 "        ".into()
                             },
                             item.result.command_with_unused_parameters,
-                        );
+                        )?;
                     }
                 }
             }
         } else {
-            eprintln!(
+            console_writeln!(
+                io::stderr(),
                 "{}: The benchmark comparison could not be computed as some benchmark times are zero. \
                  This could be caused by background interference during the initial calibration phase \
                  of hyperfine, in combination with very fast commands (faster than a few milliseconds). \
@@ -149,8 +156,10 @@ impl<'a> Scheduler<'a> {
                  --shell=none/-N option. If it does not help either, you command is most likely too fast \
                  to be accurately benchmarked by hyperfine.",
                  "Note".bold().red()
-            );
+            )?;
         }
+
+        Ok(())
     }
 
     pub fn final_export(&self) -> Result<()> {

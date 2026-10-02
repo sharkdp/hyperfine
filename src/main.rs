@@ -4,10 +4,12 @@
 )]
 
 use std::env;
+use std::io::{self, Write};
 
 use benchmark::scheduler::Scheduler;
 use cli::get_cli_arguments;
 use command::Commands;
+use error::ConsoleOutputError;
 use export::ExportManager;
 use options::Options;
 
@@ -44,17 +46,29 @@ fn run() -> Result<()> {
 
     let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
     scheduler.run_benchmarks()?;
-    scheduler.print_relative_speed_comparison();
+    scheduler.print_relative_speed_comparison()?;
     scheduler.final_export()?;
 
     Ok(())
+}
+
+fn caused_by_broken_console_pipe(error: &anyhow::Error) -> bool {
+    error
+        .downcast_ref::<ConsoleOutputError>()
+        .is_some_and(|e| e.0.kind() == io::ErrorKind::BrokenPipe)
 }
 
 fn main() {
     match run() {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{} {:#}", "Error:".red(), e);
+            // Exit quietly when a reader stops consuming console output early.
+            if caused_by_broken_console_pipe(&e) {
+                std::process::exit(0);
+            }
+            // The write to stderr can itself fail if stderr is closed; the
+            // error message cannot be shown in that case anyway.
+            let _ = writeln!(io::stderr(), "{} {:#}", "Error:".red(), e);
             std::process::exit(1);
         }
     }
