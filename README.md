@@ -84,7 +84,7 @@ This runs `sleep 0.3`, `sleep 0.5` and `sleep 0.7`.
 For non-numeric parameters, you can also supply a list of values with the `-L`/`--parameter-list`
 option:
 ```
-hyperfine -L compiler gcc,clang '{compiler} -O2 main.cpp'
+hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'
 ```
 
 ### Intermediate shell

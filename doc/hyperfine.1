@@ -184,11 +184,11 @@ Replaces the string '{\fIVAR\fP}' in each command by the current parameter value
 .RS
 Example:
 .RS
-\fBhyperfine\fR \fB\-L\fR compiler gcc,clang '{compiler} \-O2 main.cpp'
+\fBhyperfine\fR \fB\-L\fR compiler g++,clang++ '{compiler} \-O2 main.cpp'
 .RE
 .RE
 .IP
-This performs benchmarks for 'gcc \-O2 main.cpp' and 'clang \-O2 main.cpp'.
+This performs benchmarks for 'g++ \-O2 main.cpp' and 'clang++ \-O2 main.cpp'.
 .IP
 The option can be specified multiple times to run benchmarks for all
 possible parameter combinations.

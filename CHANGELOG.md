@@ -247,7 +247,7 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
   necessarily require numeric arguments.
 
   ``` bash
-  hyperfine --parameter-list compiler "gcc,clang" \
+  hyperfine --parameter-list compiler "g++,clang++" \
       "{compiler} -O2 main.cpp"
   ```
 
