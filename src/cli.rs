@@ -41,6 +41,7 @@ fn build_command() -> Command {
                 .short('w')
                 .value_name("NUM")
                 .action(ArgAction::Set)
+                .value_parser(clap::value_parser!(u64))
                 .help(
                     "Perform NUM warmup runs before the actual benchmark. This can be used \
                      to fill (disk) caches for I/O-heavy programs.",
@@ -52,6 +53,7 @@ fn build_command() -> Command {
                 .short('m')
                 .action(ArgAction::Set)
                 .value_name("NUM")
+                .value_parser(clap::value_parser!(u64).range(1..))
                 .help("Perform at least NUM runs for each command (default: 10)."),
         )
         .arg(
@@ -60,6 +62,7 @@ fn build_command() -> Command {
                 .short('M')
                 .action(ArgAction::Set)
                 .value_name("NUM")
+                .value_parser(clap::value_parser!(u64).range(1..))
                 .help("Perform at most NUM runs for each command. By default, there is no limit."),
         )
         .arg(
@@ -69,6 +72,7 @@ fn build_command() -> Command {
                 .short('r')
                 .action(ArgAction::Set)
                 .value_name("NUM")
+                .value_parser(clap::value_parser!(u64).range(1..))
                 .help("Perform exactly NUM runs for each command. If this option is not specified, \
                        hyperfine automatically determines the number of runs."),
         )

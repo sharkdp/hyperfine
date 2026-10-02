@@ -266,18 +266,12 @@ impl<'a> Benchmark<'a> {
         let count = {
             let min = cmp::max(runs_in_min_time, self.options.run_bounds.min);
 
-            let count = self
-                .options
+            self.options
                 .run_bounds
                 .max
                 .as_ref()
                 .map(|max| cmp::min(min, *max))
-                .unwrap_or(min);
-
-            // The initial timing run above has already been performed, so we can never
-            // end up with fewer than one run (this could happen with '--min-runs 0' for
-            // a command that is slower than the minimum benchmarking time).
-            cmp::max(count, 1)
+                .unwrap_or(min)
         };
 
         let count_remaining = count - 1;

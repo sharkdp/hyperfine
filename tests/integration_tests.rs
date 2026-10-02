@@ -35,22 +35,24 @@ fn one_run_is_supported() {
 
 #[test]
 fn fails_with_zero_runs() {
-    for option in ["--runs=0", "--max-runs=0"] {
+    for option in ["--runs", "--min-runs", "--max-runs"] {
         hyperfine()
             .arg(option)
+            .arg("0")
             .arg("echo dummy benchmark")
             .assert()
-            .failure()
-            .stderr(predicate::str::contains(
-                "At least one run has to be performed",
-            ));
+            .code(2)
+            .stderr(predicate::str::contains(format!(
+                "invalid value '0' for '{option} <NUM>'"
+            )));
     }
 }
 
 #[test]
-fn min_runs_of_zero_still_performs_one_run() {
+fn min_runs_of_one_still_performs_one_run() {
     hyperfine_debug()
-        .arg("--min-runs=0")
+        .arg("--min-runs=1")
+        .arg("--warmup=0")
         .arg("sleep 4")
         .assert()
         .success()
