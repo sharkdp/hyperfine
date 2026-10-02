@@ -4,23 +4,14 @@ This folder contains scripts that can be used in combination with hyperfine's `-
 
 ```bash
 hyperfine 'sleep 0.020' 'sleep 0.021' 'sleep 0.022' --export-json sleep.json
-./plot_whisker.py sleep.json
+uv run plot_whisker.py sleep.json
 ```
 
 ### Prerequisites
 
-To make these scripts work, you will need `numpy`, `matplotlib` and `scipy`.
+Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) and run the
+commands above from this directory.
 
-If you have a Python package manager that understands [PEP-723](https://peps.python.org/pep-0723/)
-inline script requirements like [`uv`](https://github.com/astral-sh/uv) or [`pipx`](https://github.com/pypa/pipx),
-you can directly run the scripts using
-
-```bash
-uv run plot_whisker.py sleep.json
-```
-
-Otherwise, install the dependencies via your system package manager or using `pip`:
-
-```bash
-pip install numpy matplotlib scipy  # pip3, if you are using python3
-```
+The scripts declare their dependencies using [PEP 723](https://peps.python.org/pep-0723/)
+inline script metadata. `uv run` automatically installs these dependencies in an
+isolated environment before running the script.
