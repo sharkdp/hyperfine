@@ -105,7 +105,7 @@ Perform exactly \fINUM\fP runs for each command. If this option is not specified
 \fB\-s\fR, \fB\-\-setup\fR \fICMD...\fP
 .IP
 Execute \fICMD\fP once before each set of timing runs. This is useful
-for compiling your software or with the provided parameters, or to do any
+for compiling your software with the provided parameters, or to do any
 other work that should happen once before a series of benchmark runs,
 not every time as would happen with the \fB\-\-prepare\fR option.
 .HP
@@ -129,8 +129,8 @@ run after the corresponding benchmark command.
 .IP
 Execute \fICMD\fP after the completion of all benchmarking runs for each individual
 command to be benchmarked. This is useful if the commands to be benchmarked
-produce artifacts that need to be cleaned up. It only runs once a series of
-benchmark runs, as opposed to \fB\-\-conclude\fR option which runs after
+produce artifacts that need to be cleaned up. It only runs once per series of
+benchmark runs, as opposed to the \fB\-\-conclude\fR option which runs after
 every run.
 .HP
 \fB\-P\fR, \fB\-\-parameter\-scan\fR \fIVAR\fP \fIMIN\fP \fIMAX\fP
@@ -148,7 +148,7 @@ Example:
 This performs benchmarks for 'make \-j 1', 'make \-j 2', ..., 'make \-j 8'.
 .IP
 To have the value increase following different patterns, use shell
-arithmetics.
+arithmetic.
 .IP
 .RS
 Example:
@@ -309,9 +309,9 @@ Read from \fI\,/dev/null\/\fP (the default).
 Read the input from the given file.
 .RE
 .HP
-\fB\-n\fR, \fB\-\-command\-name\fR \fiNAME\fP
+\fB\-n\fR, \fB\-\-command\-name\fR \fINAME\fP
 .IP
-Give a meaningful \fiNAME\fP to a command. This can be specified multiple times
+Give a meaningful \fINAME\fP to a command. This can be specified multiple times
 if several commands are benchmarked.
 .HP
 \fB\-h\fR, \fB\-\-help\fR
@@ -362,7 +362,6 @@ Demonstrate when each of \fB\-\-setup\fR, \fB\-\-prepare\fR, \fB\-\-conclude\fR,
 	\fB\-\-cleanup\fR 'echo cleanup n={n}' \\
 	'echo command n={n}'
 .fi
-.RE
 .RE
 .SH AUTHOR
 .LP

@@ -1,4 +1,4 @@
-This folder contains scripts that can be used in combination with hyperfines `--export-json` option.
+This folder contains scripts that can be used in combination with hyperfine's `--export-json` option.
 
 ### Example:
 
@@ -7,7 +7,7 @@ hyperfine 'sleep 0.020' 'sleep 0.021' 'sleep 0.022' --export-json sleep.json
 ./plot_whisker.py sleep.json
 ```
 
-### Pre-requisites
+### Prerequisites
 
 To make these scripts work, you will need `numpy`, `matplotlib` and `scipy`.
 

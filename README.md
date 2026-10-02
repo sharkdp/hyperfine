@@ -334,7 +334,7 @@ The name *hyperfine* was chosen in reference to the hyperfine levels of caesium 
 
 ## Citing hyperfine
 
-Thank you for considering to cite hyperfine in your research work. Please see the information
+Thank you for considering citing hyperfine in your research work. Please see the information
 in the sidebar on how to properly cite hyperfine.
 
 ## License
