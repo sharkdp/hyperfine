@@ -275,22 +275,15 @@ impl Default for Options {
 impl Options {
     pub fn from_cli_arguments<'a>(matches: &ArgMatches) -> Result<Self, OptionsError<'a>> {
         let mut options = Self::default();
-        let param_to_u64 = |param| {
-            matches
-                .get_one::<String>(param)
-                .map(|n| {
-                    n.parse::<u64>()
-                        .map_err(|e| OptionsError::IntParsingError(param, e))
-                })
-                .transpose()
-        };
+        options.warmup_count = matches
+            .get_one::<u64>("warmup")
+            .copied()
+            .unwrap_or(options.warmup_count);
 
-        options.warmup_count = param_to_u64("warmup")?.unwrap_or(options.warmup_count);
+        let mut min_runs = matches.get_one::<u64>("min-runs").copied();
+        let mut max_runs = matches.get_one::<u64>("max-runs").copied();
 
-        let mut min_runs = param_to_u64("min-runs")?;
-        let mut max_runs = param_to_u64("max-runs")?;
-
-        if let Some(runs) = param_to_u64("runs")? {
+        if let Some(&runs) = matches.get_one::<u64>("runs") {
             min_runs = Some(runs);
             max_runs = Some(runs);
         }

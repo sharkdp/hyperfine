@@ -75,6 +75,32 @@ fn exits_quietly_when_stdout_is_closed() {
 }
 
 #[test]
+fn fails_with_zero_runs() {
+    for option in ["--runs", "--min-runs", "--max-runs"] {
+        hyperfine()
+            .arg(option)
+            .arg("0")
+            .arg("echo dummy benchmark")
+            .assert()
+            .code(2)
+            .stderr(predicate::str::contains(format!(
+                "invalid value '0' for '{option} <NUM>'"
+            )));
+    }
+}
+
+#[test]
+fn min_runs_of_one_still_performs_one_run() {
+    hyperfine_debug()
+        .arg("--min-runs=1")
+        .arg("--warmup=0")
+        .arg("sleep 4")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Time (abs ≡)"));
+}
+
+#[test]
 fn can_run_commands_without_a_shell() {
     hyperfine()
         .arg("--runs=1")
