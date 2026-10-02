@@ -8,6 +8,7 @@ use std::io::{self, Write};
 use crate::command::{Command, Commands};
 use crate::export::ExportManager;
 use crate::options::{ExecutorKind, Options, OutputStyleOption, SortOrder};
+use crate::output::console_writeln;
 
 use anyhow::Result;
 
@@ -80,15 +81,16 @@ impl<'a> Scheduler<'a> {
             reference,
             self.options.sort_order_speed_comparison,
         ) {
+            let mut stdout = io::stdout().lock();
             match self.options.sort_order_speed_comparison {
                 SortOrder::MeanTime => {
-                    writeln!(io::stdout(), "{}", "Summary".bold())?;
+                    console_writeln!(stdout, "{}", "Summary".bold())?;
 
                     let reference = annotated_results.iter().find(|r| r.is_reference).unwrap();
                     let others = annotated_results.iter().filter(|r| !r.is_reference);
 
-                    writeln!(
-                        io::stdout(),
+                    console_writeln!(
+                        stdout,
                         "  {} ran",
                         reference.result.command_with_unused_parameters.cyan()
                     )?;
@@ -116,8 +118,8 @@ impl<'a> Scheduler<'a> {
                                 stddev
                             ),
                         };
-                        writeln!(
-                            io::stdout(),
+                        console_writeln!(
+                            stdout,
                             "{} {}",
                             comparator,
                             item.result.command_with_unused_parameters.magenta()
@@ -125,11 +127,11 @@ impl<'a> Scheduler<'a> {
                     }
                 }
                 SortOrder::Command => {
-                    writeln!(io::stdout(), "{}", "Relative speed comparison".bold())?;
+                    console_writeln!(stdout, "{}", "Relative speed comparison".bold())?;
 
                     for item in annotated_results {
-                        writeln!(
-                            io::stdout(),
+                        console_writeln!(
+                            stdout,
                             "  {}{}  {}",
                             format!("{:10.2}", item.relative_speed).bold().green(),
                             if item.is_reference {
@@ -145,7 +147,7 @@ impl<'a> Scheduler<'a> {
                 }
             }
         } else {
-            writeln!(
+            console_writeln!(
                 io::stderr(),
                 "{}: The benchmark comparison could not be computed as some benchmark times are zero. \
                  This could be caused by background interference during the initial calibration phase \

@@ -13,6 +13,7 @@ use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
 use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use crate::output::console_writeln;
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
@@ -141,7 +142,7 @@ impl<'a> Benchmark<'a> {
     /// Run the benchmark for a single command
     pub fn run(&self) -> Result<BenchmarkResult> {
         if self.options.output_style != OutputStyleOption::Disabled {
-            writeln!(
+            console_writeln!(
                 io::stdout(),
                 "{}{}: {}",
                 "Benchmark ".bold(),
@@ -360,9 +361,10 @@ impl<'a> Benchmark<'a> {
         let system_str = format_duration(system_mean, Some(time_unit));
 
         if self.options.output_style != OutputStyleOption::Disabled {
+            let mut stdout = io::stdout().lock();
             if times_real.len() == 1 {
-                writeln!(
-                    io::stdout(),
+                console_writeln!(
+                    stdout,
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
                     "abs".green().bold(),
                     mean_str.green().bold(),
@@ -373,8 +375,8 @@ impl<'a> Benchmark<'a> {
             } else {
                 let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
 
-                writeln!(
-                    io::stdout(),
+                console_writeln!(
+                    stdout,
                     "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
                     "mean".green().bold(),
                     "σ".green(),
@@ -384,8 +386,8 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 )?;
 
-                writeln!(
-                    io::stdout(),
+                console_writeln!(
+                    stdout,
                     "  Range ({} … {}):   {:>8} … {:>8}    {}",
                     "min".cyan(),
                     "max".purple(),
@@ -435,15 +437,16 @@ impl<'a> Benchmark<'a> {
         }
 
         if !warnings.is_empty() {
-            writeln!(io::stderr(), " ")?;
+            let mut stderr = io::stderr().lock();
+            console_writeln!(stderr, " ")?;
 
             for warning in &warnings {
-                writeln!(io::stderr(), "  {}: {}", "Warning".yellow(), warning)?;
+                console_writeln!(stderr, "  {}: {}", "Warning".yellow(), warning)?;
             }
         }
 
         if self.options.output_style != OutputStyleOption::Disabled {
-            writeln!(io::stdout(), " ")?;
+            console_writeln!(io::stdout(), " ")?;
         }
 
         self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;

@@ -18,6 +18,7 @@ use self::orgmode::OrgmodeExporter;
 
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
+use crate::output::console_writeln;
 use crate::util::units::Unit;
 
 use anyhow::{Context, Result};
@@ -144,8 +145,9 @@ impl ExportManager {
                 }
                 ExportTarget::Stdout => {
                     if !intermediate {
-                        writeln!(io::stdout())?;
-                        writeln!(io::stdout(), "{}", String::from_utf8(content()?).unwrap())?;
+                        let mut stdout = io::stdout().lock();
+                        console_writeln!(stdout)?;
+                        console_writeln!(stdout, "{}", String::from_utf8(content()?).unwrap())?;
                     }
                 }
             }
