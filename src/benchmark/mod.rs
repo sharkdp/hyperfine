@@ -61,11 +61,12 @@ impl<'a> Benchmark<'a> {
         command: &Command<'_>,
         error_output: &'static str,
         output_policy: &CommandOutputPolicy,
+        iteration: executor::BenchmarkIteration,
     ) -> Result<TimingResult> {
         self.executor
             .run_command_and_measure(
                 command,
-                executor::BenchmarkIteration::NonBenchmarkRun,
+                iteration,
                 Some(CmdFailureAction::RaiseError),
                 output_policy,
             )
@@ -89,7 +90,14 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy))
+            .map(|cmd| {
+                self.run_intermediate_command(
+                    &cmd,
+                    error_output,
+                    output_policy,
+                    executor::BenchmarkIteration::NonBenchmarkRun,
+                )
+            })
             .transpose()?
             .unwrap_or_default())
     }
@@ -110,7 +118,14 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy))
+            .map(|cmd| {
+                self.run_intermediate_command(
+                    &cmd,
+                    error_output,
+                    output_policy,
+                    executor::BenchmarkIteration::NonBenchmarkRun,
+                )
+            })
             .transpose()?
             .unwrap_or_default())
     }
@@ -120,11 +135,12 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         output_policy: &CommandOutputPolicy,
+        iteration: executor::BenchmarkIteration,
     ) -> Result<TimingResult> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output, output_policy)
+        self.run_intermediate_command(command, error_output, output_policy, iteration)
     }
 
     /// Run the command specified by `--conclude`.
@@ -132,11 +148,12 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         output_policy: &CommandOutputPolicy,
+        iteration: executor::BenchmarkIteration,
     ) -> Result<TimingResult> {
         let error_output = "The conclusion command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output, output_policy)
+        self.run_intermediate_command(command, error_output, output_policy, iteration)
     }
 
     /// Run the benchmark for a single command
@@ -173,10 +190,10 @@ impl<'a> Benchmark<'a> {
             )
         });
 
-        let run_preparation_command = || {
+        let run_preparation_command = |iteration: BenchmarkIteration| {
             preparation_command
                 .as_ref()
-                .map(|cmd| self.run_preparation_command(cmd, output_policy))
+                .map(|cmd| self.run_preparation_command(cmd, output_policy, iteration))
                 .transpose()
         };
 
@@ -192,10 +209,10 @@ impl<'a> Benchmark<'a> {
                 self.command.get_parameters().iter().cloned(),
             )
         });
-        let run_conclusion_command = || {
+        let run_conclusion_command = |iteration: BenchmarkIteration| {
             conclusion_command
                 .as_ref()
-                .map(|cmd| self.run_conclusion_command(cmd, output_policy))
+                .map(|cmd| self.run_conclusion_command(cmd, output_policy, iteration))
                 .transpose()
         };
 
@@ -214,14 +231,14 @@ impl<'a> Benchmark<'a> {
             };
 
             for i in 0..self.options.warmup_count {
-                let _ = run_preparation_command()?;
+                let _ = run_preparation_command(BenchmarkIteration::Warmup(i))?;
                 let _ = self.executor.run_command_and_measure(
                     self.command,
                     BenchmarkIteration::Warmup(i),
                     None,
                     output_policy,
                 )?;
-                let _ = run_conclusion_command()?;
+                let _ = run_conclusion_command(BenchmarkIteration::Warmup(i))?;
                 if let Some(bar) = progress_bar.as_ref() {
                     bar.inc(1)
                 }
@@ -242,7 +259,7 @@ impl<'a> Benchmark<'a> {
             None
         };
 
-        let preparation_result = run_preparation_command()?;
+        let preparation_result = run_preparation_command(BenchmarkIteration::Benchmark(0))?;
         let preparation_overhead =
             preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
 
@@ -255,7 +272,7 @@ impl<'a> Benchmark<'a> {
         )?;
         let success = status.success();
 
-        let conclusion_result = run_conclusion_command()?;
+        let conclusion_result = run_conclusion_command(BenchmarkIteration::Benchmark(0))?;
         let conclusion_overhead =
             conclusion_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
 
@@ -298,7 +315,7 @@ impl<'a> Benchmark<'a> {
 
         // Gather statistics (perform the actual benchmark)
         for i in 0..count_remaining {
-            run_preparation_command()?;
+            run_preparation_command(BenchmarkIteration::Benchmark(i + 1))?;
 
             let msg = {
                 let mean = format_duration(mean(&times_real), self.options.time_unit);
@@ -329,7 +346,7 @@ impl<'a> Benchmark<'a> {
                 bar.inc(1)
             }
 
-            run_conclusion_command()?;
+            run_conclusion_command(BenchmarkIteration::Benchmark(i + 1))?;
         }
 
         if let Some(bar) = progress_bar.as_ref() {
