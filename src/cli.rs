@@ -182,7 +182,7 @@ fn build_command() -> Command {
                 .requires("parameter-scan")
                 .help(
                     "This argument requires --parameter-scan to be specified as well. \
-                     Traverse the range MIN..MAX in steps of DELTA.\n\n  \
+                     Traverse the range MIN..MAX in steps of DELTA, which must be positive.\n\n  \
                      Example:  hyperfine -P delay 0.3 0.7 -D 0.2 'sleep {delay}'\n\n\
                      This performs benchmarks for 'sleep 0.3', 'sleep 0.5' and 'sleep 0.7'.",
                 ),
