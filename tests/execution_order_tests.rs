@@ -328,6 +328,28 @@ fn setup_prepare_conclude_cleanup_combined() {
 }
 
 #[test]
+fn prepare_and_conclude_see_the_current_hyperfine_iteration() {
+    ExecutionOrderTest::new()
+        .arg("--warmup=1")
+        .arg("--runs=2")
+        .prepare("prep=${HYPERFINE_ITERATION}")
+        .command("main=${HYPERFINE_ITERATION}")
+        .conclude("conc=${HYPERFINE_ITERATION}")
+        // warmup
+        .expect_output("prep=warmup-0")
+        .expect_output("main=warmup-0")
+        .expect_output("conc=warmup-0")
+        // benchmark
+        .expect_output("prep=0")
+        .expect_output("main=0")
+        .expect_output("conc=0")
+        .expect_output("prep=1")
+        .expect_output("main=1")
+        .expect_output("conc=1")
+        .run();
+}
+
+#[test]
 fn single_parameter_value() {
     ExecutionOrderTest::new()
         .arg("--runs=2")
