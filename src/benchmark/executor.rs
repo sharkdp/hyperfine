@@ -16,6 +16,35 @@ use super::timing_result::TimingResult;
 use anyhow::{bail, Context, Result};
 use statistical::mean;
 
+#[cfg(windows)]
+fn normalize_relative_command_path_for_cmd(command_line: &str) -> String {
+    let executable_end = command_line
+        .find(char::is_whitespace)
+        .unwrap_or(command_line.len());
+    format!(
+        "{}{}",
+        command_line[..executable_end].replace('/', "\\"),
+        &command_line[executable_end..]
+    )
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::normalize_relative_command_path_for_cmd;
+
+    #[test]
+    fn normalizes_only_the_relative_executable_path() {
+        assert_eq!(
+            normalize_relative_command_path_for_cmd("../target/debug/tool.exe --output value/a"),
+            "..\\target\\debug\\tool.exe --output value/a"
+        );
+        assert_eq!(
+            normalize_relative_command_path_for_cmd("./tool.exe \"input file.txt\""),
+            ".\\tool.exe \"input file.txt\""
+        );
+    }
+}
+
 pub enum BenchmarkIteration {
     NonBenchmarkRun,
     Warmup(u64),
@@ -193,13 +222,21 @@ impl Executor for ShellExecutor<'_> {
         let on_windows_cmd = cfg!(windows) && *self.shell == Shell::Default("cmd.exe");
         let mut command_builder = self.shell.command();
         command_builder.arg(if on_windows_cmd { "/C" } else { "-c" });
+        let command_line = command.get_command_line();
 
         // Windows needs special treatment for its behavior on parsing cmd arguments
         if on_windows_cmd {
             #[cfg(windows)]
-            command_builder.raw_arg(command.get_command_line());
+            if command_line.starts_with("./") || command_line.starts_with("../") {
+                // `cmd.exe /C` treats the leading `.` as a command when passed
+                // verbatim. Normalize only the executable path while retaining
+                // cmd.exe's existing raw quoting semantics for the full command.
+                command_builder.raw_arg(normalize_relative_command_path_for_cmd(&command_line));
+            } else {
+                command_builder.raw_arg(&command_line);
+            }
         } else {
-            command_builder.arg(command.get_command_line());
+            command_builder.arg(&command_line);
         }
 
         let mut result = run_command_and_measure_common(
