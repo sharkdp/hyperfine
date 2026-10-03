@@ -24,7 +24,19 @@ impl MarkupExporter for MarkdownExporter {
     }
 
     fn command(&self, cmd: &str) -> String {
-        format!("`{cmd}`")
+        let longest_backtick_run = cmd
+            .split(|character| character != '`')
+            .map(str::len)
+            .max()
+            .unwrap_or(0);
+
+        if longest_backtick_run == 0 {
+            format!("`{cmd}`")
+        } else {
+            // Use a longer delimiter and keep command backticks separate from it.
+            let delimiter = "`".repeat(longest_backtick_run + 1);
+            format!("{delimiter} {cmd} {delimiter}")
+        }
     }
 }
 
@@ -43,4 +55,20 @@ fn test_markdown_formatter_table_divider() {
 
     let divider = formatter.table_divider(&[Alignment::Left, Alignment::Right, Alignment::Left]);
     assert_eq!(divider, "|:---|---:|:---|\n");
+}
+
+#[test]
+fn test_markdown_formatter_command_with_backticks() {
+    let formatter = MarkdownExporter::default();
+
+    for (command, expected) in [
+        ("echo `uname`", "`` echo `uname` ``"),
+        ("echo ``quoted``", "``` echo ``quoted`` ```"),
+        ("`` `quoted` ``", "``` `` `quoted` `` ```"),
+        ("`", "`` ` ``"),
+        ("echo ```", "```` echo ``` ````"),
+        (" echo `uname` ", "``  echo `uname`  ``"),
+    ] {
+        assert_eq!(formatter.command(command), expected, "{command:?}");
+    }
 }
