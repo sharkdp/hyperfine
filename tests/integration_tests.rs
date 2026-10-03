@@ -732,6 +732,18 @@ fn exports_intermediate_results_to_file() {
 }
 
 #[test]
+fn markdown_export_preserves_backticks_and_pipes_in_command_names() {
+    hyperfine_debug()
+        .arg("--style=none")
+        .arg("--export-markdown=-")
+        .arg("--command-name=echo `uname` | cat")
+        .arg("sleep 1")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("| `` echo `uname` \\| cat `` |"));
+}
+
+#[test]
 fn unused_parameters_are_shown_in_benchmark_name() {
     hyperfine()
         .arg("--runs=2")
