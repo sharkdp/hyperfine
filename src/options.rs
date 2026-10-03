@@ -395,7 +395,9 @@ impl Options {
             Some(_) => unreachable!("Unknown sort order"),
         };
 
-        options.executor_kind = if matches.get_flag("no-shell") {
+        options.executor_kind = if matches.contains_id("command-args")
+            || matches.get_flag("no-shell")
+        {
             ExecutorKind::Raw
         } else {
             match (
