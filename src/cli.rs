@@ -1,8 +1,8 @@
 use std::ffi::OsString;
 
 use clap::{
-    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
-    ValueHint,
+    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgGroup, ArgMatches,
+    Command, ValueHint,
 };
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
@@ -30,10 +30,32 @@ fn build_command() -> Command {
                        The latter is only available if the shell is not explicitly disabled via \
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
-                .required(true)
                 .action(ArgAction::Append)
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .arg(
+            Arg::new("command-args")
+                .help("The executable and arguments to benchmark directly. Everything after '--' \
+                       is treated as one command and passed to the executable without an \
+                       intermediate shell, preserving argument boundaries.")
+                .last(true)
+                .num_args(1..)
+                .conflicts_with_all([
+                    "shell",
+                    "no-shell",
+                    "debug-mode",
+                    "parameter-scan",
+                    "parameter-step-size",
+                    "parameter-list",
+                ])
+                .value_hint(ValueHint::CommandWithArguments)
+                .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .group(
+            ArgGroup::new("benchmark-command")
+                .args(["command", "command-args"])
+                .required(true),
         )
         .arg(
             Arg::new("warmup")

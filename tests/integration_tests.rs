@@ -113,6 +113,37 @@ fn can_run_commands_without_a_shell() {
 }
 
 #[test]
+fn double_dash_preserves_command_arguments() {
+    let hyperfine_executable = assert_cmd::cargo::cargo_bin!("hyperfine");
+    let value_with_spaces_and_quotes = "value with spaces and 'quotes'";
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--show-output")
+        .arg("--ignore-failure")
+        .arg("--")
+        .arg(hyperfine_executable)
+        .arg("--time-unit")
+        .arg(value_with_spaces_and_quotes)
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(value_with_spaces_and_quotes));
+}
+
+#[test]
+fn positional_arguments_remain_separate_benchmarks() {
+    hyperfine_debug()
+        .arg("sleep 0.01")
+        .arg("sleep 0.02")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Benchmark 1: sleep 0.01")
+                .and(predicate::str::contains("Benchmark 2: sleep 0.02")),
+        );
+}
+
+#[test]
 fn fails_with_wrong_number_of_command_name_arguments() {
     hyperfine()
         .arg("--command-name=a")
