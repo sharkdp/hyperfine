@@ -241,6 +241,14 @@ fn build_command() -> Command {
                        a comma-separated list of exit codes to ignore (e.g., --ignore-failure=1,2)."),
         )
         .arg(
+            Arg::new("filter-failed")
+                .long("filter-failed")
+                .action(ArgAction::SetTrue)
+                .help("Exclude results with non-zero exit codes from the relative speed \
+                       comparison and from exported results. This is useful when using \
+                       '--ignore-failure' with parameter scans where some combinations fail."),
+        )
+        .arg(
             Arg::new("style")
                 .long("style")
                 .action(ArgAction::Set)
