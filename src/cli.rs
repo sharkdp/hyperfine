@@ -30,7 +30,7 @@ fn build_command() -> Command {
                        The latter is only available if the shell is not explicitly disabled via \
                        '--shell=none'. If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
-                .required(true)
+                .required_unless_present("import-json")
                 .action(ArgAction::Append)
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
@@ -328,6 +328,18 @@ fn build_command() -> Command {
                 .value_hint(ValueHint::FilePath)
                 .help("Export the timing summary statistics as an Emacs org-mode table to the given FILE. \
                        The output time unit can be changed using the --time-unit option."),
+        )
+        .arg(
+            Arg::new("import-json")
+                .long("import-json")
+                .action(ArgAction::Append)
+                .num_args(1)
+                .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
+                .help("Load benchmark results from a JSON file previously written by --export-json. \
+                       The imported benchmarks are not re-run, but appear alongside any commands given \
+                       on the command line in the relative speed comparison and in all export formats. \
+                       This option can be specified multiple times to import several files."),
         )
         .arg(
             Arg::new("show-output")

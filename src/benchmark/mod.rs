@@ -35,6 +35,7 @@ pub const MIN_EXECUTION_TIME: Second = 5e-3;
 
 pub struct Benchmark<'a> {
     number: usize,
+    display_number: usize,
     command: &'a Command<'a>,
     options: &'a Options,
     executor: &'a dyn Executor,
@@ -49,10 +50,19 @@ impl<'a> Benchmark<'a> {
     ) -> Self {
         Benchmark {
             number,
+            display_number: number,
             command,
             options,
             executor,
         }
+    }
+
+    /// Override the integer used for the `Benchmark N:` header. This is used
+    /// when imported benchmarks are listed before live ones, so the live ones
+    /// continue counting from the imported tail rather than restarting at 1.
+    pub fn with_display_number(mut self, display_number: usize) -> Self {
+        self.display_number = display_number;
+        self
     }
 
     /// Run setup, cleanup, or preparation commands
@@ -146,7 +156,7 @@ impl<'a> Benchmark<'a> {
                 io::stdout(),
                 "{}{}: {}",
                 "Benchmark ".bold(),
-                (self.number + 1).to_string().bold(),
+                (self.display_number + 1).to_string().bold(),
                 self.command.get_name_with_unused_parameters(),
             )?;
         }

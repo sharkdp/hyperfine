@@ -772,6 +772,131 @@ fn speed_comparison_sort_order() {
         ));
 }
 
+#[test]
+fn import_json_brings_saved_runs_into_comparison() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let saved = tempdir.path().join("saved.json");
+
+    // Save a run for `sleep 1.0` and `sleep 2.0`.
+    hyperfine_debug()
+        .arg("--style=none")
+        .arg("--export-json")
+        .arg(&saved)
+        .arg("sleep 1.0")
+        .arg("sleep 2.0")
+        .assert()
+        .success();
+
+    // Import that file alongside a fresh run for `sleep 1.5`. The imported
+    // entries should appear in the headers and in the relative speed summary
+    // without being re-executed.
+    hyperfine_debug()
+        .arg("--style=basic")
+        .arg("--import-json")
+        .arg(&saved)
+        .arg("sleep 1.5")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Benchmark 1: sleep 1.0 (imported)")
+                .and(predicate::str::contains(
+                    "Benchmark 2: sleep 2.0 (imported)",
+                ))
+                .and(predicate::str::contains("Benchmark 3: sleep 1.5"))
+                .and(predicate::str::contains(
+                    "1.50 ± 0.00 times faster than sleep 1.5",
+                ))
+                .and(predicate::str::contains(
+                    "2.00 ± 0.00 times faster than sleep 2.0",
+                )),
+        );
+}
+
+#[test]
+fn import_json_works_without_any_command() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let saved = tempdir.path().join("saved.json");
+
+    hyperfine_debug()
+        .arg("--style=none")
+        .arg("--export-json")
+        .arg(&saved)
+        .arg("sleep 1.0")
+        .arg("sleep 2.0")
+        .assert()
+        .success();
+
+    hyperfine_debug()
+        .arg("--style=basic")
+        .arg("--import-json")
+        .arg(&saved)
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Benchmark 1: sleep 1.0 (imported)")
+                .and(predicate::str::contains(
+                    "Benchmark 2: sleep 2.0 (imported)",
+                ))
+                .and(predicate::str::contains(
+                    "2.00 ± 0.00 times faster than sleep 2.0",
+                )),
+        );
+}
+
+#[test]
+fn import_json_can_be_specified_multiple_times() {
+    use tempfile::tempdir;
+
+    let tempdir = tempdir().unwrap();
+    let first = tempdir.path().join("first.json");
+    let second = tempdir.path().join("second.json");
+
+    hyperfine_debug()
+        .arg("--style=none")
+        .arg("--export-json")
+        .arg(&first)
+        .arg("sleep 1.0")
+        .assert()
+        .success();
+
+    hyperfine_debug()
+        .arg("--style=none")
+        .arg("--export-json")
+        .arg(&second)
+        .arg("sleep 2.0")
+        .assert()
+        .success();
+
+    hyperfine_debug()
+        .arg("--style=basic")
+        .arg("--import-json")
+        .arg(&first)
+        .arg("--import-json")
+        .arg(&second)
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Benchmark 1: sleep 1.0 (imported)").and(
+                predicate::str::contains("Benchmark 2: sleep 2.0 (imported)"),
+            ),
+        );
+}
+
+#[test]
+fn import_json_fails_for_missing_file() {
+    hyperfine()
+        .arg("--import-json")
+        .arg("nonexistent_b5d9574198b7e4b12a71fa4747c0a577.json")
+        .arg("echo a")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Could not open import file"));
+}
+
 #[cfg(windows)]
 #[test]
 fn windows_quote_args() {
