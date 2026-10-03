@@ -10,12 +10,22 @@ const TICK_SETTINGS: (&str, u64) = ("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ ", 80);
 const TICK_SETTINGS: (&str, u64) = (r"+-x| ", 200);
 
 /// Return a pre-configured progress bar
-pub fn get_progress_bar(length: u64, msg: &str, option: OutputStyleOption) -> ProgressBar {
+pub fn get_progress_bar(
+    length: u64,
+    msg: &str,
+    option: OutputStyleOption,
+    show_elapsed: bool,
+) -> ProgressBar {
+    let template_str = match show_elapsed {
+        true => " {spinner} {msg:<30} {wide_bar} ET {elapsed_precise} ETA {eta_precise} ",
+        false => " {spinner} {msg:<30} {wide_bar} ETA {eta_precise} ",
+    };
+
     let progressbar_style = match option {
         OutputStyleOption::Basic | OutputStyleOption::Color => ProgressStyle::default_bar(),
         _ => ProgressStyle::default_spinner()
             .tick_chars(TICK_SETTINGS.0)
-            .template(" {spinner} {msg:<30} {wide_bar} ETA {eta_precise} ")
+            .template(template_str)
             .expect("no template error"),
     };
 
