@@ -732,6 +732,49 @@ fn exports_intermediate_results_to_file() {
 }
 
 #[test]
+fn invalid_command_options_preserve_export_files() {
+    use tempfile::tempdir;
+
+    for (option, values) in [
+        ("--prepare", ["echo first", "echo second"]),
+        ("--conclude", ["echo first", "echo second"]),
+        ("--output", ["null", "pipe"]),
+    ] {
+        let directory = tempdir().unwrap();
+        let existing_export = directory.path().join("previous.json");
+        let new_export = directory.path().join("new.csv");
+        let previous_results =
+            b"{\"results\":[{\"command\":\"previous benchmark\",\"mean\":1.0}]}\n";
+        std::fs::write(&existing_export, previous_results).unwrap();
+
+        hyperfine()
+            .arg("--runs=1")
+            .arg("--export-json")
+            .arg(&existing_export)
+            .arg("--export-csv")
+            .arg(&new_export)
+            .args([option, values[0], option, values[1]])
+            .arg("echo benchmark")
+            .assert()
+            .failure()
+            .stderr(predicate::str::contains(format!(
+                "The '{option}' option has to be provided just once or N times"
+            )));
+
+        assert_eq!(
+            std::fs::read(&existing_export).unwrap(),
+            previous_results,
+            "{option} validation must preserve previous results"
+        );
+        assert!(
+            !new_export.exists(),
+            "{} validation must not create export files",
+            option
+        );
+    }
+}
+
+#[test]
 fn unused_parameters_are_shown_in_benchmark_name() {
     hyperfine()
         .arg("--runs=2")
