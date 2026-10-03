@@ -47,6 +47,10 @@ impl<T: Numeric> RangeStep<T> {
             return Err(ParameterScanError::ZeroStep);
         }
 
+        if step < T::from(0) {
+            return Err(ParameterScanError::NegativeStep);
+        }
+
         const MAX_PARAMETERS: usize = 100_000;
         match range_step_size_hint(start, end, step) {
             (_, Some(size)) if size <= MAX_PARAMETERS => Ok(Self {
@@ -118,6 +122,36 @@ mod tests {
         assert_eq!(param_range.len(), 11);
         assert_eq!(param_range[0], Decimal::from(0));
         assert_eq!(param_range[10], Decimal::from(1));
+    }
+
+    #[test]
+    fn test_negative_integer_step() {
+        for step in [-2, -3, i32::MIN, -1] {
+            for end in [0, 1, 10] {
+                let result = RangeStep::new(0, end, step);
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "Parameter step size must be positive"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_negative_decimal_step() {
+        for step in ["-2.0", "-0.1"] {
+            for end in [0, 1, 10] {
+                let result = RangeStep::new(
+                    Decimal::ZERO,
+                    Decimal::from(end),
+                    Decimal::from_str(step).unwrap(),
+                );
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "Parameter step size must be positive"
+                );
+            }
+        }
     }
 
     #[test]
