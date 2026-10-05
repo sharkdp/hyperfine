@@ -44,13 +44,13 @@ impl Exporter for CsvExporter {
         for res in results {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
-                res.mean_wall_clock_time(),
-                res.measurements.stddev().unwrap_or_default(),
-                res.measurements.median(),
-                res.measurements.time_user_mean(),
-                res.measurements.time_system_mean(),
-                res.measurements.min(),
-                res.measurements.max(),
+                res.mean(),
+                res.stddev().unwrap_or(0.0),
+                res.median(),
+                res.user,
+                res.system,
+                res.min(),
+                res.max(),
             ] {
                 fields.push(Cow::Owned(
                     f.format_with_precision(CSV_UNIT, CSV_PRECISION)
@@ -67,6 +67,9 @@ impl Exporter for CsvExporter {
     }
 }
 
+#[cfg(test)]
+use crate::benchmark::benchmark_result::BenchmarkRun;
+
 #[test]
 fn test_csv() {
     use crate::benchmark::benchmark_result::Parameter;
@@ -82,29 +85,21 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_a"),
             command_with_unused_parameters: String::from("command_a"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(7.0),
-                    time_user: Time::new::<second>(7.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 3.0,
+            system: 4.0,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 7.0,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(8.0),
-                    time_user: Time::new::<second>(8.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 8.0,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(12.0),
-                    time_user: Time::new::<second>(12.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 12.0,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert(
@@ -127,29 +122,21 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_b"),
             command_with_unused_parameters: String::from("command_b"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(17.0),
-                    time_user: Time::new::<second>(17.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 13.0,
+            system: 14.0,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 17.0,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(18.0),
-                    time_user: Time::new::<second>(18.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 18.0,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(19.0),
-                    time_user: Time::new::<second>(19.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 19.0,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert(
@@ -180,7 +167,7 @@ fn test_csv() {
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,9.000000,2.645751,8.000000,9.000000,0.000000,7.000000,12.000000,two,one
-    command_b,18.000000,1.000000,18.000000,18.000000,0.000000,17.000000,19.000000,seven,one
+    command_a,9,2.6457513110645907,8,3,4,7,12,two,one
+    command_b,18,1,18,13,14,17,19,seven,one
     "#);
 }

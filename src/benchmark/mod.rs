@@ -8,6 +8,7 @@ use std::cmp;
 use std::io::{self, Write};
 use std::time::Instant;
 
+use crate::benchmark::benchmark_result::BenchmarkRun;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{
@@ -26,6 +27,7 @@ use measurement::{Measurement, Measurements};
 
 use anyhow::{anyhow, Result};
 use colored::*;
+use statistical::{mean, standard_deviation};
 
 use self::executor::Executor;
 
@@ -369,11 +371,15 @@ impl<'a> Benchmark<'a> {
         }
 
         // Compute statistical quantities
-        let t_num = measurements.len();
-        let t_mean = measurements.time_wall_clock_mean();
-        let t_stddev = measurements.stddev();
-        let t_min = measurements.min();
-        let t_max = measurements.max();
+        let t_num = times_real.len();
+        let t_mean = mean(&times_real);
+        let t_stddev = if times_real.len() > 1 {
+            Some(standard_deviation(&times_real, Some(t_mean)))
+        } else {
+            None
+        };
+        let t_min = min(&times_real);
+        let t_max = max(&times_real);
 
         let user_mean = measurements.time_user_mean();
         let system_mean = measurements.time_system_mean();
@@ -484,7 +490,16 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command: self.command.get_name(),
             command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
-            measurements,
+            user: user_mean,
+            system: system_mean,
+            runs: times_real
+                .iter()
+                .map(|t| BenchmarkRun {
+                    wall_clock_time: *t,
+                })
+                .collect(),
+            memory_usage_byte: Some(memory_usage_byte),
+            exit_codes,
             parameters: self
                 .command
                 .get_parameters()

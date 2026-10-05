@@ -53,9 +53,9 @@ pub trait MarkupExporter {
             let cmd_str = measurement
                 .command_with_unused_parameters
                 .replace('|', "\\|");
-            let mean_str = measurement.mean_wall_clock_time().format_value(unit);
-            let stddev_str = if let Some(stddev) = measurement.measurements.stddev() {
-                format!(" ± {}", stddev.format_value(unit))
+            let mean_str = format_duration_value(measurement.mean(), Some(unit)).0;
+            let stddev_str = if let Some(stddev) = measurement.stddev() {
+                format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
             } else {
                 "".into()
             };
@@ -116,7 +116,7 @@ pub trait MarkupExporter {
 fn determine_unit_from_results(results: &[BenchmarkResult]) -> TimeUnit {
     if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
-        first_result.mean_wall_clock_time().suitable_unit()
+        format_duration_value(first_result.mean(), None).1
     } else {
         // Default to `Second`.
         TimeUnit::Second

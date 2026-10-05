@@ -1,6 +1,5 @@
 use super::Exporter;
-use crate::benchmark::benchmark_result::BenchmarkResult;
-use crate::benchmark::measurement::{Measurement, Measurements};
+use crate::benchmark::benchmark_result::{BenchmarkResult, BenchmarkRun};
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
 use crate::quantity::{byte, second, Information, Time, TimeUnit, Zero};
@@ -29,57 +28,41 @@ fn test_markup_export_auto_ms() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             command_with_unused_parameters: String::from("sleep 0.1"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.09),
-                    time_user: Time::new::<second>(0.09),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0011,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 0.09,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.10),
-                    time_user: Time::new::<second>(0.10),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.10,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.14),
-                    time_user: Time::new::<second>(0.14),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.14,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 2"),
             command_with_unused_parameters: String::from("sleep 2"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.0),
-                    time_user: Time::new::<second>(2.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0012,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 2.0,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(3.0),
-                    time_user: Time::new::<second>(3.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 3.0,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(4.0),
-                    time_user: Time::new::<second>(4.0),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 4.0,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
     ];
@@ -130,57 +113,41 @@ fn test_markup_export_auto_s() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             command_with_unused_parameters: String::from("sleep 2"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.1),
-                    time_user: Time::new::<second>(2.1),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0012,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 2.1,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.2),
-                    time_user: Time::new::<second>(2.2),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 2.2,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.3),
-                    time_user: Time::new::<second>(2.3),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 2.3,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             command_with_unused_parameters: String::from("sleep 0.1"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.1),
-                    time_user: Time::new::<second>(0.1),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0011,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 0.1,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.2),
-                    time_user: Time::new::<second>(0.2),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.2,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.3),
-                    time_user: Time::new::<second>(0.3),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.3,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
     ];
@@ -231,57 +198,41 @@ fn test_markup_export_manual_ms() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             command_with_unused_parameters: String::from("sleep 2"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.1),
-                    time_user: Time::new::<second>(2.1),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0012,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 2.1,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.2),
-                    time_user: Time::new::<second>(2.2),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 2.2,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.3),
-                    time_user: Time::new::<second>(2.3),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 2.3,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             command_with_unused_parameters: String::from("sleep 0.1"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.1),
-                    time_user: Time::new::<second>(0.1),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0011,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 0.1,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.2),
-                    time_user: Time::new::<second>(0.2),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.2,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.3),
-                    time_user: Time::new::<second>(0.3),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.3,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
     ];
@@ -331,69 +282,53 @@ fn test_markup_export_manual_s() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             command_with_unused_parameters: String::from("sleep 2"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.01),
-                    time_user: Time::new::<second>(2.01),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0012,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 2.01,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.02),
-                    time_user: Time::new::<second>(2.02),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 2.02,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(2.03),
-                    time_user: Time::new::<second>(2.03),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 2.03,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             command_with_unused_parameters: String::from("sleep 0.1"),
-            measurements: Measurements::new(vec![
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.11),
-                    time_user: Time::new::<second>(0.11),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+            user: 0.0009,
+            system: 0.0011,
+            runs: vec![
+                BenchmarkRun {
+                    wall_clock_time: 0.11,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.12),
-                    time_user: Time::new::<second>(0.12),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.12,
                 },
-                Measurement {
-                    time_wall_clock: Time::new::<second>(0.13),
-                    time_user: Time::new::<second>(0.13),
-                    time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
-                    exit_status: ExitStatus::default(),
+                BenchmarkRun {
+                    wall_clock_time: 0.13,
                 },
-            ]),
+            ],
+            memory_usage_byte: None,
+            exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: BTreeMap::new(),
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::Command), @r#"
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit::Second), SortOrder::Command), @r#"
     | Command | Mean [s] | Min [s] | Max [s] | Relative |
     |:---|---:|---:|---:|---:|
     | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | 16.83 ± 1.41 |
     | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
     "#);
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::MeanTime), @r#"
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit::Second), SortOrder::MeanTime), @r#"
     | Command | Mean [s] | Min [s] | Max [s] | Relative |
     |:---|---:|---:|---:|---:|
     | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
