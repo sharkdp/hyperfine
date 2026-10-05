@@ -17,8 +17,7 @@ use crate::output::console_writeln;
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{byte, const_time_from_seconds, ratio, second, FormatQuantity, Time, Zero};
-use crate::util::exit_code::extract_exit_code;
+use crate::quantity::{const_time_from_seconds, ratio, FormatQuantity, Time, Zero};
 use benchmark_result::{BenchmarkResult, Parameter};
 use measurement::{Measurement, Measurements};
 
@@ -352,7 +351,6 @@ impl<'a> Benchmark<'a> {
         let t_num = measurements.len();
         let t_mean = measurements.time_wall_clock_mean();
         let t_stddev = measurements.stddev();
-        let t_median = measurements.median();
         let t_min = measurements.min();
         let t_max = measurements.max();
 
@@ -465,31 +463,7 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command: self.command.get_name(),
             command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
-            mean: t_mean.get::<second>(),
-            stddev: t_stddev.map(|t| t.get::<second>()),
-            median: t_median.get::<second>(),
-            user: user_mean.get::<second>(),
-            system: system_mean.get::<second>(),
-            min: t_min.get::<second>(),
-            max: t_max.get::<second>(),
-            times: Some(
-                measurements
-                    .wall_clock_times()
-                    .map(|t| t.get::<second>())
-                    .collect(),
-            ),
-            memory_usage_byte: Some(
-                measurements
-                    .measurements
-                    .iter()
-                    .map(|m| m.peak_memory_usage.get::<byte>() as u64)
-                    .collect(),
-            ),
-            exit_codes: measurements
-                .measurements
-                .iter()
-                .map(|m| extract_exit_code(m.exit_status))
-                .collect(),
+            measurements,
             parameters: self
                 .command
                 .get_parameters()

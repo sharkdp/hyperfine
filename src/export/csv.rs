@@ -5,7 +5,7 @@ use csv::WriterBuilder;
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
-use crate::quantity::TimeUnit;
+use crate::quantity::{second, TimeUnit};
 
 use anyhow::Result;
 
@@ -42,13 +42,16 @@ impl Exporter for CsvExporter {
         for res in results {
             let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
             for f in &[
-                res.mean,
-                res.stddev.unwrap_or(0.0),
-                res.median,
-                res.user,
-                res.system,
-                res.min,
-                res.max,
+                res.mean_wall_clock_time().get::<second>(),
+                res.measurements
+                    .stddev()
+                    .unwrap_or_default()
+                    .get::<second>(),
+                res.measurements.median().get::<second>(),
+                res.measurements.time_user_mean().get::<second>(),
+                res.measurements.time_system_mean().get::<second>(),
+                res.measurements.min().get::<second>(),
+                res.measurements.max().get::<second>(),
             ] {
                 fields.push(Cow::Owned(format!("{f:.CSV_PRECISION$}").into_bytes()))
             }
@@ -65,23 +68,41 @@ impl Exporter for CsvExporter {
 #[test]
 fn test_csv() {
     use crate::benchmark::benchmark_result::Parameter;
+    use crate::benchmark::measurement::{Measurement, Measurements};
+    use crate::quantity::{byte, second, Information, Time, Zero};
+
     use std::collections::BTreeMap;
+    use std::process::ExitStatus;
+
     let exporter = CsvExporter::default();
 
     let results = vec![
         BenchmarkResult {
             command: String::from("command_a"),
             command_with_unused_parameters: String::from("command_a"),
-            mean: 1.0,
-            stddev: Some(2.0),
-            median: 1.0,
-            user: 3.0,
-            system: 4.0,
-            min: 5.0,
-            max: 6.0,
-            times: Some(vec![7.0, 8.0, 9.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(7.0),
+                    time_user: Time::new::<second>(7.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(8.0),
+                    time_user: Time::new::<second>(8.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(12.0),
+                    time_user: Time::new::<second>(12.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert(
@@ -104,16 +125,29 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_b"),
             command_with_unused_parameters: String::from("command_b"),
-            mean: 11.0,
-            stddev: Some(12.0),
-            median: 11.0,
-            user: 13.0,
-            system: 14.0,
-            min: 15.0,
-            max: 16.5,
-            times: Some(vec![17.0, 18.0, 19.0]),
-            memory_usage_byte: None,
-            exit_codes: vec![Some(0), Some(0), Some(0)],
+            measurements: Measurements::new(vec![
+                Measurement {
+                    time_wall_clock: Time::new::<second>(17.0),
+                    time_user: Time::new::<second>(17.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(18.0),
+                    time_user: Time::new::<second>(18.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+                Measurement {
+                    time_wall_clock: Time::new::<second>(19.0),
+                    time_user: Time::new::<second>(19.0),
+                    time_system: Time::zero(),
+                    peak_memory_usage: Information::new::<byte>(1024.),
+                    exit_status: ExitStatus::default(),
+                },
+            ]),
             parameters: {
                 let mut params = BTreeMap::new();
                 params.insert(
@@ -144,7 +178,7 @@ fn test_csv() {
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,1.000000,2.000000,1.000000,3.000000,4.000000,5.000000,6.000000,two,one
-    command_b,11.000000,12.000000,11.000000,13.000000,14.000000,15.000000,16.500000,seven,one
+    command_a,9.000000,2.645751,8.000000,9.000000,0.000000,7.000000,12.000000,two,one
+    command_b,18.000000,1.000000,18.000000,18.000000,0.000000,17.000000,19.000000,seven,one
     "#);
 }

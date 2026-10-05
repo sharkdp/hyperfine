@@ -4,7 +4,7 @@ use crate::quantity::statistics::{max, mean, median, min, modified_zscores, stan
 use crate::quantity::{Information, Time};
 
 /// Performance measurements and exit status from running a single command
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct Measurement {
     /// Wall clock time
     pub time_wall_clock: Time,
@@ -23,12 +23,16 @@ pub struct Measurement {
 }
 
 /// Performance measurements and exit statuses for all runs of a command.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Measurements {
     pub measurements: Vec<Measurement>,
 }
 
 impl Measurements {
+    pub fn new(measurements: Vec<Measurement>) -> Self {
+        Self { measurements }
+    }
+
     pub fn len(&self) -> usize {
         self.measurements.len()
     }
