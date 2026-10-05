@@ -86,7 +86,7 @@ impl Measurements {
 
     /// The median wall clock time
     pub fn median(&self) -> Time {
-        median(&self.wall_clock_times().collect::<Vec<_>>())
+        median(self.wall_clock_times())
     }
 
     /// The minimum wall clock time
