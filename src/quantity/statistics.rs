@@ -8,31 +8,6 @@ use uom::si::ratio::ratio;
 
 use super::{byte, second, Information, Time};
 
-pub trait UnsafeRawValue {
-    fn unsafe_raw_value(&self) -> f64;
-    fn unsafe_from_raw_value(value: f64) -> Self;
-}
-
-impl UnsafeRawValue for Time {
-    fn unsafe_raw_value(&self) -> f64 {
-        self.get::<second>()
-    }
-
-    fn unsafe_from_raw_value(value: f64) -> Self {
-        Time::new::<second>(value)
-    }
-}
-
-impl UnsafeRawValue for Information {
-    fn unsafe_raw_value(&self) -> f64 {
-        self.get::<byte>()
-    }
-
-    fn unsafe_from_raw_value(value: f64) -> Self {
-        Information::new::<byte>(value)
-    }
-}
-
 /// A min function that assumes no NaNs and at least one element
 pub fn min<Q: PartialOrd>(values: impl IntoIterator<Item = Q>) -> Q {
     values
@@ -85,8 +60,35 @@ where
     }
 }
 
-fn standard_deviation_f64(values: impl IntoIterator<Item = f64> + Clone) -> f64 {
-    let mean_value = mean(values.clone());
+/// This is just sad, but after several hours trying to figure out how to write
+/// a generic `standard_deviation` function using `uom` quantities, I gave up.
+pub trait UnsafeRawValue {
+    fn unsafe_raw_value(&self) -> f64;
+    fn unsafe_from_raw_value(value: f64) -> Self;
+}
+
+impl UnsafeRawValue for Time {
+    fn unsafe_raw_value(&self) -> f64 {
+        self.get::<second>()
+    }
+
+    fn unsafe_from_raw_value(value: f64) -> Self {
+        Time::new::<second>(value)
+    }
+}
+
+impl UnsafeRawValue for Information {
+    fn unsafe_raw_value(&self) -> f64 {
+        self.get::<byte>()
+    }
+
+    fn unsafe_from_raw_value(value: f64) -> Self {
+        Information::new::<byte>(value)
+    }
+}
+
+fn standard_deviation_f64(values: &[f64]) -> f64 {
+    let mean_value = mean(values.iter().copied());
 
     let mut squared_deviations = 0.;
     let mut n = 0;
@@ -101,7 +103,7 @@ fn standard_deviation_f64(values: impl IntoIterator<Item = f64> + Clone) -> f64 
 
 pub fn standard_deviation<Q: UnsafeRawValue>(values: impl IntoIterator<Item = Q> + Clone) -> Q {
     let values: Vec<_> = values.into_iter().map(|q| q.unsafe_raw_value()).collect();
-    let result = standard_deviation_f64(values);
+    let result = standard_deviation_f64(&values);
     Q::unsafe_from_raw_value(result)
 }
 
