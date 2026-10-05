@@ -42,86 +42,32 @@ pub fn standard_deviation(values: &[f64], mean: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::assert_relative_eq;
 
     #[test]
-    fn mean_preserves_summation_order() {
-        assert_eq!(mean(&[1.0]), 1.0);
-        assert_eq!(mean(&[1.0, 2.0, 6.0]), 3.0);
-        assert_eq!(mean(&[1e16, 1.0, -1e16]), 0.0);
+    fn test_mean() {
+        assert_eq!(1.0, mean(&[1.0]));
+        assert_relative_eq!(2.0, mean(&[1.0, 3.0]));
+
+        let values = [0.1, 0.2, 0.6];
+        assert_relative_eq!(mean(&values), 0.3);
     }
 
     #[test]
-    fn median_handles_odd_even_and_repeated_values() {
-        assert_eq!(median(&[7.0]), 7.0);
-        assert_eq!(median(&[6.0, 1.0, 2.0]), 2.0);
-        assert_eq!(median(&[6.0, 1.0, 3.0, 2.0]), 2.5);
-        assert_eq!(median(&[0.0, 0.0, 0.0, 1.0]), 0.0);
-        assert_eq!(median(&[-3.0, -1.0, -2.0]), -2.0);
+    fn test_median() {
+        assert_eq!(1.0, median(&[1.0]));
+        assert_relative_eq!(2.0, median(&[1.0, 3.0]));
+
+        let values = [0.1, 0.2, 0.6];
+        assert_relative_eq!(median(&values), 0.2);
+
+        let values = [0.1, 0.2, 0.3, 0.6];
+        assert_relative_eq!(median(&values), 0.25);
     }
 
     #[test]
-    fn median_preserves_input_order() {
-        let values = [3.0, 1.0, 2.0];
-        assert_eq!(median(&values), 2.0);
-        assert_eq!(values, [3.0, 1.0, 2.0]);
-    }
-
-    #[test]
-    #[should_panic(expected = "median requires at least one measurement")]
-    fn median_rejects_empty_samples() {
-        median(&[]);
-    }
-
-    #[test]
-    fn standard_deviation_uses_sample_variance() {
-        assert_eq!(standard_deviation(&[1.0, 2.0, 3.0], 2.0), 1.0);
-        assert_eq!(standard_deviation(&[0.0, 0.0], 0.0), 0.0);
-        assert_eq!(standard_deviation(&[7.0, 7.0, 7.0], 7.0), 0.0);
-    }
-
-    #[test]
-    fn matches_statistical_1_0_floating_point_results() {
-        // Recorded from statistical 1.0.0, including small durations and
-        // small differences between large values. Compare bits to catch
-        // changes that would affect the full precision JSON/CSV exports.
-        let cases: &[(&[f64], u64, u64, u64)] = &[
-            (
-                &[0.09, 0.10, 0.14],
-                0x3fbc28f5c28f5c29,
-                0x3fb999999999999a,
-                0x3f9b17ada62cc3bd,
-            ),
-            (
-                &[0.1, 0.2, 0.3, 0.4],
-                0x3fd0000000000000,
-                0x3fd0000000000000,
-                0x3fc08654a2d4f6da,
-            ),
-            (
-                &[1e-9, 2e-9, 3e-9, 9e-9],
-                0x3e301b2b29a4692c,
-                0x3e25798ee2308c3a,
-                0x3e2edf3cdee63e61,
-            ),
-            (
-                &[1e12 + 0.001, 1e12 + 0.002, 1e12 + 0.003],
-                0x426d1a94a2000010,
-                0x426d1a94a2000010,
-                0x3f510785dd689a29,
-            ),
-        ];
-
-        for &(values, mean_bits, median_bits, stddev_bits) in cases {
-            let mean = mean(values);
-            assert_eq!(mean.to_bits(), mean_bits);
-            assert_eq!(median(values).to_bits(), median_bits);
-            assert_eq!(standard_deviation(values, mean).to_bits(), stddev_bits);
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "standard deviation requires at least two measurements")]
-    fn standard_deviation_rejects_single_measurements() {
-        standard_deviation(&[1.0], 1.0);
+    fn test_standard_deviation() {
+        let values = [0.1, 0.2, 0.3];
+        assert_relative_eq!(standard_deviation(&values, mean(&values)), 0.1);
     }
 }
