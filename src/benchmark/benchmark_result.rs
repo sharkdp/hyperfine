@@ -10,9 +10,14 @@ use crate::util::{
 
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkRun {
+    /// Wall clock time measurement
     pub wall_clock_time: Second,
-    // user_time: Second,
-    // system_time: Second,
+
+    /// Time spent in user mode
+    pub user_time: Second,
+
+    /// Time spent in kernel mode
+    pub system_time: Second,
 }
 
 use crate::benchmark::measurement::Measurements;
@@ -36,12 +41,6 @@ pub struct BenchmarkResult {
 
     /// The full command line, including parameters not used in the command template.
     pub command_with_unused_parameters: String,
-
-    /// Time spent in user mode
-    pub user: f64,
-
-    /// Time spent in kernel mode
-    pub system: f64,
 
     /// All run time measurements
     pub runs: Vec<BenchmarkRun>,
@@ -156,5 +155,25 @@ impl BenchmarkResult {
     /// The maximum run time
     pub fn max(&self) -> Second {
         max(&self.wall_clock_times())
+    }
+
+    pub fn user_mean(&self) -> Second {
+        mean(
+            &self
+                .runs
+                .iter()
+                .map(|run| run.user_time)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    pub fn system_mean(&self) -> Second {
+        mean(
+            &self
+                .runs
+                .iter()
+                .map(|run| run.system_time)
+                .collect::<Vec<_>>(),
+        )
     }
 }

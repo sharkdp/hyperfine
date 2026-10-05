@@ -152,10 +152,10 @@ fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     BenchmarkResult {
         command: name.into(),
         command_with_unused_parameters: name.into(),
-        user: mean,
-        system: 0.0,
         runs: vec![BenchmarkRun {
             wall_clock_time: mean,
+            user_time: mean,
+            system_time: 0.,
         }],
         memory_usage_byte: None,
         exit_codes: Vec::new(),
