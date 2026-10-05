@@ -1,10 +1,7 @@
 use std::cmp::Ordering;
 
 use super::benchmark_result::BenchmarkResult;
-use crate::{
-    options::SortOrder,
-    quantity::{self, Ratio, Time, Zero},
-};
+use crate::{benchmark::quantity::Second, options::SortOrder};
 
 #[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
@@ -55,8 +52,8 @@ fn compute_relative_speeds<'a>(
             let is_reference = std::ptr::eq(result, reference);
             let relative_ordering = compare_mean_time(result, reference);
 
-            if result.mean_wall_clock_time() == Time::zero()
-                || reference.mean_wall_clock_time() == Time::zero()
+            if result.mean_wall_clock_time() == Second::zero()
+                || reference.mean_wall_clock_time() == Second::zero()
             {
                 return BenchmarkResultWithRelativeSpeed {
                     result,
@@ -117,7 +114,8 @@ pub fn compute_with_check_from_reference<'a>(
     reference: &'a BenchmarkResult,
     sort_order: SortOrder,
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
-    if fastest_of(results).mean_wall_clock_time() == 0.0 || reference.mean_wall_clock_time() == 0.0
+    if fastest_of(results).mean_wall_clock_time() == Second::zero()
+        || reference.mean_wall_clock_time() == Second::zero()
     {
         return None;
     }
@@ -131,7 +129,7 @@ pub fn compute_with_check(
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'_>>> {
     let fastest = fastest_of(results);
 
-    if fastest.mean_wall_clock_time() == 0.0 {
+    if fastest.mean_wall_clock_time() == Second::zero() {
         return None;
     }
 
@@ -152,16 +150,19 @@ pub fn compute<'a>(
 fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
-    use crate::benchmark::measurement::{Measurement, Measurements};
+    use crate::benchmark::{
+        measurement::{Measurement, Measurements},
+        quantity::Byte,
+    };
 
     BenchmarkResult {
         command: name.into(),
         measurements: Measurements {
             measurements: vec![Measurement {
-                wall_clock_time: mean,
-                user_time: mean,
-                system_time: 0.,
-                memory_usage_byte: 1024,
+                wall_clock_time: Second::new(mean),
+                user_time: Second::new(mean),
+                system_time: Second::zero(),
+                memory_usage_byte: Byte::new(1024),
                 exit_code: Some(0),
             }],
         },

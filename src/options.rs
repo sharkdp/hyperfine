@@ -7,9 +7,10 @@ use std::{cmp, env, fmt, io};
 use anyhow::{bail, ensure};
 use clap::ArgMatches;
 
+use crate::benchmark::quantity::Second;
 use crate::command::Commands;
 use crate::error::OptionsError;
-use crate::quantity::{second, Time, TimeUnit};
+use crate::util::units::Unit;
 
 use anyhow::Result;
 
@@ -256,7 +257,7 @@ impl Default for Options {
         Options {
             run_bounds: RunBounds::default(),
             warmup_count: 0,
-            min_benchmarking_time: Time::new::<second>(3.0),
+            min_benchmarking_time: Second::new(3.0),
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
             reference_name: None,
@@ -442,7 +443,7 @@ impl Options {
         };
 
         if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
-            options.min_benchmarking_time = Time::new::<second>(
+            options.min_benchmarking_time = Second::new(
                 time.parse::<f64>()
                     .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?,
             );

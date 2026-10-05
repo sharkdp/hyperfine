@@ -8,22 +8,22 @@ use std::process::{Child, ExitStatus};
 
 use anyhow::Result;
 
-use crate::util::units::Second;
+use crate::benchmark::quantity::{Byte, Second};
 
 #[derive(Debug, Copy, Clone)]
 struct ResourceUsage {
     /// Total amount of time spent executing in user mode
-    pub user_usec: Second,
+    pub user_usec: f64,
 
     /// Total amount of time spent executing in kernel mode
-    pub system_usec: Second,
+    pub system_usec: f64,
 
     /// Maximum amount of memory used by the process, in bytes
     pub memory_usage_byte: i64,
 }
 
 #[allow(clippy::useless_conversion)]
-fn timeval_to_seconds(tv: libc::timeval) -> Second {
+fn timeval_to_seconds(tv: libc::timeval) -> f64 {
     const MICROSEC_PER_SEC: i64 = 1000 * 1000;
     (i64::from(tv.tv_sec) * MICROSEC_PER_SEC + i64::from(tv.tv_usec)) as f64 * 1e-6
 }
@@ -68,13 +68,13 @@ impl CPUTimer {
         Self {}
     }
 
-    pub fn stop(&self, child: Child) -> Result<(ExitStatus, Second, Second, u64)> {
+    pub fn stop(&self, child: Child) -> Result<(ExitStatus, Second, Second, Byte)> {
         let (status, usage) = wait4(child)?;
         Ok((
             status,
-            usage.user_usec,
-            usage.system_usec,
-            u64::try_from(usage.memory_usage_byte).unwrap_or(0),
+            Second::new(usage.user_usec),
+            Second::new(usage.system_usec),
+            Byte::new(u64::try_from(usage.memory_usage_byte).unwrap_or(0)),
         ))
     }
 }
