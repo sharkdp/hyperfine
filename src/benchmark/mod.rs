@@ -475,8 +475,13 @@ impl<'a> Benchmark<'a> {
 
         self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
+        let command = self.command.get_name();
+        let command_raw = self.command.get_command_line();
+        let command_raw = (command_raw != command).then_some(command_raw);
+
         Ok(BenchmarkResult {
-            command: self.command.get_name(),
+            command,
+            command_raw,
             measurements,
             parameters: self
                 .command

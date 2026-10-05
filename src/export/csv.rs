@@ -81,6 +81,7 @@ fn test_csv() {
     let results = vec![
         BenchmarkResult {
             command: String::from("command_a"),
+            command_raw: None,
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(7.0),
@@ -125,6 +126,7 @@ fn test_csv() {
         },
         BenchmarkResult {
             command: String::from("command_b"),
+            command_raw: None,
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(17.0),

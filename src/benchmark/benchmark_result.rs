@@ -15,8 +15,12 @@ pub struct Parameter {
 /// Meta data and performance metrics for a single benchmark
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkResult {
-    /// The full command line of the program that is being benchmarked
+    /// The display name of the command being benchmarked
     pub command: String,
+
+    /// The expanded command line, when it differs from the display name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command_raw: Option<String>,
 
     /// Performance metric measurements and exit codes for each run
     #[serde(flatten)]

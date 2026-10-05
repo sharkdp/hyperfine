@@ -43,6 +43,61 @@ fn one_run_is_supported() {
 }
 
 #[test]
+fn json_includes_raw_command_only_when_different() {
+    for (args, expected) in [
+        (vec!["sleep 0.01"], vec![("sleep 0.01", None)]),
+        (
+            vec!["--command-name=example", "sleep 0.01"],
+            vec![("example", Some("sleep 0.01"))],
+        ),
+        (
+            vec!["--command-name=sleep 0.01", "sleep 0.01"],
+            vec![("sleep 0.01", None)],
+        ),
+        (
+            vec![
+                "-L",
+                "delay",
+                "0.01,0.02",
+                "--command-name=delay {delay}",
+                "sleep {delay}",
+            ],
+            vec![
+                ("delay 0.01", Some("sleep 0.01")),
+                ("delay 0.02", Some("sleep 0.02")),
+            ],
+        ),
+        (
+            vec![
+                "-L",
+                "delay",
+                "0.01,0.02",
+                "--command-name=sleep {delay}",
+                "sleep {delay}",
+            ],
+            vec![("sleep 0.01", None), ("sleep 0.02", None)],
+        ),
+    ] {
+        let output = hyperfine_debug()
+            .args(["--runs=1", "--style=none", "--export-json=-"])
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let export: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        let results = export["results"].as_array().unwrap();
+        assert_eq!(results.len(), expected.len());
+        for (result, (command, command_raw)) in results.iter().zip(expected) {
+            assert_eq!(result["command"], command);
+            assert_eq!(
+                result.get("command_raw"),
+                command_raw.map(serde_json::Value::from).as_ref()
+            );
+        }
+    }
+}
+
+#[test]
 fn json_memory_availability_matches_platform() {
     let output = hyperfine_raw_command()
         .args([

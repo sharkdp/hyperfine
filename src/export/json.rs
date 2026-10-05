@@ -182,6 +182,7 @@ fn test_json_optional_memory() {
     ] {
         let result = BenchmarkResult {
             command: "example".into(),
+            command_raw: None,
             measurements: Measurements::new(vec![Measurement {
                 peak_memory_usage: memory,
                 ..Measurement::default()
@@ -249,6 +250,7 @@ fn test_json_summaries_for_parameterized_results() {
         .into_iter()
         .map(|(size, times)| BenchmarkResult {
             command: "example".into(),
+            command_raw: None,
             parameters: [(
                 "size".into(),
                 Parameter {
