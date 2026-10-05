@@ -1,8 +1,10 @@
 use std::cmp::Ordering;
 
 use super::benchmark_result::BenchmarkResult;
-use crate::options::SortOrder;
-use crate::quantity::second;
+use crate::{
+    options::SortOrder,
+    quantity::{self, Ratio, Time, Zero},
+};
 
 #[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
@@ -16,8 +18,7 @@ pub struct BenchmarkResultWithRelativeSpeed<'a> {
 
 pub fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
     l.mean_wall_clock_time()
-        .get::<second>()
-        .partial_cmp(&r.mean_wall_clock_time().get::<second>())
+        .partial_cmp(&r.mean_wall_clock_time())
         .unwrap_or(Ordering::Equal)
 }
 
@@ -39,7 +40,7 @@ fn compute_relative_speeds<'a>(
             let is_reference = result == reference;
             let relative_ordering = compare_mean_time(result, reference);
 
-            if result.mean_wall_clock_time().get::<second>() == 0.0 {
+            if result.mean_wall_clock_time() == Time::zero() {
                 return BenchmarkResultWithRelativeSpeed {
                     result,
                     relative_speed: if is_reference { 1.0 } else { f64::INFINITY },
@@ -50,34 +51,25 @@ fn compute_relative_speeds<'a>(
             }
 
             let ratio = match relative_ordering {
-                Ordering::Less => {
-                    reference.mean_wall_clock_time().get::<second>()
-                        / result.mean_wall_clock_time().get::<second>()
-                }
-                Ordering::Equal => 1.0,
+                Ordering::Less => reference.mean_wall_clock_time() / result.mean_wall_clock_time(),
+                Ordering::Equal => Ratio::new::<quantity::ratio>(1.0),
                 Ordering::Greater => {
-                    result.mean_wall_clock_time().get::<second>()
-                        / reference.mean_wall_clock_time().get::<second>()
+                    result.mean_wall_clock_time() / reference.mean_wall_clock_time()
                 }
             };
 
             // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
             // Covariance assumed to be 0, i.e. variables are assumed to be independent
             let ratio_stddev = match (
-                result
-                    .measurements
-                    .stddev()
-                    .map(|time| time.get::<second>()),
-                reference
-                    .measurements
-                    .stddev()
-                    .map(|time| time.get::<second>()),
+                result.measurements.stddev(),
+                reference.measurements.stddev(),
             ) {
                 (Some(result_stddev), Some(fastest_stddev)) => Some(
                     ratio
-                        * ((result_stddev / result.mean_wall_clock_time().get::<second>()).powi(2)
-                            + (fastest_stddev / reference.mean_wall_clock_time().get::<second>())
-                                .powi(2))
+                        * ((result_stddev / result.mean_wall_clock_time())
+                            .powi(uom::typenum::P2::new())
+                            + (fastest_stddev / reference.mean_wall_clock_time())
+                                .powi(uom::typenum::P2::new()))
                         .sqrt(),
                 ),
                 _ => None,
@@ -85,8 +77,8 @@ fn compute_relative_speeds<'a>(
 
             BenchmarkResultWithRelativeSpeed {
                 result,
-                relative_speed: ratio,
-                relative_speed_stddev: ratio_stddev,
+                relative_speed: ratio.get::<quantity::ratio>(),
+                relative_speed_stddev: ratio_stddev.map(|r| r.get::<quantity::ratio>()),
                 is_reference,
                 relative_ordering,
             }
@@ -108,8 +100,8 @@ pub fn compute_with_check_from_reference<'a>(
     reference: &'a BenchmarkResult,
     sort_order: SortOrder,
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
-    if fastest_of(results).mean_wall_clock_time().get::<second>() == 0.0
-        || reference.mean_wall_clock_time().get::<second>() == 0.0
+    if fastest_of(results).mean_wall_clock_time() == Time::zero()
+        || reference.mean_wall_clock_time() == Time::zero()
     {
         return None;
     }
@@ -123,7 +115,7 @@ pub fn compute_with_check(
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'_>>> {
     let fastest = fastest_of(results);
 
-    if fastest.mean_wall_clock_time().get::<second>() == 0.0 {
+    if fastest.mean_wall_clock_time() == Time::zero() {
         return None;
     }
 
