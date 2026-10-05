@@ -95,16 +95,16 @@ pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
         discard(output);
     }
 
-    let status = child.wait()?;
+    let exit_status = child.wait()?;
 
-    let time_real = wallclock_timer.stop();
-    let (time_user, time_system, memory_usage_byte) = cpu_timer.stop();
+    let time_wall_clock = wallclock_timer.stop();
+    let (time_user, time_system, peak_memory_usage) = cpu_timer.stop();
 
     Ok(Measurement {
-        time_real,
+        time_wall_clock,
         time_user,
         time_system,
-        memory_usage_byte,
-        status,
+        peak_memory_usage,
+        exit_status,
     })
 }

@@ -12,17 +12,16 @@ use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
-use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::console_writeln;
 use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
-use crate::util::statistics::{max, mean, median, min, standard_deviation};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
-use measurement::Measurement;
+use measurement::{Measurement, Measurements};
 
 use anyhow::{anyhow, Result};
 use colored::*;
@@ -149,11 +148,7 @@ impl<'a> Benchmark<'a> {
             )?;
         }
 
-        let mut times_real: Vec<Second> = vec![];
-        let mut times_user: Vec<Second> = vec![];
-        let mut times_system: Vec<Second> = vec![];
-        let mut memory_usage_byte: Vec<u64> = vec![];
-        let mut exit_codes: Vec<Option<i32>> = vec![];
+        let mut measurements = Measurements::default();
         let mut all_succeeded = true;
 
         let output_policy = &self.options.command_output_policies[self.number];
@@ -241,8 +236,9 @@ impl<'a> Benchmark<'a> {
         };
 
         let preparation_result = run_preparation_command()?;
-        let preparation_overhead =
-            preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        let preparation_overhead = preparation_result.map_or(0.0, |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Initial timing run
         let res = self.executor.run_command_and_measure(
@@ -251,15 +247,16 @@ impl<'a> Benchmark<'a> {
             None,
             output_policy,
         )?;
-        let success = res.status.success();
+        let success = res.exit_status.success();
 
         let conclusion_result = run_conclusion_command()?;
-        let conclusion_overhead =
-            conclusion_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        let conclusion_overhead = conclusion_result.map_or(0.0, |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real
+            / (res.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead)) as u64;
@@ -278,11 +275,7 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        times_real.push(res.time_real);
-        times_user.push(res.time_user);
-        times_system.push(res.time_system);
-        memory_usage_byte.push(res.memory_usage_byte);
-        exit_codes.push(extract_exit_code(res.status));
+        measurements.push(res);
 
         all_succeeded = all_succeeded && success;
 
@@ -299,7 +292,8 @@ impl<'a> Benchmark<'a> {
             run_preparation_command()?;
 
             let msg = {
-                let mean = format_duration(mean(&times_real), self.options.time_unit);
+                let mean =
+                    format_duration(measurements.time_wall_clock_mean(), self.options.time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -313,13 +307,9 @@ impl<'a> Benchmark<'a> {
                 None,
                 output_policy,
             )?;
-            let success = res.status.success();
+            let success = res.exit_status.success();
 
-            times_real.push(res.time_real);
-            times_user.push(res.time_user);
-            times_system.push(res.time_system);
-            memory_usage_byte.push(res.memory_usage_byte);
-            exit_codes.push(extract_exit_code(res.status));
+            measurements.push(res);
 
             all_succeeded = all_succeeded && success;
 
@@ -335,19 +325,15 @@ impl<'a> Benchmark<'a> {
         }
 
         // Compute statistical quantities
-        let t_num = times_real.len();
-        let t_mean = mean(&times_real);
-        let t_stddev = if times_real.len() > 1 {
-            Some(standard_deviation(&times_real, t_mean))
-        } else {
-            None
-        };
-        let t_median = median(&times_real);
-        let t_min = min(times_real.iter().copied());
-        let t_max = max(times_real.iter().copied());
+        let t_num = measurements.len();
+        let t_mean = measurements.time_wall_clock_mean();
+        let t_stddev = measurements.stddev();
+        let t_median = measurements.median();
+        let t_min = measurements.min();
+        let t_max = measurements.max();
 
-        let user_mean = mean(&times_user);
-        let system_mean = mean(&times_system);
+        let user_mean = measurements.time_user_mean();
+        let system_mean = measurements.time_system_mean();
 
         // Formatting and console output
         let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
@@ -360,7 +346,7 @@ impl<'a> Benchmark<'a> {
 
         if self.options.output_style != OutputStyleOption::Disabled {
             let mut stdout = io::stdout().lock();
-            if times_real.len() == 1 {
+            if measurements.len() == 1 {
                 console_writeln!(
                     stdout,
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
@@ -401,7 +387,9 @@ impl<'a> Benchmark<'a> {
 
         // Check execution time
         if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
-            && times_real.iter().any(|&t| t < MIN_EXECUTION_TIME)
+            && measurements
+                .wall_clock_times()
+                .any(|t| t < MIN_EXECUTION_TIME)
         {
             warnings.push(Warnings::FastExecutionTime);
         }
@@ -412,7 +400,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = modified_zscores(&times_real);
+        let scores = measurements.modified_zscores();
 
         let outlier_warning_options = OutlierWarningOptions {
             warmup_in_use: self.options.warmup_count > 0,
@@ -427,7 +415,7 @@ impl<'a> Benchmark<'a> {
 
         if scores[0] > OUTLIER_THRESHOLD {
             warnings.push(Warnings::SlowInitialRun(
-                times_real[0],
+                measurements.wall_clock_times().next().unwrap(),
                 outlier_warning_options,
             ));
         } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
@@ -459,9 +447,19 @@ impl<'a> Benchmark<'a> {
             system: system_mean,
             min: t_min,
             max: t_max,
-            times: Some(times_real),
-            memory_usage_byte: Some(memory_usage_byte),
-            exit_codes,
+            times: Some(measurements.wall_clock_times().collect()),
+            memory_usage_byte: Some(
+                measurements
+                    .measurements
+                    .iter()
+                    .map(|m| m.peak_memory_usage)
+                    .collect(),
+            ),
+            exit_codes: measurements
+                .measurements
+                .iter()
+                .map(|m| extract_exit_code(m.exit_status))
+                .collect(),
             parameters: self
                 .command
                 .get_parameters()

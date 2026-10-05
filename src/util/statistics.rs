@@ -17,8 +17,14 @@ pub fn max<Q: PartialOrd>(values: impl IntoIterator<Item = Q>) -> Q {
 }
 
 /// Arithmetic mean, summing measurements in their original order.
-pub fn mean(values: &[f64]) -> f64 {
-    values.iter().fold(0.0, |sum, value| sum + value) / values.len() as f64
+pub fn mean(values: impl IntoIterator<Item = f64>) -> f64 {
+    let mut sum = 0.0;
+    let mut count = 0usize;
+    for value in values {
+        sum += value;
+        count += 1;
+    }
+    sum / count as f64
 }
 
 /// Median without modifying the input sample.
@@ -86,11 +92,11 @@ mod tests {
 
     #[test]
     fn test_mean() {
-        assert_eq!(1.0, mean(&[1.0]));
-        assert_relative_eq!(2.0, mean(&[1.0, 3.0]));
+        assert_eq!(1.0, mean([1.0]));
+        assert_relative_eq!(2.0, mean([1.0, 3.0]));
 
         let values = [0.1, 0.2, 0.6];
-        assert_relative_eq!(mean(&values), 0.3);
+        assert_relative_eq!(mean(values), 0.3);
     }
 
     #[test]
@@ -108,6 +114,6 @@ mod tests {
     #[test]
     fn test_standard_deviation() {
         let values = [0.1, 0.2, 0.3];
-        assert_relative_eq!(standard_deviation(&values, mean(&values)), 0.1);
+        assert_relative_eq!(standard_deviation(&values, mean(values)), 0.1);
     }
 }
