@@ -8,7 +8,7 @@ use std::process::{Child, ExitStatus};
 
 use anyhow::Result;
 
-use crate::quantity::{Information, InformationQuantity, Time, TimeQuantity};
+use crate::quantity::{byte, kibibyte, microsecond, second, Information, Time};
 
 #[derive(Debug, Copy, Clone)]
 struct ResourceUsage {
@@ -27,7 +27,7 @@ fn convert_timeval(tv: libc::timeval) -> Time {
     let sec = tv.tv_sec as f64;
     let usec = tv.tv_usec as f64;
 
-    Time::from_seconds(sec) + Time::from_microseconds(usec)
+    Time::new::<second>(sec) + Time::new::<microsecond>(usec)
 }
 
 #[allow(clippy::useless_conversion)]
@@ -47,9 +47,9 @@ fn wait4(mut child: Child) -> io::Result<(ExitStatus, ResourceUsage)> {
 
         let memory_usage_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
             // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
-            Information::from_bytes(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
+            Information::new::<byte>(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
         } else {
-            Information::from_kibibytes(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
+            Information::new::<kibibyte>(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
         };
 
         Ok((
