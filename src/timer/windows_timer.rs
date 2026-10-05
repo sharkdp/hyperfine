@@ -27,9 +27,7 @@ use windows_sys::{
     },
 };
 
-use crate::quantity::{microsecond, Information, Time, Zero};
-
-const HUNDRED_NS_PER_MS: i64 = 10;
+use crate::quantity::{nanosecond, Information, Time, Zero};
 
 #[cfg(not(feature = "windows_process_extensions_main_thread_handle"))]
 #[allow(non_upper_case_globals)]
@@ -108,17 +106,14 @@ impl CPUTimer {
             // The `TotalUserTime` is "The total amount of user-mode execution time for
             // all active processes associated with the job, as well as all terminated processes no
             // longer associated with the job, in 100-nanosecond ticks."
-            let user: i64 = job_object_info.TotalUserTime / HUNDRED_NS_PER_MS;
+            let user_time = Time::new::<nanosecond>((job_object_info.TotalUserTime as f64) * 100.0);
 
             // The `TotalKernelTime` is "The total amount of kernel-mode execution time
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
-            let kernel: i64 = job_object_info.TotalKernelTime / HUNDRED_NS_PER_MS;
-            (
-                Time::new::<microsecond>(user as f64),
-                Time::new::<microsecond>(kernel as f64),
-                Information::zero(),
-            )
+            let system_time =
+                Time::new::<nanosecond>((job_object_info.TotalKernelTime as f64) * 100.0);
+            (user_time, system_time, Information::zero())
         } else {
             (Time::zero(), Time::zero(), Information::zero())
         }

@@ -4,7 +4,9 @@ pub use uom::num_traits::Zero;
 pub use uom::si::f64::{Information, Ratio, Time};
 pub use uom::si::information::byte;
 pub use uom::si::ratio::ratio;
-pub use uom::si::time::{microsecond, nanosecond, second};
+#[cfg(any(not(windows), test))]
+pub use uom::si::time::microsecond;
+pub use uom::si::time::{nanosecond, second};
 
 pub use units::TimeUnit;
 
