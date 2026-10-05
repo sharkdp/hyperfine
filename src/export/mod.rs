@@ -19,7 +19,7 @@ use self::orgmode::OrgmodeExporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
 use crate::output::console_writeln;
-use crate::util::units::Unit;
+use crate::quantity::TimeUnit;
 
 use anyhow::{Context, Result};
 use clap::ArgMatches;
@@ -49,7 +49,7 @@ trait Exporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<Unit>,
+        unit: Option<TimeUnit>,
         sort_order: SortOrder,
     ) -> Result<Vec<u8>>;
 }
@@ -67,7 +67,7 @@ struct ExporterWithTarget {
 /// Handles the management of multiple file exporters.
 pub struct ExportManager {
     exporters: Vec<ExporterWithTarget>,
-    time_unit: Option<Unit>,
+    time_unit: Option<TimeUnit>,
     sort_order: SortOrder,
 }
 
@@ -76,7 +76,7 @@ impl ExportManager {
     /// in the given ArgMatches
     pub fn from_cli_arguments(
         matches: &ArgMatches,
-        time_unit: Option<Unit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
     ) -> Result<Self> {
         let mut export_manager = Self {

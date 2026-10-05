@@ -9,8 +9,7 @@ use clap::ArgMatches;
 
 use crate::command::Commands;
 use crate::error::OptionsError;
-use crate::quantity::{second, Time};
-use crate::util::units::Unit;
+use crate::quantity::{second, Time, TimeUnit};
 
 use anyhow::Result;
 
@@ -246,7 +245,7 @@ pub struct Options {
     pub command_output_policies: Vec<CommandOutputPolicy>,
 
     /// Which time unit to use when displaying results
-    pub time_unit: Option<Unit>,
+    pub time_unit: Option<TimeUnit>,
 }
 
 impl Default for Options {
@@ -430,11 +429,11 @@ impl Options {
         }
 
         options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {
-            Some("µs" | "us" | "microsecond" | "microseconds") => Some(Unit::MicroSecond),
-            Some("ms" | "millisecond" | "milliseconds") => Some(Unit::MilliSecond),
-            Some("s" | "second" | "seconds") => Some(Unit::Second),
-            Some("min" | "minute" | "minutes") => Some(Unit::Minute),
-            Some("h" | "hour" | "hours") => Some(Unit::Hour),
+            Some("µs" | "us" | "microsecond" | "microseconds") => Some(TimeUnit::MicroSecond),
+            Some("ms" | "millisecond" | "milliseconds") => Some(TimeUnit::MilliSecond),
+            Some("s" | "second" | "seconds") => Some(TimeUnit::Second),
+            Some("min" | "minute" | "minutes") => Some(TimeUnit::Minute),
+            Some("h" | "hour" | "hours") => Some(TimeUnit::Hour),
             _ => None,
         };
 

@@ -1,8 +1,7 @@
 use std::process::ExitStatus;
 
-use crate::outlier_detection::modified_zscores;
+use crate::quantity::statistics::{max, mean, median, min, modified_zscores, standard_deviation};
 use crate::quantity::{second, Information, Time};
-use crate::util::statistics::{max, mean, median, min, standard_deviation};
 
 /// Performance measurements and exit status from running a single command
 #[derive(Debug, Default, Copy, Clone)]

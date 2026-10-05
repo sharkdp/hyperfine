@@ -1,13 +1,13 @@
 use std::cmp::Ordering;
 
 use super::benchmark_result::BenchmarkResult;
-use crate::{options::SortOrder, util::units::Scalar};
+use crate::options::SortOrder;
 
 #[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
     pub result: &'a BenchmarkResult,
-    pub relative_speed: Scalar,
-    pub relative_speed_stddev: Option<Scalar>,
+    pub relative_speed: f64,
+    pub relative_speed_stddev: Option<f64>,
     pub is_reference: bool,
     // Less means faster
     pub relative_ordering: Ordering,
@@ -119,7 +119,7 @@ pub fn compute(
 }
 
 #[cfg(test)]
-fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
+fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
     BenchmarkResult {
