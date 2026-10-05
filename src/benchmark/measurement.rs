@@ -1,7 +1,7 @@
 use std::process::ExitStatus;
 
 use crate::quantity::statistics::{max, mean, median, min, modified_zscores, standard_deviation};
-use crate::quantity::{second, Information, Time};
+use crate::quantity::{Information, Time};
 
 /// Performance measurements and exit status from running a single command
 #[derive(Debug, Default, Copy, Clone)]
@@ -77,12 +77,7 @@ impl Measurements {
 
     /// Compute modified Z-scores for the wall clock times.
     pub fn modified_zscores(&self) -> Vec<f64> {
-        modified_zscores(
-            &self
-                .wall_clock_times()
-                .map(|t| t.get::<second>())
-                .collect::<Vec<_>>(),
-        )
+        modified_zscores(&self.wall_clock_times().collect::<Vec<_>>())
     }
 
     /// The average user time.
@@ -93,5 +88,9 @@ impl Measurements {
     /// The average system time.
     pub fn time_system_mean(&self) -> Time {
         mean(self.measurements.iter().map(|m| m.time_system))
+    }
+
+    pub fn peak_memory_usage_mean(&self) -> Information {
+        mean(self.measurements.iter().map(|m| m.peak_memory_usage))
     }
 }

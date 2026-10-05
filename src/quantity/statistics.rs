@@ -112,7 +112,7 @@ pub fn standard_deviation<Q: UnsafeRawValue>(values: &[Q], mean: Q) -> Q {
 ///
 /// References:
 /// - <https://en.wikipedia.org/wiki/Median_absolute_deviation>
-pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
+pub fn modified_zscores_f64(xs: &[f64]) -> Vec<f64> {
     assert!(!xs.is_empty());
 
     // Compute sample median:
@@ -129,6 +129,11 @@ pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
 
     // Compute modified Z-scores (x_i - x_median) / MAD
     xs.iter().map(|&x| (x - x_median) / mad).collect()
+}
+
+pub fn modified_zscores<Q: UnsafeRawValue>(values: &[Q]) -> Vec<f64> {
+    let values: Vec<_> = values.iter().map(|q| q.unsafe_raw_value()).collect();
+    modified_zscores_f64(&values)
 }
 
 #[cfg(test)]

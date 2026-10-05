@@ -14,13 +14,13 @@ pub const OUTLIER_THRESHOLD: f64 = 1.4826 * 10.0;
 /// modified Z-score that is larger than `OUTLIER_THRESHOLD`.
 #[cfg(test)]
 pub fn num_outliers(xs: &[f64]) -> usize {
-    use crate::quantity::statistics::modified_zscores;
+    use crate::quantity::statistics::modified_zscores_f64;
 
     if xs.is_empty() {
         return 0;
     }
 
-    let scores = modified_zscores(xs);
+    let scores = modified_zscores_f64(xs);
     scores
         .iter()
         .filter(|&&s| s.abs() > OUTLIER_THRESHOLD)

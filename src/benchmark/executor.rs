@@ -266,7 +266,7 @@ impl Executor for ShellExecutor<'_> {
             time_wall_clock: measurements.time_wall_clock_mean(),
             time_user: measurements.time_user_mean(),
             time_system: measurements.time_system_mean(),
-            peak_memory_usage: Information::zero(),
+            peak_memory_usage: measurements.peak_memory_usage_mean(),
             exit_status: ExitStatus::default(),
         });
 
