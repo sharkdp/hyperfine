@@ -120,6 +120,15 @@ pub fn compute(
 
 #[cfg(test)]
 fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
+    create_result_with_exit_codes(name, mean, vec![Some(0)])
+}
+
+#[cfg(test)]
+fn create_result_with_exit_codes(
+    name: &str,
+    mean: Scalar,
+    exit_codes: Vec<Option<i32>>,
+) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
     BenchmarkResult {
@@ -134,7 +143,7 @@ fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
         max: mean,
         times: None,
         memory_usage_byte: None,
-        exit_codes: Vec::new(),
+        exit_codes,
         parameters: BTreeMap::new(),
     }
 }
@@ -177,4 +186,27 @@ fn test_compute_relative_speed_for_zero_times() {
     let annotated_results = compute_with_check(&results, SortOrder::Command);
 
     assert!(annotated_results.is_none());
+}
+
+#[test]
+fn test_has_failure_excludes_from_comparison() {
+    use approx::assert_relative_eq;
+
+    let results = vec![
+        create_result("cmd1", 3.0),
+        create_result_with_exit_codes("cmd_fail", 0.5, vec![Some(1)]),
+        create_result("cmd3", 5.0),
+    ];
+
+    // Without filtering, the failed command (0.5s) would be "fastest"
+    let all_results = compute_with_check(&results, SortOrder::Command).unwrap();
+    assert_eq!(all_results.len(), 3);
+    assert!(all_results[1].is_reference); // cmd_fail is fastest
+
+    // After filtering out failed results, comparison should work on successes only
+    let filtered: Vec<_> = results.into_iter().filter(|r| !r.has_failure()).collect();
+    let filtered_results = compute_with_check(&filtered, SortOrder::Command).unwrap();
+    assert_eq!(filtered_results.len(), 2);
+    assert!(filtered_results[0].is_reference); // cmd1 is now fastest
+    assert_relative_eq!(1.0, filtered_results[0].relative_speed);
 }
