@@ -54,13 +54,14 @@ impl Measurements {
         mean(self.wall_clock_times())
     }
 
-    /// The standard deviation of wall clock times, if at least two runs were measured.
+    /// The standard deviation of all wall clock times. Not available if only one run has been performed
     pub fn stddev(&self) -> Option<Time> {
-        if self.len() < 2 {
+        let times: Vec<_> = self.wall_clock_times().collect(); // TODO: Avoid collecting
+
+        if times.len() < 2 {
             None
         } else {
-            let times: Vec<_> = self.wall_clock_times().collect();
-            Some(standard_deviation(&times, self.time_wall_clock_mean()))
+            Some(standard_deviation(times))
         }
     }
 
