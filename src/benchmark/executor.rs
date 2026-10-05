@@ -277,7 +277,7 @@ impl Executor for ShellExecutor<'_> {
             time_wall_clock: measurements.time_wall_clock_mean(),
             time_user: measurements.time_user_mean(),
             time_system: measurements.time_system_mean(),
-            peak_memory_usage: measurements.peak_memory_usage_mean(),
+            peak_memory_usage: None,
             exit_status: ExitStatus::default(),
         });
 
@@ -335,7 +335,7 @@ impl Executor for MockExecutor {
             time_wall_clock: Self::extract_time(command.get_command_line()),
             time_user: Time::zero(),
             time_system: Time::zero(),
-            peak_memory_usage: Information::zero(),
+            peak_memory_usage: Some(Information::zero()),
             exit_status,
         })
     }

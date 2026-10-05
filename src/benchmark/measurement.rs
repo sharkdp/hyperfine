@@ -16,6 +16,19 @@ where
     }
 }
 
+fn serialize_optional_information<S>(
+    value: &Option<Information>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match value {
+        Some(value) => serialize_information(value, serializer),
+        None => serializer.serialize_none(),
+    }
+}
+
 /// Performance metric measurements and exit code for a single run
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 pub struct Measurement {
@@ -31,9 +44,12 @@ pub struct Measurement {
     #[serde(serialize_with = "serialize_time")]
     pub time_system: Time,
 
-    /// Maximum memory usage of the process
-    #[serde(serialize_with = "serialize_information")]
-    pub peak_memory_usage: Information,
+    /// Peak resident set size, if available on this platform
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_information"
+    )]
+    pub peak_memory_usage: Option<Information>,
 
     // The exit status of the process
     #[serde(rename = "exit_code", serialize_with = "serialize_exit_status")]
@@ -110,9 +126,5 @@ impl Measurements {
     /// The average system time
     pub fn time_system_mean(&self) -> Time {
         mean(self.measurements.iter().map(|m| m.time_system))
-    }
-
-    pub fn peak_memory_usage_mean(&self) -> Information {
-        mean(self.measurements.iter().map(|m| m.peak_memory_usage))
     }
 }

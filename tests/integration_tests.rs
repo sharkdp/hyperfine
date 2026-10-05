@@ -42,6 +42,30 @@ fn one_run_is_supported() {
         .success();
 }
 
+#[test]
+fn json_memory_availability_matches_platform() {
+    let output = hyperfine_raw_command()
+        .args([
+            "--runs=1",
+            "--style=none",
+            "--export-json=-",
+            "echo benchmark",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let export: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let measurement = &export["results"][0]["measurements"][0];
+    let memory = measurement.get("peak_memory_usage");
+    if cfg!(windows) {
+        assert!(memory.is_none(), "unavailable memory must be omitted");
+    } else {
+        let memory = memory.expect("Unix memory measurement must be present");
+        assert_eq!(memory["unit"], "byte");
+        assert!(memory["value"].as_f64().unwrap() >= 0.0);
+    }
+}
+
 /// Regression test: hyperfine must not panic when writing to a closed
 /// stdout pipe (e.g. `hyperfine ... | head -n 1` or a downstream process
 /// that terminates early). A `BrokenPipe` error should result in a quiet

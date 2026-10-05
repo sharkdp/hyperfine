@@ -158,6 +158,26 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 
 #### JSON
 
+The JSON export contains a `results` array with one entry per benchmark. Each entry has a
+`measurements` array with one object per measured run (excluding warmup runs):
+
+| Field | Format | Meaning and platform differences |
+|:---|:---|:---|
+| `time_wall_clock` | `{ "value": number, "unit": "second" }` | Elapsed time, including time spent waiting or descheduled. Available on all platforms. |
+| `time_user` | `{ "value": number, "unit": "second" }` | CPU time spent in user mode, accumulated across threads. On Unix, includes descendants whose usage propagates through parents waiting for them. On Windows, includes processes associated with the benchmark's job object. |
+| `time_system` | `{ "value": number, "unit": "second" }` | CPU time spent in kernel mode, with the same process accounting as `time_user`. |
+| `peak_memory_usage` | `{ "value": number, "unit": "byte" }` | Peak resident set size (RSS) on Linux and macOS; omitted on Windows. This is the largest per-process peak among the command and descendants whose usage is collected by waiting for them, **not the simultaneous total memory of the process tree**. Linux's KiB counter and macOS's byte counter are both exported in bytes. On macOS, this is RSS, not Apple's separate memory-footprint metric. |
+| `exit_code` | Integer or `null` | Process exit code; `0` indicates success. On Unix, termination by a signal is encoded as `128 + signal number`. `null` means no exit code could be determined. Failed runs are included when allowed by `--ignore-failure`. |
+
+Metrics unavailable on a platform are omitted, rather than reported as zero. Consumers should
+accept missing metrics and additional fields as new metrics are introduced. Time values are always
+exported in seconds, regardless of `--time-unit`. When using a shell, the estimated shell startup
+CPU and wall-clock times are subtracted; memory usage is not adjusted.
+
+For example, two concurrent worker processes that each use 128 MiB can produce a
+`peak_memory_usage` of about 128 MiB, even though their combined memory use is about 256 MiB.
+Threads share a process's address space and are covered by its RSS measurement.
+
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
 of helpful Python programs to further analyze benchmark results and create helpful
