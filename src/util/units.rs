@@ -11,6 +11,8 @@ pub enum Unit {
     Second,
     MilliSecond,
     MicroSecond,
+    Minute,
+    Hour,
 }
 
 impl Unit {
@@ -20,6 +22,8 @@ impl Unit {
             Unit::Second => String::from("s"),
             Unit::MilliSecond => String::from("ms"),
             Unit::MicroSecond => String::from("µs"),
+            Unit::Minute => String::from("min"),
+            Unit::Hour => String::from("h"),
         }
     }
 
@@ -29,6 +33,8 @@ impl Unit {
             Unit::Second => format!("{value:.3}"),
             Unit::MilliSecond => format!("{:.1}", value * 1e3),
             Unit::MicroSecond => format!("{:.1}", value * 1e6),
+            Unit::Minute => format!("{:.1}", value / 60.0),
+            Unit::Hour => format!("{:.1}", value / 3600.0),
         }
     }
 }
@@ -38,6 +44,8 @@ fn test_unit_short_name() {
     assert_eq!("s", Unit::Second.short_name());
     assert_eq!("ms", Unit::MilliSecond.short_name());
     assert_eq!("µs", Unit::MicroSecond.short_name());
+    assert_eq!("min", Unit::Minute.short_name());
+    assert_eq!("h", Unit::Hour.short_name());
 }
 
 // Note - the values are rounded when formatted.
@@ -48,4 +56,6 @@ fn test_unit_format() {
     assert_eq!("123456.8", Unit::MilliSecond.format(value));
 
     assert_eq!("1234.6", Unit::MicroSecond.format(0.00123456));
+    assert_eq!("2.1", Unit::Minute.format(value));
+    assert_eq!("0.0", Unit::Hour.format(value));
 }
