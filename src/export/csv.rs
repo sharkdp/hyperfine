@@ -19,6 +19,8 @@ impl Exporter for CsvExporter {
         _unit: Option<TimeUnit>,
         _sort_order: SortOrder,
     ) -> Result<Vec<u8>> {
+        const CSV_PRECISION: usize = 6;
+
         let mut writer = WriterBuilder::new().from_writer(vec![]);
 
         {
@@ -48,7 +50,7 @@ impl Exporter for CsvExporter {
                 res.min,
                 res.max,
             ] {
-                fields.push(Cow::Owned(f.to_string().into_bytes()))
+                fields.push(Cow::Owned(format!("{f:.CSV_PRECISION$}").into_bytes()))
             }
             for v in res.parameters.values() {
                 fields.push(Cow::Borrowed(v.as_bytes()))
@@ -117,7 +119,7 @@ fn test_csv() {
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,1,2,1,3,4,5,6,two,one
-    command_b,11,12,11,13,14,15,16.5,seven,one
+    command_a,1.000000,2.000000,1.000000,3.000000,4.000000,5.000000,6.000000,two,one
+    command_b,11.000000,12.000000,11.000000,13.000000,14.000000,15.000000,16.500000,seven,one
     "#);
 }
