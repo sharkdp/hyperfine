@@ -31,7 +31,9 @@ impl BenchmarkResultWithRelativeSpeed<'_> {
 }
 
 pub fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
-    l.mean().partial_cmp(&r.mean()).unwrap_or(Ordering::Equal)
+    l.mean_wall_clock_time()
+        .partial_cmp(&r.mean_wall_clock_time())
+        .unwrap_or(Ordering::Equal)
 }
 
 pub fn fastest_of(results: &[BenchmarkResult]) -> &BenchmarkResult {
@@ -66,9 +68,11 @@ fn compute_relative_speeds<'a>(
             }
 
             let ratio = match relative_ordering {
-                Ordering::Less => reference.mean() / result.mean(),
+                Ordering::Less => reference.mean_wall_clock_time() / result.mean_wall_clock_time(),
                 Ordering::Equal => 1.0,
-                Ordering::Greater => result.mean() / reference.mean(),
+                Ordering::Greater => {
+                    result.mean_wall_clock_time() / reference.mean_wall_clock_time()
+                }
             };
 
             // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
@@ -113,7 +117,8 @@ pub fn compute_with_check_from_reference<'a>(
     reference: &'a BenchmarkResult,
     sort_order: SortOrder,
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
-    if fastest_of(results).mean() == 0.0 || reference.mean() == 0.0 {
+    if fastest_of(results).mean_wall_clock_time() == 0.0 || reference.mean_wall_clock_time() == 0.0
+    {
         return None;
     }
 
@@ -126,7 +131,7 @@ pub fn compute_with_check(
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'_>>> {
     let fastest = fastest_of(results);
 
-    if fastest.mean() == 0.0 {
+    if fastest.mean_wall_clock_time() == 0.0 {
         return None;
     }
 

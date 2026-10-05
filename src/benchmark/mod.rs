@@ -15,6 +15,7 @@ use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
 use crate::outlier_detection::OUTLIER_THRESHOLD;
+use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::console_writeln;
 use crate::output::progress_bar::{
     finish_initial_measurement, get_progress_bar, start_initial_measurement,
@@ -441,7 +442,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = modified_zscores(&runs.wall_clock_times());
+        let scores = runs.modified_zscores();
 
         let outlier_warning_options = OutlierWarningOptions {
             warmup_in_use: self.options.warmup_count > 0,

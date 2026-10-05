@@ -48,25 +48,23 @@ pub trait MarkupExporter {
         table.push_str(&self.table_divider(&cells_alignment));
 
         for entry in entries {
-            let measurement = &entry.result;
+            let result = &entry.result;
             // prepare data row strings
-            let cmd_str = measurement
-                .command_with_unused_parameters()
-                .replace('|', "\\|");
-            let mean_str = format_duration_value(measurement.mean(), Some(unit)).0;
-            let stddev_str = if let Some(stddev) = measurement.stddev() {
+            let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
+            let mean_str = format_duration_value(result.mean_wall_clock_time(), Some(unit)).0;
+            let stddev_str = if let Some(stddev) = result.runs.stddev() {
                 format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
             } else {
                 "".into()
             };
-            let min_str = measurement.measurements.min().format_value(unit);
-            let max_str = measurement.measurements.max().format_value(unit);
+            let min_str = result.measurements.min().format_value(unit);
+            let max_str = result.measurements.max().format_value(unit);
             // The ratio of two zero times is undefined, even if they compare equal.
             let relative_unavailable = reference_pending
                 || (explicit_reference
                     && !entry.is_reference
                     && entry.relative_ordering == Ordering::Equal
-                    && measurement.mean_wall_clock_time() == Time::zero());
+                    && result.mean_wall_clock_time() == Time::zero());
             let relative = if relative_unavailable {
                 "N/A".to_string()
             } else {
@@ -116,7 +114,7 @@ pub trait MarkupExporter {
 fn determine_unit_from_results(results: &[BenchmarkResult]) -> TimeUnit {
     if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
-        format_duration_value(first_result.mean(), None).1
+        format_duration_value(first_result.mean_wall_clock_time(), None).1
     } else {
         // Default to `Second`.
         TimeUnit::Second
