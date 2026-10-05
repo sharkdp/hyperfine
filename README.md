@@ -160,20 +160,25 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 
 The JSON export includes the following metrics for each measured run (excluding warmup runs):
 
-| Metric | Unit | Meaning and platform differences |
-|:---|:---|:---|
-| `time_wall_clock` | second | Elapsed time, including time spent waiting or descheduled. Available on all platforms. |
-| `time_user` | second | CPU time spent in user mode, accumulated across threads. On Unix, includes descendants whose usage propagates through parents waiting for them. On Windows, includes processes associated with the benchmark's job object. |
-| `time_system` | second | CPU time spent in kernel mode, with the same process accounting as `time_user`. |
-| `memory_peak_resident` | byte | Peak resident set size (RSS) on Linux and macOS; omitted on Windows. This is the largest per-process peak among the command and descendants whose usage is collected by waiting for them, **not the simultaneous total memory of the process tree**. Linux's KiB counter and macOS's byte counter are both exported in bytes. On macOS, this is RSS, not Apple's separate memory-footprint metric. |
+- **`time_wall_clock`**: Time from start to finish, including time spent waiting, in seconds.
 
-Metrics unavailable on a platform are omitted, rather than reported as zero. Time values are always
-exported in seconds, regardless of `--time-unit`. When using a shell, the estimated shell startup
-CPU and wall-clock times are subtracted; memory usage is not adjusted.
+- **`time_user`**: CPU time spent running the program's code, summed across threads, in seconds.
 
-For example, two concurrent worker processes that each use 128 MiB can produce a
-`memory_peak_resident` of about 128 MiB, even though their combined memory use is about 256 MiB.
-Threads share a process's address space and are covered by its RSS measurement.
+  - Linux/macOS: Includes child-process time when parents wait for their children to finish.
+  - Windows: Includes the command and its child processes.
+
+- **`time_system`**: CPU time spent running operating-system code for the program, for example
+  to read files, summed across threads, in seconds.
+
+  - Linux/macOS: Includes child-process time when parents wait for their children to finish.
+  - Windows: Includes the command and its child processes.
+
+- **`memory_peak_resident`**: Peak memory held in physical RAM, in bytes.
+
+  - Linux/macOS: Peak resident set size (RSS). This is the largest per-process peak among the
+    command and child processes (whose usage is collected when their parents wait for them),
+    *not the simultaneous total memory of the full process tree*.
+  - Windows: Currently not supported.
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
