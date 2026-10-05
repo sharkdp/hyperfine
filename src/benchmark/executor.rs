@@ -9,10 +9,9 @@ use crate::options::{
 use crate::output::progress_bar::get_progress_bar;
 use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
-use crate::util::statistics::mean;
 use crate::util::units::Second;
 
-use super::measurement::Measurement;
+use super::measurement::{Measurement, Measurements};
 
 use anyhow::{bail, Context, Result};
 
@@ -225,9 +224,7 @@ impl Executor for ShellExecutor<'_> {
             None
         };
 
-        let mut times_real: Vec<Second> = vec![];
-        let mut times_user: Vec<Second> = vec![];
-        let mut times_system: Vec<Second> = vec![];
+        let mut measurements = Measurements::default();
 
         for _ in 0..COUNT {
             // Just run the shell without any command
@@ -252,9 +249,7 @@ impl Executor for ShellExecutor<'_> {
                     );
                 }
                 Ok(r) => {
-                    times_real.push(r.time_wall_clock);
-                    times_user.push(r.time_user);
-                    times_system.push(r.time_system);
+                    measurements.push(r);
                 }
             }
 
@@ -268,9 +263,9 @@ impl Executor for ShellExecutor<'_> {
         }
 
         self.shell_spawning_time = Some(Measurement {
-            time_wall_clock: mean(&times_real),
-            time_user: mean(&times_user),
-            time_system: mean(&times_system),
+            time_wall_clock: measurements.time_wall_clock_mean(),
+            time_user: measurements.time_user_mean(),
+            time_system: measurements.time_system_mean(),
             peak_memory_usage: 0,
             exit_status: ExitStatus::default(),
         });
