@@ -158,7 +158,11 @@ impl ExportManager {
 
 /// Write the given content to a file with the specified name
 fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
-    let mut file = OpenOptions::new().write(true).open(filename)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        // Avoid leaving trailing bytes when the new export is shorter.
+        .truncate(true)
+        .open(filename)?;
     file.write_all(content)
         .with_context(|| format!("Failed to export results to '{filename}'"))
 }
