@@ -19,7 +19,7 @@ use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::quantity::{byte, const_time_from_seconds, ratio, second, FormatQuantity, Time, Zero};
 use crate::util::exit_code::extract_exit_code;
-use benchmark_result::BenchmarkResult;
+use benchmark_result::{BenchmarkResult, Parameter};
 use measurement::{Measurement, Measurements};
 
 use anyhow::{anyhow, Result};
@@ -474,7 +474,15 @@ impl<'a> Benchmark<'a> {
                 .command
                 .get_parameters()
                 .iter()
-                .map(|(name, value)| (name.to_string(), value.to_string()))
+                .map(|(name, value)| {
+                    (
+                        name.to_string(),
+                        Parameter {
+                            value: value.to_string(),
+                            is_unused: self.command.is_parameter_unused(name),
+                        },
+                    )
+                })
                 .collect(),
         })
     }

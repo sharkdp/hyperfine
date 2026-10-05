@@ -2,6 +2,15 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
+/// Parameter value and whether it was used in the command line template
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+#[serde(transparent)]
+pub struct Parameter {
+    pub value: String,
+    #[serde(skip)]
+    pub is_unused: bool,
+}
+
 /// Set of values that will be exported.
 // NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
 // `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
@@ -49,5 +58,5 @@ pub struct BenchmarkResult {
 
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub parameters: BTreeMap<String, String>,
+    pub parameters: BTreeMap<String, Parameter>,
 }
