@@ -84,7 +84,7 @@ impl CPUTimer {
         Self { job_object }
     }
 
-    pub fn stop(&self, mut child: Child) -> Result<(Time, Time, Information, ExitStatus)> {
+    pub fn stop(&self, mut child: Child) -> Result<(ExitStatus, Second, Second, u64)> {
         let status = child.wait()?;
 
         let mut job_object_info =
@@ -113,12 +113,10 @@ impl CPUTimer {
             // The `TotalKernelTime` is "The total amount of kernel-mode execution time
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
-            let system_time =
-                Time::new::<nanosecond>((job_object_info.TotalKernelTime as f64) * 100.0);
-
-            Ok((user_time, system_time, Information::zero(), status))
+            let kernel: i64 = job_object_info.TotalKernelTime / HUNDRED_NS_PER_MS;
+            Ok((status, user as f64 * 1e-6, kernel as f64 * 1e-6, 0))
         } else {
-            Ok((Time::zero(), Time::zero(), Information::zero(), status))
+            Ok((status, 0.0, 0.0, 0))
         }
     }
 }

@@ -18,6 +18,12 @@ pub struct BenchmarkRun {
 
     /// Time spent in kernel mode
     pub system_time: Second,
+
+    /// Maximum memory usage of the process, in bytes
+    pub memory_usage_byte: u64,
+
+    /// Exit codes of the process
+    pub exit_code: Option<i32>,
 }
 
 use crate::benchmark::measurement::Measurements;
@@ -44,13 +50,6 @@ pub struct BenchmarkResult {
 
     /// All run time measurements
     pub runs: Vec<BenchmarkRun>,
-
-    /// Maximum memory usage of the process, in bytes
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub memory_usage_byte: Option<Vec<u64>>,
-
-    /// Exit codes of all command invocations
-    pub exit_codes: Vec<Option<i32>>,
 
     /// Parameter values for this benchmark
     pub parameters: BTreeMap<String, Parameter>,

@@ -24,6 +24,17 @@ use std::process::{ChildStdout, Command};
 
 use anyhow::Result;
 
+/// Used to indicate the result of running a command
+#[derive(Debug, Copy, Clone)]
+pub struct TimerResult {
+    pub time_real: Second,
+    pub time_user: Second,
+    pub time_system: Second,
+    pub memory_usage_byte: u64,
+    /// The exit status of the process
+    pub status: ExitStatus,
+}
+
 /// Discard the output of a child process.
 fn discard(output: ChildStdout) {
     const CHUNK_SIZE: usize = 64 << 10;
@@ -82,8 +93,8 @@ pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
         discard(output);
     }
 
-    let (time_user, time_system, peak_memory_usage, exit_status) = cpu_timer.stop(child)?;
-    let time_wall_clock = wallclock_timer.stop();
+    let (status, time_user, time_system, memory_usage_byte) = cpu_timer.stop(child)?;
+    let time_real = wallclock_timer.stop();
 
     Ok(Measurement {
         time_wall_clock,
