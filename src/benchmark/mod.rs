@@ -331,7 +331,10 @@ impl<'a> Benchmark<'a> {
 
             let msg = {
                 let t_wall_clock_mean = measurements.time_wall_clock_mean();
-                let time_unit = t_wall_clock_mean.suitable_unit();
+                let time_unit = self
+                    .options
+                    .time_unit
+                    .unwrap_or(t_wall_clock_mean.suitable_unit());
                 let mean = t_wall_clock_mean.format(time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };

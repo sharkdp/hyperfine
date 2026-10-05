@@ -1,4 +1,3 @@
-use core::f64;
 use std::marker::PhantomData;
 
 use serde::ser::SerializeStruct;
@@ -54,9 +53,7 @@ impl FormatQuantity for Time {
 
     /// Format the given time duration. The unit will be determined automatically.
     fn format_auto(&self) -> String {
-        let unit = self.suitable_unit();
-        let value = self.format(unit);
-        format!("{} {}", value, unit.short_name())
+        self.format(self.suitable_unit())
     }
 
     /// Like `format`, but without displaying the unit.
@@ -102,9 +99,7 @@ impl FormatQuantity for Information {
 
     /// Format the given information. The unit will be determined automatically.
     fn format_auto(&self) -> String {
-        let unit = self.suitable_unit();
-        let value = self.format(unit);
-        format!("{} {}", value, unit.short_name())
+        self.format(self.suitable_unit())
     }
 
     /// Like `format`, but without displaying the unit.
@@ -206,9 +201,11 @@ fn test_format() {
     let time = Time::new::<millisecond>(123.4);
     assert_eq!(time.format(TimeUnit::Second), "0.123 s");
     assert_eq!(time.format(TimeUnit::MilliSecond), "123.4 ms");
+    assert_eq!(time.format_auto(), "123.4 ms");
     assert_eq!(time.format(TimeUnit::MicroSecond), "123400.0 µs");
 
     let peak_memory_usage = Information::new::<kibibyte>(8.);
+    assert_eq!(peak_memory_usage.format_auto(), "8.0 KiB");
     assert_eq!(peak_memory_usage.format(InformationUnit::Byte), "8192 B");
     assert_eq!(
         peak_memory_usage.format(InformationUnit::KibiByte),
