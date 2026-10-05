@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::benchmark::MIN_EXECUTION_TIME;
 use crate::output::format::format_duration;
-use crate::util::units::Second;
+use crate::quantity::{second, Time};
 
 pub struct OutlierWarningOptions {
     pub warmup_in_use: bool,
@@ -13,7 +13,7 @@ pub struct OutlierWarningOptions {
 pub enum Warnings {
     FastExecutionTime,
     NonZeroExitCode,
-    SlowInitialRun(Second, OutlierWarningOptions),
+    SlowInitialRun(Time, OutlierWarningOptions),
     OutliersDetected(OutlierWarningOptions),
 }
 
@@ -26,7 +26,7 @@ impl fmt::Display for Warnings {
                 inaccurate because hyperfine can not calibrate the shell startup time much \
                 more precise than this limit. You can try to use the `-N`/`--shell=none` \
                 option to disable the shell completely.",
-                MIN_EXECUTION_TIME * 1e3
+                MIN_EXECUTION_TIME.get::<second>() * 1e3
             ),
             Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
             Warnings::SlowInitialRun(time_first_run, ref options) => write!(
@@ -34,7 +34,7 @@ impl fmt::Display for Warnings {
                 "The first benchmarking run for this command was significantly slower than the \
                  rest ({time}). This could be caused by (filesystem) caches that were not filled until \
                  after the first run. {hints}",
-                time=format_duration(time_first_run, None),
+                time=format_duration(time_first_run.get::<second>(), None),
                 hints=match (options.warmup_in_use, options.prepare_in_use) {
                     (true, true) => "You are already using both the '--warmup' option as well \
                     as the '--prepare' option. Consider re-running the benchmark on a quiet system. \

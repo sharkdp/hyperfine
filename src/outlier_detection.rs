@@ -22,13 +22,13 @@ pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
     assert!(!xs.is_empty());
 
     // Compute sample median:
-    let x_median = median(xs);
+    let x_median = median(xs.iter().copied());
 
     // Compute the absolute deviations from the median:
     let deviations: Vec<f64> = xs.iter().map(|x| (x - x_median).abs()).collect();
 
     // Compute median absolute deviation:
-    let mad = median(&deviations);
+    let mad = median(deviations.iter().copied());
 
     // Handle MAD == 0 case
     let mad = if mad > 0.0 { mad } else { f64::EPSILON };

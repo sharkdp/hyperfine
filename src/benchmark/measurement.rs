@@ -1,23 +1,23 @@
 use std::process::ExitStatus;
 
 use crate::outlier_detection::modified_zscores;
+use crate::quantity::{second, Information, Time};
 use crate::util::statistics::{max, mean, median, min, standard_deviation};
-use crate::util::units::Second;
 
 /// Performance measurements and exit status from running a single command
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Measurement {
     /// Wall clock time
-    pub time_wall_clock: Second,
+    pub time_wall_clock: Time,
 
     /// Time spent in user mode
-    pub time_user: Second,
+    pub time_user: Time,
 
     /// Time spent in kernel mode
-    pub time_system: Second,
+    pub time_system: Time,
 
-    /// Maximum amount of memory used, in bytes
-    pub peak_memory_usage: u64,
+    /// Maximum amount of memory used
+    pub peak_memory_usage: Information,
 
     /// The exit status of the process
     pub exit_status: ExitStatus,
@@ -42,17 +42,17 @@ impl Measurements {
         self.measurements.push(measurement);
     }
 
-    pub fn wall_clock_times(&self) -> impl Iterator<Item = Second> + '_ {
+    pub fn wall_clock_times(&self) -> impl Iterator<Item = Time> + '_ {
         self.measurements.iter().map(|m| m.time_wall_clock)
     }
 
     /// The average wall clock time.
-    pub fn time_wall_clock_mean(&self) -> Second {
+    pub fn time_wall_clock_mean(&self) -> Time {
         mean(self.wall_clock_times())
     }
 
     /// The standard deviation of wall clock times, if at least two runs were measured.
-    pub fn stddev(&self) -> Option<Second> {
+    pub fn stddev(&self) -> Option<Time> {
         if self.len() < 2 {
             None
         } else {
@@ -62,32 +62,37 @@ impl Measurements {
     }
 
     /// The median wall clock time.
-    pub fn median(&self) -> Second {
-        median(&self.wall_clock_times().collect::<Vec<_>>())
+    pub fn median(&self) -> Time {
+        median(self.wall_clock_times())
     }
 
     /// The minimum wall clock time.
-    pub fn min(&self) -> Second {
+    pub fn min(&self) -> Time {
         min(self.wall_clock_times())
     }
 
     /// The maximum wall clock time.
-    pub fn max(&self) -> Second {
+    pub fn max(&self) -> Time {
         max(self.wall_clock_times())
     }
 
     /// Compute modified Z-scores for the wall clock times.
     pub fn modified_zscores(&self) -> Vec<f64> {
-        modified_zscores(&self.wall_clock_times().collect::<Vec<_>>())
+        modified_zscores(
+            &self
+                .wall_clock_times()
+                .map(|t| t.get::<second>())
+                .collect::<Vec<_>>(),
+        )
     }
 
     /// The average user time.
-    pub fn time_user_mean(&self) -> Second {
+    pub fn time_user_mean(&self) -> Time {
         mean(self.measurements.iter().map(|m| m.time_user))
     }
 
     /// The average system time.
-    pub fn time_system_mean(&self) -> Second {
+    pub fn time_system_mean(&self) -> Time {
         mean(self.measurements.iter().map(|m| m.time_system))
     }
 }

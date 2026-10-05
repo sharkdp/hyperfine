@@ -27,7 +27,7 @@ use windows_sys::{
     },
 };
 
-use crate::util::units::Second;
+use crate::quantity::{microsecond, Information, Time, Zero};
 
 const HUNDRED_NS_PER_MS: i64 = 10;
 
@@ -86,7 +86,7 @@ impl CPUTimer {
         Self { job_object }
     }
 
-    pub fn stop(&self) -> (Second, Second, u64) {
+    pub fn stop(&self) -> (Time, Time, Information) {
         let mut job_object_info =
             mem::MaybeUninit::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>::uninit();
 
@@ -114,9 +114,13 @@ impl CPUTimer {
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
             let kernel: i64 = job_object_info.TotalKernelTime / HUNDRED_NS_PER_MS;
-            (user as f64 * 1e-6, kernel as f64 * 1e-6, 0)
+            (
+                Time::new::<microsecond>(user as f64),
+                Time::new::<microsecond>(kernel as f64),
+                Information::zero(),
+            )
         } else {
-            (0.0, 0.0, 0)
+            (Time::zero(), Time::zero(), Information::zero())
         }
     }
 }

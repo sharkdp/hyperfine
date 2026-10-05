@@ -18,8 +18,8 @@ use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
+use crate::quantity::{byte, const_time_from_seconds, ratio, second, Time, Zero};
 use crate::util::exit_code::extract_exit_code;
-use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use measurement::{Measurement, Measurements};
 
@@ -29,7 +29,7 @@ use colored::*;
 use self::executor::Executor;
 
 /// Threshold for warning about fast execution time
-pub const MIN_EXECUTION_TIME: Second = 5e-3;
+pub const MIN_EXECUTION_TIME: Time = const_time_from_seconds(5e-3);
 
 pub struct Benchmark<'a> {
     number: usize,
@@ -236,7 +236,7 @@ impl<'a> Benchmark<'a> {
         };
 
         let preparation_result = run_preparation_command()?;
-        let preparation_overhead = preparation_result.map_or(0.0, |res| {
+        let preparation_overhead = preparation_result.map_or(Time::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
 
@@ -250,7 +250,7 @@ impl<'a> Benchmark<'a> {
         let success = res.exit_status.success();
 
         let conclusion_result = run_conclusion_command()?;
-        let conclusion_overhead = conclusion_result.map_or(0.0, |res| {
+        let conclusion_overhead = conclusion_result.map_or(Time::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
 
@@ -259,7 +259,8 @@ impl<'a> Benchmark<'a> {
             / (res.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
-                + conclusion_overhead)) as u64;
+                + conclusion_overhead))
+            .get::<ratio>() as u64;
 
         let count = {
             let min = cmp::max(runs_in_min_time, self.options.run_bounds.min);
@@ -292,8 +293,10 @@ impl<'a> Benchmark<'a> {
             run_preparation_command()?;
 
             let msg = {
-                let mean =
-                    format_duration(measurements.time_wall_clock_mean(), self.options.time_unit);
+                let mean = format_duration(
+                    measurements.time_wall_clock_mean().get::<second>(),
+                    self.options.time_unit,
+                );
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -336,13 +339,14 @@ impl<'a> Benchmark<'a> {
         let system_mean = measurements.time_system_mean();
 
         // Formatting and console output
-        let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
-        let min_str = format_duration(t_min, Some(time_unit));
-        let max_str = format_duration(t_max, Some(time_unit));
+        let (mean_str, time_unit) =
+            format_duration_unit(t_mean.get::<second>(), self.options.time_unit);
+        let min_str = format_duration(t_min.get::<second>(), Some(time_unit));
+        let max_str = format_duration(t_max.get::<second>(), Some(time_unit));
         let num_str = format!("{t_num} runs");
 
-        let user_str = format_duration(user_mean, Some(time_unit));
-        let system_str = format_duration(system_mean, Some(time_unit));
+        let user_str = format_duration(user_mean.get::<second>(), Some(time_unit));
+        let system_str = format_duration(system_mean.get::<second>(), Some(time_unit));
 
         if self.options.output_style != OutputStyleOption::Disabled {
             let mut stdout = io::stdout().lock();
@@ -357,7 +361,8 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 )?;
             } else {
-                let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
+                let stddev_str =
+                    format_duration(t_stddev.unwrap().get::<second>(), Some(time_unit));
 
                 console_writeln!(
                     stdout,
@@ -440,19 +445,24 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command: self.command.get_name(),
             command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
-            mean: t_mean,
-            stddev: t_stddev,
-            median: t_median,
-            user: user_mean,
-            system: system_mean,
-            min: t_min,
-            max: t_max,
-            times: Some(measurements.wall_clock_times().collect()),
+            mean: t_mean.get::<second>(),
+            stddev: t_stddev.map(|t| t.get::<second>()),
+            median: t_median.get::<second>(),
+            user: user_mean.get::<second>(),
+            system: system_mean.get::<second>(),
+            min: t_min.get::<second>(),
+            max: t_max.get::<second>(),
+            times: Some(
+                measurements
+                    .wall_clock_times()
+                    .map(|t| t.get::<second>())
+                    .collect(),
+            ),
             memory_usage_byte: Some(
                 measurements
                     .measurements
                     .iter()
-                    .map(|m| m.peak_memory_usage)
+                    .map(|m| m.peak_memory_usage.get::<byte>() as u64)
                     .collect(),
             ),
             exit_codes: measurements
