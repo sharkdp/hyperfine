@@ -59,7 +59,7 @@ fn test_json_optional_memory() {
             ..BenchmarkResult::default()
         };
         let output = JsonExporter::default()
-            .serialize(&[result], None, SortOrder::Command)
+            .serialize(&[result], None, SortOrder::Command, None)
             .unwrap();
         let actual: serde_json::Value = serde_json::from_slice(&output).unwrap();
         let mut expected = json!({

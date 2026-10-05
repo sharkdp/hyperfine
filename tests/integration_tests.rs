@@ -940,7 +940,7 @@ fn selects_reference_with_parameterized_prepare() {
     assert_eq!(
         results
             .iter()
-            .map(|result| result["parameters"]["delay"].as_str().unwrap())
+            .map(|result| result["parameters"]["delay"]["value"].as_str().unwrap())
             .collect::<Vec<_>>(),
         ["0.2", "0.4", "0.6"]
     );
