@@ -8,14 +8,19 @@ use crate::quantity::TimeUnit;
 
 use anyhow::Result;
 
+mod metadata;
+use metadata::Metadata;
+
 #[derive(Serialize, Debug)]
 struct HyperfineSummary<'a> {
-    schema_version: u32,
+    metadata: &'a Metadata,
     results: &'a [BenchmarkResult],
 }
 
 #[derive(Default)]
-pub struct JsonExporter {}
+pub struct JsonExporter {
+    metadata: Metadata,
+}
 
 impl Exporter for JsonExporter {
     fn serialize(
@@ -26,7 +31,7 @@ impl Exporter for JsonExporter {
         _reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
         let mut output = to_vec_pretty(&HyperfineSummary {
-            schema_version: 2,
+            metadata: &self.metadata,
             results,
         });
         if let Ok(ref mut content) = output {
@@ -62,12 +67,19 @@ fn test_json_optional_memory() {
             }]),
             ..BenchmarkResult::default()
         };
-        let output = JsonExporter::default()
+        let mut exporter = JsonExporter::default();
+        exporter.metadata.start_time = Some("2000-02-29T12:34:56Z".to_owned());
+        let output = exporter
             .serialize(&[result], None, SortOrder::Command, None)
             .unwrap();
         let actual: serde_json::Value = serde_json::from_slice(&output).unwrap();
         let mut expected = json!({
-            "schema_version": 2,
+            "metadata": {
+                "json_schema_version": metadata::JSON_SCHEMA_VERSION,
+                "hyperfine_version": env!("CARGO_PKG_VERSION"),
+                "start_time": "2000-02-29T12:34:56Z",
+                "platform": exporter.metadata.platform
+            },
             "results": [{
                 "command": "example",
                 "measurements": [{
