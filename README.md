@@ -151,6 +151,20 @@ multiple benchmarks:
 | ![](doc/histogram.png) | ![](doc/whisker.png) |
 |---:|---:|
 
+### Comparing against a previous run
+
+Use `--import-json <file>` to read a JSON file produced by a previous `--export-json`
+run. The imported benchmarks are not re-executed: they appear in the relative speed
+summary and in every export format alongside any commands you give on the command line.
+This is handy when the baseline takes a long time to run, or lives on another machine,
+or simply already exists from an earlier session:
+
+```sh
+hyperfine 'old-binary args' --export-json baseline.json
+hyperfine --import-json baseline.json 'new-binary args'
+```
+
+`--import-json` may be specified more than once to combine several saved files.
 
 ### Detailed benchmark flowchart
 
