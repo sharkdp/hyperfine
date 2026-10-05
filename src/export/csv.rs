@@ -53,7 +53,7 @@ impl Exporter for CsvExporter {
                 fields.push(Cow::Owned(format!("{f:.CSV_PRECISION$}").into_bytes()))
             }
             for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.as_bytes()))
+                fields.push(Cow::Borrowed(v.value.as_bytes()))
             }
             writer.write_record(fields)?;
         }
@@ -64,6 +64,7 @@ impl Exporter for CsvExporter {
 
 #[test]
 fn test_csv() {
+    use crate::benchmark::benchmark_result::Parameter;
     use std::collections::BTreeMap;
     let exporter = CsvExporter::default();
 
@@ -83,8 +84,20 @@ fn test_csv() {
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
-                params.insert("foo".into(), "one".into());
-                params.insert("bar".into(), "two".into());
+                params.insert(
+                    "foo".into(),
+                    Parameter {
+                        value: "one".into(),
+                        is_unused: false,
+                    },
+                );
+                params.insert(
+                    "bar".into(),
+                    Parameter {
+                        value: "two".into(),
+                        is_unused: false,
+                    },
+                );
                 params
             },
         },
@@ -103,8 +116,20 @@ fn test_csv() {
             exit_codes: vec![Some(0), Some(0), Some(0)],
             parameters: {
                 let mut params = BTreeMap::new();
-                params.insert("foo".into(), "one".into());
-                params.insert("bar".into(), "seven".into());
+                params.insert(
+                    "foo".into(),
+                    Parameter {
+                        value: "one".into(),
+                        is_unused: false,
+                    },
+                );
+                params.insert(
+                    "bar".into(),
+                    Parameter {
+                        value: "seven".into(),
+                        is_unused: false,
+                    },
+                );
                 params
             },
         },
