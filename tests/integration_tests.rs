@@ -942,6 +942,21 @@ fn speed_comparison_sort_order() {
 
 #[cfg(windows)]
 #[test]
+fn windows_runs_executable_paths_with_forward_slashes() {
+    let hyperfine_exe = assert_cmd::cargo::cargo_bin!("hyperfine");
+    let working_directory = std::env::current_dir().unwrap();
+    let relative_path = hyperfine_exe.strip_prefix(working_directory).unwrap();
+    let command_path = std::path::Path::new("..").join(relative_path);
+    let command = format!(
+        "{} --version",
+        command_path.to_string_lossy().replace('\\', "/")
+    );
+
+    hyperfine().arg("--runs=1").arg(command).assert().success();
+}
+
+#[cfg(windows)]
+#[test]
 fn windows_quote_args() {
     hyperfine()
         .arg("more \"example_input_file.txt\"")
