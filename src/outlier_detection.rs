@@ -5,7 +5,7 @@
 //!   The ASQC Basic References in Quality Control: Statistical Techniques, Edward F. Mykytka,
 //!   Ph.D., Editor.
 
-use statistical::median;
+use crate::util::statistics::median;
 
 /// Minimum modified Z-score for a datapoint to be an outlier. Here, 1.4826 is a factor that
 /// converts the MAD to an estimator for the standard deviation. The second factor is the number
