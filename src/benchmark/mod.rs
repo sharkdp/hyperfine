@@ -6,6 +6,7 @@ pub mod scheduler;
 
 use std::cmp;
 use std::io::{self, Write};
+use std::time::Instant;
 
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
@@ -15,7 +16,7 @@ use crate::options::{
 use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::console_writeln;
 use crate::output::progress_bar::{
-    get_progress_bar, replace_message_template, reset_progress_template,
+    finish_initial_measurement, get_progress_bar, start_initial_measurement,
 };
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
@@ -244,13 +245,15 @@ impl<'a> Benchmark<'a> {
 
         // Set up progress bar (and spinner for initial measurement)
         let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
-            let temp_bar = get_progress_bar(
+            Some(get_progress_bar(
                 self.options.run_bounds.min,
-                "Initial time measurement:",
+                if preparation_command.is_some() {
+                    "Running preparation command"
+                } else {
+                    "Initial run"
+                },
                 self.options.output_style,
-            );
-            let template = format!("{{msg}} {{elapsed:<{}}}", 30 - temp_bar.message().len() - 1,);
-            Some(replace_message_template(temp_bar, &template))
+            ))
         } else {
             None
         };
@@ -262,6 +265,9 @@ impl<'a> Benchmark<'a> {
         });
 
         // Initial timing run
+        if let Some(bar) = progress_bar.as_ref() {
+            start_initial_measurement(bar, Instant::now());
+        }
         let res = self.executor.run_command_and_measure(
             self.command,
             benchmark_iteration,
@@ -269,6 +275,18 @@ impl<'a> Benchmark<'a> {
             output_policy,
         )?;
         let success = res.exit_status.success();
+
+        if let Some(bar) = progress_bar.as_ref() {
+            let time_unit = self
+                .options
+                .time_unit
+                .unwrap_or(res.time_wall_clock.suitable_unit());
+            let estimate = res.time_wall_clock.format(time_unit);
+            finish_initial_measurement(
+                bar,
+                format!("Current estimate: {}", estimate.to_string().green()),
+            );
+        }
 
         let conclusion_result = run_conclusion_command(benchmark_iteration)?;
         let conclusion_overhead = conclusion_result.map_or(Time::zero(), |res| {
@@ -302,18 +320,14 @@ impl<'a> Benchmark<'a> {
         all_succeeded = all_succeeded && success;
 
         // Re-configure the progress bar
-        let progress_bar = progress_bar.map(reset_progress_template);
         if let Some(bar) = progress_bar.as_ref() {
-            bar.set_length(count)
-        }
-        if let Some(bar) = progress_bar.as_ref() {
-            bar.inc(1)
+            bar.set_length(count);
+            bar.inc(1);
         }
 
         // Gather statistics (perform the actual benchmark)
         for i in 0..count_remaining {
             let benchmark_iteration = BenchmarkIteration::Benchmark(i + 1);
-            run_preparation_command(benchmark_iteration)?;
 
             let msg = {
                 let t_wall_clock_mean = measurements.time_wall_clock_mean();
@@ -328,6 +342,8 @@ impl<'a> Benchmark<'a> {
             if let Some(bar) = progress_bar.as_ref() {
                 bar.set_message(msg.to_owned())
             }
+
+            run_preparation_command(benchmark_iteration)?;
 
             let res = self.executor.run_command_and_measure(
                 self.command,

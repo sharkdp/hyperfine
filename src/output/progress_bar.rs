@@ -1,5 +1,6 @@
-use indicatif::{ProgressBar, ProgressStyle};
-use std::time::Duration;
+use indicatif::{FormattedDuration, ProgressBar, ProgressState, ProgressStyle};
+use std::fmt;
+use std::time::{Duration, Instant};
 
 use crate::options::OutputStyleOption;
 
@@ -9,42 +10,46 @@ const TICK_SETTINGS: (&str, u64) = ("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ ", 80);
 #[cfg(windows)]
 const TICK_SETTINGS: (&str, u64) = (r"+-x| ", 200);
 
-const DEFAULT_MESSAGE_TEMPLATE: &str = "{msg:<30}";
+// Keep the message area 30 columns wide across preparation, the initial run,
+// and estimates so that switching between them does not move the bar.
+const DEFAULT_TEMPLATE: &str = " {spinner} {msg:<30} {wide_bar} ETA {eta_precise} ";
+const INITIAL_TEMPLATE: &str =
+    " {spinner} Initial run: {initial_elapsed:<17} {wide_bar} ETA {eta_precise} ";
 
-fn create_progress_template(msg_template: &str) -> String {
-    format!(
-        " {{spinner}} {} {{wide_bar}} ETA {{eta_precise}} ",
-        msg_template
-    )
+/// Show the time elapsed since the initial benchmark command started.
+pub fn start_initial_measurement(bar: &ProgressBar, started: Instant) {
+    // Keep a separate clock: the progress bar's clock and ETA estimator must
+    // continue to include preparation time.
+    let style = bar
+        .style()
+        .template(INITIAL_TEMPLATE)
+        .expect("no template error")
+        .with_key(
+            "initial_elapsed",
+            move |_: &ProgressState, w: &mut dyn fmt::Write| {
+                write!(w, "{}", FormattedDuration(started.elapsed())).unwrap();
+            },
+        );
+    bar.set_style(style);
 }
 
-/// Replace the usual `message` in a progress bar with the result of evaluating `template`.
-/// The `template` may contain a `ProgressBar`'s templated fields.
-#[must_use]
-pub fn replace_message_template(bar: ProgressBar, template: &str) -> ProgressBar {
-    let old_style = bar.style();
-    let new_template = create_progress_template(template);
-    let new_style = old_style
-        .template(&new_template)
-        .expect("no template error");
-    bar.with_style(new_style)
-}
-
-/// Reset a progress bar's template to the default.
-/// This is useful after calling `replace_message_template()`.
-#[must_use]
-pub fn reset_progress_template(bar: ProgressBar) -> ProgressBar {
-    replace_message_template(bar, DEFAULT_MESSAGE_TEMPLATE)
+/// Stop showing the initial timer and display the next phase's message.
+pub fn finish_initial_measurement(bar: &ProgressBar, message: String) {
+    bar.set_message(message);
+    bar.set_style(
+        bar.style()
+            .template(DEFAULT_TEMPLATE)
+            .expect("no template error"),
+    );
 }
 
 /// Return a pre-configured progress bar
 pub fn get_progress_bar(length: u64, msg: &str, option: OutputStyleOption) -> ProgressBar {
-    let template = create_progress_template(DEFAULT_MESSAGE_TEMPLATE);
     let progressbar_style = match option {
         OutputStyleOption::Basic | OutputStyleOption::Color => ProgressStyle::default_bar(),
         _ => ProgressStyle::default_spinner()
             .tick_chars(TICK_SETTINGS.0)
-            .template(&template)
+            .template(DEFAULT_TEMPLATE)
             .expect("no template error"),
     };
 
