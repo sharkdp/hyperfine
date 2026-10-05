@@ -16,7 +16,10 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
+from plot_utils import METRICS, add_metric_argument, validate_metric
+
 parser = argparse.ArgumentParser(description=__doc__)
+add_metric_argument(parser)
 parser.add_argument("file", help="JSON file with benchmark results")
 parser.add_argument("--title", help="Plot title")
 parser.add_argument(
@@ -47,10 +50,18 @@ parser.add_argument(
 )
 parser.add_argument("-o", "--output", help="Save image to the given filename.")
 parser.add_argument(
-    "--t-min", metavar="T", help="Minimum time to be displayed (seconds)"
+    "--min",
+    "--t-min",
+    dest="value_min",
+    type=float,
+    help="Minimum value to display (seconds, or MiB for memory)",
 )
 parser.add_argument(
-    "--t-max", metavar="T", help="Maximum time to be displayed (seconds)"
+    "--max",
+    "--t-max",
+    dest="value_max",
+    type=float,
+    help="Maximum value to display (seconds, or MiB for memory)",
 )
 parser.add_argument(
     "--log-count",
@@ -59,31 +70,41 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+metric_label, metric_scale = METRICS[args.metric]
 
 with open(args.file) as f:
     results = json.load(f)["results"]
+validate_metric(parser, results, args.metric)
 
 if args.labels:
     labels = args.labels.split(",")
 else:
     labels = [b.get("name", b["command"]) for b in results]
-all_times = [
-    [m["time_wall_clock"]["value"] for m in b["measurements"]] for b in results
+all_values = [
+    [m[args.metric]["value"] / metric_scale for m in b["measurements"]] for b in results
 ]
 
-t_min = float(args.t_min) if args.t_min else np.min(list(map(np.min, all_times)))
-t_max = float(args.t_max) if args.t_max else np.max(list(map(np.max, all_times)))
+value_min = (
+    args.value_min
+    if args.value_min is not None
+    else np.min(list(map(np.min, all_values)))
+)
+value_max = (
+    args.value_max
+    if args.value_max is not None
+    else np.max(list(map(np.max, all_values)))
+)
 
 bins = int(args.bins) if args.bins else "auto"
 histtype = args.type if args.type else "bar"
 
 plt.figure(figsize=(10, 5))
 plt.hist(
-    all_times,
+    all_values,
     label=labels,
     bins=bins,
     histtype=histtype,
-    range=(t_min, t_max),
+    range=(value_min, value_max),
 )
 plt.legend(
     loc=args.legend_location,
@@ -92,7 +113,7 @@ plt.legend(
     prop={"size": 10, "family": ["Source Code Pro", "Fira Mono", "Courier New"]},
 )
 
-plt.xlabel("Time [s]")
+plt.xlabel(metric_label)
 if args.title:
     plt.title(args.title)
 

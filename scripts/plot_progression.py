@@ -19,16 +19,19 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
+from plot_utils import METRICS, add_metric_argument, validate_metric
 
-def moving_average(times, num_runs):
-    times_padded = np.pad(
-        times, (num_runs // 2, num_runs - 1 - num_runs // 2), mode="edge"
+
+def moving_average(values, num_runs):
+    values_padded = np.pad(
+        values, (num_runs // 2, num_runs - 1 - num_runs // 2), mode="edge"
     )
     kernel = np.ones(num_runs) / num_runs
-    return np.convolve(times_padded, kernel, mode="valid")
+    return np.convolve(values_padded, kernel, mode="valid")
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_metric_argument(parser)
 parser.add_argument("file", help="JSON file with benchmark results")
 parser.add_argument("--title", help="Plot Title")
 parser.add_argument("-o", "--output", help="Save image to the given filename.")
@@ -47,17 +50,19 @@ parser.add_argument(
 
 
 args = parser.parse_args()
+metric_label, metric_scale = METRICS[args.metric]
 
 with open(args.file) as f:
     results = json.load(f)["results"]
+validate_metric(parser, results, args.metric)
 
 for result in results:
     label = result.get("name", result["command"])
-    times = [m["time_wall_clock"]["value"] for m in result["measurements"]]
-    num = len(times)
+    values = [m[args.metric]["value"] / metric_scale for m in result["measurements"]]
+    num = len(values)
     nums = range(num)
 
-    plt.scatter(x=nums, y=times, marker=".")
+    plt.scatter(x=nums, y=values, marker=".")
     plt.ylim([0, None])
     plt.xlim([-1, num])
 
@@ -68,7 +73,7 @@ for result in results:
             else args.moving_average_width
         )
 
-        average = moving_average(times, moving_average_width)
+        average = moving_average(values, moving_average_width)
         plt.plot(nums, average, "-")
 
 if args.title:
@@ -81,7 +86,7 @@ for result in results:
         legend.append("moving average")
 plt.legend(legend)
 
-plt.ylabel("Time [s]")
+plt.ylabel(metric_label)
 
 if args.output:
     plt.savefig(args.output)
