@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::benchmark::MIN_EXECUTION_TIME;
-use crate::quantity::{Time, TimeQuantity, TimeUnit};
+use crate::quantity::{Time, TimeQuantity};
 
 pub struct OutlierWarningOptions {
     pub warmup_in_use: bool,
@@ -25,7 +25,7 @@ impl fmt::Display for Warnings {
                 inaccurate because hyperfine can not calibrate the shell startup time much \
                 more precise than this limit. You can try to use the `-N`/`--shell=none` \
                 option to disable the shell completely.",
-                min_execution_time = MIN_EXECUTION_TIME.format_value_in(TimeUnit::MilliSecond, 0)
+                min_execution_time = MIN_EXECUTION_TIME.format_auto(None)
             ),
             Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
             Warnings::SlowInitialRun(time_first_run, ref options) => write!(
