@@ -29,6 +29,7 @@ fn test_markup_export_auto_ms() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             name: None,
+            display_name: String::from("sleep 0.1"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.09),
@@ -57,6 +58,7 @@ fn test_markup_export_auto_ms() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             name: None,
+            display_name: String::from("sleep 2"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.0),
@@ -130,6 +132,7 @@ fn test_markup_export_auto_s() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             name: None,
+            display_name: String::from("sleep 2"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.1),
@@ -158,6 +161,7 @@ fn test_markup_export_auto_s() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             name: None,
+            display_name: String::from("sleep 0.1"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.1),
@@ -231,6 +235,7 @@ fn test_markup_export_manual_ms() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             name: None,
+            display_name: String::from("sleep 2"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.1),
@@ -259,6 +264,7 @@ fn test_markup_export_manual_ms() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             name: None,
+            display_name: String::from("sleep 0.1"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.1),
@@ -331,6 +337,7 @@ fn test_markup_export_manual_s() {
         BenchmarkResult {
             command: String::from("sleep 2"),
             name: None,
+            display_name: String::from("sleep 2"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.01),
@@ -359,6 +366,7 @@ fn test_markup_export_manual_s() {
         BenchmarkResult {
             command: String::from("sleep 0.1"),
             name: None,
+            display_name: String::from("sleep 0.1"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.11),

@@ -50,7 +50,7 @@ pub trait MarkupExporter {
         for entry in entries {
             let result = &entry.result;
             // prepare data row strings
-            let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
+            let cmd_str = result.display_name.replace('|', "\\|");
             let mean_str = result.mean_wall_clock_time().format_value(time_unit);
             let stddev_str = if let Some(stddev) = result.measurements.stddev() {
                 format!(" ± {}", stddev.format_value(time_unit))

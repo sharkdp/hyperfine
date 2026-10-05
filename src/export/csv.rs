@@ -82,6 +82,7 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("echo command_a"),
             name: Some(String::from("command_a")),
+            display_name: String::from("command_a"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(7.0),
@@ -111,14 +112,12 @@ fn test_csv() {
                     "foo".into(),
                     Parameter {
                         value: "one".into(),
-                        is_unused: false,
                     },
                 );
                 params.insert(
                     "bar".into(),
                     Parameter {
                         value: "two".into(),
-                        is_unused: false,
                     },
                 );
                 params
@@ -127,6 +126,7 @@ fn test_csv() {
         BenchmarkResult {
             command: String::from("command_b"),
             name: None,
+            display_name: String::from("command_b"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(17.0),
@@ -156,14 +156,12 @@ fn test_csv() {
                     "foo".into(),
                     Parameter {
                         value: "one".into(),
-                        is_unused: false,
                     },
                 );
                 params.insert(
                     "bar".into(),
                     Parameter {
                         value: "seven".into(),
-                        is_unused: false,
                     },
                 );
                 params

@@ -89,11 +89,7 @@ impl<'a> Scheduler<'a> {
                     let reference = annotated_results.iter().find(|r| r.is_reference).unwrap();
                     let others = annotated_results.iter().filter(|r| !r.is_reference);
 
-                    console_writeln!(
-                        stdout,
-                        "  {} ran",
-                        reference.result.command_with_unused_parameters().cyan()
-                    )?;
+                    console_writeln!(stdout, "  {} ran", reference.result.display_name.cyan())?;
 
                     for item in others {
                         let stddev = if let Some(stddev) = item.relative_speed_stddev {
@@ -122,7 +118,7 @@ impl<'a> Scheduler<'a> {
                             stdout,
                             "{} {}",
                             comparator,
-                            &item.result.command_with_unused_parameters().magenta()
+                            &item.result.display_name.magenta()
                         )?;
                     }
                 }
@@ -146,7 +142,7 @@ impl<'a> Scheduler<'a> {
                             } else {
                                 "        ".into()
                             },
-                            item.result.command_with_unused_parameters(),
+                            item.result.display_name,
                             relationship,
                         )?;
                     }

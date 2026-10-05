@@ -130,7 +130,7 @@ pub fn serialize_time<S>(t: &Time, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let mut state = s.serialize_struct("Time", 3)?;
+    let mut state = s.serialize_struct("Time", 2)?;
     state.serialize_field("value", &t.get::<second>())?;
     state.serialize_field("unit", "second")?;
     state.end()
@@ -140,7 +140,7 @@ pub fn serialize_information<S>(i: &Information, s: S) -> Result<S::Ok, S::Error
 where
     S: Serializer,
 {
-    let mut state = s.serialize_struct("Information", 3)?;
+    let mut state = s.serialize_struct("Information", 2)?;
     state.serialize_field("value", &i.get::<byte>())?;
     state.serialize_field("unit", "byte")?;
     state.end()

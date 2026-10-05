@@ -158,6 +158,7 @@ fn create_result(name: &str, mean: f64) -> BenchmarkResult {
 
     BenchmarkResult {
         command: name.into(),
+        display_name: name.into(),
         name: None,
         measurements: Measurements {
             measurements: vec![Measurement {

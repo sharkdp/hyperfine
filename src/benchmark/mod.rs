@@ -482,6 +482,7 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command,
             name,
+            display_name: self.command.get_name_with_unused_parameters(),
             measurements,
             parameters: self
                 .command
@@ -492,7 +493,6 @@ impl<'a> Benchmark<'a> {
                         name.to_string(),
                         Parameter {
                             value: value.to_string(),
-                            is_unused: self.command.is_parameter_unused(name),
                         },
                     )
                 })
