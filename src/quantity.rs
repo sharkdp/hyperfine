@@ -1,7 +1,3 @@
-//! Typed quantities for benchmark measurements.
-//!
-//! Both time and information use `f64` storage. Whole-byte counts are exact up to 8 PiB.
-
 use std::marker::PhantomData;
 
 pub use uom::num_traits::Zero;

@@ -61,57 +61,49 @@ where
     }
 }
 
-/// Access a quantity in its base unit for statistical operations.
-pub trait RawValue {
-    fn raw_value(&self) -> f64;
-    fn from_raw_value(value: f64) -> Self;
+/// This is just sad, but after several hours trying to figure out how to write
+/// a generic `standard_deviation` function using `uom` quantities, I gave up.
+pub trait UnsafeRawValue {
+    fn unsafe_raw_value(&self) -> f64;
+    fn unsafe_from_raw_value(value: f64) -> Self;
 }
 
-impl RawValue for Time {
-    fn raw_value(&self) -> f64 {
+impl UnsafeRawValue for Time {
+    fn unsafe_raw_value(&self) -> f64 {
         self.get::<second>()
     }
 
-    fn from_raw_value(value: f64) -> Self {
+    fn unsafe_from_raw_value(value: f64) -> Self {
         Time::new::<second>(value)
     }
 }
 
-impl RawValue for Information {
-    fn raw_value(&self) -> f64 {
+impl UnsafeRawValue for Information {
+    fn unsafe_raw_value(&self) -> f64 {
         self.get::<byte>()
     }
 
-    fn from_raw_value(value: f64) -> Self {
+    fn unsafe_from_raw_value(value: f64) -> Self {
         Information::new::<byte>(value)
     }
 }
 
-impl RawValue for f64 {
-    fn raw_value(&self) -> f64 {
-        *self
-    }
-    fn from_raw_value(value: f64) -> Self {
-        value
-    }
-}
-
 /// Sample standard deviation, using an already computed mean.
-pub fn standard_deviation<Q: RawValue>(values: &[Q], mean: Q) -> Q {
-    let mean = mean.raw_value();
+pub fn standard_deviation<Q: UnsafeRawValue>(values: &[Q], mean: Q) -> Q {
+    let mean = mean.unsafe_raw_value();
     assert!(
         values.len() > 1,
         "standard deviation requires at least two measurements"
     );
     let sum = values
         .iter()
-        .map(|value| (value.raw_value() - mean) * (value.raw_value() - mean))
+        .map(|value| (value.unsafe_raw_value() - mean) * (value.unsafe_raw_value() - mean))
         .fold(0.0, |sum, deviation| sum + deviation);
     assert!(sum >= 0.0, "invalid sum of squared deviations");
 
     // Preserve the operation order of statistical 1.0: dividing by n - 1
     // before taking the square root also preserves exported floating-point values.
-    Q::from_raw_value((sum / (values.len() as f64 - 1.0)).sqrt())
+    Q::unsafe_from_raw_value((sum / (values.len() as f64 - 1.0)).sqrt())
 }
 
 #[cfg(test)]
