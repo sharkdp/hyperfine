@@ -9,11 +9,13 @@
 
 ## Changes
 
+- With `--parameter-scan` or `--parameter-list`, `--reference` now selects an existing benchmark by its full displayed name instead of running a separate reference command. The name must match exactly one benchmark; use `--command-name` instead of `--reference-name` in this mode, see #847 and #979 (@sharkdp)
 - Format times in CSV exports with six decimal places, see #966 and #972 (@sharkdp)
 - Update dependencies and raise the minimum supported Rust version to 1.97, see #934 (@sharkdp)
 
 ## Bugfixes
 
+- Make Markdown, AsciiDoc, and Org-mode exports compare against the specified reference, and label faster and slower results in command-sorted comparisons with `--reference`, see #811 and #979 (@sharkdp)
 - Reject zero values for `--runs`, `--min-runs`, and `--max-runs` instead of allowing invalid run counts, see #923 (@VXNCXNX, @sharkdp)
 - Reject negative parameter-scan steps before expanding ranges, avoiding hangs and excessive memory use, see #951 (@Likio3000)
 - Preserve existing export files when command options are invalid, see #950 (@Likio3000)
