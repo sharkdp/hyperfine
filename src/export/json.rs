@@ -28,6 +28,8 @@ struct HyperfineSummary<'a> {
 struct JsonBenchmarkResult<'a> {
     #[serde(flatten)]
     result: &'a BenchmarkResult,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    is_reference: bool,
     summary: BenchmarkSummary,
 }
 
@@ -119,15 +121,17 @@ impl Exporter for JsonExporter {
         results: &[BenchmarkResult],
         _time_unit: Option<TimeUnit>,
         _sort_order: SortOrder,
-        _reference_index: Option<usize>,
+        reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
         let mut output = to_vec_pretty(&HyperfineSummary {
             schema_version: JSON_SCHEMA_VERSION,
             metadata: &self.metadata,
             results: results
                 .iter()
-                .map(|result| JsonBenchmarkResult {
+                .enumerate()
+                .map(|(index, result)| JsonBenchmarkResult {
                     result,
+                    is_reference: reference_index == Some(index),
                     summary: BenchmarkSummary::from_measurements(&result.measurements),
                 })
                 .collect(),
