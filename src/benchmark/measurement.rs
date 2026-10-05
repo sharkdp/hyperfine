@@ -1,25 +1,39 @@
+use std::process::ExitStatus;
+
 use serde::Serialize;
 
 use crate::benchmark::quantity::{max, mean, median, min, standard_deviation, Byte, Second};
 use crate::outlier_detection::modified_zscores;
+use crate::util::exit_code::extract_exit_code;
+
+fn serialize_exit_status<S>(exit_status: &ExitStatus, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match extract_exit_code(*exit_status) {
+        Some(code) => serializer.serialize_i32(code),
+        None => serializer.serialize_unit(),
+    }
+}
 
 /// Performance metric measurements and exit code for a single run
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
 pub struct Measurement {
     /// Elapsed wall clock time (real time)
-    pub wall_clock_time: Second,
+    pub time_wall_clock: Second,
 
     /// Time spent in user mode
-    pub user_time: Second,
+    pub time_user: Second,
 
     /// Time spent in kernel mode
-    pub system_time: Second,
+    pub time_system: Second,
 
     /// Maximum memory usage of the process
-    pub memory_usage_byte: Byte,
+    pub peak_memory_usage: Byte,
 
-    /// Exit codes of the process
-    pub exit_code: Option<i32>,
+    // The exit status of the process
+    #[serde(serialize_with = "serialize_exit_status")]
+    pub exit_status: ExitStatus,
 }
 
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
@@ -47,12 +61,12 @@ impl Measurements {
     pub fn wall_clock_times(&self) -> Vec<Second> {
         self.measurements
             .iter()
-            .map(|m| m.wall_clock_time)
+            .map(|m| m.time_wall_clock)
             .collect()
     }
 
     /// The average wall clock time
-    pub fn mean(&self) -> Second {
+    pub fn time_wall_clock_mean(&self) -> Second {
         mean(&self.wall_clock_times())
     }
 
@@ -83,25 +97,33 @@ impl Measurements {
     }
 
     /// The average user time
-    pub fn user_mean(&self) -> Second {
+    pub fn time_user_mean(&self) -> Second {
         mean(
             &self
                 .measurements
                 .iter()
-                .map(|m| m.user_time)
+                .map(|m| m.time_user)
                 .collect::<Vec<_>>(),
         )
     }
 
     /// The average system time
-    pub fn system_mean(&self) -> Second {
+    pub fn time_system_mean(&self) -> Second {
         mean(
             &self
                 .measurements
                 .iter()
-                .map(|m| m.system_time)
+                .map(|m| m.time_system)
                 .collect::<Vec<_>>(),
         )
+    }
+
+    pub fn peak_memory_usage_mean(&self) -> Byte {
+        self.measurements
+            .iter()
+            .map(|m| m.peak_memory_usage)
+            .max_by(|a, b| a.partial_cmp(b).unwrap()) // TODO
+            .unwrap() // TODO
     }
 
     pub fn modified_zscores(&self) -> Vec<f64> {

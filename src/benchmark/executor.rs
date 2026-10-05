@@ -2,7 +2,8 @@
 use std::os::windows::process::CommandExt;
 use std::process::ExitStatus;
 
-use crate::benchmark::quantity::mean;
+use crate::benchmark::measurement::Measurement;
+use crate::benchmark::measurement::Measurements;
 use crate::benchmark::quantity::Byte;
 use crate::benchmark::quantity::Second;
 use crate::command::Command;
@@ -10,11 +11,8 @@ use crate::options::{
     CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
 };
 use crate::output::progress_bar::get_progress_bar;
-use crate::quantity::{second, Information, Time, Zero};
 use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
-
-use super::measurement::{Measurement, Measurements};
 
 use anyhow::{bail, Context, Result};
 
@@ -82,8 +80,20 @@ fn run_command_and_measure_common(
     let result = execute_and_measure(command)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
-    if !result.exit_status.success() {
-        use crate::util::exit_code::extract_exit_code;
+    if command_failure_action == CmdFailureAction::RaiseError && !result.exit_status.success() {
+        let when = match iteration {
+            BenchmarkIteration::NonBenchmarkRun => "a non-benchmark run".to_string(),
+            BenchmarkIteration::Warmup(0) => "the first warmup run".to_string(),
+            BenchmarkIteration::Warmup(i) => format!("warmup iteration {i}"),
+            BenchmarkIteration::Benchmark(0) => "the first benchmark run".to_string(),
+            BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
+        };
+        bail!(
+            "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+            Alternatively, use the '--show-output' option to debug what went wrong.",
+            cause=result.exit_status.code().map_or(
+                "The process has been terminated by a signal".into(),
+                |c| format!("Command terminated with non-zero exit code {c}")
 
         let should_fail = match command_failure_action {
             CmdFailureAction::RaiseError => true,
@@ -140,7 +150,7 @@ impl Executor for RawExecutor<'_> {
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
     ) -> Result<Measurement> {
-        run_command_and_measure_common(
+        let result = run_command_and_measure_common(
             command.get_command()?,
             iteration,
             command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
@@ -149,15 +159,13 @@ impl Executor for RawExecutor<'_> {
             &command.get_command_line(),
         )?;
 
-        Ok((
-            TimingResult {
-                time_wall_clock: result.time_wall_clock,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                memory_usage_byte: result.memory_usage_byte,
-            },
-            result.status,
-        ))
+        Ok(Measurement {
+            time_wall_clock: result.time_wall_clock,
+            time_user: result.time_user,
+            time_system: result.time_system,
+            peak_memory_usage: result.peak_memory_usage,
+            exit_status: result.exit_status,
+        })
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -223,7 +231,7 @@ impl Executor for ShellExecutor<'_> {
             }
         }
 
-        if let Some(spawning_time) = self.shell_spawning_time {
+        if let Some(ref spawning_time) = self.shell_spawning_time {
             result.time_wall_clock =
                 ensure_non_negative(result.time_wall_clock - spawning_time.time_wall_clock);
             result.time_user = ensure_non_negative(result.time_user - spawning_time.time_user);
@@ -231,15 +239,13 @@ impl Executor for ShellExecutor<'_> {
                 ensure_non_negative(result.time_system - spawning_time.time_system);
         }
 
-        Ok((
-            TimingResult {
-                time_wall_clock: result.time_wall_clock,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                memory_usage_byte: result.memory_usage_byte,
-            },
-            result.status,
-        ))
+        Ok(Measurement {
+            time_wall_clock: result.time_wall_clock,
+            time_user: result.time_user,
+            time_system: result.time_system,
+            peak_memory_usage: result.peak_memory_usage,
+            exit_status: result.exit_status,
+        })
     }
 
     /// Measure the average shell spawning time
@@ -255,20 +261,18 @@ impl Executor for ShellExecutor<'_> {
             None
         };
 
-        let mut times_wall_clock: Vec<Second> = vec![]; // TODO
-        let mut times_user: Vec<Second> = vec![];
-        let mut times_system: Vec<Second> = vec![];
+        let mut measurements = Measurements::default();
 
         for _ in 0..COUNT {
             // Just run the shell without any command
-            let res = self.run_command_and_measure(
+            let measurement = self.run_command_and_measure(
                 &Command::new(None, ""),
                 BenchmarkIteration::NonBenchmarkRun,
                 None,
                 &CommandOutputPolicy::Null,
             );
 
-            match res {
+            match measurement {
                 Err(_) => {
                     let shell_cmd = if cfg!(windows) {
                         format!("{} /C \"\"", self.shell)
@@ -281,10 +285,8 @@ impl Executor for ShellExecutor<'_> {
                         shell_cmd
                     );
                 }
-                Ok((r, _)) => {
-                    times_wall_clock.push(r.time_wall_clock);
-                    times_user.push(r.time_user);
-                    times_system.push(r.time_system);
+                Ok(result) => {
+                    measurements.push(result);
                 }
             }
 
@@ -297,18 +299,19 @@ impl Executor for ShellExecutor<'_> {
             bar.finish_and_clear()
         }
 
-        self.shell_spawning_time = Some(TimingResult {
-            time_wall_clock: mean(&times_wall_clock),
-            time_user: mean(&times_user),
-            time_system: mean(&times_system),
-            memory_usage_byte: Byte::new(0),
+        self.shell_spawning_time = Some(Measurement {
+            time_wall_clock: measurements.time_wall_clock_mean(),
+            time_user: measurements.time_user_mean(),
+            time_system: measurements.time_system_mean(),
+            peak_memory_usage: measurements.peak_memory_usage_mean(),
+            exit_status: ExitStatus::default(),
         });
 
         Ok(())
     }
 
     fn time_overhead(&self) -> Second {
-        self.shell_spawning_time.unwrap().time_wall_clock
+        self.shell_spawning_time.as_ref().unwrap().time_wall_clock
     }
 }
 
@@ -354,15 +357,13 @@ impl Executor for MockExecutor {
             ExitStatus::from_raw(0)
         };
 
-        Ok((
-            TimingResult {
-                time_wall_clock: Self::extract_time(command.get_command_line()),
-                time_user: Second::zero(),
-                time_system: Second::zero(),
-                memory_usage_byte: Byte::new(0),
-            },
-            status,
-        ))
+        Ok(Measurement {
+            time_wall_clock: Self::extract_time(command.get_command_line()),
+            time_user: Second::zero(),
+            time_system: Second::zero(),
+            peak_memory_usage: Byte::new(0),
+            exit_status,
+        })
     }
 
     fn calibrate(&mut self) -> Result<()> {

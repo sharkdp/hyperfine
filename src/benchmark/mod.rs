@@ -25,10 +25,7 @@ use crate::output::progress_bar::{
 };
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{byte, const_time_from_seconds, ratio, second, FormatQuantity, Time, Zero};
-use crate::util::exit_code::extract_exit_code;
 use benchmark_result::BenchmarkResult;
-use measurement::{Measurement, Measurements};
 
 use anyhow::{anyhow, Result};
 use colored::*;
@@ -273,20 +270,20 @@ impl<'a> Benchmark<'a> {
         if let Some(bar) = progress_bar.as_ref() {
             start_initial_measurement(bar, Instant::now());
         }
-        let res = self.executor.run_command_and_measure(
+        let result = self.executor.run_command_and_measure(
             self.command,
             benchmark_iteration,
             None,
             output_policy,
         )?;
-        let success = res.exit_status.success();
+        let success = result.exit_status.success();
 
         if let Some(bar) = progress_bar.as_ref() {
             let time_unit = self
                 .options
                 .time_unit
-                .unwrap_or(res.time_wall_clock.suitable_unit());
-            let estimate = res.time_wall_clock.format(time_unit);
+                .unwrap_or(result.time_wall_clock.suitable_unit());
+            let estimate = result.time_wall_clock.format(time_unit);
             finish_initial_measurement(
                 bar,
                 format!("Current estimate: {}", estimate.to_string().green()),
@@ -300,7 +297,7 @@ impl<'a> Benchmark<'a> {
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_wall_clock
+            / (result.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead))
@@ -321,11 +318,11 @@ impl<'a> Benchmark<'a> {
 
         // Save the first result
         measurements.push(Measurement {
-            wall_clock_time: res.time_wall_clock,
-            user_time: res.time_user,
-            system_time: res.time_system,
-            memory_usage_byte: res.memory_usage_byte,
-            exit_code: extract_exit_code(status),
+            time_wall_clock: result.time_wall_clock,
+            time_user: result.time_user,
+            time_system: result.time_system,
+            peak_memory_usage: result.peak_memory_usage,
+            exit_status: result.exit_status,
         });
 
         all_succeeded = all_succeeded && success;
@@ -341,7 +338,8 @@ impl<'a> Benchmark<'a> {
             let benchmark_iteration = BenchmarkIteration::Benchmark(i + 1);
 
             let msg = {
-                let mean = format_duration(measurements.mean(), self.options.time_unit);
+                let mean =
+                    format_duration(measurements.time_wall_clock_mean(), self.options.time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -351,20 +349,20 @@ impl<'a> Benchmark<'a> {
 
             run_preparation_command(benchmark_iteration)?;
 
-            let res = self.executor.run_command_and_measure(
+            let result = self.executor.run_command_and_measure(
                 self.command,
                 benchmark_iteration,
                 None,
                 output_policy,
             )?;
-            let success = res.exit_status.success();
+            let success = result.exit_status.success();
 
             measurements.push(Measurement {
-                wall_clock_time: res.time_wall_clock,
-                user_time: res.time_user,
-                system_time: res.time_system,
-                memory_usage_byte: res.memory_usage_byte,
-                exit_code: extract_exit_code(status),
+                time_wall_clock: result.time_wall_clock,
+                time_user: result.time_user,
+                time_system: result.time_system,
+                peak_memory_usage: result.peak_memory_usage,
+                exit_status: result.exit_status,
             });
 
             all_succeeded = all_succeeded && success;
@@ -382,13 +380,13 @@ impl<'a> Benchmark<'a> {
 
         // Formatting and console output
         let (mean_str, time_unit) =
-            format_duration_unit(measurements.mean(), self.options.time_unit);
+            format_duration_unit(measurements.time_wall_clock_mean(), self.options.time_unit);
         let min_str = format_duration(measurements.min(), Some(time_unit));
         let max_str = format_duration(measurements.max(), Some(time_unit));
         let num_str = format!("{num_runs} runs", num_runs = measurements.len());
 
-        let user_str = format_duration(measurements.user_mean(), Some(time_unit));
-        let system_str = format_duration(measurements.system_mean(), Some(time_unit));
+        let user_str = format_duration(measurements.time_user_mean(), Some(time_unit));
+        let system_str = format_duration(measurements.time_system_mean(), Some(time_unit));
 
         if self.options.output_style != OutputStyleOption::Disabled {
             if measurements.len() == 1 {
