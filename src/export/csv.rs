@@ -5,7 +5,7 @@ use csv::WriterBuilder;
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
-use crate::quantity::{second, TimeQuantity, TimeUnit};
+use crate::quantity::{TimeQuantity, TimeUnit};
 
 use anyhow::Result;
 
@@ -52,7 +52,9 @@ impl Exporter for CsvExporter {
                 res.measurements.min(),
                 res.measurements.max(),
             ] {
-                fields.push(Cow::Owned(f.value_in(second).to_string().into_bytes()))
+                fields.push(Cow::Owned(
+                    f.format(CSV_UNIT, Some(CSV_PRECISION)).into_bytes(),
+                ))
             }
             for v in res.parameters.values() {
                 fields.push(Cow::Borrowed(v.value.as_bytes()))
@@ -68,7 +70,7 @@ impl Exporter for CsvExporter {
 fn test_csv() {
     use crate::benchmark::benchmark_result::Parameter;
     use crate::benchmark::measurement::{Measurement, Measurements};
-    use crate::quantity::{byte, Information, Time, TimeQuantity};
+    use crate::quantity::{byte, second, Information, Time, TimeQuantity};
 
     use std::collections::BTreeMap;
     use std::process::ExitStatus;
@@ -175,7 +177,7 @@ fn test_csv() {
 
     insta::assert_snapshot!(actual, @r#"
     command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,9,2.6457513110645907,8,9,0,7,12,two,one
-    command_b,18,1,18,18,0,17,19,seven,one
+    command_a,9.000000,2.645751,8.000000,9.000000,0.000000,7.000000,12.000000,two,one
+    command_b,18.000000,1.000000,18.000000,18.000000,0.000000,17.000000,19.000000,seven,one
     "#);
 }
