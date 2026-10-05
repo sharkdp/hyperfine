@@ -16,12 +16,12 @@ pub trait MarkupExporter {
     fn table_results(
         &self,
         entries: &[BenchmarkResultWithRelativeSpeed],
-        unit: TimeUnit,
+        time_unit: TimeUnit,
         reference_pending: bool,
         explicit_reference: bool,
     ) -> String {
         // prepare table header strings
-        let notation = format!("[{}]", unit.short_name());
+        let notation = format!("[{}]", time_unit.short_name());
 
         // prepare table cells alignment
         let cells_alignment = [
@@ -51,14 +51,14 @@ pub trait MarkupExporter {
             let result = &entry.result;
             // prepare data row strings
             let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
-            let mean_str = format_duration_value(result.mean_wall_clock_time(), Some(unit)).0;
+            let mean_str = format_duration_value(result.mean_wall_clock_time(), Some(time_unit)).0;
             let stddev_str = if let Some(stddev) = result.measurements.stddev() {
-                format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
+                format!(" ± {}", format_duration_value(stddev, Some(time_unit)).0)
             } else {
                 "".into()
             };
-            let min_str = result.measurements.min().format_value(unit);
-            let max_str = result.measurements.max().format_value(unit);
+            let min_str = result.measurements.min().format_value(time_unit);
+            let max_str = result.measurements.max().format_value(time_unit);
             // The ratio of two zero times is undefined, even if they compare equal.
             let relative_unavailable = reference_pending
                 || (explicit_reference

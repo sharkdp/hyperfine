@@ -10,7 +10,7 @@ use clap::ArgMatches;
 use crate::command::Commands;
 use crate::error::OptionsError;
 use crate::quantity::{Time, TimeQuantity};
-use crate::util::units::Unit;
+use crate::util::units::TimeUnit;
 
 use anyhow::Result;
 
@@ -437,8 +437,6 @@ impl Options {
             Some("µs" | "us" | "microsecond" | "microseconds") => Some(TimeUnit::MicroSecond),
             Some("ms" | "millisecond" | "milliseconds") => Some(TimeUnit::MilliSecond),
             Some("s" | "second" | "seconds") => Some(TimeUnit::Second),
-            Some("min" | "minute" | "minutes") => Some(TimeUnit::Minute),
-            Some("h" | "hour" | "hours") => Some(TimeUnit::Hour),
             _ => None,
         };
 

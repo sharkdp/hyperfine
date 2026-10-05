@@ -6,7 +6,7 @@ use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
 use crate::quantity::{second, TimeQuantity};
-use crate::util::units::Unit;
+use crate::util::units::TimeUnit;
 
 use anyhow::Result;
 
@@ -17,7 +17,7 @@ impl Exporter for CsvExporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        _unit: Option<TimeUnit>,
+        _time_unit: Option<TimeUnit>,
         _sort_order: SortOrder,
         _reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
@@ -53,7 +53,7 @@ impl Exporter for CsvExporter {
                 res.measurements.min(),
                 res.measurements.max(),
             ] {
-                fields.push(Cow::Owned(f.value_in::<second>().to_string().into_bytes()))
+                fields.push(Cow::Owned(f.value_in(second).to_string().into_bytes()))
             }
             for v in res.parameters.values() {
                 fields.push(Cow::Borrowed(v.value.as_bytes()))

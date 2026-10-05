@@ -18,8 +18,7 @@ use self::orgmode::OrgmodeExporter;
 
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
-use crate::output::console_writeln;
-use crate::quantity::TimeUnit;
+use crate::util::units::TimeUnit;
 
 use anyhow::{Context, Result};
 use clap::ArgMatches;
@@ -49,7 +48,7 @@ trait Exporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<TimeUnit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
         reference_index: Option<usize>,
     ) -> Result<Vec<u8>>;

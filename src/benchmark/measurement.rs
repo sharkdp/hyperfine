@@ -138,7 +138,7 @@ impl Measurements {
             &self
                 .wall_clock_times()
                 .iter()
-                .map(|t| t.value_in::<second>()) // TODO
+                .map(|t| t.value_in(second)) // TODO
                 .collect::<Vec<_>>(),
         )
     }
