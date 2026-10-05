@@ -34,6 +34,12 @@ impl<U: uom::si::information::Unit + uom::Conversion<f64, T = f64>> QuantityInUn
     }
 }
 
+impl<U: uom::si::ratio::Unit + uom::Conversion<f64, T = f64>> QuantityInUnit<U> for Ratio {
+    fn value_in_unit(self) -> f64 {
+        self.get::<U>()
+    }
+}
+
 pub trait FormatQuantity {
     type Unit;
 

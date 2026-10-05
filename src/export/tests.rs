@@ -36,6 +36,7 @@ fn test_markup_export_auto_ms() {
                     time_user: Time::new::<second>(0.09),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -43,6 +44,7 @@ fn test_markup_export_auto_ms() {
                     time_user: Time::new::<second>(0.10),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -50,6 +52,7 @@ fn test_markup_export_auto_ms() {
                     time_user: Time::new::<second>(0.14),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -65,6 +68,7 @@ fn test_markup_export_auto_ms() {
                     time_user: Time::new::<second>(2.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -72,6 +76,7 @@ fn test_markup_export_auto_ms() {
                     time_user: Time::new::<second>(3.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -79,6 +84,7 @@ fn test_markup_export_auto_ms() {
                     time_user: Time::new::<second>(4.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -139,6 +145,7 @@ fn test_markup_export_auto_s() {
                     time_user: Time::new::<second>(2.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -146,6 +153,7 @@ fn test_markup_export_auto_s() {
                     time_user: Time::new::<second>(2.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -153,6 +161,7 @@ fn test_markup_export_auto_s() {
                     time_user: Time::new::<second>(2.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -168,6 +177,7 @@ fn test_markup_export_auto_s() {
                     time_user: Time::new::<second>(0.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -175,6 +185,7 @@ fn test_markup_export_auto_s() {
                     time_user: Time::new::<second>(0.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -182,6 +193,7 @@ fn test_markup_export_auto_s() {
                     time_user: Time::new::<second>(0.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -242,6 +254,7 @@ fn test_markup_export_manual_ms() {
                     time_user: Time::new::<second>(2.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -249,6 +262,7 @@ fn test_markup_export_manual_ms() {
                     time_user: Time::new::<second>(2.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -256,6 +270,7 @@ fn test_markup_export_manual_ms() {
                     time_user: Time::new::<second>(2.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -271,6 +286,7 @@ fn test_markup_export_manual_ms() {
                     time_user: Time::new::<second>(0.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -278,6 +294,7 @@ fn test_markup_export_manual_ms() {
                     time_user: Time::new::<second>(0.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -285,6 +302,7 @@ fn test_markup_export_manual_ms() {
                     time_user: Time::new::<second>(0.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -344,6 +362,7 @@ fn test_markup_export_manual_s() {
                     time_user: Time::new::<second>(2.01),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -351,6 +370,7 @@ fn test_markup_export_manual_s() {
                     time_user: Time::new::<second>(2.02),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -358,6 +378,7 @@ fn test_markup_export_manual_s() {
                     time_user: Time::new::<second>(2.03),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -373,6 +394,7 @@ fn test_markup_export_manual_s() {
                     time_user: Time::new::<second>(0.11),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -380,6 +402,7 @@ fn test_markup_export_manual_s() {
                     time_user: Time::new::<second>(0.12),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -387,6 +410,7 @@ fn test_markup_export_manual_s() {
                     time_user: Time::new::<second>(0.13),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),

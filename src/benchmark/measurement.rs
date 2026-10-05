@@ -29,6 +29,47 @@ where
     }
 }
 
+fn serialize_optional_count<S>(value: &Option<u64>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    #[derive(Serialize)]
+    struct Count {
+        value: u64,
+    }
+
+    value.map(|value| Count { value }).serialize(serializer)
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+pub struct HardwareCounters {
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_count"
+    )]
+    pub cpu_cycles: Option<u64>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_count"
+    )]
+    pub instructions: Option<u64>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_count"
+    )]
+    pub cache_references: Option<u64>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_count"
+    )]
+    pub cache_misses: Option<u64>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_count"
+    )]
+    pub branch_misses: Option<u64>,
+}
+
 /// Performance metric measurements and exit code for a single run
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 pub struct Measurement {
@@ -50,6 +91,9 @@ pub struct Measurement {
         serialize_with = "serialize_optional_information"
     )]
     pub memory_peak_resident: Option<Information>,
+
+    #[serde(flatten)]
+    pub hardware_counters: HardwareCounters,
 
     // The exit status of the process
     #[serde(rename = "exit_code", serialize_with = "serialize_exit_status")]
