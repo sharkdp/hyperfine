@@ -18,8 +18,6 @@ const INITIAL_TEMPLATE: &str =
 
 /// Show the time elapsed since the initial benchmark command started.
 pub fn start_initial_measurement(bar: &ProgressBar, started: Instant) {
-    // Keep a separate clock: the progress bar's clock and ETA estimator must
-    // continue to include preparation time.
     let style = bar
         .style()
         .template(INITIAL_TEMPLATE)
