@@ -707,6 +707,7 @@ fn shows_benchmark_comparison_relative_to_reference() {
 
 #[test]
 fn command_sorted_comparison_and_markup_identify_reference() {
+    let _settings = snapshot_settings().bind_to_scope();
     let directory = tempfile::tempdir().unwrap();
     let export_path = directory.path().join("results.md");
     let output = hyperfine_debug()
@@ -727,15 +728,12 @@ fn command_sorted_comparison_and_markup_identify_reference() {
     assert!(output.status.success(), "{:?}", output);
     let stdout = String::from_utf8(output.stdout).unwrap();
     let comparison = stdout.split_once("Relative speed comparison\n").unwrap().1;
-    for (name, factor) in [
-        ("baseline (reference)", "1.00"),
-        ("sleep 1 (faster)", "2.00"),
-        ("sleep 2 (same speed)", "1.00"),
-        ("sleep 3 (slower)", "1.50"),
-    ] {
-        let row = comparison.lines().find(|line| line.contains(name)).unwrap();
-        assert!(row.trim_start().starts_with(factor), "{}", row);
-    }
+    insta::assert_snapshot!(comparison, @r"
+            1.00          baseline (reference)
+            2.00          sleep 1 (faster)
+            1.00          sleep 2 (same speed)
+            1.50          sleep 3 (slower)
+    ");
     let markdown = std::fs::read_to_string(export_path).unwrap();
     for (command, relative) in [
         ("baseline", "1.00 (reference)"),
@@ -1011,7 +1009,8 @@ fn intermediate_markdown_waits_for_selected_reference() {
 
 #[test]
 fn markdown_export_uses_selected_parameterized_reference() {
-    let output = hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
         .args([
             "--style=none",
             "--runs=1",
@@ -1025,19 +1024,20 @@ fn markdown_export_uses_selected_parameterized_reference() {
             "--reference",
             "case-2",
             "sleep {x}",
-        ])
-        .output()
-        .unwrap();
-    assert!(output.status.success(), "{:?}", output);
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    for (command, relative) in [
-        ("case-1", "2.00 (faster)"),
-        ("case-2", "1.00 (reference)"),
-        ("case-3", "1.50 (slower)"),
-    ] {
-        let row = stdout.lines().find(|line| line.contains(command)).unwrap();
-        assert!(row.ends_with(&format!("| {relative} |")), "{}", row);
-    }
+        ]), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+    |:---|---:|---:|---:|---:|
+    | `case-1` | 1.000 | 1.000 | 1.000 | 2.00 (faster) |
+    | `case-2` | 2.000 | 2.000 | 2.000 | 1.00 (reference) |
+    | `case-3` | 3.000 | 3.000 | 3.000 | 1.50 (slower) |
+
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
