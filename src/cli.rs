@@ -1,21 +1,41 @@
 use std::ffi::OsString;
 
 use clap::{
-    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
-    ValueHint,
+    builder::NonEmptyStringValueParser, crate_version, error::ErrorKind, value_parser, Arg,
+    ArgAction, ArgMatches, Command, ValueHint,
 };
+use clap_complete::shells::Shell;
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone + 'a,
 {
-    let command = build_command();
+    let mut command = build_command();
+    let args = args.into_iter().map(Into::into).collect::<Vec<_>>();
+
+    if let Some(subcommand_index) = args
+        .iter()
+        .position(|arg| arg == "generate-shell-completion")
+        .filter(|index| *index > 1)
+    {
+        command
+            .error(
+                ErrorKind::ArgumentConflict,
+                format!(
+                    "the argument '{}' cannot be used with the subcommand '{}'",
+                    args[subcommand_index - 1].to_string_lossy(),
+                    args[subcommand_index].to_string_lossy()
+                ),
+            )
+            .exit();
+    }
+
     command.get_matches_from(args)
 }
 
 /// Build the clap command for parsing command line arguments
-fn build_command() -> Command {
+pub fn build_command() -> Command {
     Command::new("hyperfine")
         .version(crate_version!())
         .next_line_help(true)
@@ -23,6 +43,19 @@ fn build_command() -> Command {
         .about("A command-line benchmarking tool.")
         .help_expected(true)
         .max_term_width(80)
+        .subcommand_negates_reqs(true)
+        .args_conflicts_with_subcommands(true)
+        .subcommand_precedence_over_arg(true)
+        .subcommand(
+            Command::new("generate-shell-completion")
+                .about("Generate shell completion scripts")
+                .arg(
+                    Arg::new("shell")
+                        .help("The shell to generate completions for.")
+                        .required(true)
+                        .value_parser(value_parser!(Shell)),
+                ),
+        )
         .arg(
             Arg::new("command")
                 .help("The command to benchmark. This can be the name of an executable, a command \

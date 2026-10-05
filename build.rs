@@ -1,6 +1,6 @@
 use std::fs;
 
-use clap_complete::{generate_to, Shell};
+use clap_complete::generate_to;
 
 include!("src/cli.rs");
 
