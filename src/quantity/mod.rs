@@ -3,6 +3,8 @@ use std::marker::PhantomData;
 pub use uom::num_traits::Zero;
 pub use uom::si::f64::{Information, Ratio, Time};
 pub use uom::si::information::byte;
+#[cfg(any(not(windows), test))]
+pub use uom::si::information::kibibyte;
 pub use uom::si::ratio::ratio;
 #[cfg(any(not(windows), test))]
 pub use uom::si::time::microsecond;
@@ -55,7 +57,7 @@ pub fn format_duration_value(duration: f64, unit: Option<TimeUnit>) -> (String, 
 }
 
 #[cfg(test)]
-use uom::si::{information::kibibyte, time::millisecond};
+use uom::si::time::millisecond;
 
 #[test]
 fn test_time() {

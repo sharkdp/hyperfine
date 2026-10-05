@@ -24,19 +24,6 @@ use std::process::{ChildStdout, Command};
 
 use anyhow::Result;
 
-#[cfg(not(windows))]
-#[derive(Debug, Copy, Clone)]
-struct CPUTimes {
-    /// Total amount of time spent executing in user mode
-    pub user_usec: i64,
-
-    /// Total amount of time spent executing in kernel mode
-    pub system_usec: i64,
-
-    /// Maximum amount of memory used by the process, in bytes
-    pub memory_usage_byte: u64,
-}
-
 /// Discard the output of a child process.
 fn discard(output: ChildStdout) {
     const CHUNK_SIZE: usize = 64 << 10;
@@ -95,9 +82,15 @@ pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
         discard(output);
     }
 
+    #[cfg(not(windows))]
+    let (time_user, time_system, peak_memory_usage, exit_status) = cpu_timer.stop(child)?;
+
+    #[cfg(windows)]
     let exit_status = child.wait()?;
 
     let time_wall_clock = wallclock_timer.stop();
+
+    #[cfg(windows)]
     let (time_user, time_system, peak_memory_usage) = cpu_timer.stop();
 
     Ok(Measurement {
