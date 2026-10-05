@@ -1037,3 +1037,45 @@ fn windows_quote_before_quote_args() {
         .assert()
         .success();
 }
+
+#[test]
+fn hyperfine_iteration_env_var_in_prepare_and_conclude_commands() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let output_path = tempdir.path().join("iteration output.txt");
+    let iteration = if cfg!(windows) {
+        "%HYPERFINE_ITERATION%"
+    } else {
+        "$HYPERFINE_ITERATION"
+    };
+    let command = |phase| format!(r#"echo {phase}:{iteration} >> "iteration output.txt""#);
+
+    hyperfine()
+        .current_dir(tempdir.path())
+        .arg("--runs=2")
+        .arg("--warmup=1")
+        .arg("--prepare")
+        .arg(command("prepare"))
+        .arg(command("benchmark"))
+        .arg("--conclude")
+        .arg(command("conclude"))
+        .assert()
+        .success();
+
+    let contents = std::fs::read_to_string(output_path).unwrap();
+    // cmd.exe's echo includes the space before the redirection operator.
+    let lines: Vec<&str> = contents.lines().map(str::trim_end).collect();
+    assert_eq!(
+        lines,
+        [
+            "prepare:warmup-0",
+            "benchmark:warmup-0",
+            "conclude:warmup-0",
+            "prepare:0",
+            "benchmark:0",
+            "conclude:0",
+            "prepare:1",
+            "benchmark:1",
+            "conclude:1",
+        ]
+    );
+}

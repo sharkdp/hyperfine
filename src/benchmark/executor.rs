@@ -15,6 +15,7 @@ use super::measurement::{Measurement, Measurements};
 
 use anyhow::{bail, Context, Result};
 
+#[derive(Clone, Copy)]
 pub enum BenchmarkIteration {
     NonBenchmarkRun,
     Warmup(u64),
