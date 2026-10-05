@@ -37,11 +37,11 @@ with open(args.file, encoding="utf-8") as f:
 if args.labels:
     labels = args.labels.split(",")
 else:
-    labels = [b["command"] for b in results]
-times = [b["times"] for b in results]
+    labels = [b.get("name", b["command"]) for b in results]
+times = [[m["time_wall_clock"]["value"] for m in b["measurements"]] for b in results]
 
 if args.sort_by == "median":
-    medians = [b["median"] for b in results]
+    medians = [b["summary"]["time_wall_clock"]["median"] for b in results]
     indices = sorted(range(len(labels)), key=lambda k: medians[k])
     labels = [labels[i] for i in indices]
     times = [times[i] for i in indices]

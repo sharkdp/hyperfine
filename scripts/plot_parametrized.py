@@ -71,7 +71,7 @@ def unique_parameter(benchmark):
             f"benchmarks must have exactly one parameter, but found multiple: {sorted(params_dict)}"
         )
     [(name, value)] = params_dict.items()
-    return (name, float(value))
+    return (name, float(value["value"]))
 
 
 parameter_name = None
@@ -87,8 +87,11 @@ for filename in args.file:
         )
     parameter_name = this_parameter_name
 
-    times_mean = [b["mean"] for b in results]
-    times_stddev = [b["stddev"] for b in results]
+    summaries = [b["summary"]["time_wall_clock"] for b in results]
+    times_mean = [s["mean"] for s in summaries]
+    times_stddev = [
+        s["stddev"] if s["stddev"] is not None else float("nan") for s in summaries
+    ]
 
     plt.errorbar(x=parameter_values, y=times_mean, yerr=times_stddev, capsize=2)
 

@@ -158,6 +158,28 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 
 #### JSON
 
+The JSON export includes the following metrics for each measured run (excluding warmup runs):
+
+- **`time_wall_clock`**: Time from start to finish, including time spent waiting, in seconds.
+
+- **`time_user`**: CPU time spent running the program's code, summed across threads, in seconds.
+
+  - Linux/macOS: Includes child-process time when parents wait for their children to finish.
+  - Windows: Includes the command and its child processes.
+
+- **`time_system`**: CPU time spent running operating-system code for the program, for example
+  to read files, summed across threads, in seconds.
+
+  - Linux/macOS: Includes child-process time when parents wait for their children to finish.
+  - Windows: Includes the command and its child processes.
+
+- **`memory_peak_resident`**: Peak memory held in physical RAM, in bytes.
+
+  - Linux/macOS: Peak resident set size (RSS). This is the largest per-process peak among the
+    command and child processes (whose usage is collected when their parents wait for them),
+    *not the simultaneous total memory of the full process tree*.
+  - Windows: Currently not supported.
+
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
 of helpful Python programs to further analyze benchmark results and create helpful

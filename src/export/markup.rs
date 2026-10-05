@@ -16,12 +16,12 @@ pub trait MarkupExporter {
     fn table_results(
         &self,
         entries: &[BenchmarkResultWithRelativeSpeed],
-        unit: TimeUnit,
+        time_unit: TimeUnit,
         reference_pending: bool,
         explicit_reference: bool,
     ) -> String {
         // prepare table header strings
-        let notation = format!("[{}]", unit.short_name());
+        let notation = format!("[{}]", time_unit.short_name());
 
         // prepare table cells alignment
         let cells_alignment = [
@@ -48,25 +48,23 @@ pub trait MarkupExporter {
         table.push_str(&self.table_divider(&cells_alignment));
 
         for entry in entries {
-            let measurement = &entry.result;
+            let result = &entry.result;
             // prepare data row strings
-            let cmd_str = measurement
-                .command_with_unused_parameters
-                .replace('|', "\\|");
-            let mean_str = measurement.mean_wall_clock_time().format_value(unit);
-            let stddev_str = if let Some(stddev) = measurement.measurements.stddev() {
-                format!(" ± {}", stddev.format_value(unit))
+            let cmd_str = result.display_name.replace('|', "\\|");
+            let mean_str = result.mean_wall_clock_time().format_value(time_unit);
+            let stddev_str = if let Some(stddev) = result.measurements.stddev() {
+                format!(" ± {}", stddev.format_value(time_unit))
             } else {
                 "".into()
             };
-            let min_str = measurement.measurements.min().format_value(unit);
-            let max_str = measurement.measurements.max().format_value(unit);
+            let min_str = result.measurements.min().format_value(time_unit);
+            let max_str = result.measurements.max().format_value(time_unit);
             // The ratio of two zero times is undefined, even if they compare equal.
             let relative_unavailable = reference_pending
                 || (explicit_reference
                     && !entry.is_reference
                     && entry.relative_ordering == Ordering::Equal
-                    && measurement.mean_wall_clock_time() == Time::zero());
+                    && result.mean_wall_clock_time() == Time::zero());
             let relative = if relative_unavailable {
                 "N/A".to_string()
             } else {
@@ -127,11 +125,11 @@ impl<T: MarkupExporter> Exporter for T {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<TimeUnit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
         reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
-        let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
+        let unit = time_unit.unwrap_or_else(|| determine_unit_from_results(results));
         // Do not report ratios against another benchmark while the selected
         // reference is still pending in an intermediate export.
         let reference_pending = reference_index.is_some_and(|i| i >= results.len());

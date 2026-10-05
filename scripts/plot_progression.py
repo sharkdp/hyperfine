@@ -52,8 +52,8 @@ with open(args.file) as f:
     results = json.load(f)["results"]
 
 for result in results:
-    label = result["command"]
-    times = result["times"]
+    label = result.get("name", result["command"])
+    times = [m["time_wall_clock"]["value"] for m in result["measurements"]]
     num = len(times)
     nums = range(num)
 
@@ -63,7 +63,9 @@ for result in results:
 
     if not args.no_moving_average:
         moving_average_width = (
-            num // 5 if args.moving_average_width is None else args.moving_average_width
+            max(1, num // 5)
+            if args.moving_average_width is None
+            else args.moving_average_width
         )
 
         average = moving_average(times, moving_average_width)
@@ -74,7 +76,7 @@ if args.title:
 
 legend = []
 for result in results:
-    legend.append(result["command"])
+    legend.append(result.get("name", result["command"]))
     if not args.no_moving_average:
         legend.append("moving average")
 plt.legend(legend)

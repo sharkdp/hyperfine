@@ -24,6 +24,17 @@ fn snapshot_settings() -> insta::Settings {
     settings
 }
 
+fn json_snapshot_settings() -> insta::Settings {
+    let mut settings = snapshot_settings();
+    for field in ["hyperfine_version", "start_time", "os", "architecture"] {
+        settings.add_filter(
+            &format!(r#"("{field}": ")[^"]+(")"#),
+            format!(r#"${{1}}[{field}]$2"#),
+        );
+    }
+    settings
+}
+
 #[test]
 fn runs_successfully() {
     hyperfine()
@@ -916,7 +927,7 @@ fn selects_reference_with_parameterized_prepare() {
     assert_eq!(
         results
             .iter()
-            .map(|result| result["parameters"]["delay"].as_str().unwrap())
+            .map(|result| result["parameters"]["delay"]["value"].as_str().unwrap())
             .collect::<Vec<_>>(),
         ["0.2", "0.4", "0.6"]
     );
@@ -1272,4 +1283,47 @@ fn hyperfine_iteration_env_var_in_prepare_and_conclude_commands() {
             "conclude:1",
         ]
     );
+}
+
+#[test]
+fn json_export_basic() {
+    let _settings = json_snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug().args([
+        "--style=none",
+        "--export-json=-",
+        "--runs=2",
+        "--warmup=1",
+        "--reference-name=one second",
+        "--reference=sleep 1",
+        "--command-name=sleep 2",
+        "sleep 2",
+    ]));
+}
+
+#[test]
+fn json_export_single_run() {
+    // Make sure that the standard deviation is set to `null`
+    let _settings = json_snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug().args([
+        "--style=none",
+        "--export-json=-",
+        "--runs=1",
+        "sleep 1",
+    ]));
+}
+
+#[test]
+fn json_export_parameterized_with_reference() {
+    let _settings = json_snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug().args([
+        "--style=none",
+        "--export-json=-",
+        "--runs=2",
+        "-L",
+        "duration",
+        "1,2",
+        "--command-name=sleep for {duration} seconds",
+        "--reference=sleep for 2 seconds",
+        "sleep {duration}",
+    ]));
 }

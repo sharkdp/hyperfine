@@ -1,5 +1,8 @@
 use std::marker::PhantomData;
 
+use serde::ser::SerializeStruct;
+use serde::Serializer;
+
 use uom::si;
 
 pub use si::f64::{Information, Ratio, Time};
@@ -12,6 +15,24 @@ pub use units::{InformationUnit, IsUnit, TimeUnit};
 
 pub mod statistics;
 mod units;
+
+pub trait QuantityInUnit<U> {
+    fn value_in_unit(self) -> f64;
+}
+
+impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> QuantityInUnit<U> for Time {
+    fn value_in_unit(self) -> f64 {
+        self.get::<U>()
+    }
+}
+
+impl<U: uom::si::information::Unit + uom::Conversion<f64, T = f64>> QuantityInUnit<U>
+    for Information
+{
+    fn value_in_unit(self) -> f64 {
+        self.get::<U>()
+    }
+}
 
 pub trait FormatQuantity {
     type Unit;
@@ -105,6 +126,26 @@ impl FormatQuantity for Information {
     }
 }
 
+pub fn serialize_time<S>(t: &Time, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut state = s.serialize_struct("Time", 2)?;
+    state.serialize_field("value", &t.get::<second>())?;
+    state.serialize_field("unit", "second")?;
+    state.end()
+}
+
+pub fn serialize_information<S>(i: &Information, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut state = s.serialize_struct("Information", 2)?;
+    state.serialize_field("value", &i.get::<byte>())?;
+    state.serialize_field("unit", "byte")?;
+    state.end()
+}
+
 #[test]
 fn test_time() {
     let time = Time::new::<millisecond>(123.4);
@@ -181,11 +222,11 @@ fn test_format() {
     assert_eq!(time.format_auto(), "123.4 ms");
     assert_eq!(time.format(TimeUnit::MicroSecond), "123400.0 µs");
 
-    let peak_memory_usage = Information::new::<kibibyte>(8.);
-    assert_eq!(peak_memory_usage.format_auto(), "8.0 KiB");
-    assert_eq!(peak_memory_usage.format(InformationUnit::Byte), "8192 B");
+    let memory_peak_resident = Information::new::<kibibyte>(8.);
+    assert_eq!(memory_peak_resident.format_auto(), "8.0 KiB");
+    assert_eq!(memory_peak_resident.format(InformationUnit::Byte), "8192 B");
     assert_eq!(
-        peak_memory_usage.format(InformationUnit::KibiByte),
+        memory_peak_resident.format(InformationUnit::KibiByte),
         "8.0 KiB"
     );
 }

@@ -1,29 +1,62 @@
 use std::process::ExitStatus;
 
-use crate::quantity::statistics::{max, mean, median, min, modified_zscores, standard_deviation};
-use crate::quantity::{Information, Time};
+use serde::Serialize;
 
-/// Performance measurements and exit status from running a single command
-#[derive(Debug, Default, Copy, Clone, PartialEq)]
+use crate::quantity::statistics::{max, mean, median, min, modified_zscores, standard_deviation};
+use crate::quantity::{serialize_information, serialize_time, Information, Time};
+use crate::util::exit_code::extract_exit_code;
+
+fn serialize_exit_status<S>(exit_status: &ExitStatus, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match extract_exit_code(*exit_status) {
+        Some(code) => serializer.serialize_i32(code),
+        None => serializer.serialize_unit(),
+    }
+}
+
+fn serialize_optional_information<S>(
+    value: &Option<Information>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match value {
+        Some(value) => serialize_information(value, serializer),
+        None => serializer.serialize_none(),
+    }
+}
+
+/// Performance metric measurements and exit code for a single run
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
 pub struct Measurement {
-    /// Wall clock time
+    /// Elapsed wall clock time (real time)
+    #[serde(serialize_with = "serialize_time")]
     pub time_wall_clock: Time,
 
     /// Time spent in user mode
+    #[serde(serialize_with = "serialize_time")]
     pub time_user: Time,
 
     /// Time spent in kernel mode
+    #[serde(serialize_with = "serialize_time")]
     pub time_system: Time,
 
-    /// Maximum amount of memory used
-    pub peak_memory_usage: Information,
+    /// Peak resident set size, if available on this platform
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_information"
+    )]
+    pub memory_peak_resident: Option<Information>,
 
-    /// The exit status of the process
+    // The exit status of the process
+    #[serde(rename = "exit_code", serialize_with = "serialize_exit_status")]
     pub exit_status: ExitStatus,
 }
 
-/// Performance measurements and exit statuses for all runs of a command.
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct Measurements {
     pub measurements: Vec<Measurement>,
 }
@@ -49,7 +82,7 @@ impl Measurements {
         self.measurements.iter().map(|m| m.time_wall_clock)
     }
 
-    /// The average wall clock time.
+    /// The average wall clock time
     pub fn time_wall_clock_mean(&self) -> Time {
         mean(self.wall_clock_times())
     }
@@ -65,37 +98,33 @@ impl Measurements {
         }
     }
 
-    /// The median wall clock time.
+    /// The median wall clock time
     pub fn median(&self) -> Time {
         median(self.wall_clock_times())
     }
 
-    /// The minimum wall clock time.
+    /// The minimum wall clock time
     pub fn min(&self) -> Time {
         min(self.wall_clock_times())
     }
 
-    /// The maximum wall clock time.
+    /// The maximum wall clock time
     pub fn max(&self) -> Time {
         max(self.wall_clock_times())
     }
 
-    /// Compute modified Z-scores for the wall clock times.
+    /// Compute modified Z-scores for the wall clock times
     pub fn modified_zscores(&self) -> Vec<f64> {
         modified_zscores(&self.wall_clock_times().collect::<Vec<_>>())
     }
 
-    /// The average user time.
+    /// The average user time
     pub fn time_user_mean(&self) -> Time {
         mean(self.measurements.iter().map(|m| m.time_user))
     }
 
-    /// The average system time.
+    /// The average system time
     pub fn time_system_mean(&self) -> Time {
         mean(self.measurements.iter().map(|m| m.time_system))
-    }
-
-    pub fn peak_memory_usage_mean(&self) -> Information {
-        mean(self.measurements.iter().map(|m| m.peak_memory_usage))
     }
 }

@@ -8,7 +8,9 @@ use std::cmp;
 use std::io::{self, Write};
 use std::time::Instant;
 
+use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
+use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
@@ -20,9 +22,8 @@ use crate::output::progress_bar::{
 };
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{const_time_from_seconds, ratio, FormatQuantity, Time, Zero};
-use benchmark_result::{BenchmarkResult, Parameter};
-use measurement::{Measurement, Measurements};
+use crate::quantity::{self, const_time_from_seconds, FormatQuantity, Time, Zero};
+use benchmark_result::BenchmarkResult;
 
 use anyhow::{anyhow, Result};
 use colored::*;
@@ -30,7 +31,7 @@ use colored::*;
 use self::executor::Executor;
 
 /// Threshold for warning about fast execution time
-pub const MIN_EXECUTION_TIME: Time = const_time_from_seconds(5e-3);
+pub const MIN_EXECUTION_TIME: Time = const_time_from_seconds(0.005);
 
 pub struct Benchmark<'a> {
     number: usize,
@@ -268,20 +269,20 @@ impl<'a> Benchmark<'a> {
         if let Some(bar) = progress_bar.as_ref() {
             start_initial_measurement(bar, Instant::now());
         }
-        let res = self.executor.run_command_and_measure(
+        let measurement = self.executor.run_command_and_measure(
             self.command,
             benchmark_iteration,
             None,
             output_policy,
         )?;
-        let success = res.exit_status.success();
+        let success = measurement.exit_status.success();
 
         if let Some(bar) = progress_bar.as_ref() {
             let time_unit = self
                 .options
                 .time_unit
-                .unwrap_or(res.time_wall_clock.suitable_unit());
-            let estimate = res.time_wall_clock.format(time_unit);
+                .unwrap_or(measurement.time_wall_clock.suitable_unit());
+            let estimate = measurement.time_wall_clock.format(time_unit);
             finish_initial_measurement(
                 bar,
                 format!("Current estimate: {}", estimate.to_string().green()),
@@ -295,11 +296,11 @@ impl<'a> Benchmark<'a> {
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_wall_clock
+            / (measurement.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead))
-            .get::<ratio>() as u64;
+            .get::<quantity::ratio>() as u64;
 
         let count = {
             let min = cmp::max(runs_in_min_time, self.options.run_bounds.min);
@@ -315,7 +316,7 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        measurements.push(res);
+        measurements.push(measurement);
 
         all_succeeded = all_succeeded && success;
 
@@ -345,15 +346,14 @@ impl<'a> Benchmark<'a> {
 
             run_preparation_command(benchmark_iteration)?;
 
-            let res = self.executor.run_command_and_measure(
+            let measurement = self.executor.run_command_and_measure(
                 self.command,
                 benchmark_iteration,
                 None,
                 output_policy,
             )?;
-            let success = res.exit_status.success();
-
-            measurements.push(res);
+            let success = measurement.exit_status.success();
+            measurements.push(measurement);
 
             all_succeeded = all_succeeded && success;
 
@@ -368,25 +368,19 @@ impl<'a> Benchmark<'a> {
             bar.finish_and_clear()
         }
 
-        // Compute statistical quantities
-        let t_num = measurements.len();
-        let t_mean = measurements.time_wall_clock_mean();
-        let t_stddev = measurements.stddev();
-        let t_min = measurements.min();
-        let t_max = measurements.max();
-
-        let user_mean = measurements.time_user_mean();
-        let system_mean = measurements.time_system_mean();
-
         // Formatting and console output
-        let time_unit = self.options.time_unit.unwrap_or(t_mean.suitable_unit());
-        let mean_str = t_mean.format(time_unit);
-        let min_str = t_min.format(time_unit);
-        let max_str = t_max.format(time_unit);
-        let num_str = format!("{t_num} runs");
+        let t_wall_clock_mean = measurements.time_wall_clock_mean();
+        let time_unit = self
+            .options
+            .time_unit
+            .unwrap_or(t_wall_clock_mean.suitable_unit());
+        let mean_str = t_wall_clock_mean.format(time_unit);
+        let min_str = measurements.min().format(time_unit);
+        let max_str = measurements.max().format(time_unit);
+        let num_str = format!("{num_runs} runs", num_runs = measurements.len());
 
-        let user_str = user_mean.format(time_unit);
-        let system_str = system_mean.format(time_unit);
+        let user_str = measurements.time_user_mean().format(time_unit);
+        let system_str = measurements.time_system_mean().format(time_unit);
 
         if self.options.output_style != OutputStyleOption::Disabled {
             let mut stdout = io::stdout().lock();
@@ -401,7 +395,7 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 )?;
             } else {
-                let stddev_str = t_stddev.unwrap().format(time_unit);
+                let stddev_str = measurements.stddev().unwrap().format(time_unit);
 
                 console_writeln!(
                     stdout,
@@ -481,9 +475,14 @@ impl<'a> Benchmark<'a> {
 
         self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
+        let command = self.command.get_command_line();
+        let name = self.command.get_name();
+        let name = (name != command).then_some(name);
+
         Ok(BenchmarkResult {
-            command: self.command.get_name(),
-            command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
+            command,
+            name,
+            display_name: self.command.get_name_with_unused_parameters(),
             measurements,
             parameters: self
                 .command
@@ -494,7 +493,6 @@ impl<'a> Benchmark<'a> {
                         name.to_string(),
                         Parameter {
                             value: value.to_string(),
-                            is_unused: self.command.is_parameter_unused(name),
                         },
                     )
                 })

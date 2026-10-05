@@ -49,7 +49,7 @@ trait Exporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<TimeUnit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
         reference_index: Option<usize>,
     ) -> Result<Vec<u8>>;

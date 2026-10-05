@@ -16,7 +16,7 @@ impl Exporter for CsvExporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        _unit: Option<TimeUnit>,
+        _time_unit: Option<TimeUnit>,
         _sort_order: SortOrder,
         _reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
@@ -42,7 +42,7 @@ impl Exporter for CsvExporter {
         }
 
         for res in results {
-            let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
+            let mut fields = vec![Cow::Borrowed(res.get_name().as_bytes())];
             for f in &[
                 res.mean_wall_clock_time(),
                 res.measurements.stddev().unwrap_or_default(),
@@ -80,28 +80,29 @@ fn test_csv() {
 
     let results = vec![
         BenchmarkResult {
-            command: String::from("command_a"),
-            command_with_unused_parameters: String::from("command_a"),
+            command: String::from("echo command_a"),
+            name: Some(String::from("command_a")),
+            display_name: String::from("command_a"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(7.0),
                     time_user: Time::new::<second>(7.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(8.0),
                     time_user: Time::new::<second>(8.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(12.0),
                     time_user: Time::new::<second>(12.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -111,14 +112,12 @@ fn test_csv() {
                     "foo".into(),
                     Parameter {
                         value: "one".into(),
-                        is_unused: false,
                     },
                 );
                 params.insert(
                     "bar".into(),
                     Parameter {
                         value: "two".into(),
-                        is_unused: false,
                     },
                 );
                 params
@@ -126,27 +125,28 @@ fn test_csv() {
         },
         BenchmarkResult {
             command: String::from("command_b"),
-            command_with_unused_parameters: String::from("command_b"),
+            name: None,
+            display_name: String::from("command_b"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(17.0),
                     time_user: Time::new::<second>(17.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(18.0),
                     time_user: Time::new::<second>(18.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(19.0),
                     time_user: Time::new::<second>(19.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -156,14 +156,12 @@ fn test_csv() {
                     "foo".into(),
                     Parameter {
                         value: "one".into(),
-                        is_unused: false,
                     },
                 );
                 params.insert(
                     "bar".into(),
                     Parameter {
                         value: "seven".into(),
-                        is_unused: false,
                     },
                 );
                 params

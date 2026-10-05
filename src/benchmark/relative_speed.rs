@@ -154,11 +154,12 @@ fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
     use crate::benchmark::measurement::{Measurement, Measurements};
-    use crate::quantity::{second, Time};
+    use crate::quantity::second;
 
     BenchmarkResult {
         command: name.into(),
-        command_with_unused_parameters: name.into(),
+        display_name: name.into(),
+        name: None,
         measurements: Measurements {
             measurements: vec![Measurement {
                 time_wall_clock: Time::new::<second>(mean),
@@ -223,7 +224,7 @@ fn reference_identity_distinguishes_equal_results() {
 fn reference_ratios_handle_zero_times() {
     let mut results = vec![create_result("reference", 2.0), create_result("zero", 0.0)];
     for result in &mut results {
-        let measurement = result.measurements.measurements[0];
+        let measurement = result.measurements.measurements[0].clone();
         result.measurements.measurements.push(measurement);
     }
     let entries = compute_relative_speeds(&results, &results[0], SortOrder::Command);
