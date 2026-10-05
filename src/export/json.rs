@@ -10,6 +10,7 @@ use anyhow::Result;
 
 #[derive(Serialize, Debug)]
 struct HyperfineSummary<'a> {
+    schema_version: u32,
     results: &'a [BenchmarkResult],
 }
 
@@ -24,7 +25,10 @@ impl Exporter for JsonExporter {
         _sort_order: SortOrder,
         _reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
-        let mut output = to_vec_pretty(&HyperfineSummary { results });
+        let mut output = to_vec_pretty(&HyperfineSummary {
+            schema_version: 2,
+            results,
+        });
         if let Ok(ref mut content) = output {
             content.push(b'\n');
         }
@@ -63,6 +67,7 @@ fn test_json_optional_memory() {
             .unwrap();
         let actual: serde_json::Value = serde_json::from_slice(&output).unwrap();
         let mut expected = json!({
+            "schema_version": 2,
             "results": [{
                 "command": "example",
                 "measurements": [{

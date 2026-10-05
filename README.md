@@ -158,8 +158,12 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 
 #### JSON
 
-The JSON export contains a `results` array with one entry per benchmark. Each entry has a
-`measurements` array with one object per measured run (excluding warmup runs):
+The JSON export contains a top-level `"schema_version": 2` and a `results` array with one entry
+per benchmark. Earlier exports without `schema_version` use the legacy format (version 1).
+The schema version is independent of the hyperfine release version and changes when the format
+changes incompatibly; adding optional metrics does not require a new schema version.
+
+Each result has a `measurements` array with one object per measured run (excluding warmup runs):
 
 | Field | Format | Meaning and platform differences |
 |:---|:---|:---|
