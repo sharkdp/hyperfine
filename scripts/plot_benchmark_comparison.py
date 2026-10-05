@@ -51,7 +51,7 @@ for i, filename in enumerate(args.files):
         assert (
             commands == benchmark_commands
         ), f"Unexpected commands in {filename}: {benchmark_commands}, expected: {commands}"
-    data.append([round(b["mean"], 2) for b in results])
+    data.append([b["summary"]["time_wall_clock"]["mean"] for b in results])
     if args.benchmark_names:
         inputs.append(args.benchmark_names[i])
     else:

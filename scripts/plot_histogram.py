@@ -67,7 +67,9 @@ if args.labels:
     labels = args.labels.split(",")
 else:
     labels = [b["command"] for b in results]
-all_times = [b["times"] for b in results]
+all_times = [
+    [m["time_wall_clock"]["value"] for m in b["measurements"]] for b in results
+]
 
 t_min = float(args.t_min) if args.t_min else np.min(list(map(np.min, all_times)))
 t_max = float(args.t_max) if args.t_max else np.max(list(map(np.max, all_times)))

@@ -27,7 +27,7 @@ if len(results) != 2:
     sys.exit(1)
 
 a, b = (x["command"] for x in results[:2])
-X, Y = (x["times"] for x in results[:2])
+X, Y = ([m["time_wall_clock"]["value"] for m in x["measurements"]] for x in results[:2])
 
 print(f"Command 1: {a}")
 print(f"Command 2: {b}\n")

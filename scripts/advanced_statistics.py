@@ -50,11 +50,9 @@ unit_str = str(unit)
 with open(args.file) as f:
     results = json.load(f)["results"]
 
-commands = [b["command"] for b in results]
-times = [b["times"] for b in results]
-
-for command, ts in zip(commands, times):
-    ts = [t * unit.factor() for t in ts]
+for result in results:
+    summary = result["summary"]["time_wall_clock"]
+    ts = [m["time_wall_clock"]["value"] * unit.factor() for m in result["measurements"]]
 
     p05 = np.percentile(ts, 5)
     p25 = np.percentile(ts, 25)
@@ -63,13 +61,16 @@ for command, ts in zip(commands, times):
 
     iqr = p75 - p25
 
-    print(f"Command '{command}'")
-    print(f"  runs:   {len(ts):8d}")
-    print(f"  mean:   {np.mean(ts):8.3f} {unit_str}")
-    print(f"  stddev: {np.std(ts, ddof=1):8.3f} {unit_str}")
-    print(f"  median: {np.median(ts):8.3f} {unit_str}")
-    print(f"  min:    {np.min(ts):8.3f} {unit_str}")
-    print(f"  max:    {np.max(ts):8.3f} {unit_str}")
+    print(f"Command '{result['command']}'")
+    print(f"  runs:   {summary['count']:8d}")
+    print(f"  mean:   {summary['mean'] * unit.factor():8.3f} {unit_str}")
+    if summary["stddev"] is None:
+        print(f"  stddev: {'N/A':>8}")
+    else:
+        print(f"  stddev: {summary['stddev'] * unit.factor():8.3f} {unit_str}")
+    print(f"  median: {summary['median'] * unit.factor():8.3f} {unit_str}")
+    print(f"  min:    {summary['min'] * unit.factor():8.3f} {unit_str}")
+    print(f"  max:    {summary['max'] * unit.factor():8.3f} {unit_str}")
     print()
     print("  percentiles:")
     print(f"     P_05 .. P_95:    {p05:.3f} {unit_str} .. {p95:.3f} {unit_str}")

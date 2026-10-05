@@ -16,6 +16,24 @@ pub use units::{InformationUnit, IsUnit, TimeUnit};
 pub mod statistics;
 mod units;
 
+pub trait QuantityInUnit<U> {
+    fn value_in_unit(self) -> f64;
+}
+
+impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> QuantityInUnit<U> for Time {
+    fn value_in_unit(self) -> f64 {
+        self.get::<U>()
+    }
+}
+
+impl<U: uom::si::information::Unit + uom::Conversion<f64, T = f64>> QuantityInUnit<U>
+    for Information
+{
+    fn value_in_unit(self) -> f64 {
+        self.get::<U>()
+    }
+}
+
 pub trait FormatQuantity {
     type Unit;
 
