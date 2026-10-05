@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::{cmp, env, fmt, io};
 
-use anyhow::ensure;
+use anyhow::{bail, ensure};
 use clap::ArgMatches;
 
 use crate::command::Commands;
@@ -208,11 +208,14 @@ pub struct Options {
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
 
-    // Command to use as a reference for relative speed comparison
+    // Standalone reference command, cleared when an existing benchmark is selected.
     pub reference_command: Option<String>,
 
     // Name of the reference command
     pub reference_name: Option<String>,
+
+    // Index of the reference in the benchmark sequence, if any.
+    pub reference_index: Option<usize>,
 
     /// Command(s) to run before each timing run
     pub preparation_command: Option<Vec<String>>,
@@ -257,6 +260,7 @@ impl Default for Options {
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
             reference_name: None,
+            reference_index: None,
             preparation_command: None,
             conclusion_command: None,
             setup_command: None,
@@ -464,6 +468,35 @@ impl Options {
     }
 
     pub fn validate_against_command_list(&mut self, commands: &Commands) -> Result<()> {
+        if let Some(reference) = &self.reference_command {
+            if commands
+                .iter()
+                .next()
+                .is_some_and(|command| !command.get_parameters().is_empty())
+            {
+                ensure!(
+                    self.reference_name.is_none(),
+                    "--reference-name cannot be used with a parameterized reference; use --command-name to name the benchmark"
+                );
+                let mut matches = commands
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, command)| command.get_name_with_unused_parameters() == *reference);
+                let Some((index, _)) = matches.next() else {
+                    bail!(
+                        "Reference '{reference}' does not match any parameterized benchmark. Use its full displayed benchmark name."
+                    );
+                };
+                ensure!(
+                    matches.next().is_none(),
+                    "Reference '{reference}' matches multiple parameterized benchmarks. Use --command-name to give them unique names."
+                );
+                self.reference_index = Some(index);
+                self.reference_command = None;
+            } else {
+                self.reference_index = Some(0);
+            }
+        }
         let has_reference_command = self.reference_command.is_some();
         let num_commands = commands.num_commands(has_reference_command);
 

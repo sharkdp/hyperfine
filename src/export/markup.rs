@@ -1,10 +1,11 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::options::SortOrder;
-use crate::quantity::{FormatQuantity, IsUnit, TimeUnit};
+use crate::quantity::{FormatQuantity, IsUnit, Time, TimeUnit, Zero};
 
 use super::Exporter;
 use anyhow::Result;
+use std::cmp::Ordering;
 
 pub enum Alignment {
     Left,
@@ -16,6 +17,8 @@ pub trait MarkupExporter {
         &self,
         entries: &[BenchmarkResultWithRelativeSpeed],
         unit: TimeUnit,
+        reference_pending: bool,
+        explicit_reference: bool,
     ) -> String {
         // prepare table header strings
         let notation = format!("[{}]", unit.short_name());
@@ -58,13 +61,25 @@ pub trait MarkupExporter {
             };
             let min_str = measurement.measurements.min().format_value(unit);
             let max_str = measurement.measurements.max().format_value(unit);
-            let rel_str = format!("{:.2}", entry.relative_speed);
-            let rel_stddev_str = if entry.is_reference {
-                "".into()
-            } else if let Some(stddev) = entry.relative_speed_stddev {
-                format!(" ± {stddev:.2}")
+            // The ratio of two zero times is undefined, even if they compare equal.
+            let relative_unavailable = reference_pending
+                || (explicit_reference
+                    && !entry.is_reference
+                    && entry.relative_ordering == Ordering::Equal
+                    && measurement.mean_wall_clock_time() == Time::zero());
+            let relative = if relative_unavailable {
+                "N/A".to_string()
             } else {
-                "".into()
+                let stddev = match (entry.is_reference, entry.relative_speed_stddev) {
+                    (false, Some(stddev)) => format!(" ± {stddev:.2}"),
+                    _ => String::new(),
+                };
+                let label = if explicit_reference {
+                    entry.reference_label()
+                } else {
+                    ""
+                };
+                format!("{:.2}{stddev}{label}", entry.relative_speed)
             };
 
             // prepare table row entries
@@ -73,7 +88,7 @@ pub trait MarkupExporter {
                 &format!("{mean_str}{stddev_str}"),
                 &min_str,
                 &max_str,
-                &format!("{rel_str}{rel_stddev_str}"),
+                &relative,
             ]))
         }
 
@@ -114,11 +129,20 @@ impl<T: MarkupExporter> Exporter for T {
         results: &[BenchmarkResult],
         unit: Option<TimeUnit>,
         sort_order: SortOrder,
+        reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
         let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
-        let entries = relative_speed::compute(results, sort_order);
+        // Do not report ratios against another benchmark while the selected
+        // reference is still pending in an intermediate export.
+        let reference_pending = reference_index.is_some_and(|i| i >= results.len());
+        let entries = relative_speed::compute(
+            results,
+            sort_order,
+            reference_index.and_then(|i| results.get(i)),
+        );
 
-        let table = self.table_results(&entries, unit);
+        let table =
+            self.table_results(&entries, unit, reference_pending, reference_index.is_some());
         Ok(table.as_bytes().to_vec())
     }
 }

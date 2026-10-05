@@ -51,6 +51,7 @@ trait Exporter {
         results: &[BenchmarkResult],
         unit: Option<TimeUnit>,
         sort_order: SortOrder,
+        reference_index: Option<usize>,
     ) -> Result<Vec<u8>>;
 }
 
@@ -130,11 +131,18 @@ impl ExportManager {
     /// results are written to all file targets (to always have them up to date, even
     /// if a benchmark fails). In the latter case, we only print to stdout targets (in
     /// order not to clutter the output of hyperfine with intermediate results).
-    pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
+    /// `reference_index` refers to the complete benchmark sequence, so it can
+    /// point past `results` while that benchmark is still pending.
+    pub fn write_results(
+        &self,
+        results: &[BenchmarkResult],
+        intermediate: bool,
+        reference_index: Option<usize>,
+    ) -> Result<()> {
         for e in &self.exporters {
             let content = || {
                 e.exporter
-                    .serialize(results, self.time_unit, self.sort_order)
+                    .serialize(results, self.time_unit, self.sort_order, reference_index)
             };
 
             match e.target {

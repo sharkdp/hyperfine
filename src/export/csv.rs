@@ -18,6 +18,7 @@ impl Exporter for CsvExporter {
         results: &[BenchmarkResult],
         _unit: Option<TimeUnit>,
         _sort_order: SortOrder,
+        _reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
         const CSV_UNIT: TimeUnit = TimeUnit::Second;
         const CSV_PRECISION: usize = 6;
@@ -172,7 +173,7 @@ fn test_csv() {
 
     let actual = String::from_utf8(
         exporter
-            .serialize(&results, Some(TimeUnit::Second), SortOrder::Command)
+            .serialize(&results, Some(TimeUnit::Second), SortOrder::Command, None)
             .unwrap(),
     )
     .unwrap();

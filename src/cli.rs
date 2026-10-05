@@ -105,8 +105,11 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
-                    "The reference command for the relative comparison of results. \
-                    If this is unset, results are compared with the fastest command as reference."
+                    "The reference for the relative comparison of results. Without parameters, \
+                    CMD is run as a separate reference command. With --parameter-scan or \
+                    --parameter-list, CMD must exactly match one unique benchmark name as \
+                    shown in the output. If this is unset, results are compared with the \
+                    fastest command as reference."
                 )
         )
         .arg(
@@ -114,7 +117,8 @@ fn build_command() -> Command {
                 .long("reference-name")
                 .action(ArgAction::Set)
                 .value_name("CMD")
-                .help("Give a meaningful name to the reference command.")
+                .help("Give a meaningful name to the reference command. This cannot be used \
+                       with parameterized benchmarks; use --command-name instead.")
                 .requires("reference")
         )
         .arg(

@@ -116,13 +116,17 @@ not every time as would happen with the \fB\-\-prepare\fR option.
 .HP
 \fB\-\-reference\fR \fICMD\fP
 .IP
-Benchmark \fICMD\fP as the reference for the relative comparison of results.
-If this option is not specified, the fastest command is used as the reference.
+Use \fICMD\fP as the reference for the relative comparison of results. Without
+parameters, benchmark \fICMD\fP as a separate reference command. If this option
+is not specified, the fastest command is used as the reference.
+With \fB\-\-parameter\-scan\fR or \fB\-\-parameter\-list\fR, select an existing
+benchmark by its exact printed name. The name must match exactly one benchmark.
 .HP
 \fB\-\-reference\-name\fR \fINAME\fP
 .IP
 Give a meaningful \fINAME\fP to the reference command.
 Requires \fB\-\-reference\fR.
+Cannot be used with parameterized benchmarks; use \fB\-\-command\-name\fR instead.
 .HP
 \fB\-p\fR, \fB\-\-prepare\fR \fICMD...\fP
 .IP

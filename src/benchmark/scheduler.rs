@@ -54,7 +54,8 @@ impl<'a> Scheduler<'a> {
 
             // We export results after each individual benchmark, because
             // we would risk losing them if a later benchmark fails.
-            self.export_manager.write_results(&self.results, true)?;
+            self.export_manager
+                .write_results(&self.results, true, self.options.reference_index)?;
         }
 
         Ok(())
@@ -71,9 +72,8 @@ impl<'a> Scheduler<'a> {
 
         let reference = self
             .options
-            .reference_command
-            .as_ref()
-            .map(|_| &self.results[0])
+            .reference_index
+            .map(|index| &self.results[index])
             .unwrap_or_else(|| relative_speed::fastest_of(&self.results));
 
         if let Some(annotated_results) = relative_speed::compute_with_check_from_reference(
@@ -130,9 +130,14 @@ impl<'a> Scheduler<'a> {
                     console_writeln!(stdout, "{}", "Relative speed comparison".bold())?;
 
                     for item in annotated_results {
+                        let relationship = if self.options.reference_index.is_some() {
+                            item.reference_label()
+                        } else {
+                            ""
+                        };
                         console_writeln!(
                             stdout,
-                            "  {}{}  {}",
+                            "  {}{}  {}{}",
                             format!("{:10.2}", item.relative_speed).bold().green(),
                             if item.is_reference {
                                 "        ".into()
@@ -142,6 +147,7 @@ impl<'a> Scheduler<'a> {
                                 "        ".into()
                             },
                             item.result.command_with_unused_parameters,
+                            relationship,
                         )?;
                     }
                 }
@@ -163,7 +169,8 @@ impl<'a> Scheduler<'a> {
     }
 
     pub fn final_export(&self) -> Result<()> {
-        self.export_manager.write_results(&self.results, false)
+        self.export_manager
+            .write_results(&self.results, false, self.options.reference_index)
     }
 }
 
