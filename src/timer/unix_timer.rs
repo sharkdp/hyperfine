@@ -3,16 +3,16 @@
 use std::convert::TryFrom;
 use std::mem;
 
+use crate::quantity::{byte, microsecond, Information, Time};
 use crate::timer::CPUTimes;
-use crate::util::units::Second;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CPUInterval {
     /// Total amount of time spent executing in user mode
-    pub user: Second,
+    pub user: Time,
 
     /// Total amount of time spent executing in kernel mode
-    pub system: Second,
+    pub system: Time,
 }
 
 pub struct CPUTimer {
@@ -26,13 +26,13 @@ impl CPUTimer {
         }
     }
 
-    pub fn stop(&self) -> (Second, Second, u64) {
+    pub fn stop(&self) -> (Time, Time, Information) {
         let end_cpu = get_cpu_times();
         let cpu_interval = cpu_time_interval(&self.start_cpu, &end_cpu);
         (
             cpu_interval.user,
             cpu_interval.system,
-            end_cpu.memory_usage_byte,
+            Information::new::<byte>(end_cpu.memory_usage_byte as f64),
         )
     }
 }
@@ -70,11 +70,13 @@ fn get_cpu_times() -> CPUTimes {
 /// Compute the time intervals in between two `CPUTimes` snapshots
 fn cpu_time_interval(start: &CPUTimes, end: &CPUTimes) -> CPUInterval {
     CPUInterval {
-        user: ((end.user_usec - start.user_usec) as f64) * 1e-6,
-        system: ((end.system_usec - start.system_usec) as f64) * 1e-6,
+        user: Time::new::<microsecond>((end.user_usec - start.user_usec) as f64),
+        system: Time::new::<microsecond>((end.system_usec - start.system_usec) as f64),
     }
 }
 
+#[cfg(test)]
+use crate::quantity::second;
 #[cfg(test)]
 use approx::assert_relative_eq;
 
@@ -93,14 +95,14 @@ fn test_cpu_time_interval() {
     };
 
     let t_zero = cpu_time_interval(&t_a, &t_a);
-    assert!(t_zero.user.abs() < f64::EPSILON);
-    assert!(t_zero.system.abs() < f64::EPSILON);
+    assert!(t_zero.user.get::<second>().abs() < f64::EPSILON);
+    assert!(t_zero.system.get::<second>().abs() < f64::EPSILON);
 
     let t_ab = cpu_time_interval(&t_a, &t_b);
-    assert_relative_eq!(0.007655, t_ab.user);
-    assert_relative_eq!(0.015679, t_ab.system);
+    assert_relative_eq!(0.007655, t_ab.user.get::<second>());
+    assert_relative_eq!(0.015679, t_ab.system.get::<second>());
 
     let t_ba = cpu_time_interval(&t_b, &t_a);
-    assert_relative_eq!(-0.007655, t_ba.user);
-    assert_relative_eq!(-0.015679, t_ba.system);
+    assert_relative_eq!(-0.007655, t_ba.user.get::<second>());
+    assert_relative_eq!(-0.015679, t_ba.system.get::<second>());
 }

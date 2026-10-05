@@ -9,7 +9,8 @@ use clap::ArgMatches;
 
 use crate::command::Commands;
 use crate::error::OptionsError;
-use crate::util::units::{Second, Unit};
+use crate::quantity::{second, Time};
+use crate::util::units::Unit;
 
 use anyhow::Result;
 
@@ -203,7 +204,7 @@ pub struct Options {
     pub warmup_count: u64,
 
     /// Minimum benchmarking time
-    pub min_benchmarking_time: Second,
+    pub min_benchmarking_time: Time,
 
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
@@ -253,7 +254,7 @@ impl Default for Options {
         Options {
             run_bounds: RunBounds::default(),
             warmup_count: 0,
-            min_benchmarking_time: 3.0,
+            min_benchmarking_time: Time::new::<second>(3.0),
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
             reference_name: None,
@@ -438,9 +439,10 @@ impl Options {
         };
 
         if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
-            options.min_benchmarking_time = time
-                .parse::<f64>()
-                .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;
+            options.min_benchmarking_time = Time::new::<second>(
+                time.parse::<f64>()
+                    .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?,
+            );
         }
 
         options.command_input_policy = if let Some(path_str) = matches.get_one::<String>("input") {
