@@ -107,7 +107,7 @@ pub fn standard_deviation<Q: UnsafeRawValue>(values: impl IntoIterator<Item = Q>
     Q::unsafe_from_raw_value(result)
 }
 
-/// Compute modifized Z-scores for a given sample. A (unmodified) Z-score is defined by
+/// Compute modified Z-scores for a given sample. A (unmodified) Z-score is defined by
 /// `(x_i - x_mean)/x_stddev` whereas the modified Z-score is defined by `(x_i - x_median)/MAD`
 /// where MAD is the median absolute deviation.
 ///

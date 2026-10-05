@@ -259,7 +259,8 @@ impl<'a> Benchmark<'a> {
             None
         };
 
-        let preparation_result = run_preparation_command()?;
+        let benchmark_iteration = BenchmarkIteration::Benchmark(0);
+        let preparation_result = run_preparation_command(benchmark_iteration)?;
         let preparation_overhead = preparation_result.map_or(Time::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
@@ -288,7 +289,7 @@ impl<'a> Benchmark<'a> {
             );
         }
 
-        let conclusion_result = run_conclusion_command()?;
+        let conclusion_result = run_conclusion_command(benchmark_iteration)?;
         let conclusion_overhead = conclusion_result.map_or(Time::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });

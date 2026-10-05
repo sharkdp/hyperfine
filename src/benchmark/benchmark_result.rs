@@ -14,15 +14,6 @@ pub struct Parameter {
 
 /// Meta data and performance metrics for a single benchmark
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
-#[serde(transparent)]
-pub struct Parameter {
-    pub value: String,
-    #[serde(skip)]
-    pub is_unused: bool,
-}
-
-/// Meta data and performance metrics for a single benchmark
-#[derive(Debug, Default, Clone, PartialEq)]
 pub struct BenchmarkResult {
     /// The full command line of the program that is being benchmarked
     pub command: String,
