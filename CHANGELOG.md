@@ -1,3 +1,35 @@
+# v1.21.0
+
+## Features
+
+- Add support for minutes and hours in `--time-unit`, as well as short and plural aliases such as `ms`, `seconds`, and `min`, see #960 (@sharkdp)
+- Expose `$HYPERFINE_ITERATION` to `--prepare` and `--conclude` commands, see #781 and #807 (@willcl-ark)
+- Show elapsed time during the initial benchmark run, see #416 and #581 (@devonhollowood)
+- Add colors to `--help` output, see #841 (@starsep)
+
+## Changes
+
+- Format times in CSV exports with six decimal places, see #966 and #972 (@sharkdp)
+- Update dependencies and raise the minimum supported Rust version to 1.97, see #934 (@sharkdp)
+
+## Bugfixes
+
+- Reject zero values for `--runs`, `--min-runs`, and `--max-runs` instead of allowing invalid run counts, see #923 (@VXNCXNX, @sharkdp)
+- Reject negative parameter-scan steps before expanding ranges, avoiding hangs and excessive memory use, see #951 (@Likio3000)
+- Preserve existing export files when command options are invalid, see #950 (@Likio3000)
+- Truncate export files when rewriting results to avoid leaving trailing bytes, see #970 (@sharkdp)
+- Preserve backticks in command names in Markdown exports, see #947 (@Likio3000)
+- Handle broken output pipes gracefully instead of panicking, see #932 (@Mathjk)
+- Collect peak memory usage separately for each command on Unix, so commands no longer inherit the peak memory usage of earlier commands, see #965 (@sharkdp)
+- Preserve 100-nanosecond precision in Windows CPU times, see #964 (@sharkdp)
+- Python scripts: Correct the interpretation of Welch's t-test results, see #943 (@sharkdp)
+
+## Other
+
+- Build binaries for Windows ARM64 and Linux ARM64 musl, see #922 and #924 (@meop)
+- Refactor measurement, statistics, and formatting code to use typed quantities, see #954, #958, #961, #967, #969, #971, and #976 (@sharkdp)
+- Improve documentation and examples, including comparisons across Git branches, iteration variables, reference commands, and selective failure handling, see #899, #900, #929, and #940 (@xfocus3, @ded-furby, @Likio3000, @sharkdp)
+
 # v1.20.0
 
 ## Features
