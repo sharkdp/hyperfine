@@ -21,7 +21,8 @@ pub fn format_duration_value(duration: Second, unit: Option<Unit>) -> (String, U
     } else if (duration < 1.0 && unit.is_none()) || unit == Some(Unit::MilliSecond) {
         (Unit::MilliSecond.format(duration), Unit::MilliSecond)
     } else {
-        (Unit::Second.format(duration), Unit::Second)
+        let unit = unit.unwrap_or(Unit::Second);
+        (unit.format(duration), unit)
     }
 }
 

@@ -255,8 +255,21 @@ order benchmarks by mean runtime
 .HP
 \fB\-u\fR, \fB\-\-time\-unit\fR \fIUNIT\fP
 .IP
-Set the time unit to be used. Possible values: microsecond, millisecond, second. If
-the option is not given, the time unit is determined automatically.
+Set the time unit to be used. If the option is not given, the time unit is
+determined automatically. Possible values:
+.RS
+.IP "microsecond"
+Aliases: µs, us, microseconds.
+.IP "millisecond"
+Aliases: ms, milliseconds.
+.IP "second"
+Aliases: s, seconds.
+.IP "minute"
+Aliases: min, minutes.
+.IP "hour"
+Aliases: h, hours.
+.RE
+.IP
 This option affects the standard output as well as all export formats
 except for CSV and JSON.
 .HP
