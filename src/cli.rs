@@ -1,8 +1,10 @@
 use std::ffi::OsString;
 
 use clap::{
-    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgMatches, Command,
-    ValueHint,
+    builder::styling::{AnsiColor, Effects},
+    builder::NonEmptyStringValueParser,
+    builder::Styles,
+    crate_version, Arg, ArgAction, ArgMatches, Command, ValueHint,
 };
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
@@ -14,10 +16,17 @@ where
     command.get_matches_from(args)
 }
 
+const STYLES: Styles = Styles::styled()
+    .header(AnsiColor::Green.on_default().effects(Effects::BOLD))
+    .usage(AnsiColor::Green.on_default().effects(Effects::BOLD))
+    .literal(AnsiColor::Cyan.on_default().effects(Effects::BOLD))
+    .placeholder(AnsiColor::Cyan.on_default());
+
 /// Build the clap command for parsing command line arguments
 fn build_command() -> Command {
     Command::new("hyperfine")
         .version(crate_version!())
+        .styles(STYLES)
         .next_line_help(true)
         .hide_possible_values(true)
         .about("A command-line benchmarking tool.")
