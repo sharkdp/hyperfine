@@ -106,7 +106,9 @@ fn build_command() -> Command {
                 .value_name("CMD")
                 .help(
                     "The reference command for the relative comparison of results. \
-                    If this is unset, results are compared with the fastest command as reference."
+                    If this is unset, results are compared with the fastest command as reference. \
+                    In the command-sorted comparison and exported markup tables, values below 1 \
+                    indicate commands faster than the reference."
                 )
         )
         .arg(

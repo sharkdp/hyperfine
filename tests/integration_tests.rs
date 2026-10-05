@@ -706,6 +706,105 @@ fn shows_benchmark_comparison_relative_to_reference() {
 }
 
 #[test]
+fn command_sorted_comparison_relative_to_reference() {
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .args([
+            "--style=basic",
+            "--sort=command",
+            "--reference=sleep 2",
+            "--reference-name=baseline",
+            "sleep 1",
+            "sleep 3",
+            "sleep 2",
+        ]), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: baseline
+      Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    2.000 s …  2.000 s    10 runs
+
+    Benchmark 2: sleep 1
+      Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    1.000 s …  1.000 s    10 runs
+
+    Benchmark 3: sleep 3
+      Time (mean ± σ):      3.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    3.000 s …  3.000 s    10 runs
+
+    Benchmark 4: sleep 2
+      Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    2.000 s …  2.000 s    10 runs
+
+    Relative speed comparison
+            1.00          baseline
+            0.50 ±  0.00  sleep 1
+            1.50 ±  0.00  sleep 3
+            1.00 ±  0.00  sleep 2
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn markdown_export_relative_to_reference() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let export_path = tempdir.path().join("results.md");
+
+    insta::allow_duplicates! {
+        for sort_order in ["auto", "command", "mean-time"] {
+            for to_stdout in [false, true] {
+                let output = hyperfine_debug()
+                    .args([
+                        "--style=none",
+                        "--time-unit=second",
+                        "--reference=sleep 2",
+                        "--reference-name=baseline",
+                        "sleep 1",
+                        "sleep 3",
+                    ])
+                    .arg(format!("--sort={sort_order}"))
+                    .arg("--export-markdown")
+                    .arg(if to_stdout {
+                        std::path::Path::new("-")
+                    } else {
+                        &export_path
+                    })
+                    .assert()
+                    .success()
+                    .get_output()
+                    .stdout
+                    .clone();
+                let table = if to_stdout {
+                    String::from_utf8(output).unwrap()
+                } else {
+                    std::fs::read_to_string(&export_path).unwrap()
+                };
+
+                if sort_order == "mean-time" {
+                    insta::assert_snapshot!(table.trim(), @r"
+                    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+                    |:---|---:|---:|---:|---:|
+                    | `sleep 1` | 1.000 ± 0.000 | 1.000 | 1.000 | 0.50 ± 0.00 |
+                    | `baseline` | 2.000 ± 0.000 | 2.000 | 2.000 | 1.00 |
+                    | `sleep 3` | 3.000 ± 0.000 | 3.000 | 3.000 | 1.50 ± 0.00 |
+                    ");
+                } else {
+                    insta::assert_snapshot!(table.trim(), @r"
+                    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+                    |:---|---:|---:|---:|---:|
+                    | `baseline` | 2.000 ± 0.000 | 2.000 | 2.000 | 1.00 |
+                    | `sleep 1` | 1.000 ± 0.000 | 1.000 | 1.000 | 0.50 ± 0.00 |
+                    | `sleep 3` | 3.000 ± 0.000 | 3.000 | 3.000 | 1.50 ± 0.00 |
+                    ");
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn shows_reference_name() {
     let _settings = snapshot_settings().bind_to_scope();
     assert_cmd_snapshot!(hyperfine_debug()

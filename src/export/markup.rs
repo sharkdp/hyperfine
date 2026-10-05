@@ -114,9 +114,10 @@ impl<T: MarkupExporter> Exporter for T {
         results: &[BenchmarkResult],
         unit: Option<TimeUnit>,
         sort_order: SortOrder,
+        reference: Option<&BenchmarkResult>,
     ) -> Result<Vec<u8>> {
         let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
-        let entries = relative_speed::compute(results, sort_order);
+        let entries = relative_speed::compute(results, sort_order, reference);
 
         let table = self.table_results(&entries, unit);
         Ok(table.as_bytes().to_vec())

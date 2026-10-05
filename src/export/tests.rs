@@ -14,7 +14,7 @@ fn get_output<E: Exporter + Default>(
     sort_order: SortOrder,
 ) -> String {
     let exporter = E::default();
-    String::from_utf8(exporter.serialize(results, unit, sort_order).unwrap()).unwrap()
+    String::from_utf8(exporter.serialize(results, unit, sort_order, None).unwrap()).unwrap()
 }
 
 /// Ensure the makrup output includes the table header and the multiple

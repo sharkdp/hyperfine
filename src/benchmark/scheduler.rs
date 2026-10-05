@@ -96,7 +96,18 @@ impl<'a> Scheduler<'a> {
                     )?;
 
                     for item in others {
-                        let stddev = if let Some(stddev) = item.relative_speed_stddev {
+                        // The prose summary expresses both directions as factors above one.
+                        let (relative_speed, relative_speed_stddev) =
+                            if item.relative_ordering == Ordering::Less {
+                                (
+                                    1.0 / item.relative_speed,
+                                    item.relative_speed_stddev
+                                        .map(|stddev| stddev / item.relative_speed.powi(2)),
+                                )
+                            } else {
+                                (item.relative_speed, item.relative_speed_stddev)
+                            };
+                        let stddev = if let Some(stddev) = relative_speed_stddev {
                             format!(" ± {}", format!("{:.2}", stddev).green())
                         } else {
                             "".into()
@@ -104,17 +115,17 @@ impl<'a> Scheduler<'a> {
                         let comparator = match item.relative_ordering {
                             Ordering::Less => format!(
                                 "{}{} times slower than",
-                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                format!("{relative_speed:8.2}").bold().green(),
                                 stddev
                             ),
                             Ordering::Greater => format!(
                                 "{}{} times faster than",
-                                format!("{:8.2}", item.relative_speed).bold().green(),
+                                format!("{relative_speed:8.2}").bold().green(),
                                 stddev
                             ),
                             Ordering::Equal => format!(
                                 "    As fast ({}{}) as",
-                                format!("{:.2}", item.relative_speed).bold().green(),
+                                format!("{relative_speed:.2}").bold().green(),
                                 stddev
                             ),
                         };

@@ -51,6 +51,7 @@ trait Exporter {
         results: &[BenchmarkResult],
         unit: Option<TimeUnit>,
         sort_order: SortOrder,
+        reference: Option<&BenchmarkResult>,
     ) -> Result<Vec<u8>>;
 }
 
@@ -69,6 +70,7 @@ pub struct ExportManager {
     exporters: Vec<ExporterWithTarget>,
     time_unit: Option<TimeUnit>,
     sort_order: SortOrder,
+    has_reference: bool,
 }
 
 impl ExportManager {
@@ -83,6 +85,7 @@ impl ExportManager {
             exporters: vec![],
             time_unit,
             sort_order,
+            has_reference: matches.contains_id("reference"),
         };
         {
             let mut add_exporter = |flag, exporttype| -> Result<()> {
@@ -131,10 +134,16 @@ impl ExportManager {
     /// if a benchmark fails). In the latter case, we only print to stdout targets (in
     /// order not to clutter the output of hyperfine with intermediate results).
     pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
+        // The scheduler benchmarks an explicit reference before the other commands.
+        let reference = if self.has_reference {
+            results.first()
+        } else {
+            None
+        };
         for e in &self.exporters {
             let content = || {
                 e.exporter
-                    .serialize(results, self.time_unit, self.sort_order)
+                    .serialize(results, self.time_unit, self.sort_order, reference)
             };
 
             match e.target {
