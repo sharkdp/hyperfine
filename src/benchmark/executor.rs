@@ -144,7 +144,17 @@ impl Executor for RawExecutor<'_> {
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
-        )
+        )?;
+
+        Ok((
+            TimingResult {
+                time_wall_clock: result.time_wall_clock,
+                time_user: result.time_user,
+                time_system: result.time_system,
+                memory_usage_byte: result.memory_usage_byte,
+            },
+            result.status,
+        ))
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -204,12 +214,20 @@ impl Executor for ShellExecutor<'_> {
         // Subtract shell spawning time
         if let Some(spawning_time) = self.shell_spawning_time {
             result.time_wall_clock =
-                (result.time_wall_clock - spawning_time.time_wall_clock).max(Time::zero());
-            result.time_user = (result.time_user - spawning_time.time_user).max(Time::zero());
-            result.time_system = (result.time_system - spawning_time.time_system).max(Time::zero());
+                (result.time_wall_clock - spawning_time.time_wall_clock).max(0.0);
+            result.time_user = (result.time_user - spawning_time.time_user).max(0.0);
+            result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
         }
 
-        Ok(result)
+        Ok((
+            TimingResult {
+                time_wall_clock: result.time_wall_clock,
+                time_user: result.time_user,
+                time_system: result.time_system,
+                memory_usage_byte: result.memory_usage_byte,
+            },
+            result.status,
+        ))
     }
 
     /// Measure the average shell spawning time
@@ -225,7 +243,9 @@ impl Executor for ShellExecutor<'_> {
             None
         };
 
-        let mut measurements = Measurements::default();
+        let mut times_wall_clock: Vec<Second> = vec![];
+        let mut times_user: Vec<Second> = vec![];
+        let mut times_system: Vec<Second> = vec![];
 
         for _ in 0..COUNT {
             // Just run the shell without any command
@@ -249,8 +269,10 @@ impl Executor for ShellExecutor<'_> {
                         shell_cmd
                     );
                 }
-                Ok(r) => {
-                    measurements.push(r);
+                Ok((r, _)) => {
+                    times_wall_clock.push(r.time_wall_clock);
+                    times_user.push(r.time_user);
+                    times_system.push(r.time_system);
                 }
             }
 
@@ -263,18 +285,17 @@ impl Executor for ShellExecutor<'_> {
             bar.finish_and_clear()
         }
 
-        self.shell_spawning_time = Some(Measurement {
-            time_wall_clock: measurements.time_wall_clock_mean(),
-            time_user: measurements.time_user_mean(),
-            time_system: measurements.time_system_mean(),
-            peak_memory_usage: measurements.peak_memory_usage_mean(),
-            exit_status: ExitStatus::default(),
+        self.shell_spawning_time = Some(TimingResult {
+            time_wall_clock: mean(&times_wall_clock),
+            time_user: mean(&times_user),
+            time_system: mean(&times_system),
+            memory_usage_byte: 0,
         });
 
         Ok(())
     }
 
-    fn time_overhead(&self) -> Time {
+    fn time_overhead(&self) -> Second {
         self.shell_spawning_time.unwrap().time_wall_clock
     }
 }
@@ -321,13 +342,15 @@ impl Executor for MockExecutor {
             ExitStatus::from_raw(0)
         };
 
-        Ok(Measurement {
-            time_wall_clock: Self::extract_time(command.get_command_line()),
-            time_user: Time::zero(),
-            time_system: Time::zero(),
-            peak_memory_usage: Information::zero(),
-            exit_status,
-        })
+        Ok((
+            TimingResult {
+                time_wall_clock: Self::extract_time(command.get_command_line()),
+                time_user: 0.0,
+                time_system: 0.0,
+                memory_usage_byte: 0,
+            },
+            status,
+        ))
     }
 
     fn calibrate(&mut self) -> Result<()> {

@@ -147,11 +147,11 @@ pub fn compute<'a>(
 fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
-    use crate::benchmark::benchmark_result::BenchmarkRun;
+    use crate::benchmark::benchmark_result::Run;
 
     BenchmarkResult {
         command: name.into(),
-        runs: vec![BenchmarkRun {
+        runs: vec![Run {
             wall_clock_time: mean,
             user_time: mean,
             system_time: 0.,
