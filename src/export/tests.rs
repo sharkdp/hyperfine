@@ -1,5 +1,5 @@
 use super::Exporter;
-use crate::benchmark::benchmark_result::{BenchmarkResult, Run};
+use crate::benchmark::benchmark_result::{BenchmarkResult, Run, Runs};
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
 use crate::quantity::{byte, second, Information, Time, TimeUnit, Zero};
@@ -27,7 +27,7 @@ fn test_markup_export_auto_ms() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 0.09,
                     user_time: 0.09,
@@ -49,12 +49,12 @@ fn test_markup_export_auto_ms() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 2"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 2.0,
                     user_time: 2.0,
@@ -76,7 +76,7 @@ fn test_markup_export_auto_ms() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
     ];
@@ -126,7 +126,7 @@ fn test_markup_export_auto_s() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 2.1,
                     user_time: 2.1,
@@ -148,12 +148,12 @@ fn test_markup_export_auto_s() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 0.1,
                     user_time: 0.1,
@@ -175,7 +175,7 @@ fn test_markup_export_auto_s() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
     ];
@@ -225,7 +225,7 @@ fn test_markup_export_manual_ms() {
     let timing_results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 2.1,
                     user_time: 2.1,
@@ -247,12 +247,12 @@ fn test_markup_export_manual_ms() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 0.1,
                     user_time: 0.1,
@@ -274,7 +274,7 @@ fn test_markup_export_manual_ms() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
     ];
@@ -323,7 +323,7 @@ fn test_markup_export_manual_s() {
     let results = [
         BenchmarkResult {
             command: String::from("sleep 2"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 2.01,
                     user_time: 2.01,
@@ -345,12 +345,12 @@ fn test_markup_export_manual_s() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
             command: String::from("sleep 0.1"),
-            runs: vec![
+            runs: Runs::new(vec![
                 Run {
                     wall_clock_time: 0.11,
                     user_time: 0.11,
@@ -372,7 +372,7 @@ fn test_markup_export_manual_s() {
                     memory_usage_byte: 1024,
                     exit_code: Some(0),
                 },
-            ],
+            ]),
             parameters: BTreeMap::new(),
         },
     ];

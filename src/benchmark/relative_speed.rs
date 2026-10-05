@@ -147,17 +147,19 @@ pub fn compute<'a>(
 fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     use std::collections::BTreeMap;
 
-    use crate::benchmark::benchmark_result::Run;
+    use crate::benchmark::benchmark_result::{Run, Runs};
 
     BenchmarkResult {
         command: name.into(),
-        runs: vec![Run {
-            wall_clock_time: mean,
-            user_time: mean,
-            system_time: 0.,
-            memory_usage_byte: 1024,
-            exit_code: Some(0),
-        }],
+        runs: Runs {
+            runs: vec![Run {
+                wall_clock_time: mean,
+                user_time: mean,
+                system_time: 0.,
+                memory_usage_byte: 1024,
+                exit_code: Some(0),
+            }],
+        },
         parameters: BTreeMap::new(),
     }
 }
