@@ -9,18 +9,19 @@ use crate::quantity::Time;
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct Parameter {
     pub value: String,
+    #[serde(skip_serializing)]
     pub is_unused: bool,
 }
 
 /// Meta data and performance metrics for a single benchmark
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkResult {
-    /// The display name of the command being benchmarked
+    /// The expanded command line being benchmarked
     pub command: String,
 
-    /// The expanded command line, when it differs from the display name
+    /// The display name, when it differs from the command line
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub command_raw: Option<String>,
+    pub name: Option<String>,
 
     /// Performance metric measurements and exit codes for each run
     #[serde(flatten)]
@@ -32,12 +33,16 @@ pub struct BenchmarkResult {
 }
 
 impl BenchmarkResult {
+    pub fn get_name(&self) -> &str {
+        self.name.as_deref().unwrap_or(&self.command)
+    }
+
     /// The average wall clock time
     pub fn mean_wall_clock_time(&self) -> Time {
         self.measurements.time_wall_clock_mean()
     }
 
-    /// The full command line of the program that is being benchmarked, possibly including a list of
+    /// The display name of the command, possibly including a list of
     /// parameters that were not used in the command line template.
     pub fn command_with_unused_parameters(&self) -> String {
         let parameters = self
@@ -54,6 +59,6 @@ impl BenchmarkResult {
             format!(" ({parameters})")
         };
 
-        format!("{}{}", self.command, parameters)
+        format!("{}{}", self.get_name(), parameters)
     }
 }

@@ -1,10 +1,7 @@
 use serde::Serialize;
 
-pub(super) const JSON_SCHEMA_VERSION: u32 = 2;
-
 #[derive(Debug, Serialize)]
 pub(super) struct Metadata {
-    json_schema_version: u32,
     hyperfine_version: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
@@ -14,7 +11,6 @@ pub(super) struct Metadata {
 impl Default for Metadata {
     fn default() -> Self {
         Self {
-            json_schema_version: JSON_SCHEMA_VERSION,
             hyperfine_version: env!("CARGO_PKG_VERSION"),
             start_time: utc_now(),
             platform: Platform::detect(),

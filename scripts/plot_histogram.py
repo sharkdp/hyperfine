@@ -66,7 +66,7 @@ with open(args.file) as f:
 if args.labels:
     labels = args.labels.split(",")
 else:
-    labels = [b["command"] for b in results]
+    labels = [b.get("name", b["command"]) for b in results]
 all_times = [
     [m["time_wall_clock"]["value"] for m in b["measurements"]] for b in results
 ]

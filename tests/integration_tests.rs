@@ -43,12 +43,12 @@ fn one_run_is_supported() {
 }
 
 #[test]
-fn json_includes_raw_command_only_when_different() {
+fn json_includes_name_only_when_different() {
     for (args, expected) in [
         (vec!["sleep 0.01"], vec![("sleep 0.01", None)]),
         (
             vec!["--command-name=example", "sleep 0.01"],
-            vec![("example", Some("sleep 0.01"))],
+            vec![("sleep 0.01", Some("example"))],
         ),
         (
             vec!["--command-name=sleep 0.01", "sleep 0.01"],
@@ -63,8 +63,8 @@ fn json_includes_raw_command_only_when_different() {
                 "sleep {delay}",
             ],
             vec![
-                ("delay 0.01", Some("sleep 0.01")),
-                ("delay 0.02", Some("sleep 0.02")),
+                ("sleep 0.01", Some("delay 0.01")),
+                ("sleep 0.02", Some("delay 0.02")),
             ],
         ),
         (
@@ -87,11 +87,12 @@ fn json_includes_raw_command_only_when_different() {
         let export: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
         let results = export["results"].as_array().unwrap();
         assert_eq!(results.len(), expected.len());
-        for (result, (command, command_raw)) in results.iter().zip(expected) {
+        for (result, (command, name)) in results.iter().zip(expected) {
             assert_eq!(result["command"], command);
+            assert!(result.get("command_raw").is_none());
             assert_eq!(
-                result.get("command_raw"),
-                command_raw.map(serde_json::Value::from).as_ref()
+                result.get("name"),
+                name.map(serde_json::Value::from).as_ref()
             );
         }
     }

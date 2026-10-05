@@ -61,7 +61,7 @@ for result in results:
 
     iqr = p75 - p25
 
-    print(f"Command '{result['command']}'")
+    print(f"Command '{result.get('name', result['command'])}'")
     print(f"  runs:   {summary['count']:8d}")
     print(f"  mean:   {summary['mean'] * unit.factor():8.3f} {unit_str}")
     if summary["stddev"] is None:

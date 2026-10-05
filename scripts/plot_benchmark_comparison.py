@@ -44,7 +44,7 @@ if args.benchmark_names:
 for i, filename in enumerate(args.files):
     with open(filename) as f:
         results = json.load(f)["results"]
-    benchmark_commands = [b["command"] for b in results]
+    benchmark_commands = [b.get("name", b["command"]) for b in results]
     if commands is None:
         commands = benchmark_commands
     else:

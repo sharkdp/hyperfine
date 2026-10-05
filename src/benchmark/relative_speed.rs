@@ -158,7 +158,7 @@ fn create_result(name: &str, mean: f64) -> BenchmarkResult {
 
     BenchmarkResult {
         command: name.into(),
-        command_raw: None,
+        name: None,
         measurements: Measurements {
             measurements: vec![Measurement {
                 time_wall_clock: Time::new::<second>(mean),

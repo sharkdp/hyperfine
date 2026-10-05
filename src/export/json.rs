@@ -15,8 +15,11 @@ use anyhow::Result;
 mod metadata;
 use metadata::Metadata;
 
+const JSON_SCHEMA_VERSION: u32 = 2;
+
 #[derive(Serialize)]
 struct HyperfineSummary<'a> {
+    schema_version: u32,
     metadata: &'a Metadata,
     results: Vec<JsonBenchmarkResult<'a>>,
 }
@@ -116,6 +119,7 @@ impl Exporter for JsonExporter {
         _reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
         let mut output = to_vec_pretty(&HyperfineSummary {
+            schema_version: JSON_SCHEMA_VERSION,
             metadata: &self.metadata,
             results: results
                 .iter()
@@ -182,7 +186,7 @@ fn test_json_optional_memory() {
     ] {
         let result = BenchmarkResult {
             command: "example".into(),
-            command_raw: None,
+            name: None,
             measurements: Measurements::new(vec![Measurement {
                 peak_memory_usage: memory,
                 ..Measurement::default()
@@ -196,8 +200,8 @@ fn test_json_optional_memory() {
             .unwrap();
         let actual: serde_json::Value = serde_json::from_slice(&output).unwrap();
         let mut expected = json!({
+            "schema_version": JSON_SCHEMA_VERSION,
             "metadata": {
-                "json_schema_version": metadata::JSON_SCHEMA_VERSION,
                 "hyperfine_version": env!("CARGO_PKG_VERSION"),
                 "start_time": "2000-02-29T12:34:56Z",
                 "platform": exporter.metadata.platform
@@ -250,12 +254,12 @@ fn test_json_summaries_for_parameterized_results() {
         .into_iter()
         .map(|(size, times)| BenchmarkResult {
             command: "example".into(),
-            command_raw: None,
+            name: None,
             parameters: [(
                 "size".into(),
                 Parameter {
                     value: size.into(),
-                    is_unused: true,
+                    is_unused: size == "small",
                 },
             )]
             .into(),
@@ -276,8 +280,8 @@ fn test_json_summaries_for_parameterized_results() {
     let actual: serde_json::Value = serde_json::from_slice(&output).unwrap();
     let results = actual["results"].as_array().unwrap();
     assert_eq!(results.len(), 2);
-    assert_eq!(results[0]["parameters"]["size"]["value"], "small");
-    assert_eq!(results[1]["parameters"]["size"]["value"], "large");
+    assert_eq!(results[0]["parameters"]["size"], json!({"value": "small"}));
+    assert_eq!(results[1]["parameters"]["size"], json!({"value": "large"}));
     assert_eq!(results[0]["measurements"].as_array().unwrap().len(), 2);
     assert_eq!(results[1]["measurements"].as_array().unwrap().len(), 1);
     assert_eq!(

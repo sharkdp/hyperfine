@@ -26,7 +26,7 @@ if len(results) != 2:
     print("The input file has to contain exactly two benchmarks")
     sys.exit(1)
 
-a, b = (x["command"] for x in results[:2])
+a, b = (x.get("name", x["command"]) for x in results[:2])
 X, Y = ([m["time_wall_clock"]["value"] for m in x["measurements"]] for x in results[:2])
 
 print(f"Command 1: {a}")

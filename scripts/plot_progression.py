@@ -52,7 +52,7 @@ with open(args.file) as f:
     results = json.load(f)["results"]
 
 for result in results:
-    label = result["command"]
+    label = result.get("name", result["command"])
     times = [m["time_wall_clock"]["value"] for m in result["measurements"]]
     num = len(times)
     nums = range(num)
@@ -76,7 +76,7 @@ if args.title:
 
 legend = []
 for result in results:
-    legend.append(result["command"])
+    legend.append(result.get("name", result["command"]))
     if not args.no_moving_average:
         legend.append("moving average")
 plt.legend(legend)
