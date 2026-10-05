@@ -18,6 +18,7 @@ use self::orgmode::OrgmodeExporter;
 
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
+use crate::output::console_writeln;
 use crate::quantity::TimeUnit;
 
 use anyhow::{Context, Result};

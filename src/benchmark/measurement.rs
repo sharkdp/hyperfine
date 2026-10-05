@@ -115,8 +115,4 @@ impl Measurements {
     pub fn peak_memory_usage_mean(&self) -> Information {
         mean(self.measurements.iter().map(|m| m.peak_memory_usage))
     }
-
-    pub fn peak_memory_usage_mean(&self) -> Information {
-        mean(self.measurements.iter().map(|m| m.peak_memory_usage))
-    }
 }

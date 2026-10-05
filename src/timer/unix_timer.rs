@@ -37,32 +37,37 @@ fn wait4(mut child: Child) -> io::Result<(ExitStatus, ResourceUsage)> {
     let mut status = 0;
     let mut rusage = MaybeUninit::zeroed();
 
-    let result = unsafe { libc::wait4(pid, &mut status, 0, rusage.as_mut_ptr()) };
-
-    if result < 0 {
-        Err(io::Error::last_os_error())
-    } else {
-        let rusage = unsafe { rusage.assume_init() };
-
-        let memory_usage_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
-            // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
-            // A f64 can represent integers up to 2^53 exactly, so we can represent
-            // all values up to 2^53 bytes = 8 PiB exactly. Beyond that, our precision
-            // is larger than 1 byte, but that's considered acceptable.
-            Information::new::<byte>(rusage.ru_maxrss as f64)
-        } else {
-            Information::new::<kibibyte>(rusage.ru_maxrss as f64)
-        };
-
-        Ok((
-            ExitStatus::from_raw(status),
-            ResourceUsage {
-                time_user: convert_timeval(rusage.ru_utime),
-                time_system: convert_timeval(rusage.ru_stime),
-                memory_usage: memory_usage_byte.into(),
-            },
-        ))
+    loop {
+        let result = unsafe { libc::wait4(pid, &mut status, 0, rusage.as_mut_ptr()) };
+        if result >= 0 {
+            break;
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() != io::ErrorKind::Interrupted {
+            return Err(error);
+        }
     }
+
+    let rusage = unsafe { rusage.assume_init() };
+
+    let memory_usage_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
+        // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
+        // A f64 can represent integers up to 2^53 exactly, so we can represent
+        // all values up to 2^53 bytes = 8 PiB exactly. Beyond that, our precision
+        // is larger than 1 byte, but that's considered acceptable.
+        Information::new::<byte>(rusage.ru_maxrss as f64)
+    } else {
+        Information::new::<kibibyte>(rusage.ru_maxrss as f64)
+    };
+
+    Ok((
+        ExitStatus::from_raw(status),
+        ResourceUsage {
+            time_user: convert_timeval(rusage.ru_utime),
+            time_system: convert_timeval(rusage.ru_stime),
+            memory_usage: memory_usage_byte.into(),
+        },
+    ))
 }
 
 pub struct CPUTimer {}

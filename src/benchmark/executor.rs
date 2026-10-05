@@ -79,28 +79,15 @@ fn run_command_and_measure_common(
     let measurement = execute_and_measure(command)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
-    if command_failure_action == CmdFailureAction::RaiseError && !measurement.exit_status.success()
-    {
-        let when = match iteration {
-            BenchmarkIteration::NonBenchmarkRun => "a non-benchmark run".to_string(),
-            BenchmarkIteration::Warmup(0) => "the first warmup run".to_string(),
-            BenchmarkIteration::Warmup(i) => format!("warmup iteration {i}"),
-            BenchmarkIteration::Benchmark(0) => "the first benchmark run".to_string(),
-            BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
-        };
-        bail!(
-            "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-            Alternatively, use the '--show-output' option to debug what went wrong.",
-            cause=measurement.exit_status.code().map_or(
-                "The process has been terminated by a signal".into(),
-                |c| format!("Command terminated with non-zero exit code {c}")
+    if !measurement.exit_status.success() {
+        use crate::util::exit_code::extract_exit_code;
 
         let should_fail = match command_failure_action {
             CmdFailureAction::RaiseError => true,
             CmdFailureAction::IgnoreAllFailures => false,
             CmdFailureAction::IgnoreSpecificFailures(ref codes) => {
                 // Only fail if the exit code is not in the list of codes to ignore
-                if let Some(exit_code) = extract_exit_code(result.exit_status) {
+                if let Some(exit_code) = extract_exit_code(measurement.exit_status) {
                     !codes.contains(&exit_code)
                 } else {
                     // If we can't extract an exit code, treat it as a failure
@@ -120,7 +107,7 @@ fn run_command_and_measure_common(
             bail!(
                 "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
                 Alternatively, use the '--show-output' option to debug what went wrong.",
-                cause=result.exit_status.code().map_or(
+                cause=measurement.exit_status.code().map_or(
                     "The process has been terminated by a signal".into(),
                     |c| format!("Command terminated with non-zero exit code {c}")
 

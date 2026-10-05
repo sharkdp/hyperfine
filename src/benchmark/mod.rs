@@ -379,8 +379,10 @@ impl<'a> Benchmark<'a> {
         let system_str = measurements.time_system_mean().format(time_unit);
 
         if self.options.output_style != OutputStyleOption::Disabled {
+            let mut stdout = io::stdout().lock();
             if measurements.len() == 1 {
-                println!(
+                console_writeln!(
+                    stdout,
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
                     "abs".green().bold(),
                     mean_str.green().bold(),
