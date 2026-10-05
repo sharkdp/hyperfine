@@ -58,7 +58,7 @@ impl<'a> Benchmark<'a> {
         command: &Command<'_>,
         error_output: &'static str,
         output_policy: &CommandOutputPolicy,
-        iteration: &executor::BenchmarkIteration,
+        iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
         self.executor
             .run_command_and_measure(
@@ -75,7 +75,6 @@ impl<'a> Benchmark<'a> {
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
         output_policy: &CommandOutputPolicy,
-        iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
         let command = self
             .options
@@ -87,7 +86,14 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy, &iteration))
+            .map(|cmd| {
+                self.run_intermediate_command(
+                    &cmd,
+                    error_output,
+                    output_policy,
+                    BenchmarkIteration::NonBenchmarkRun,
+                )
+            })
             .transpose()?
             .unwrap_or_default())
     }
@@ -97,7 +103,6 @@ impl<'a> Benchmark<'a> {
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
         output_policy: &CommandOutputPolicy,
-        iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
         let command = self
             .options
@@ -109,7 +114,14 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy, &iteration))
+            .map(|cmd| {
+                self.run_intermediate_command(
+                    &cmd,
+                    error_output,
+                    output_policy,
+                    BenchmarkIteration::NonBenchmarkRun,
+                )
+            })
             .transpose()?
             .unwrap_or_default())
     }
@@ -119,7 +131,7 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         output_policy: &CommandOutputPolicy,
-        iteration: &executor::BenchmarkIteration,
+        iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
@@ -137,7 +149,7 @@ impl<'a> Benchmark<'a> {
         let error_output = "The conclusion command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output, output_policy, &iteration)
+        self.run_intermediate_command(command, error_output, output_policy, iteration)
     }
 
     /// Run the benchmark for a single command
@@ -170,7 +182,7 @@ impl<'a> Benchmark<'a> {
             )
         });
 
-        let run_preparation_command = |iteration: &executor::BenchmarkIteration| {
+        let run_preparation_command = |iteration: executor::BenchmarkIteration| {
             preparation_command
                 .as_ref()
                 .map(|cmd| self.run_preparation_command(cmd, output_policy, iteration))
@@ -196,11 +208,7 @@ impl<'a> Benchmark<'a> {
                 .transpose()
         };
 
-        self.run_setup_command(
-            self.command.get_parameters().iter().cloned(),
-            output_policy,
-            executor::BenchmarkIteration::NonBenchmarkRun,
-        )?;
+        self.run_setup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
         // Warmup phase
         if self.options.warmup_count > 0 {
@@ -216,10 +224,10 @@ impl<'a> Benchmark<'a> {
 
             for i in 0..self.options.warmup_count {
                 let warmup_iteration = BenchmarkIteration::Warmup(i);
-                let _ = run_preparation_command(&warmup_iteration)?;
+                let _ = run_preparation_command(warmup_iteration)?;
                 let _ = self.executor.run_command_and_measure(
                     self.command,
-                    &warmup_iteration,
+                    warmup_iteration,
                     None,
                     output_policy,
                 )?;
@@ -245,7 +253,7 @@ impl<'a> Benchmark<'a> {
         };
 
         let benchmark_iteration = BenchmarkIteration::Benchmark(0);
-        let preparation_result = run_preparation_command(&benchmark_iteration)?;
+        let preparation_result = run_preparation_command(benchmark_iteration)?;
         let preparation_overhead = preparation_result.map_or(Time::zero(), |res| {
             res.time_wall_clock + self.executor.time_overhead()
         });
@@ -253,7 +261,7 @@ impl<'a> Benchmark<'a> {
         // Initial timing run
         let res = self.executor.run_command_and_measure(
             self.command,
-            &benchmark_iteration,
+            benchmark_iteration,
             None,
             output_policy,
         )?;
@@ -301,7 +309,7 @@ impl<'a> Benchmark<'a> {
         // Gather statistics (perform the actual benchmark)
         for i in 0..count_remaining {
             let benchmark_iteration = BenchmarkIteration::Benchmark(i + 1);
-            run_preparation_command(&benchmark_iteration)?;
+            run_preparation_command(benchmark_iteration)?;
 
             let msg = {
                 let t_wall_clock_mean = measurements.time_wall_clock_mean();
@@ -319,7 +327,7 @@ impl<'a> Benchmark<'a> {
 
             let res = self.executor.run_command_and_measure(
                 self.command,
-                &benchmark_iteration,
+                benchmark_iteration,
                 None,
                 output_policy,
             )?;
@@ -452,11 +460,7 @@ impl<'a> Benchmark<'a> {
             console_writeln!(io::stdout(), " ")?;
         }
 
-        self.run_cleanup_command(
-            self.command.get_parameters().iter().cloned(),
-            output_policy,
-            executor::BenchmarkIteration::NonBenchmarkRun,
-        )?;
+        self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
         Ok(BenchmarkResult {
             command: self.command.get_name(),
