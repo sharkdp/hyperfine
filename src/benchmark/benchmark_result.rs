@@ -26,11 +26,15 @@ pub struct BenchmarkRun {
     pub exit_code: Option<i32>,
 }
 
-use crate::benchmark::measurement::Measurements;
-use crate::quantity::{byte, second, Time};
-use crate::util::exit_code::extract_exit_code;
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+pub struct Parameter {
+    pub value: String,
+    pub is_unused: bool,
+}
 
-/// Parameter value and whether it was used in the command line template
+/// Set of values that will be exported.
+// NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
+// `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 #[serde(transparent)]
 pub struct Parameter {
@@ -45,78 +49,12 @@ pub struct BenchmarkResult {
     /// The full command line of the program that is being benchmarked
     pub command: String,
 
-    /// The full command line, including parameters not used in the command template.
-    pub command_with_unused_parameters: String,
-
     /// All run time measurements
     pub runs: Vec<BenchmarkRun>,
 
     /// Parameter values for this benchmark
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parameters: BTreeMap<String, Parameter>,
-}
-
-impl BenchmarkResult {
-    /// The average wall clock time
-    pub fn mean_wall_clock_time(&self) -> Time {
-        self.measurements.time_wall_clock_mean()
-    }
-}
-
-// Preserve the existing export format while storing typed measurements internally.
-impl Serialize for BenchmarkResult {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct(
-            "BenchmarkResult",
-            if self.parameters.is_empty() { 11 } else { 12 },
-        )?;
-        state.serialize_field("command", &self.command)?;
-        state.serialize_field("mean", &self.mean_wall_clock_time().get::<second>())?;
-        state.serialize_field(
-            "stddev",
-            &self.measurements.stddev().map(|time| time.get::<second>()),
-        )?;
-        state.serialize_field("median", &self.measurements.median().get::<second>())?;
-        state.serialize_field("user", &self.measurements.time_user_mean().get::<second>())?;
-        state.serialize_field(
-            "system",
-            &self.measurements.time_system_mean().get::<second>(),
-        )?;
-        state.serialize_field("min", &self.measurements.min().get::<second>())?;
-        state.serialize_field("max", &self.measurements.max().get::<second>())?;
-        state.serialize_field(
-            "times",
-            &self
-                .measurements
-                .wall_clock_times()
-                .map(|time| time.get::<second>())
-                .collect::<Vec<_>>(),
-        )?;
-        state.serialize_field(
-            "memory_usage_byte",
-            &self
-                .measurements
-                .measurements
-                .iter()
-                .map(|measurement| measurement.peak_memory_usage.get::<byte>() as u64)
-                .collect::<Vec<_>>(),
-        )?;
-        state.serialize_field(
-            "exit_codes",
-            &self
-                .measurements
-                .measurements
-                .iter()
-                .map(|measurement| extract_exit_code(measurement.exit_status))
-                .collect::<Vec<_>>(),
-        )?;
-        if !self.parameters.is_empty() {
-            state.serialize_field("parameters", &self.parameters)?;
-        }
-        state.end()
-    }
 }
 
 impl BenchmarkResult {
@@ -174,5 +112,25 @@ impl BenchmarkResult {
                 .map(|run| run.system_time)
                 .collect::<Vec<_>>(),
         )
+    }
+
+    /// The full command line of the program that is being benchmarked, possibly including a list of
+    /// parameters that were not used in the command line template.
+    pub fn command_with_unused_parameters(&self) -> String {
+        let parameters = self
+            .parameters
+            .iter()
+            .filter(|(_, parameter)| parameter.is_unused)
+            .fold(String::new(), |output, (name, parameter)| {
+                output + &format!("{name} = {value}, ", value = parameter.value)
+            });
+        let parameters = parameters.trim_end_matches(", ");
+        let parameters = if parameters.is_empty() {
+            "".into()
+        } else {
+            format!(" ({parameters})")
+        };
+
+        format!("{}{}", self.command, parameters)
     }
 }

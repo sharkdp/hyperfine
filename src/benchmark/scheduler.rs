@@ -92,8 +92,8 @@ impl<'a> Scheduler<'a> {
                     console_writeln!(
                         stdout,
                         "  {} ran",
-                        reference.result.command_with_unused_parameters.cyan()
-                    )?;
+                        reference.result.command_with_unused_parameters().cyan()
+                    );
 
                     for item in others {
                         let stddev = if let Some(stddev) = item.relative_speed_stddev {
@@ -122,8 +122,8 @@ impl<'a> Scheduler<'a> {
                             stdout,
                             "{} {}",
                             comparator,
-                            item.result.command_with_unused_parameters.magenta()
-                        )?;
+                            &item.result.command_with_unused_parameters().magenta()
+                        );
                     }
                 }
                 SortOrder::Command => {
@@ -146,7 +146,7 @@ impl<'a> Scheduler<'a> {
                             } else {
                                 "        ".into()
                             },
-                            item.result.command_with_unused_parameters,
+                            item.result.command_with_unused_parameters(),
                             relationship,
                         )?;
                     }

@@ -8,7 +8,7 @@ use std::cmp;
 use std::io::{self, Write};
 use std::time::Instant;
 
-use crate::benchmark::benchmark_result::BenchmarkRun;
+use crate::benchmark::benchmark_result::{BenchmarkRun, Parameter};
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::command::Command;
 use crate::options::{
@@ -489,7 +489,6 @@ impl<'a> Benchmark<'a> {
 
         Ok(BenchmarkResult {
             command: self.command.get_name(),
-            command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
             runs: times_real
                 .iter()
                 .zip(times_user.iter())
@@ -520,7 +519,7 @@ impl<'a> Benchmark<'a> {
                         name.to_string(),
                         Parameter {
                             value: value.to_string(),
-                            is_unused: self.command.is_parameter_unused(name),
+                            is_unused: self.command.is_parameter_unused(&name),
                         },
                     )
                 })

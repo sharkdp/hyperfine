@@ -68,7 +68,7 @@ impl Exporter for CsvExporter {
 }
 
 #[cfg(test)]
-use crate::benchmark::benchmark_result::BenchmarkRun;
+use crate::benchmark::benchmark_result::{BenchmarkRun, Parameter};
 
 #[test]
 fn test_csv() {
@@ -84,7 +84,6 @@ fn test_csv() {
     let results = vec![
         BenchmarkResult {
             command: String::from("command_a"),
-            command_with_unused_parameters: String::from("command_a"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 7.0,
@@ -129,7 +128,6 @@ fn test_csv() {
         },
         BenchmarkResult {
             command: String::from("command_b"),
-            command_with_unused_parameters: String::from("command_b"),
             runs: vec![
                 BenchmarkRun {
                     wall_clock_time: 17.0,
