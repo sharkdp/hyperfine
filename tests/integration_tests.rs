@@ -1,6 +1,8 @@
 mod common;
 use common::{hyperfine, hyperfine_raw_command};
 
+use assert_cmd::assert::OutputAssertExt;
+use insta_cmd::assert_cmd_snapshot;
 use predicates::prelude::*;
 
 /// Platform-specific I/O utility.
@@ -9,10 +11,17 @@ use predicates::prelude::*;
 ///   See: <https://superuser.com/questions/853580/real-windows-equivalent-to-cat-stdin>
 const STDIN_READ_COMMAND: &str = if cfg!(windows) { "findstr x*" } else { "cat" };
 
-pub fn hyperfine_debug() -> assert_cmd::Command {
-    let mut cmd = hyperfine();
+pub fn hyperfine_debug() -> std::process::Command {
+    let mut cmd = hyperfine_raw_command();
     cmd.arg("--debug-mode");
     cmd
+}
+
+fn snapshot_settings() -> insta::Settings {
+    let mut settings = insta::Settings::clone_current();
+    // Ignore trailing report padding while preserving indentation and internal spacing.
+    settings.add_filter(r"(?m)[ \t]+$", "");
+    settings
 }
 
 #[test]
@@ -594,86 +603,187 @@ fn takes_both_preparation_and_conclusion_command_into_account_for_computing_numb
 
 #[test]
 fn shows_benchmark_comparison_with_relative_times() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
         .arg("sleep 1.0")
         .arg("sleep 2.0")
-        .arg("sleep 3.0")
-        .assert()
-        .success()
-        .stdout(
-            predicate::str::contains("2.00 ± 0.00 times faster")
-                .and(predicate::str::contains("3.00 ± 0.00 times faster")),
-        );
+        .arg("sleep 3.0"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: sleep 1.0
+      Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    1.000 s …  1.000 s    10 runs
+
+    Benchmark 2: sleep 2.0
+      Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    2.000 s …  2.000 s    10 runs
+
+    Benchmark 3: sleep 3.0
+      Time (mean ± σ):      3.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    3.000 s …  3.000 s    10 runs
+
+    Summary
+      sleep 1.0 ran
+        2.00 ± 0.00 times faster than sleep 2.0
+        3.00 ± 0.00 times faster than sleep 3.0
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn shows_benchmark_comparison_with_same_time() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
         .arg("--command-name=A")
         .arg("--command-name=B")
         .arg("sleep 1.0")
         .arg("sleep 1.0")
         .arg("sleep 2.0")
-        .arg("sleep 1000.0")
-        .assert()
-        .success()
-        .stdout(
-            predicate::str::contains("As fast (1.00 ± 0.00) as")
-                .and(predicate::str::contains("2.00 ± 0.00 times faster"))
-                .and(predicate::str::contains("1000.00 ± 0.00 times faster")),
-        );
+        .arg("sleep 1000.0"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: A
+      Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    1.000 s …  1.000 s    10 runs
+
+    Benchmark 2: B
+      Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    1.000 s …  1.000 s    10 runs
+
+    Benchmark 3: sleep 2.0
+      Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    2.000 s …  2.000 s    10 runs
+
+    Benchmark 4: sleep 1000.0
+      Time (mean ± σ):     1000.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   1000.000 s … 1000.000 s    10 runs
+
+    Summary
+      A ran
+        As fast (1.00 ± 0.00) as B
+        2.00 ± 0.00 times faster than sleep 2.0
+     1000.00 ± 0.00 times faster than sleep 1000.0
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn shows_benchmark_comparison_relative_to_reference() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
         .arg("--reference=sleep 2.0")
         .arg("sleep 1.0")
-        .arg("sleep 3.0")
-        .assert()
-        .success()
-        .stdout(
-            predicate::str::contains("2.00 ± 0.00 times slower")
-                .and(predicate::str::contains("1.50 ± 0.00 times faster")),
-        );
+        .arg("sleep 3.0"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: sleep 2.0
+      Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    2.000 s …  2.000 s    10 runs
+
+    Benchmark 2: sleep 1.0
+      Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    1.000 s …  1.000 s    10 runs
+
+    Benchmark 3: sleep 3.0
+      Time (mean ± σ):      3.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    3.000 s …  3.000 s    10 runs
+
+    Summary
+      sleep 2.0 ran
+        2.00 ± 0.00 times slower than sleep 1.0
+        1.50 ± 0.00 times faster than sleep 3.0
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn shows_reference_name() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
         .arg("--reference=sleep 2.0")
         .arg("--reference-name=refabc123")
         .arg("sleep 1.0")
-        .arg("sleep 3.0")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("Benchmark 1: refabc123"));
+        .arg("sleep 3.0"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: refabc123
+      Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    2.000 s …  2.000 s    10 runs
+
+    Benchmark 2: sleep 1.0
+      Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    1.000 s …  1.000 s    10 runs
+
+    Benchmark 3: sleep 3.0
+      Time (mean ± σ):      3.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    3.000 s …  3.000 s    10 runs
+
+    Summary
+      refabc123 ran
+        2.00 ± 0.00 times slower than sleep 1.0
+        1.50 ± 0.00 times faster than sleep 3.0
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn performs_all_benchmarks_in_parameter_scan() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
         .arg("--parameter-scan")
         .arg("time")
         .arg("30")
         .arg("45")
         .arg("--parameter-step-size")
         .arg("5")
-        .arg("sleep {time}")
-        .assert()
-        .success()
-        .stdout(
-            predicate::str::contains("Benchmark 1: sleep 30")
-                .and(predicate::str::contains("Benchmark 2: sleep 35"))
-                .and(predicate::str::contains("Benchmark 3: sleep 40"))
-                .and(predicate::str::contains("Benchmark 4: sleep 45"))
-                .and(predicate::str::contains("Benchmark 5: sleep 50").not()),
-        );
+        .arg("sleep {time}"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: sleep 30
+      Time (mean ± σ):     30.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   30.000 s … 30.000 s    10 runs
+
+    Benchmark 2: sleep 35
+      Time (mean ± σ):     35.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   35.000 s … 35.000 s    10 runs
+
+    Benchmark 3: sleep 40
+      Time (mean ± σ):     40.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   40.000 s … 40.000 s    10 runs
+
+    Benchmark 4: sleep 45
+      Time (mean ± σ):     45.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   45.000 s … 45.000 s    10 runs
+
+    Summary
+      sleep 30 ran
+        1.17 ± 0.00 times faster than sleep 35
+        1.33 ± 0.00 times faster than sleep 40
+        1.50 ± 0.00 times faster than sleep 45
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn performs_reference_and_all_benchmarks_in_parameter_scan() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
         .arg("--reference=sleep 25")
         .arg("--parameter-scan")
         .arg("time")
@@ -681,33 +791,62 @@ fn performs_reference_and_all_benchmarks_in_parameter_scan() {
         .arg("45")
         .arg("--parameter-step-size")
         .arg("5")
-        .arg("sleep {time}")
-        .assert()
-        .success()
-        .stdout(
-            predicate::str::contains("Benchmark 1: sleep 25")
-                .and(predicate::str::contains("Benchmark 2: sleep 30"))
-                .and(predicate::str::contains("Benchmark 3: sleep 35"))
-                .and(predicate::str::contains("Benchmark 4: sleep 40"))
-                .and(predicate::str::contains("Benchmark 5: sleep 45"))
-                .and(predicate::str::contains("Benchmark 6: sleep 50").not()),
-        );
+        .arg("sleep {time}"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: sleep 25
+      Time (mean ± σ):     25.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   25.000 s … 25.000 s    10 runs
+
+    Benchmark 2: sleep 30
+      Time (mean ± σ):     30.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   30.000 s … 30.000 s    10 runs
+
+    Benchmark 3: sleep 35
+      Time (mean ± σ):     35.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   35.000 s … 35.000 s    10 runs
+
+    Benchmark 4: sleep 40
+      Time (mean ± σ):     40.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   40.000 s … 40.000 s    10 runs
+
+    Benchmark 5: sleep 45
+      Time (mean ± σ):     45.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):   45.000 s … 45.000 s    10 runs
+
+    Summary
+      sleep 25 ran
+        1.20 ± 0.00 times faster than sleep 30
+        1.40 ± 0.00 times faster than sleep 35
+        1.60 ± 0.00 times faster than sleep 40
+        1.80 ± 0.00 times faster than sleep 45
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn intermediate_results_are_not_exported_to_stdout() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
         .arg("--style=none") // To only see the Markdown export on stdout
         .arg("--export-markdown")
         .arg("-")
         .arg("sleep 1")
-        .arg("sleep 2")
-        .assert()
-        .success()
-        .stdout(
-            (predicate::str::contains("sleep 1").count(1))
-                .and(predicate::str::contains("sleep 2").count(1)),
-        );
+        .arg("sleep 2"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+    |:---|---:|---:|---:|---:|
+    | `sleep 1` | 1.000 ± 0.000 | 1.000 | 1.000 | 1.00 |
+    | `sleep 2` | 2.000 ± 0.000 | 2.000 | 2.000 | 2.00 ± 0.00 |
+
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
@@ -749,27 +888,56 @@ fn unused_parameters_are_shown_in_benchmark_name() {
 
 #[test]
 fn speed_comparison_sort_order() {
-    for sort_order in ["auto", "mean-time"] {
-        hyperfine_debug()
-            .arg("sleep 2")
-            .arg("sleep 1")
-            .arg(format!("--sort={sort_order}"))
-            .assert()
-            .success()
-            .stdout(predicate::str::contains(
-                "sleep 1 ran\n    2.00 ± 0.00 times faster than sleep 2",
-            ));
+    let _settings = snapshot_settings().bind_to_scope();
+    insta::allow_duplicates! {
+        for sort_order in ["auto", "mean-time"] {
+            assert_cmd_snapshot!(hyperfine_debug()
+                .arg("--style=basic")
+                .arg("sleep 2")
+                .arg("sleep 1")
+                .arg(format!("--sort={sort_order}")), @r"
+            success: true
+            exit_code: 0
+            ----- stdout -----
+            Benchmark 1: sleep 2
+              Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+              Range (min … max):    2.000 s …  2.000 s    10 runs
+
+            Benchmark 2: sleep 1
+              Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+              Range (min … max):    1.000 s …  1.000 s    10 runs
+
+            Summary
+              sleep 1 ran
+                2.00 ± 0.00 times faster than sleep 2
+
+            ----- stderr -----
+            ");
+        }
     }
 
-    hyperfine_debug()
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
         .arg("sleep 2")
         .arg("sleep 1")
-        .arg("--sort=command")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            "2.00 ±  0.00  sleep 2\n        1.00          sleep 1",
-        ));
+        .arg("--sort=command"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: sleep 2
+      Time (mean ± σ):      2.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    2.000 s …  2.000 s    10 runs
+
+    Benchmark 2: sleep 1
+      Time (mean ± σ):      1.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
+      Range (min … max):    1.000 s …  1.000 s    10 runs
+
+    Relative speed comparison
+            2.00 ±  0.00  sleep 2
+            1.00          sleep 1
+
+    ----- stderr -----
+    ");
 }
 
 #[cfg(windows)]

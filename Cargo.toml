@@ -63,7 +63,8 @@ features = [
 [dev-dependencies]
 approx = "0.5"
 assert_cmd = "2.2"
-insta = { version = "1.48", features = ["yaml"] }
+insta = { version = "1.48", features = ["yaml", "filters"] }
+insta-cmd = "0.7"
 predicates = "3.1"
 tempfile = "3.27"
 
