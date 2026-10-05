@@ -22,6 +22,7 @@ impl Exporter for JsonExporter {
         results: &[BenchmarkResult],
         _unit: Option<TimeUnit>,
         _sort_order: SortOrder,
+        _reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
         let mut output = to_vec_pretty(&HyperfineSummary { results });
         if let Ok(ref mut content) = output {

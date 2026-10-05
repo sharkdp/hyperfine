@@ -384,16 +384,14 @@ fn reference_is_executed_first() {
 }
 
 #[test]
-fn reference_is_executed_first_parameter_value() {
+fn parameterized_reference_keeps_parameter_order() {
     ExecutionOrderTest::new()
         .arg("--runs=2")
-        .reference("reference")
+        .reference("command 2")
         .arg("--parameter-list")
         .arg("number")
         .arg("1,2,3")
         .command("command {number}")
-        .expect_output("reference")
-        .expect_output("reference")
         .expect_output("command 1")
         .expect_output("command 1")
         .expect_output("command 2")

@@ -13,8 +13,173 @@ fn get_output<E: Exporter + Default>(
     unit: Option<TimeUnit>,
     sort_order: SortOrder,
 ) -> String {
+    get_output_with_reference::<E>(results, unit, sort_order, None)
+}
+
+fn get_output_with_reference<E: Exporter + Default>(
+    results: &[BenchmarkResult],
+    unit: Option<TimeUnit>,
+    sort_order: SortOrder,
+    reference_index: Option<usize>,
+) -> String {
     let exporter = E::default();
-    String::from_utf8(exporter.serialize(results, unit, sort_order).unwrap()).unwrap()
+    String::from_utf8(
+        exporter
+            .serialize(results, unit, sort_order, reference_index)
+            .unwrap(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn test_markup_exports_identify_explicit_reference_and_direction() {
+    let benchmark = |name: &str, seconds| {
+        let measurement = Measurement {
+            time_wall_clock: Time::new::<second>(seconds),
+            ..Measurement::default()
+        };
+        BenchmarkResult {
+            command: name.to_owned(),
+            command_with_unused_parameters: name.to_owned(),
+            measurements: Measurements::new(vec![measurement, measurement]),
+            ..BenchmarkResult::default()
+        }
+    };
+    let results = [
+        benchmark("faster", 1.0),
+        benchmark("reference", 2.0),
+        benchmark("equal", 2.0),
+        benchmark("slower", 3.0),
+    ];
+
+    for sort_order in [SortOrder::Command, SortOrder::MeanTime] {
+        let outputs = [
+            get_output_with_reference::<MarkdownExporter>(
+                &results,
+                Some(TimeUnit::Second),
+                sort_order,
+                Some(1),
+            ),
+            get_output_with_reference::<AsciidocExporter>(
+                &results,
+                Some(TimeUnit::Second),
+                sort_order,
+                Some(1),
+            ),
+            get_output_with_reference::<OrgmodeExporter>(
+                &results,
+                Some(TimeUnit::Second),
+                sort_order,
+                Some(1),
+            ),
+        ];
+        for output in outputs {
+            for expected in [
+                "2.00 ± 0.00 (faster)",
+                "1.00 (reference)",
+                "1.00 ± 0.00 (same speed)",
+                "1.50 ± 0.00 (slower)",
+            ] {
+                assert!(output.contains(expected), "{}", output);
+            }
+        }
+    }
+}
+
+#[test]
+fn test_markup_exports_leave_pending_reference_ratios_unavailable() {
+    let results = [BenchmarkResult {
+        command: "sleep 1".into(),
+        command_with_unused_parameters: "sleep 1".into(),
+        measurements: Measurements::new(vec![Measurement {
+            time_wall_clock: Time::new::<second>(1.0),
+            ..Measurement::default()
+        }]),
+        ..BenchmarkResult::default()
+    }];
+    for sort_order in [SortOrder::Command, SortOrder::MeanTime] {
+        let outputs = [
+            get_output_with_reference::<MarkdownExporter>(
+                &results,
+                Some(TimeUnit::Second),
+                sort_order,
+                Some(1),
+            ),
+            get_output_with_reference::<AsciidocExporter>(
+                &results,
+                Some(TimeUnit::Second),
+                sort_order,
+                Some(1),
+            ),
+            get_output_with_reference::<OrgmodeExporter>(
+                &results,
+                Some(TimeUnit::Second),
+                sort_order,
+                Some(1),
+            ),
+        ];
+        for output in outputs {
+            assert!(output.contains("N/A"), "{}", output);
+            assert!(!output.contains("(reference)"), "{}", output);
+        }
+    }
+}
+
+#[test]
+fn test_markup_exports_with_zero_reference() {
+    let benchmark = |name: &str, seconds| BenchmarkResult {
+        command: name.to_owned(),
+        command_with_unused_parameters: name.to_owned(),
+        measurements: Measurements::new(vec![Measurement {
+            time_wall_clock: Time::new::<second>(seconds),
+            ..Measurement::default()
+        }]),
+        ..BenchmarkResult::default()
+    };
+    let results = [
+        benchmark("other zero", 0.0),
+        benchmark("reference", 0.0),
+        benchmark("slower", 1.0),
+    ];
+    for sort_order in [SortOrder::Command, SortOrder::MeanTime] {
+        for reference in [Some(1), Some(3), None] {
+            let outputs = [
+                get_output_with_reference::<MarkdownExporter>(
+                    &results,
+                    Some(TimeUnit::Second),
+                    sort_order,
+                    reference,
+                ),
+                get_output_with_reference::<AsciidocExporter>(
+                    &results,
+                    Some(TimeUnit::Second),
+                    sort_order,
+                    reference,
+                ),
+                get_output_with_reference::<OrgmodeExporter>(
+                    &results,
+                    Some(TimeUnit::Second),
+                    sort_order,
+                    reference,
+                ),
+            ];
+            for output in outputs {
+                match reference {
+                    Some(1) => {
+                        assert_eq!(output.matches("N/A").count(), 1, "{}", output);
+                        assert!(output.contains("1.00 (reference)"), "{}", output);
+                        assert!(output.contains("inf (slower)"), "{}", output);
+                    }
+                    Some(_) => assert_eq!(output.matches("N/A").count(), 3, "{}", output),
+                    None => {
+                        assert!(!output.contains("N/A"), "{}", output);
+                        assert!(output.contains("inf"), "{}", output);
+                        assert!(!output.contains("(reference)"), "{}", output);
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Ensure the makrup output includes the table header and the multiple

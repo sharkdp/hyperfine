@@ -44,6 +44,7 @@ impl<'a> Scheduler<'a> {
             .options
             .reference_command
             .as_ref()
+            .filter(|_| !self.options.parameterized_mode)
             .map(|cmd| Command::new(self.options.reference_name.as_deref(), cmd));
 
         executor.calibrate()?;
@@ -54,7 +55,8 @@ impl<'a> Scheduler<'a> {
 
             // We export results after each individual benchmark, because
             // we would risk losing them if a later benchmark fails.
-            self.export_manager.write_results(&self.results, true)?;
+            self.export_manager
+                .write_results(&self.results, true, self.reference_index())?;
         }
 
         Ok(())
@@ -70,10 +72,8 @@ impl<'a> Scheduler<'a> {
         }
 
         let reference = self
-            .options
-            .reference_command
-            .as_ref()
-            .map(|_| &self.results[0])
+            .reference_index()
+            .map(|index| &self.results[index])
             .unwrap_or_else(|| relative_speed::fastest_of(&self.results));
 
         if let Some(annotated_results) = relative_speed::compute_with_check_from_reference(
@@ -130,9 +130,20 @@ impl<'a> Scheduler<'a> {
                     console_writeln!(stdout, "{}", "Relative speed comparison".bold())?;
 
                     for item in annotated_results {
+                        let relationship = if self.reference_index().is_none() {
+                            ""
+                        } else if item.is_reference {
+                            " (reference)"
+                        } else {
+                            match item.relative_ordering {
+                                Ordering::Less => " (faster)",
+                                Ordering::Equal => " (same speed)",
+                                Ordering::Greater => " (slower)",
+                            }
+                        };
                         console_writeln!(
                             stdout,
-                            "  {}{}  {}",
+                            "  {}{}  {}{}",
                             format!("{:10.2}", item.relative_speed).bold().green(),
                             if item.is_reference {
                                 "        ".into()
@@ -142,6 +153,7 @@ impl<'a> Scheduler<'a> {
                                 "        ".into()
                             },
                             item.result.command_with_unused_parameters,
+                            relationship,
                         )?;
                     }
                 }
@@ -162,8 +174,16 @@ impl<'a> Scheduler<'a> {
         Ok(())
     }
 
+    fn reference_index(&self) -> Option<usize> {
+        self.options
+            .reference_command
+            .as_ref()
+            .map(|_| self.options.parameterized_reference_index.unwrap_or(0))
+    }
+
     pub fn final_export(&self) -> Result<()> {
-        self.export_manager.write_results(&self.results, false)
+        self.export_manager
+            .write_results(&self.results, false, self.reference_index())
     }
 }
 

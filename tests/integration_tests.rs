@@ -706,6 +706,40 @@ fn shows_benchmark_comparison_relative_to_reference() {
 }
 
 #[test]
+fn command_sorted_comparison_labels_explicit_reference() {
+    for (args, expected) in [
+        (
+            vec!["--reference", "sleep 2", "sleep 1", "sleep 3"],
+            vec![
+                "1.00          sleep 2 (reference)",
+                "2.00 ±  0.00  sleep 1 (faster)",
+                "1.50 ±  0.00  sleep 3 (slower)",
+            ],
+        ),
+        (
+            vec!["--reference", "sleep 2", "sleep 2"],
+            vec![
+                "1.00          sleep 2 (reference)",
+                "1.00 ±  0.00  sleep 2 (same speed)",
+            ],
+        ),
+    ] {
+        let output = hyperfine_debug()
+            .args(["--style=basic", "--runs=2", "--sort=command"])
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let comparison = stdout.split_once("Relative speed comparison\n").unwrap().1;
+        assert_eq!(
+            comparison.lines().map(str::trim).collect::<Vec<_>>(),
+            expected
+        );
+    }
+}
+
+#[test]
 fn shows_reference_name() {
     let _settings = snapshot_settings().bind_to_scope();
     assert_cmd_snapshot!(hyperfine_debug()
@@ -796,50 +830,453 @@ fn rejects_negative_parameter_steps() {
 }
 
 #[test]
-fn performs_reference_and_all_benchmarks_in_parameter_scan() {
-    let _settings = snapshot_settings().bind_to_scope();
-    assert_cmd_snapshot!(hyperfine_debug()
-        .arg("--style=basic")
-        .arg("--reference=sleep 25")
-        .arg("--parameter-scan")
-        .arg("time")
-        .arg("30")
-        .arg("45")
-        .arg("--parameter-step-size")
-        .arg("5")
-        .arg("sleep {time}"), @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    Benchmark 1: sleep 25
-      Time (mean ± σ):     25.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
-      Range (min … max):   25.000 s … 25.000 s    10 runs
+fn selects_reference_from_parameter_scan() {
+    let output = hyperfine_debug()
+        .args([
+            "--style=basic",
+            "--reference=sleep 35",
+            "--parameter-scan",
+            "time",
+            "30",
+            "45",
+            "--parameter-step-size",
+            "5",
+            "sleep {time}",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let benchmarks: Vec<_> = stdout
+        .lines()
+        .filter(|line| line.starts_with("Benchmark "))
+        .collect();
+    assert_eq!(
+        benchmarks,
+        [
+            "Benchmark 1: sleep 30",
+            "Benchmark 2: sleep 35",
+            "Benchmark 3: sleep 40",
+            "Benchmark 4: sleep 45",
+        ]
+    );
+    assert!(stdout.contains("Summary\n  sleep 35 ran\n"), "{}", stdout);
+}
 
-    Benchmark 2: sleep 30
-      Time (mean ± σ):     30.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
-      Range (min … max):   30.000 s … 30.000 s    10 runs
+#[cfg(unix)]
+#[test]
+fn selects_reference_with_parameterized_prepare() {
+    let directory = tempfile::tempdir().unwrap();
+    let csv_path = directory.path().join("results.csv");
+    let json_path = directory.path().join("results.json");
+    let output = hyperfine_raw_command()
+        .args([
+            "--style=basic",
+            "--shell=none",
+            "--runs=1",
+            "-L",
+            "delay",
+            "0.2,0.4,0.6",
+            "--prepare",
+            "sleep {delay}",
+            "--reference",
+            "echo a (delay = 0.4)",
+            "--export-csv",
+        ])
+        .arg(&csv_path)
+        .arg("--export-json")
+        .arg(&json_path)
+        .arg("echo a")
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert_eq!(stdout.matches("Benchmark ").count(), 3);
+    assert!(stdout.contains("echo a (delay = 0.4) ran"), "{}", stdout);
 
-    Benchmark 3: sleep 35
-      Time (mean ± σ):     35.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
-      Range (min … max):   35.000 s … 35.000 s    10 runs
+    let mut csv = csv::Reader::from_path(csv_path).unwrap();
+    assert!(csv
+        .headers()
+        .unwrap()
+        .iter()
+        .any(|header| header == "parameter_delay"));
+    let records: Vec<_> = csv.records().map(|record| record.unwrap()).collect();
+    assert_eq!(records.len(), 3);
+    let json: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(json_path).unwrap()).unwrap();
+    let results = json["results"].as_array().unwrap();
+    assert_eq!(results.len(), 3);
+    assert_eq!(
+        results
+            .iter()
+            .map(|result| result["parameters"]["delay"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        ["0.2", "0.4", "0.6"]
+    );
+}
 
-    Benchmark 4: sleep 40
-      Time (mean ± σ):     40.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
-      Range (min … max):   40.000 s … 40.000 s    10 runs
+#[test]
+fn selects_reference_by_custom_benchmark_name() {
+    for (command, name, reference) in [
+        ("sleep {x}", "case-{x}", "case-2"),
+        ("sleep 1", "case-{x}", "case-2 (x = 2)"),
+    ] {
+        let output = hyperfine_debug()
+            .args([
+                "--style=basic",
+                "--runs=1",
+                "-L",
+                "x",
+                "1,2",
+                "--command-name",
+                name,
+                "--reference",
+                reference,
+                command,
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        assert_eq!(stdout.matches("Benchmark ").count(), 2);
+        assert!(stdout.contains(&format!("{reference} ran")), "{}", stdout);
+    }
+}
 
-    Benchmark 5: sleep 45
-      Time (mean ± σ):     45.000 s ±  0.000 s    [User: 0.000 s, System: 0.000 s]
-      Range (min … max):   45.000 s … 45.000 s    10 runs
+#[test]
+fn selects_reference_from_multiple_commands_and_parameters() {
+    let output = hyperfine_debug()
+        .args([
+            "--style=basic",
+            "--runs=1",
+            "-L",
+            "x",
+            "1,2",
+            "-L",
+            "y",
+            "3,4",
+            "--reference",
+            "sleep 4 (x = 2)",
+            "sleep {x}",
+            "sleep {y}",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert_eq!(stdout.matches("Benchmark ").count(), 8);
+    assert!(stdout.contains("sleep 4 (x = 2) ran"), "{}", stdout);
+}
 
-    Summary
-      sleep 25 ran
-        1.20 ± 0.00 times faster than sleep 30
-        1.40 ± 0.00 times faster than sleep 35
-        1.60 ± 0.00 times faster than sleep 40
-        1.80 ± 0.00 times faster than sleep 45
+#[test]
+fn rejects_unmatched_parameterized_reference_before_creating_export() {
+    let directory = tempfile::tempdir().unwrap();
+    let export_path = directory.path().join("results.csv");
+    let marker_path = directory.path().join("setup-ran");
+    for (args, benchmark) in [
+        (vec!["-L", "x", "1,2", "--reference", "echo 3"], "echo {x}"),
+        (
+            vec!["--reference", "sleep 1", "-P", "secs", "2", "3"],
+            "sleep {secs}",
+        ),
+    ] {
+        std::fs::write(&export_path, "previous contents").unwrap();
+        hyperfine()
+            .args(args)
+            .arg("--setup")
+            .arg(format!("echo touched > \"{}\"", marker_path.display()))
+            .arg("--export-csv")
+            .arg(&export_path)
+            .arg(benchmark)
+            .assert()
+            .failure()
+            .stdout(predicate::str::is_empty())
+            .stderr(predicate::str::contains(
+                "does not match any parameterized benchmark",
+            ));
 
-    ----- stderr -----
-    ");
+        assert_eq!(
+            std::fs::read_to_string(&export_path).unwrap(),
+            "previous contents"
+        );
+        assert!(!marker_path.exists());
+    }
+}
+
+#[test]
+fn rejects_ambiguous_parameterized_reference() {
+    for args in [
+        vec![
+            "-L",
+            "x",
+            "1,2",
+            "--command-name",
+            "case",
+            "--reference",
+            "case",
+            "sleep {x}",
+        ],
+        vec!["-L", "x", "1,1", "--reference", "sleep 1", "sleep {x}"],
+    ] {
+        hyperfine_debug()
+            .args(args)
+            .assert()
+            .failure()
+            .stdout(predicate::str::is_empty())
+            .stderr(predicate::str::contains(
+                "matches multiple parameterized benchmarks",
+            ));
+    }
+}
+
+#[test]
+fn rejects_reference_name_with_parameterized_reference() {
+    hyperfine_debug()
+        .args([
+            "-L",
+            "x",
+            "1,2",
+            "--reference",
+            "sleep 1",
+            "--reference-name",
+            "baseline",
+            "sleep {x}",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "--reference-name cannot be used with a parameterized reference",
+        ));
+}
+
+#[test]
+fn parameterized_reference_preserves_per_benchmark_hook_order() {
+    let directory = tempfile::tempdir().unwrap();
+    let log_path = directory.path().join("hooks.log");
+    let prepare = |name: &str| format!("echo {name} >> \"{}\"", log_path.display());
+    let command = format!("echo benchmark-{{x}} >> \"{}\"", log_path.display());
+
+    hyperfine()
+        .args(["--runs=1", "-L", "x", "1,2,3"])
+        .arg("--command-name")
+        .arg("case-{x}")
+        .arg("--reference")
+        .arg("case-2")
+        .arg("--prepare")
+        .arg(prepare("prepare-1"))
+        .arg("--prepare")
+        .arg(prepare("prepare-2"))
+        .arg("--prepare")
+        .arg(prepare("prepare-3"))
+        .arg(command)
+        .assert()
+        .success();
+
+    let contents = std::fs::read_to_string(log_path).unwrap();
+    assert_eq!(
+        contents.lines().map(str::trim).collect::<Vec<_>>(),
+        [
+            "prepare-1",
+            "benchmark-1",
+            "prepare-2",
+            "benchmark-2",
+            "prepare-3",
+            "benchmark-3"
+        ]
+    );
+}
+
+#[test]
+fn parameterized_reference_preserves_per_benchmark_output_order() {
+    let directory = tempfile::tempdir().unwrap();
+    let output_paths = [
+        directory.path().join("one.txt"),
+        directory.path().join("two.txt"),
+        directory.path().join("three.txt"),
+    ];
+    let mut command = hyperfine();
+    command.args([
+        "--runs=1",
+        "-L",
+        "x",
+        "1,2,3",
+        "--command-name",
+        "case-{x}",
+        "--reference",
+        "case-2",
+    ]);
+    for path in &output_paths {
+        command.arg("--output").arg(path);
+    }
+    command.arg("echo benchmark-{x}").assert().success();
+
+    for (path, expected) in output_paths
+        .iter()
+        .zip(["benchmark-1", "benchmark-2", "benchmark-3"])
+    {
+        assert_eq!(std::fs::read_to_string(path).unwrap().trim(), expected);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn intermediate_markdown_waits_for_selected_reference() {
+    let directory = tempfile::tempdir().unwrap();
+    for (reference, preparations, reference_available) in [
+        ("sleep 0.03", ["true", "false", "true"], false),
+        ("sleep 0.02", ["true", "true", "false"], true),
+    ] {
+        let export_path = directory.path().join("results.md");
+        let mut command = hyperfine();
+        command.args([
+            "--style=none",
+            "--shell=none",
+            "--runs=1",
+            "-L",
+            "delay",
+            "0.01,0.02,0.03",
+            "--reference",
+            reference,
+        ]);
+        for preparation in preparations {
+            command.arg("--prepare").arg(preparation);
+        }
+        command
+            .arg("--export-markdown")
+            .arg(&export_path)
+            .arg("sleep {delay}")
+            .assert()
+            .failure()
+            .stderr(predicate::str::contains(
+                "The preparation command terminated",
+            ));
+        let markdown = std::fs::read_to_string(&export_path).unwrap();
+        if reference_available {
+            assert!(!markdown.contains("N/A"), "{}", markdown);
+            let row = markdown
+                .lines()
+                .find(|line| line.contains("sleep 0.02"))
+                .unwrap();
+            assert!(row.ends_with("| 1.00 (reference) |"), "{}", row);
+        } else {
+            let row = markdown
+                .lines()
+                .find(|line| line.contains("sleep 0.01"))
+                .unwrap();
+            assert!(row.ends_with("| N/A |"), "{}", row);
+        }
+    }
+}
+
+#[test]
+fn markdown_export_uses_selected_parameterized_reference() {
+    for sort_order in ["command", "mean-time"] {
+        let output = hyperfine_debug()
+            .args([
+                "--style=none",
+                "--runs=1",
+                "--time-unit=second",
+                "--export-markdown=-",
+                "--sort",
+                sort_order,
+                "-L",
+                "x",
+                "3,2,1",
+                "--reference",
+                "sleep 2",
+                "sleep {x}",
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let rows: Vec<_> = stdout
+            .lines()
+            .filter(|line| line.contains("sleep "))
+            .collect();
+        if sort_order == "command" {
+            assert!(rows[0].contains("sleep 3"));
+            assert!(rows[1].contains("sleep 2"));
+            assert!(rows[2].contains("sleep 1"));
+        } else {
+            assert!(rows[0].contains("sleep 1"));
+            assert!(rows[1].contains("sleep 2"));
+            assert!(rows[2].contains("sleep 3"));
+        }
+        for (command, relative) in [
+            ("sleep 1", "2.00 (faster)"),
+            ("sleep 2", "1.00 (reference)"),
+            ("sleep 3", "1.50 (slower)"),
+        ] {
+            let row = rows.iter().find(|line| line.contains(command)).unwrap();
+            assert!(row.ends_with(&format!("| {relative} |")), "{}", row);
+        }
+    }
+}
+
+#[test]
+fn markdown_export_uses_standalone_reference() {
+    for sort_order in ["command", "mean-time"] {
+        let output = hyperfine_debug()
+            .args([
+                "--style=none",
+                "--runs=1",
+                "--time-unit=second",
+                "--export-markdown=-",
+                "--sort",
+                sort_order,
+                "--reference",
+                "sleep 2",
+                "--reference-name",
+                "baseline",
+                "sleep 1",
+                "sleep 2",
+                "sleep 3",
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        for (command, relative) in [
+            ("baseline", "1.00 (reference)"),
+            ("sleep 1", "2.00 (faster)"),
+            ("sleep 2", "1.00 (same speed)"),
+            ("sleep 3", "1.50 (slower)"),
+        ] {
+            let row = stdout.lines().find(|line| line.contains(command)).unwrap();
+            assert!(row.ends_with(&format!("| {relative} |")), "{}", row);
+        }
+    }
+}
+
+#[test]
+fn markdown_export_without_explicit_reference_is_unchanged() {
+    for sort_order in ["command", "mean-time"] {
+        let output = hyperfine_debug()
+            .args([
+                "--style=none",
+                "--runs=1",
+                "--time-unit=second",
+                "--export-markdown=-",
+                "--sort",
+                sort_order,
+                "sleep 3",
+                "sleep 1",
+                "sleep 2",
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        for (command, relative) in [
+            ("sleep 1", "1.00"),
+            ("sleep 2", "2.00"),
+            ("sleep 3", "3.00"),
+        ] {
+            let row = stdout.lines().find(|line| line.contains(command)).unwrap();
+            assert!(row.ends_with(&format!("| {relative} |")), "{}", row);
+        }
+    }
 }
 
 #[test]

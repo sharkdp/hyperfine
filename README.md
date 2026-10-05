@@ -98,6 +98,16 @@ hyperfine \
     'python main.py'
 ```
 
+To compare a parameterized benchmark against a particular run, pass its exact printed name to
+`--reference`. For example:
+```sh
+hyperfine -L delay 0.2,0.4,0.6 --prepare 'sleep {delay}' --reference 'echo a (delay = 0.4)' 'echo a'
+```
+The name must identify exactly one benchmark, including any `--command-name` and displayed unused
+parameters. `--reference-name` cannot be used with parameterized benchmarks; use `--command-name`
+to name them instead. Without `--parameter-scan` or `--parameter-list`, `--reference` runs a
+separate reference command.
+
 If you need a unique value for each individual run of a benchmark command, hyperfine also exposes
 the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarked command itself:
 ```sh

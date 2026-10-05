@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::{cmp, env, fmt, io};
 
-use anyhow::ensure;
+use anyhow::{bail, ensure};
 use clap::ArgMatches;
 
 use crate::command::Commands;
@@ -214,6 +214,12 @@ pub struct Options {
     // Name of the reference command
     pub reference_name: Option<String>,
 
+    // Whether commands are expanded from --parameter-scan or --parameter-list.
+    pub parameterized_mode: bool,
+
+    // Index of the selected command in a parameterized run, if any.
+    pub parameterized_reference_index: Option<usize>,
+
     /// Command(s) to run before each timing run
     pub preparation_command: Option<Vec<String>>,
 
@@ -257,6 +263,8 @@ impl Default for Options {
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
             reference_name: None,
+            parameterized_mode: false,
+            parameterized_reference_index: None,
             preparation_command: None,
             conclusion_command: None,
             setup_command: None,
@@ -309,6 +317,8 @@ impl Options {
 
         options.setup_command = matches.get_one::<String>("setup").map(String::from);
 
+        options.parameterized_mode = matches.get_many::<String>("parameter-scan").is_some()
+            || matches.get_many::<String>("parameter-list").is_some();
         options.reference_command = matches.get_one::<String>("reference").map(String::from);
         options.reference_name = matches
             .get_one::<String>("reference-name")
@@ -464,7 +474,29 @@ impl Options {
     }
 
     pub fn validate_against_command_list(&mut self, commands: &Commands) -> Result<()> {
-        let has_reference_command = self.reference_command.is_some();
+        if self.parameterized_mode {
+            if let Some(reference) = &self.reference_command {
+                ensure!(
+                    self.reference_name.is_none(),
+                    "--reference-name cannot be used with a parameterized reference; use --command-name to name the benchmark"
+                );
+                let mut matches = commands
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, command)| command.get_name_with_unused_parameters() == *reference);
+                let Some((index, _)) = matches.next() else {
+                    bail!(
+                        "Reference '{reference}' does not match any parameterized benchmark. Use its full displayed benchmark name."
+                    );
+                };
+                ensure!(
+                    matches.next().is_none(),
+                    "Reference '{reference}' matches multiple parameterized benchmarks. Use --command-name to give them unique names."
+                );
+                self.parameterized_reference_index = Some(index);
+            }
+        }
+        let has_reference_command = self.reference_command.is_some() && !self.parameterized_mode;
         let num_commands = commands.num_commands(has_reference_command);
 
         if let Some(preparation_command) = &self.preparation_command {
