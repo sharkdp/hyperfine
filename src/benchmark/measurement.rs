@@ -2,10 +2,9 @@ use std::process::ExitStatus;
 
 use serde::Serialize;
 
-use crate::outlier_detection::modified_zscores;
 use crate::quantity::{
-    max, mean, median, min, second, serialize_information, serialize_time, standard_deviation,
-    Information, Time, TimeQuantity,
+    max, mean, median, min, modified_zscores, serialize_information, serialize_time,
+    standard_deviation, Information, Time,
 };
 use crate::util::exit_code::extract_exit_code;
 
@@ -103,6 +102,11 @@ impl Measurements {
         max(&self.wall_clock_times())
     }
 
+    /// Compute modified Z-scores for the wall clock times
+    pub fn modified_zscores(&self) -> Vec<f64> {
+        modified_zscores(&self.wall_clock_times())
+    }
+
     /// The average user time
     pub fn time_user_mean(&self) -> Time {
         mean(
@@ -126,19 +130,11 @@ impl Measurements {
     }
 
     pub fn peak_memory_usage_mean(&self) -> Information {
-        self.measurements
-            .iter()
-            .map(|m| m.peak_memory_usage)
-            .max() // TODO: should be mean: do we need InformationF64?
-            .unwrap_or_default()
-    }
-
-    pub fn modified_zscores(&self) -> Vec<f64> {
-        modified_zscores(
+        mean(
             &self
-                .wall_clock_times()
+                .measurements
                 .iter()
-                .map(|t| t.value_in(second)) // TODO
+                .map(|m| m.peak_memory_usage)
                 .collect::<Vec<_>>(),
         )
     }

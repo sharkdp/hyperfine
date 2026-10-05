@@ -1,6 +1,5 @@
 #![cfg(not(windows))]
 
-use std::convert::TryFrom;
 use std::io;
 use std::mem::MaybeUninit;
 use std::os::unix::process::ExitStatusExt;
@@ -47,9 +46,12 @@ fn wait4(mut child: Child) -> io::Result<(ExitStatus, ResourceUsage)> {
 
         let memory_usage_byte = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
             // Linux and *BSD return the value in KibiBytes, Darwin flavors in bytes
-            Information::new::<byte>(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
+            // A f64 can represent integers up to 2^53 exactly, so we can represent
+            // all values up to 2^53 bytes = 8 PiB exactly. Beyond that, our precision
+            // is larger than 1 byte, but that's considered acceptable.
+            Information::new::<byte>(rusage.ru_maxrss as f64)
         } else {
-            Information::new::<kibibyte>(u64::try_from(rusage.ru_maxrss).unwrap_or(0))
+            Information::new::<kibibyte>(rusage.ru_maxrss as f64)
         };
 
         Ok((
