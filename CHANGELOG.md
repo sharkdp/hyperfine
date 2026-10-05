@@ -1,3 +1,10 @@
+# Unreleased
+
+## Breaking changes
+
+- Execute commands directly by default (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
+- Repurpose `-S` as an alias for `--shell=default`. It no longer accepts a shell argument; replace `-S <SHELL>` with `--shell <SHELL>`.
+
 # v1.21.0
 
 ## Features

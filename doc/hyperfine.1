@@ -3,7 +3,7 @@
 hyperfine \- command\-line benchmarking tool
 .SH SYNOPSIS
 .B hyperfine
-.RB [ \-hVN ]
+.RB [ \-hVNS ]
 .RB [ \-\-ignore\-failure[=MODE] ]
 .RB [ \-\-warmup
 .IR NUM ]
@@ -172,7 +172,7 @@ arithmetic.
 .RS
 Example:
 .RS
-\fBhyperfine\fR \fB\-P\fR size 0 3 'sleep $((2**{size}))'
+\fBhyperfine\fR \fB\-\-shell=bash\fR \fB\-P\fR size 0 3 'sleep $((2**{size}))'
 .RE
 .RE
 .IP
@@ -212,15 +212,20 @@ This performs benchmarks for 'g++ \-O2 main.cpp' and 'clang++ \-O2 main.cpp'.
 The option can be specified multiple times to run benchmarks for all
 possible parameter combinations.
 .HP
-\fB\-S\fR, \fB\-\-shell\fR \fISHELL\fP
+\fB\-\-shell\fR \fISHELL\fP
 .IP
-Set the shell to use for executing benchmarked commands. This can be
+Set the shell to use for executing commands (default: none). This can be
 the name or the path to the shell executable, or a full command line
 like "bash \fB\-\-norc\fR". It can also be set to "default" to explicitly
-select the default shell on this platform. Finally, this can also be
+select the platform shell (sh on Unix, cmd.exe on Windows). Finally, this can also be
 set to "none" to disable the shell. In this case, commands will be
 executed directly. They can still have arguments, but more complex
 things like "sleep 0.1; sleep 0.2" are not possible without a shell.
+This option also applies to setup, prepare, conclude, and cleanup commands.
+.HP
+\fB\-S\fR
+.IP
+An alias for '\-\-shell=default' (sh on Unix, cmd.exe on Windows).
 .HP
 \fB\-N\fR
 .IP
@@ -331,7 +336,8 @@ Write the output to the given file.
 This option can be specified once for all commands or multiple times,
 once for each command. Note: If you want to log the output of each and
 every iteration, you can use a shell redirection and the $HYPERFINE_ITERATION
-environment variable: 'my-command > output-${HYPERFINE_ITERATION}.log'
+environment variable (requires \fB\-S\fR / \fB\-\-shell=default\fR):
+'my-command > output-${HYPERFINE_ITERATION}.log'
 .HP
 \fB\-\-input\fR \fIWHERE\fP
 .IP
@@ -377,7 +383,7 @@ Perform a benchmark of 'grep' with a warm disk cache by executing 3 runs up fron
 of the measurement: 
 .RS
 .nf
-\fBhyperfine\fR \fB\-\-warmup\fR 3 'grep -R TODO *'
+\fBhyperfine\fR \fB\-S\fR \fB\-\-warmup\fR 3 'grep -R TODO *'
 .fi
 .RE
 .LP

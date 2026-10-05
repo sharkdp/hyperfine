@@ -259,6 +259,7 @@ fn fails_with_duplicate_parameter_names() {
 #[test]
 fn fails_for_unknown_command() {
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .assert()
@@ -298,6 +299,7 @@ fn fails_for_failing_command_without_shell() {
 #[test]
 fn fails_for_unknown_setup_command() {
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--setup=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .arg("echo test")
@@ -311,6 +313,7 @@ fn fails_for_unknown_setup_command() {
 #[test]
 fn fails_for_unknown_cleanup_command() {
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--cleanup=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .arg("echo test")
@@ -324,6 +327,7 @@ fn fails_for_unknown_cleanup_command() {
 #[test]
 fn fails_for_unknown_prepare_command() {
     hyperfine()
+        .arg("--shell=default")
         .arg("--prepare=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .arg("echo test")
         .assert()
@@ -336,6 +340,7 @@ fn fails_for_unknown_prepare_command() {
 #[test]
 fn fails_for_unknown_conclude_command() {
     hyperfine()
+        .arg("--shell=default")
         .arg("--conclude=some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577")
         .arg("echo test")
         .assert()
@@ -369,6 +374,7 @@ fn can_run_failing_commands_with_ignore_failure_option() {
 fn can_ignore_specific_exit_codes() {
     // Test that specifying exit code 1 ignores it
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--ignore-failure=1")
         .arg("exit 1")
@@ -377,6 +383,7 @@ fn can_ignore_specific_exit_codes() {
 
     // Test that other exit codes still fail
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--ignore-failure=1")
         .arg("exit 2")
@@ -392,6 +399,7 @@ fn can_ignore_specific_exit_codes() {
 fn can_ignore_multiple_exit_codes() {
     // Test that all specified exit codes are ignored
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--ignore-failure=1,2,3")
         .arg("exit 1")
@@ -399,6 +407,7 @@ fn can_ignore_multiple_exit_codes() {
         .success();
 
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--ignore-failure=1,2,3")
         .arg("exit 2")
@@ -406,6 +415,7 @@ fn can_ignore_multiple_exit_codes() {
         .success();
 
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--ignore-failure=1,2,3")
         .arg("exit 3")
@@ -414,6 +424,7 @@ fn can_ignore_multiple_exit_codes() {
 
     // Test that other exit codes still fail
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--ignore-failure=1,2,3")
         .arg("exit 4")
@@ -429,6 +440,7 @@ fn can_ignore_multiple_exit_codes() {
 fn ignore_failure_with_all_non_zero() {
     // Test explicit "all-non-zero" mode
     hyperfine()
+        .arg("--shell=default")
         .arg("--runs=1")
         .arg("--ignore-failure=all-non-zero")
         .arg("exit 5")
@@ -1229,6 +1241,7 @@ fn speed_comparison_sort_order() {
 #[test]
 fn windows_quote_args() {
     hyperfine()
+        .arg("--shell=default")
         .arg("more \"example_input_file.txt\"")
         .assert()
         .success();
@@ -1238,6 +1251,7 @@ fn windows_quote_args() {
 #[test]
 fn windows_quote_before_quote_args() {
     hyperfine()
+        .arg("--shell=default")
         .arg("dir \"..\\src\\\" \"..\\tests\\\"")
         .assert()
         .success();
@@ -1255,6 +1269,7 @@ fn hyperfine_iteration_env_var_in_prepare_and_conclude_commands() {
     let command = |phase| format!(r#"echo {phase}:{iteration} >> "iteration output.txt""#);
 
     hyperfine()
+        .arg("--shell=default")
         .current_dir(tempdir.path())
         .arg("--runs=2")
         .arg("--warmup=1")
