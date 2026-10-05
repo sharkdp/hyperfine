@@ -79,7 +79,7 @@ fn run_command_and_measure_common(
     let result = execute_and_measure(command)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
-    if !result.status.success() {
+    if !result.exit_status.success() {
         use crate::util::exit_code::extract_exit_code;
 
         let should_fail = match command_failure_action {
@@ -87,7 +87,7 @@ fn run_command_and_measure_common(
             CmdFailureAction::IgnoreAllFailures => false,
             CmdFailureAction::IgnoreSpecificFailures(ref codes) => {
                 // Only fail if the exit code is not in the list of codes to ignore
-                if let Some(exit_code) = extract_exit_code(result.status) {
+                if let Some(exit_code) = extract_exit_code(result.exit_status) {
                     !codes.contains(&exit_code)
                 } else {
                     // If we can't extract an exit code, treat it as a failure
@@ -107,7 +107,7 @@ fn run_command_and_measure_common(
             bail!(
                 "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
                 Alternatively, use the '--show-output' option to debug what went wrong.",
-                cause=result.status.code().map_or(
+                cause=result.exit_status.code().map_or(
                     "The process has been terminated by a signal".into(),
                     |c| format!("Command terminated with non-zero exit code {c}")
 
@@ -203,7 +203,8 @@ impl Executor for ShellExecutor<'_> {
 
         // Subtract shell spawning time
         if let Some(spawning_time) = self.shell_spawning_time {
-            result.time_real = (result.time_real - spawning_time.time_real).max(0.0);
+            result.time_wall_clock =
+                (result.time_wall_clock - spawning_time.time_wall_clock).max(0.0);
             result.time_user = (result.time_user - spawning_time.time_user).max(0.0);
             result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
         }
@@ -251,7 +252,7 @@ impl Executor for ShellExecutor<'_> {
                     );
                 }
                 Ok(r) => {
-                    times_real.push(r.time_real);
+                    times_real.push(r.time_wall_clock);
                     times_user.push(r.time_user);
                     times_system.push(r.time_system);
                 }
@@ -267,18 +268,18 @@ impl Executor for ShellExecutor<'_> {
         }
 
         self.shell_spawning_time = Some(Measurement {
-            time_real: mean(&times_real),
+            time_wall_clock: mean(&times_real),
             time_user: mean(&times_user),
             time_system: mean(&times_system),
-            memory_usage_byte: 0,
-            status: ExitStatus::default(),
+            peak_memory_usage: 0,
+            exit_status: ExitStatus::default(),
         });
 
         Ok(())
     }
 
     fn time_overhead(&self) -> Second {
-        self.shell_spawning_time.unwrap().time_real
+        self.shell_spawning_time.unwrap().time_wall_clock
     }
 }
 
@@ -311,23 +312,23 @@ impl Executor for MockExecutor {
         _output_policy: &CommandOutputPolicy,
     ) -> Result<Measurement> {
         #[cfg(unix)]
-        let status = {
+        let exit_status = {
             use std::os::unix::process::ExitStatusExt;
             ExitStatus::from_raw(0)
         };
 
         #[cfg(windows)]
-        let status = {
+        let exit_status = {
             use std::os::windows::process::ExitStatusExt;
             ExitStatus::from_raw(0)
         };
 
         Ok(Measurement {
-            time_real: Self::extract_time(command.get_command_line()),
+            time_wall_clock: Self::extract_time(command.get_command_line()),
             time_user: 0.0,
             time_system: 0.0,
-            memory_usage_byte: 0,
-            status,
+            peak_memory_usage: 0,
+            exit_status,
         })
     }
 

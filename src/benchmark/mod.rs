@@ -241,8 +241,9 @@ impl<'a> Benchmark<'a> {
         };
 
         let preparation_result = run_preparation_command()?;
-        let preparation_overhead =
-            preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        let preparation_overhead = preparation_result.map_or(0.0, |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Initial timing run
         let res = self.executor.run_command_and_measure(
@@ -251,15 +252,16 @@ impl<'a> Benchmark<'a> {
             None,
             output_policy,
         )?;
-        let success = res.status.success();
+        let success = res.exit_status.success();
 
         let conclusion_result = run_conclusion_command()?;
-        let conclusion_overhead =
-            conclusion_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        let conclusion_overhead = conclusion_result.map_or(0.0, |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real
+            / (res.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead)) as u64;
@@ -278,11 +280,11 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        times_real.push(res.time_real);
+        times_real.push(res.time_wall_clock);
         times_user.push(res.time_user);
         times_system.push(res.time_system);
-        memory_usage_byte.push(res.memory_usage_byte);
-        exit_codes.push(extract_exit_code(res.status));
+        memory_usage_byte.push(res.peak_memory_usage);
+        exit_codes.push(extract_exit_code(res.exit_status));
 
         all_succeeded = all_succeeded && success;
 
@@ -313,13 +315,13 @@ impl<'a> Benchmark<'a> {
                 None,
                 output_policy,
             )?;
-            let success = res.status.success();
+            let success = res.exit_status.success();
 
-            times_real.push(res.time_real);
+            times_real.push(res.time_wall_clock);
             times_user.push(res.time_user);
             times_system.push(res.time_system);
-            memory_usage_byte.push(res.memory_usage_byte);
-            exit_codes.push(extract_exit_code(res.status));
+            memory_usage_byte.push(res.peak_memory_usage);
+            exit_codes.push(extract_exit_code(res.exit_status));
 
             all_succeeded = all_succeeded && success;
 
