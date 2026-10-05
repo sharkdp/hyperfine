@@ -47,6 +47,10 @@ where
     P: Into<Q>,
 {
     let mut values = values.into_iter().collect::<Vec<_>>();
+    assert!(
+        !values.is_empty(),
+        "median requires at least one measurement"
+    );
     values.sort_by(|a, b| a.partial_cmp(b).expect("No NaN values"));
 
     let len = values.len();
