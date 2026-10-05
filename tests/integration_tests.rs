@@ -1038,118 +1038,44 @@ fn windows_quote_before_quote_args() {
         .success();
 }
 
-#[cfg(unix)]
 #[test]
-fn hyperfine_iteration_env_var_in_prepare_command() {
-    use tempfile::tempdir;
+fn hyperfine_iteration_env_var_in_prepare_and_conclude_commands() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let output_path = tempdir.path().join("iteration output.txt");
+    let iteration = if cfg!(windows) {
+        "%HYPERFINE_ITERATION%"
+    } else {
+        "$HYPERFINE_ITERATION"
+    };
+    let command = |phase| format!(r#"echo {phase}:{iteration} >> "iteration output.txt""#);
 
-    let tempdir = tempdir().unwrap();
-    let output_path = tempdir.path().join("iteration_output.txt");
-
-    // Write HYPERFINE_ITERATION value to a file during prepare
     hyperfine()
+        .current_dir(tempdir.path())
         .arg("--runs=2")
         .arg("--warmup=1")
-        .arg(format!(
-            "--prepare=echo $HYPERFINE_ITERATION >> {}",
-            output_path.to_string_lossy()
-        ))
-        .arg("echo test")
+        .arg("--prepare")
+        .arg(command("prepare"))
+        .arg(command("benchmark"))
+        .arg("--conclude")
+        .arg(command("conclude"))
         .assert()
         .success();
 
     let contents = std::fs::read_to_string(output_path).unwrap();
-    let lines: Vec<&str> = contents.lines().collect();
-
-    assert_eq!(lines.len(), 3);
-    assert_eq!(lines[0], "warmup-0");
-    assert_eq!(lines[1], "0");
-    assert_eq!(lines[2], "1");
-}
-
-#[cfg(windows)]
-#[test]
-fn hyperfine_iteration_env_var_in_prepare_command() {
-    use tempfile::tempdir;
-
-    let tempdir = tempdir().unwrap();
-    let output_path = tempdir.path().join("iteration_output.txt");
-
-    // Write HYPERFINE_ITERATION value to a file during prepare
-    hyperfine()
-        .arg("--runs=2")
-        .arg("--warmup=1")
-        .arg(format!(
-            "--prepare=echo %HYPERFINE_ITERATION% >> {}",
-            output_path.to_string_lossy()
-        ))
-        .arg("echo test")
-        .assert()
-        .success();
-
-    let contents = std::fs::read_to_string(output_path).unwrap();
-    let lines: Vec<String> = contents.lines().map(|l| l.trim().to_string()).collect();
-
-    assert_eq!(lines.len(), 3);
-    assert_eq!(lines[0], "warmup-0");
-    assert_eq!(lines[1], "0");
-    assert_eq!(lines[2], "1");
-}
-
-#[cfg(unix)]
-#[test]
-fn hyperfine_iteration_env_var_in_conclude_command() {
-    use tempfile::tempdir;
-
-    let tempdir = tempdir().unwrap();
-    let output_path = tempdir.path().join("iteration_output.txt");
-
-    // Write HYPERFINE_ITERATION value to a file during conclude
-    hyperfine()
-        .arg("--runs=2")
-        .arg("--warmup=1")
-        .arg(format!(
-            "--conclude=echo $HYPERFINE_ITERATION >> {}",
-            output_path.to_string_lossy()
-        ))
-        .arg("echo test")
-        .assert()
-        .success();
-
-    let contents = std::fs::read_to_string(output_path).unwrap();
-    let lines: Vec<&str> = contents.lines().collect();
-
-    assert_eq!(lines.len(), 3);
-    assert_eq!(lines[0], "warmup-0");
-    assert_eq!(lines[1], "0");
-    assert_eq!(lines[2], "1");
-}
-
-#[cfg(windows)]
-#[test]
-fn hyperfine_iteration_env_var_in_conclude_command() {
-    use tempfile::tempdir;
-
-    let tempdir = tempdir().unwrap();
-    let output_path = tempdir.path().join("iteration_output.txt");
-
-    // Write HYPERFINE_ITERATION value to a file during conclude
-    hyperfine()
-        .arg("--runs=2")
-        .arg("--warmup=1")
-        .arg(format!(
-            "--conclude=echo %HYPERFINE_ITERATION% >> {}",
-            output_path.to_string_lossy()
-        ))
-        .arg("echo test")
-        .assert()
-        .success();
-
-    let contents = std::fs::read_to_string(output_path).unwrap();
-    let lines: Vec<String> = contents.lines().map(|l| l.trim().to_string()).collect();
-
-    assert_eq!(lines.len(), 3);
-    assert_eq!(lines[0], "warmup-0");
-    assert_eq!(lines[1], "0");
-    assert_eq!(lines[2], "1");
+    // cmd.exe's echo includes the space before the redirection operator.
+    let lines: Vec<&str> = contents.lines().map(str::trim_end).collect();
+    assert_eq!(
+        lines,
+        [
+            "prepare:warmup-0",
+            "benchmark:warmup-0",
+            "conclude:warmup-0",
+            "prepare:0",
+            "benchmark:0",
+            "conclude:0",
+            "prepare:1",
+            "benchmark:1",
+            "conclude:1",
+        ]
+    );
 }
