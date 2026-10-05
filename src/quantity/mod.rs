@@ -1,19 +1,63 @@
 use std::marker::PhantomData;
 
-pub use uom::num_traits::Zero;
-pub use uom::si::f64::{Information, Ratio, Time};
-pub use uom::si::information::byte;
-#[cfg(any(not(windows), test))]
-pub use uom::si::information::kibibyte;
-pub use uom::si::ratio::ratio;
-#[cfg(any(not(windows), test))]
-pub use uom::si::time::microsecond;
-pub use uom::si::time::{nanosecond, second};
+use uom::si;
 
-pub use units::TimeUnit;
+pub use si::f64::{Information, Ratio, Time};
+pub use si::information::{byte, gibibyte, kibibyte, mebibyte, tebibyte};
+pub use si::ratio::ratio;
+pub use si::time::{hour, microsecond, millisecond, minute, nanosecond, second};
+pub use uom::num_traits::Zero;
+
+pub use units::{InformationUnit, IsUnit, TimeUnit};
 
 pub mod statistics;
 mod units;
+
+pub trait FormatQuantity {
+    type Unit;
+
+    fn suitable_unit(&self) -> Self::Unit;
+
+    fn format_with_precision(&self, unit: Self::Unit, precision: usize) -> String;
+    fn format(&self, unit: Self::Unit) -> String;
+    fn format_auto(&self) -> String;
+    fn format_value(&self, unit: Self::Unit) -> String;
+}
+
+impl FormatQuantity for Time {
+    type Unit = TimeUnit;
+
+    fn suitable_unit(&self) -> TimeUnit {
+        if *self < Time::new::<millisecond>(1.0) {
+            TimeUnit::MicroSecond
+        } else if *self < Time::new::<second>(1.0) {
+            TimeUnit::MilliSecond
+        } else {
+            TimeUnit::Second
+        }
+    }
+
+    /// Format the time duration in the given unit with the given precision.
+    fn format_with_precision(&self, u: TimeUnit, precision: usize) -> String {
+        u.format(*self, precision)
+    }
+
+    /// Format the time duration in the given unit.
+    fn format(&self, unit: TimeUnit) -> String {
+        let value = self.format_with_precision(unit, unit.preferred_precision());
+        format!("{} {}", value, unit.short_name())
+    }
+
+    /// Format the given time duration. The unit will be determined automatically.
+    fn format_auto(&self) -> String {
+        self.format(self.suitable_unit())
+    }
+
+    /// Like `format`, but without displaying the unit.
+    fn format_value(&self, unit: TimeUnit) -> String {
+        self.format_with_precision(unit, unit.preferred_precision())
+    }
+}
 
 pub const fn const_time_from_seconds(value: f64) -> Time {
     // Quantity::new in uom is not yet const: https://docs.rs/uom/0.36.0/uom/si/struct.Quantity.html
@@ -24,40 +68,42 @@ pub const fn const_time_from_seconds(value: f64) -> Time {
     }
 }
 
-/// Format the given duration as a string. The output-unit can be enforced by setting `unit` to
-/// `Some(target_unit)`. If `unit` is `None`, it will be determined automatically.
-pub fn format_duration(duration: f64, unit: Option<TimeUnit>) -> String {
-    let (duration_fmt, _) = format_duration_unit(duration, unit);
-    duration_fmt
-}
+impl FormatQuantity for Information {
+    type Unit = InformationUnit;
 
-/// Like `format_duration`, but returns the target unit as well.
-pub fn format_duration_unit(duration: f64, unit: Option<TimeUnit>) -> (String, TimeUnit) {
-    let (out_str, out_unit) = format_duration_value(duration, unit);
+    fn suitable_unit(&self) -> InformationUnit {
+        if *self < Information::new::<kibibyte>(1.0) {
+            InformationUnit::Byte
+        } else if *self < Information::new::<mebibyte>(1.0) {
+            InformationUnit::KibiByte
+        } else if *self < Information::new::<gibibyte>(1.0) {
+            InformationUnit::MebiByte
+        } else {
+            InformationUnit::GibiByte
+        }
+    }
 
-    (format!("{} {}", out_str, out_unit.short_name()), out_unit)
-}
+    /// Format the information in the given unit with the given precision.
+    fn format_with_precision(&self, u: InformationUnit, precision: usize) -> String {
+        u.format(*self, precision)
+    }
 
-/// Like `format_duration`, but returns the target unit as well.
-pub fn format_duration_value(duration: f64, unit: Option<TimeUnit>) -> (String, TimeUnit) {
-    if (duration < 0.001 && unit.is_none()) || unit == Some(TimeUnit::MicroSecond) {
-        (
-            TimeUnit::MicroSecond.format(duration),
-            TimeUnit::MicroSecond,
-        )
-    } else if (duration < 1.0 && unit.is_none()) || unit == Some(TimeUnit::MilliSecond) {
-        (
-            TimeUnit::MilliSecond.format(duration),
-            TimeUnit::MilliSecond,
-        )
-    } else {
-        let unit = unit.unwrap_or(TimeUnit::Second);
-        (unit.format(duration), unit)
+    /// Format the information in the given unit.
+    fn format(&self, unit: InformationUnit) -> String {
+        let value = self.format_with_precision(unit, unit.preferred_precision());
+        format!("{} {}", value, unit.short_name())
+    }
+
+    /// Format the given information. The unit will be determined automatically.
+    fn format_auto(&self) -> String {
+        self.format(self.suitable_unit())
+    }
+
+    /// Like `format`, but without displaying the unit.
+    fn format_value(&self, unit: InformationUnit) -> String {
+        self.format_with_precision(unit, unit.preferred_precision())
     }
 }
-
-#[cfg(test)]
-use uom::si::time::millisecond;
 
 #[test]
 fn test_time() {
@@ -86,52 +132,72 @@ fn test_information() {
 }
 
 #[test]
-fn test_format_duration_unit_basic() {
-    let (out_str, out_unit) = format_duration_unit(1.3, None);
+fn test_suiteable_unit_time() {
+    assert_eq!(Time::new::<second>(1.3).suitable_unit(), TimeUnit::Second);
+    assert_eq!(Time::new::<second>(1.0).suitable_unit(), TimeUnit::Second);
+    assert_eq!(
+        Time::new::<second>(0.999).suitable_unit(),
+        TimeUnit::MilliSecond
+    );
+    assert_eq!(
+        Time::new::<second>(0.0005).suitable_unit(),
+        TimeUnit::MicroSecond
+    );
+    assert_eq!(
+        Time::new::<second>(0.).suitable_unit(),
+        TimeUnit::MicroSecond
+    );
+    assert_eq!(
+        Time::new::<second>(1000.0).suitable_unit(),
+        TimeUnit::Second
+    );
+}
 
-    assert_eq!("1.300 s", out_str);
-    assert_eq!(TimeUnit::Second, out_unit);
+#[test]
+fn test_suitable_unit_information() {
+    assert_eq!(
+        Information::new::<byte>(512.0).suitable_unit(),
+        InformationUnit::Byte
+    );
+    assert_eq!(
+        Information::new::<byte>(2048.0).suitable_unit(),
+        InformationUnit::KibiByte
+    );
+    assert_eq!(
+        Information::new::<byte>(2_097_152.0).suitable_unit(),
+        InformationUnit::MebiByte
+    );
+    assert_eq!(
+        Information::new::<byte>(2_147_483_648.0).suitable_unit(),
+        InformationUnit::GibiByte
+    );
+}
 
-    let (out_str, out_unit) = format_duration_unit(1.0, None);
+#[test]
+fn test_format() {
+    let time = Time::new::<millisecond>(123.4);
+    assert_eq!(time.format(TimeUnit::Second), "0.123 s");
+    assert_eq!(time.format(TimeUnit::MilliSecond), "123.4 ms");
+    assert_eq!(time.format_auto(), "123.4 ms");
+    assert_eq!(time.format(TimeUnit::MicroSecond), "123400.0 µs");
 
-    assert_eq!("1.000 s", out_str);
-    assert_eq!(TimeUnit::Second, out_unit);
-
-    let (out_str, out_unit) = format_duration_unit(0.999, None);
-
-    assert_eq!("999.0 ms", out_str);
-    assert_eq!(TimeUnit::MilliSecond, out_unit);
-
-    let (out_str, out_unit) = format_duration_unit(0.0005, None);
-
-    assert_eq!("500.0 µs", out_str);
-    assert_eq!(TimeUnit::MicroSecond, out_unit);
-
-    let (out_str, out_unit) = format_duration_unit(0.0, None);
-
-    assert_eq!("0.0 µs", out_str);
-    assert_eq!(TimeUnit::MicroSecond, out_unit);
-
-    let (out_str, out_unit) = format_duration_unit(1000.0, None);
-
-    assert_eq!("1000.000 s", out_str);
-    assert_eq!(TimeUnit::Second, out_unit);
+    let peak_memory_usage = Information::new::<kibibyte>(8.);
+    assert_eq!(peak_memory_usage.format_auto(), "8.0 KiB");
+    assert_eq!(peak_memory_usage.format(InformationUnit::Byte), "8192 B");
+    assert_eq!(
+        peak_memory_usage.format(InformationUnit::KibiByte),
+        "8.0 KiB"
+    );
 }
 
 #[test]
 fn test_format_duration_unit_with_unit() {
-    let (out_str, out_unit) = format_duration_unit(1.3, Some(TimeUnit::Second));
+    let out = Time::new::<second>(1.3).format(TimeUnit::Second);
+    assert_eq!("1.300 s", out);
 
-    assert_eq!("1.300 s", out_str);
-    assert_eq!(TimeUnit::Second, out_unit);
+    let out = Time::new::<second>(1.3).format(TimeUnit::MilliSecond);
+    assert_eq!("1300.0 ms", out);
 
-    let (out_str, out_unit) = format_duration_unit(1.3, Some(TimeUnit::MilliSecond));
-
-    assert_eq!("1300.0 ms", out_str);
-    assert_eq!(TimeUnit::MilliSecond, out_unit);
-
-    let (out_str, out_unit) = format_duration_unit(1.3, Some(TimeUnit::MicroSecond));
-
-    assert_eq!("1300000.0 µs", out_str);
-    assert_eq!(TimeUnit::MicroSecond, out_unit);
+    let out = Time::new::<second>(1.3).format(TimeUnit::MicroSecond);
+    assert_eq!("1300000.0 µs", out);
 }
