@@ -88,6 +88,16 @@ option:
 hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'
 ```
 
+A common use case is comparing the same command across multiple Git branches. Use `--setup`
+to switch branches once before each set of timing runs, so the branch switch is not part of
+the measured command:
+```sh
+hyperfine \
+    --parameter-list branch main,performance-improvements \
+    --setup 'git switch {branch}' \
+    'python main.py'
+```
+
 ### Intermediate shell
 
 By default, commands are executed using `sh` on Unix (resolved through `PATH`) or `cmd.exe` on Windows.
