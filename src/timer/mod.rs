@@ -82,16 +82,8 @@ pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
         discard(output);
     }
 
-    #[cfg(not(windows))]
     let (time_user, time_system, peak_memory_usage, exit_status) = cpu_timer.stop(child)?;
-
-    #[cfg(windows)]
-    let exit_status = child.wait()?;
-
     let time_wall_clock = wallclock_timer.stop();
-
-    #[cfg(windows)]
-    let (time_user, time_system, peak_memory_usage) = cpu_timer.stop();
 
     Ok(Measurement {
         time_wall_clock,
