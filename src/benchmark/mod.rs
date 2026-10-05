@@ -22,7 +22,7 @@ use crate::output::progress_bar::{
 };
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{self, const_time_from_seconds, Time, TimeQuantity};
+use crate::quantity::{self, const_time_from_seconds, Time, Quantity};
 use benchmark_result::BenchmarkResult;
 
 use anyhow::{anyhow, Result};
