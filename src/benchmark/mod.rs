@@ -19,8 +19,7 @@ use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
-use crate::util::min_max::{max, min};
-use crate::util::statistics::{mean, median, standard_deviation};
+use crate::util::statistics::{max, mean, median, min, standard_deviation};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use measurement::Measurement;
@@ -344,8 +343,8 @@ impl<'a> Benchmark<'a> {
             None
         };
         let t_median = median(&times_real);
-        let t_min = min(&times_real);
-        let t_max = max(&times_real);
+        let t_min = min(times_real.iter().copied());
+        let t_max = max(times_real.iter().copied());
 
         let user_mean = mean(&times_user);
         let system_mean = mean(&times_system);

@@ -1,5 +1,21 @@
 //! Statistics for non-empty samples of finite measurements.
 
+/// A min function that assumes no NaNs and at least one element
+pub fn min<Q: PartialOrd>(values: impl IntoIterator<Item = Q>) -> Q {
+    values
+        .into_iter()
+        .min_by(|a, b| a.partial_cmp(b).expect("No NaN values"))
+        .expect("'min' requires at least one element")
+}
+
+/// A max function that assumes no NaNs and at least one element
+pub fn max<Q: PartialOrd>(values: impl IntoIterator<Item = Q>) -> Q {
+    values
+        .into_iter()
+        .max_by(|a, b| a.partial_cmp(b).expect("No NaN values"))
+        .expect("'max' requires at least one element")
+}
+
 /// Arithmetic mean, summing measurements in their original order.
 pub fn mean(values: &[f64]) -> f64 {
     values.iter().fold(0.0, |sum, value| sum + value) / values.len() as f64
@@ -43,6 +59,30 @@ pub fn standard_deviation(values: &[f64], mean: f64) -> f64 {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
+
+    #[test]
+    fn test_min() {
+        assert_eq!(1.0, min([1.0]));
+        assert_eq!(-1.0, min([-1.0]));
+        assert_eq!(-2.0, min([-2.0, -1.0]));
+        assert_eq!(-1.0, min([-1.0, 1.0]));
+        assert_eq!(-1.0, min([1.0, -1.0, 0.0]));
+
+        let values = vec![1024.0, 2.0, 3.0];
+        assert_eq!(*min(&values), 2.0);
+    }
+
+    #[test]
+    fn test_max() {
+        assert_eq!(1.0, max([1.0]));
+        assert_eq!(-1.0, max([-1.0]));
+        assert_eq!(-1.0, max([-2.0, -1.0]));
+        assert_eq!(1.0, max([-1.0, 1.0]));
+        assert_eq!(1.0, max([-1.0, 1.0, 0.0]));
+
+        let values = vec![1.0, 2048.0, 3.0];
+        assert_eq!(*max(&values), 2048.0);
+    }
 
     #[test]
     fn test_mean() {
