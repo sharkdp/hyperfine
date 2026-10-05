@@ -125,11 +125,11 @@ impl<T: MarkupExporter> Exporter for T {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<TimeUnit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
         reference_index: Option<usize>,
     ) -> Result<Vec<u8>> {
-        let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));
+        let unit = time_unit.unwrap_or_else(|| determine_unit_from_results(results));
         // Do not report ratios against another benchmark while the selected
         // reference is still pending in an intermediate export.
         let reference_pending = reference_index.is_some_and(|i| i >= results.len());
