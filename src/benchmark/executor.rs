@@ -9,12 +9,12 @@ use crate::options::{
 use crate::output::progress_bar::get_progress_bar;
 use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
+use crate::util::statistics::mean;
 use crate::util::units::Second;
 
 use super::measurement::Measurement;
 
 use anyhow::{bail, Context, Result};
-use statistical::mean;
 
 pub enum BenchmarkIteration {
     NonBenchmarkRun,

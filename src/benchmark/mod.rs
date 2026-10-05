@@ -20,13 +20,13 @@ use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
 use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
+use crate::util::statistics::{mean, median, standard_deviation};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
 use measurement::Measurement;
 
 use anyhow::{anyhow, Result};
 use colored::*;
-use statistical::{mean, median, standard_deviation};
 
 use self::executor::Executor;
 
@@ -339,7 +339,7 @@ impl<'a> Benchmark<'a> {
         let t_num = times_real.len();
         let t_mean = mean(&times_real);
         let t_stddev = if times_real.len() > 1 {
-            Some(standard_deviation(&times_real, Some(t_mean)))
+            Some(standard_deviation(&times_real, t_mean))
         } else {
             None
         };
