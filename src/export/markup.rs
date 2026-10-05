@@ -52,7 +52,7 @@ pub trait MarkupExporter {
             // prepare data row strings
             let cmd_str = result.command_with_unused_parameters().replace('|', "\\|");
             let mean_str = format_duration_value(result.mean_wall_clock_time(), Some(unit)).0;
-            let stddev_str = if let Some(stddev) = result.runs.stddev() {
+            let stddev_str = if let Some(stddev) = result.measurements.stddev() {
                 format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
             } else {
                 "".into()

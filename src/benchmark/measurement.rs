@@ -1,29 +1,33 @@
-use std::process::ExitStatus;
+use serde::Serialize;
 
-use crate::quantity::statistics::{max, mean, median, min, modified_zscores, standard_deviation};
-use crate::quantity::{Information, Time};
+use statistical::{mean, median, standard_deviation};
 
-/// Performance measurements and exit status from running a single command
-#[derive(Debug, Default, Copy, Clone, PartialEq)]
+use crate::util::units::Second;
+use crate::{
+    outlier_detection::modified_zscores,
+    util::min_max::{max, min},
+};
+
+/// Performance metric measurements and exit code for a single run
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct Measurement {
-    /// Wall clock time
-    pub time_wall_clock: Time,
+    /// Elapsed wall clock time (real time)
+    pub wall_clock_time: Second,
 
     /// Time spent in user mode
-    pub time_user: Time,
+    pub user_time: Second,
 
     /// Time spent in kernel mode
-    pub time_system: Time,
+    pub system_time: Second,
 
-    /// Maximum amount of memory used
-    pub peak_memory_usage: Information,
+    /// Maximum memory usage of the process, in bytes
+    pub memory_usage_byte: u64,
 
-    /// The exit status of the process
-    pub exit_status: ExitStatus,
+    /// Exit codes of the process
+    pub exit_code: Option<i32>,
 }
 
-/// Performance measurements and exit statuses for all runs of a command.
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct Measurements {
     pub measurements: Vec<Measurement>,
 }
@@ -45,54 +49,69 @@ impl Measurements {
         self.measurements.push(measurement);
     }
 
-    pub fn wall_clock_times(&self) -> impl Iterator<Item = Time> + '_ {
-        self.measurements.iter().map(|m| m.time_wall_clock)
+    pub fn wall_clock_times(&self) -> Vec<Second> {
+        self.measurements
+            .iter()
+            .map(|m| m.wall_clock_time)
+            .collect()
     }
 
-    /// The average wall clock time.
-    pub fn time_wall_clock_mean(&self) -> Time {
-        mean(self.wall_clock_times())
+    /// The average wall clock time
+    pub fn mean(&self) -> Second {
+        mean(&self.wall_clock_times())
     }
 
     /// The standard deviation of all wall clock times. Not available if only one run has been performed
-    pub fn stddev(&self) -> Option<Time> {
-        let times: Vec<_> = self.wall_clock_times().collect(); // TODO: Avoid collecting
+    pub fn stddev(&self) -> Option<Second> {
+        let times = self.wall_clock_times();
 
-        if times.len() < 2 {
-            None
+        let t_mean = mean(&times);
+        if times.len() > 1 {
+            Some(standard_deviation(&times, Some(t_mean)))
         } else {
-            Some(standard_deviation(times))
+            None
         }
     }
 
-    /// The median wall clock time.
-    pub fn median(&self) -> Time {
-        median(self.wall_clock_times())
+    /// The median wall clock time
+    pub fn median(&self) -> Second {
+        median(&self.wall_clock_times())
     }
 
-    /// The minimum wall clock time.
-    pub fn min(&self) -> Time {
-        min(self.wall_clock_times())
+    /// The minimum wall clock time
+    pub fn min(&self) -> Second {
+        min(&self.wall_clock_times())
     }
 
-    /// The maximum wall clock time.
-    pub fn max(&self) -> Time {
-        max(self.wall_clock_times())
+    /// The maximum wall clock time
+    pub fn max(&self) -> Second {
+        max(&self.wall_clock_times())
     }
 
-    /// Compute modified Z-scores for the wall clock times.
+    /// The average user time
+    pub fn user_mean(&self) -> Second {
+        mean(
+            &self
+                .measurements
+                .iter()
+                .map(|m| m.user_time)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    /// The average system time
+    pub fn system_mean(&self) -> Second {
+        mean(
+            &self
+                .measurements
+                .iter()
+                .map(|m| m.system_time)
+                .collect::<Vec<_>>(),
+        )
+    }
+
     pub fn modified_zscores(&self) -> Vec<f64> {
-        modified_zscores(&self.wall_clock_times().collect::<Vec<_>>())
-    }
-
-    /// The average user time.
-    pub fn time_user_mean(&self) -> Time {
-        mean(self.measurements.iter().map(|m| m.time_user))
-    }
-
-    /// The average system time.
-    pub fn time_system_mean(&self) -> Time {
-        mean(self.measurements.iter().map(|m| m.time_system))
+        modified_zscores(&self.wall_clock_times())
     }
 
     pub fn peak_memory_usage_mean(&self) -> Information {
