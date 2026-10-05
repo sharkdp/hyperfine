@@ -780,6 +780,22 @@ fn performs_all_benchmarks_in_parameter_scan() {
 }
 
 #[test]
+fn rejects_negative_parameter_steps() {
+    for step in ["-1", "-1.0"] {
+        hyperfine()
+            .args(["--parameter-scan", "n", "0", "1"])
+            .arg(format!("--parameter-step-size={step}"))
+            .arg("echo {n}")
+            .assert()
+            .code(1)
+            .stdout(predicate::str::is_empty())
+            .stderr(predicate::str::contains(
+                "Parameter step size must be positive",
+            ));
+    }
+}
+
+#[test]
 fn performs_reference_and_all_benchmarks_in_parameter_scan() {
     let _settings = snapshot_settings().bind_to_scope();
     assert_cmd_snapshot!(hyperfine_debug()

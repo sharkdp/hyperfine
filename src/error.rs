@@ -19,6 +19,8 @@ pub enum ParameterScanError {
     TooLarge,
     #[error("Zero is not a valid parameter step")]
     ZeroStep,
+    #[error("Parameter step size must be positive")]
+    NegativeStep,
     #[error("A step size is required when the range bounds are floating point numbers. The step size can be specified with the '-D/--parameter-step-size <DELTA>' parameter")]
     StepRequired,
     #[error("'--command-name' has been specified {0} times. It has to appear exactly once, or exactly {1} times (number of benchmarks)")]
