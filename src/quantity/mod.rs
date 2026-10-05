@@ -1,9 +1,12 @@
 use core::f64;
 use std::marker::PhantomData;
+use std::ops::AddAssign;
+use std::ops::Div;
 
 use serde::ser::SerializeStruct;
 use serde::Serializer;
 
+use uom::num_traits;
 use uom::si;
 pub use uom::si::information::{byte, gibibyte, kibibyte, mebibyte, tebibyte};
 pub use uom::si::ratio::ratio;
@@ -173,10 +176,40 @@ macro_rules! quantity_fn {
     };
 }
 
-quantity_fn!(mean, values, statistical::mean(&values));
+/// A max function that assumes no NaNs and at least one element
+pub fn max<V: PartialOrd>(values: impl IntoIterator<Item = V>) -> V {
+    values
+        .into_iter()
+        .max_by(|a, b| a.partial_cmp(b).expect("No NaN values"))
+        .expect("'max' requires at least one element")
+}
+
+/// A min function that assumes no NaNs and at least one element
+pub fn min<V: PartialOrd>(values: impl IntoIterator<Item = V>) -> V {
+    values
+        .into_iter()
+        .min_by(|a, b| a.partial_cmp(b).expect("No NaN values"))
+        .expect("'min' requires at least one element")
+}
+
+/// A mean function that assumes at least one element
+pub fn mean<Q, P>(values: impl IntoIterator<Item = Q>) -> Q
+where
+    Q: AddAssign + num_traits::Zero + Div<Ratio, Output = P>,
+    P: Into<Q>,
+{
+    let mut sum = Q::zero();
+    let mut count = 0;
+    for value in values {
+        sum += value;
+        count += 1;
+    }
+
+    let count = Ratio::new::<ratio>(count as f64);
+    (sum / count).into()
+}
+
 quantity_fn!(median, values, statistical::median(&values));
-quantity_fn!(min, values, crate::util::min_max::min(&values));
-quantity_fn!(max, values, crate::util::min_max::max(&values));
 quantity_fn!(standard_deviation, values, {
     let mean_value = statistical::mean(&values);
     statistical::standard_deviation(&values, Some(mean_value))
@@ -185,6 +218,15 @@ quantity_fn!(standard_deviation, values, {
 pub fn modified_zscores<Q: UnsafeRawValue>(values: &[Q]) -> Vec<f64> {
     let values: Vec<_> = values.iter().map(|q| q.unsafe_raw_value()).collect();
     crate::outlier_detection::modified_zscores(&values)
+}
+
+#[test]
+fn test_max() {
+    assert_eq!(1.0, max([1.0]));
+    assert_eq!(-1.0, max([-1.0]));
+    assert_eq!(-1.0, max([-2.0, -1.0]));
+    assert_eq!(1.0, max([-1.0, 1.0]));
+    assert_eq!(1.0, max([-1.0, 1.0, 0.0]));
 }
 
 #[test]
@@ -234,7 +276,7 @@ fn test_mean() {
         Time::new::<millisecond>(123.4),
         Time::new::<millisecond>(234.5),
     ];
-    let result = mean(&values);
+    let result = mean(values.into_iter());
     assert_eq!(result.format(TimeUnit::MilliSecond), "178.9 ms");
 }
 
@@ -270,4 +312,32 @@ fn test_format_duration_unit_with_unit() {
 
     let out = Time::new::<second>(1.3).format(TimeUnit::MicroSecond);
     assert_eq!("1300000.0 µs", out);
+}
+
+#[test]
+fn statistics() {
+    let values = vec![
+        Time::new::<second>(1.0),
+        Time::new::<second>(2.0),
+        Time::new::<second>(3.0),
+    ];
+
+    assert_eq!(
+        mean(values.iter().copied()).format(TimeUnit::Second),
+        "2.000 s"
+    );
+    assert_eq!(median(&values).format(TimeUnit::Second), "2.000 s");
+    assert_eq!(min(&values).format(TimeUnit::Second), "1.000 s");
+    assert_eq!(max(&values).format(TimeUnit::Second), "3.000 s");
+    assert_eq!(
+        standard_deviation(&values).format(TimeUnit::Second),
+        "1.000 s"
+    );
+
+    let values = vec![
+        Information::new::<byte>(1.0),
+        Information::new::<byte>(2.0),
+        Information::new::<byte>(3.0),
+    ];
+    mean(values.iter().copied()).format(InformationUnit::Byte);
 }
