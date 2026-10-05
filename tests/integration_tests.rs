@@ -112,7 +112,7 @@ fn json_memory_availability_matches_platform() {
     assert!(output.status.success());
     let export: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     let measurement = &export["results"][0]["measurements"][0];
-    let memory = measurement.get("peak_memory_usage");
+    let memory = measurement.get("memory_peak_resident");
     if cfg!(windows) {
         assert!(memory.is_none(), "unavailable memory must be omitted");
     } else {

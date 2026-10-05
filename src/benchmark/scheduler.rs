@@ -215,7 +215,7 @@ fn scheduler_basic() -> Result<()> {
           time_system:
             value: 0
             unit: second
-          peak_memory_usage:
+          memory_peak_resident:
             value: 0
             unit: byte
           exit_code: 0
@@ -228,7 +228,7 @@ fn scheduler_basic() -> Result<()> {
           time_system:
             value: 0
             unit: second
-          peak_memory_usage:
+          memory_peak_resident:
             value: 0
             unit: byte
           exit_code: 0
@@ -243,7 +243,7 @@ fn scheduler_basic() -> Result<()> {
           time_system:
             value: 0
             unit: second
-          peak_memory_usage:
+          memory_peak_resident:
             value: 0
             unit: byte
           exit_code: 0
@@ -256,7 +256,7 @@ fn scheduler_basic() -> Result<()> {
           time_system:
             value: 0
             unit: second
-          peak_memory_usage:
+          memory_peak_resident:
             value: 0
             unit: byte
           exit_code: 0

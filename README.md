@@ -165,14 +165,14 @@ The JSON export includes the following metrics for each measured run (excluding 
 | `time_wall_clock` | second | Elapsed time, including time spent waiting or descheduled. Available on all platforms. |
 | `time_user` | second | CPU time spent in user mode, accumulated across threads. On Unix, includes descendants whose usage propagates through parents waiting for them. On Windows, includes processes associated with the benchmark's job object. |
 | `time_system` | second | CPU time spent in kernel mode, with the same process accounting as `time_user`. |
-| `peak_memory_usage` | byte | Peak resident set size (RSS) on Linux and macOS; omitted on Windows. This is the largest per-process peak among the command and descendants whose usage is collected by waiting for them, **not the simultaneous total memory of the process tree**. Linux's KiB counter and macOS's byte counter are both exported in bytes. On macOS, this is RSS, not Apple's separate memory-footprint metric. |
+| `memory_peak_resident` | byte | Peak resident set size (RSS) on Linux and macOS; omitted on Windows. This is the largest per-process peak among the command and descendants whose usage is collected by waiting for them, **not the simultaneous total memory of the process tree**. Linux's KiB counter and macOS's byte counter are both exported in bytes. On macOS, this is RSS, not Apple's separate memory-footprint metric. |
 
 Metrics unavailable on a platform are omitted, rather than reported as zero. Time values are always
 exported in seconds, regardless of `--time-unit`. When using a shell, the estimated shell startup
 CPU and wall-clock times are subtracted; memory usage is not adjusted.
 
 For example, two concurrent worker processes that each use 128 MiB can produce a
-`peak_memory_usage` of about 128 MiB, even though their combined memory use is about 256 MiB.
+`memory_peak_resident` of about 128 MiB, even though their combined memory use is about 256 MiB.
 Threads share a process's address space and are covered by its RSS measurement.
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. The

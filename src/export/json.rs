@@ -37,13 +37,16 @@ struct BenchmarkSummary {
     time_user: StatisticalSummary,
     time_system: StatisticalSummary,
     #[serde(skip_serializing_if = "Option::is_none")]
-    peak_memory_usage: Option<StatisticalSummary>,
+    memory_peak_resident: Option<StatisticalSummary>,
 }
 
 impl BenchmarkSummary {
     fn from_measurements(measurements: &Measurements) -> Self {
         let values = &measurements.measurements;
-        let mut memory_values = values.iter().filter_map(|m| m.peak_memory_usage).peekable();
+        let mut memory_values = values
+            .iter()
+            .filter_map(|m| m.memory_peak_resident)
+            .peekable();
         Self {
             time_wall_clock: StatisticalSummary::from_values(
                 values.iter().map(|m| m.time_wall_clock),
@@ -54,7 +57,7 @@ impl BenchmarkSummary {
                 values.iter().map(|m| m.time_system),
                 second,
             ),
-            peak_memory_usage: memory_values
+            memory_peak_resident: memory_values
                 .peek()
                 .is_some()
                 .then(|| StatisticalSummary::from_values(memory_values, byte)),
@@ -188,7 +191,7 @@ fn test_json_optional_memory() {
             command: "example".into(),
             name: None,
             measurements: Measurements::new(vec![Measurement {
-                peak_memory_usage: memory,
+                memory_peak_resident: memory,
                 ..Measurement::default()
             }]),
             ..BenchmarkResult::default()
@@ -233,11 +236,11 @@ fn test_json_optional_memory() {
         }
         if let Some(memory) = expected_memory {
             let value = memory["value"].clone();
-            expected["results"][0]["summary"]["peak_memory_usage"] = json!({
+            expected["results"][0]["summary"]["memory_peak_resident"] = json!({
                 "unit": "byte", "count": 1, "mean": value,
                 "stddev": null, "median": value, "min": value, "max": value
             });
-            expected["results"][0]["measurements"][0]["peak_memory_usage"] = memory;
+            expected["results"][0]["measurements"][0]["memory_peak_resident"] = memory;
         }
         assert_eq!(actual, expected);
     }
@@ -313,7 +316,7 @@ fn test_json_summary_metrics_and_missing_samples() {
                 time_wall_clock: Time::new::<second>(time),
                 time_user: Time::new::<second>(time * 2.0),
                 time_system: Time::new::<second>(time * 3.0),
-                peak_memory_usage: memory.map(Information::new::<byte>),
+                memory_peak_resident: memory.map(Information::new::<byte>),
                 ..Measurement::default()
             })
             .collect(),
@@ -334,7 +337,7 @@ fn test_json_summary_metrics_and_missing_samples() {
                 "unit": "second", "count": 3, "mean": 6.0, "stddev": 3.0,
                 "median": 6.0, "min": 3.0, "max": 9.0
             },
-            "peak_memory_usage": {
+            "memory_peak_resident": {
                 "unit": "byte", "count": 2, "mean": 2048.0,
                 "stddev": 1024.0 * 2.0_f64.sqrt(),
                 "median": 2048.0, "min": 1024.0, "max": 3072.0

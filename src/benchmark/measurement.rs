@@ -49,7 +49,7 @@ pub struct Measurement {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serialize_optional_information"
     )]
-    pub peak_memory_usage: Option<Information>,
+    pub memory_peak_resident: Option<Information>,
 
     // The exit status of the process
     #[serde(rename = "exit_code", serialize_with = "serialize_exit_status")]

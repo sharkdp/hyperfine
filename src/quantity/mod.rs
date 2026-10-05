@@ -222,11 +222,11 @@ fn test_format() {
     assert_eq!(time.format_auto(), "123.4 ms");
     assert_eq!(time.format(TimeUnit::MicroSecond), "123400.0 µs");
 
-    let peak_memory_usage = Information::new::<kibibyte>(8.);
-    assert_eq!(peak_memory_usage.format_auto(), "8.0 KiB");
-    assert_eq!(peak_memory_usage.format(InformationUnit::Byte), "8192 B");
+    let memory_peak_resident = Information::new::<kibibyte>(8.);
+    assert_eq!(memory_peak_resident.format_auto(), "8.0 KiB");
+    assert_eq!(memory_peak_resident.format(InformationUnit::Byte), "8192 B");
     assert_eq!(
-        peak_memory_usage.format(InformationUnit::KibiByte),
+        memory_peak_resident.format(InformationUnit::KibiByte),
         "8.0 KiB"
     );
 }
