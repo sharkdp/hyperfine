@@ -1,10 +1,10 @@
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::benchmark::measurement::{Measurement, Measurements};
-use crate::benchmark::quantity::{Information, InformationQuantity, Time, TimeQuantity};
 use crate::export::asciidoc::AsciidocExporter;
 use crate::export::orgmode::OrgmodeExporter;
-use crate::quantity::{byte, second, Information, Time, TimeUnit, Zero};
+use crate::quantity::{Information, InformationQuantity, Time, TimeQuantity};
+use crate::util::units::Unit;
 use crate::{export::markdown::MarkdownExporter, options::SortOrder};
 use std::collections::BTreeMap;
 use std::process::ExitStatus;

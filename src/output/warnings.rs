@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::benchmark::quantity::{millisecond, Time, TimeQuantity};
 use crate::benchmark::MIN_EXECUTION_TIME;
 use crate::output::format::format_duration;
+use crate::quantity::{millisecond, Time, TimeQuantity};
 
 pub struct OutlierWarningOptions {
     pub warmup_in_use: bool,

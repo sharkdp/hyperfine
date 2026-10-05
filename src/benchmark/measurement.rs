@@ -2,11 +2,11 @@ use std::process::ExitStatus;
 
 use serde::Serialize;
 
-use crate::benchmark::quantity::{
+use crate::outlier_detection::modified_zscores;
+use crate::quantity::{
     max, mean, median, min, second, serialize_information, serialize_time, standard_deviation,
     Information, Time, TimeQuantity,
 };
-use crate::outlier_detection::modified_zscores;
 use crate::util::exit_code::extract_exit_code;
 
 fn serialize_exit_status<S>(exit_status: &ExitStatus, serializer: S) -> Result<S::Ok, S::Error>
