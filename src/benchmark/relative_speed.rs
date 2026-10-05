@@ -1,7 +1,10 @@
 use std::cmp::Ordering;
 
 use super::benchmark_result::BenchmarkResult;
-use crate::{benchmark::quantity::Second, options::SortOrder};
+use crate::{
+    benchmark::quantity::{self, Ratio, Time, TimeQuantity},
+    options::SortOrder,
+};
 
 #[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
@@ -52,8 +55,8 @@ fn compute_relative_speeds<'a>(
             let is_reference = std::ptr::eq(result, reference);
             let relative_ordering = compare_mean_time(result, reference);
 
-            if result.mean_wall_clock_time() == Second::zero()
-                || reference.mean_wall_clock_time() == Second::zero()
+            if result.mean_wall_clock_time() == Time::zero()
+                || reference.mean_wall_clock_time() == Time::zero()
             {
                 return BenchmarkResultWithRelativeSpeed {
                     result,
@@ -66,7 +69,7 @@ fn compute_relative_speeds<'a>(
 
             let ratio = match relative_ordering {
                 Ordering::Less => reference.mean_wall_clock_time() / result.mean_wall_clock_time(),
-                Ordering::Equal => 1.0,
+                Ordering::Equal => Ratio::new::<quantity::ratio>(1.0),
                 Ordering::Greater => {
                     result.mean_wall_clock_time() / reference.mean_wall_clock_time()
                 }
@@ -114,8 +117,8 @@ pub fn compute_with_check_from_reference<'a>(
     reference: &'a BenchmarkResult,
     sort_order: SortOrder,
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
-    if fastest_of(results).mean_wall_clock_time() == Second::zero()
-        || reference.mean_wall_clock_time() == Second::zero()
+    if fastest_of(results).mean_wall_clock_time() == Time::zero()
+        || reference.mean_wall_clock_time() == Time::zero()
     {
         return None;
     }
@@ -129,7 +132,7 @@ pub fn compute_with_check(
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'_>>> {
     let fastest = fastest_of(results);
 
-    if fastest.mean_wall_clock_time() == Second::zero() {
+    if fastest.mean_wall_clock_time() == Time::zero() {
         return None;
     }
 
@@ -152,17 +155,17 @@ fn create_result(name: &str, mean: f64) -> BenchmarkResult {
 
     use crate::benchmark::{
         measurement::{Measurement, Measurements},
-        quantity::Byte,
+        quantity::{Information, InformationQuantity},
     };
 
     BenchmarkResult {
         command: name.into(),
         measurements: Measurements {
             measurements: vec![Measurement {
-                time_wall_clock: Second::new(mean),
-                time_user: Second::new(mean),
-                time_system: Second::zero(),
-                peak_memory_usage: Byte::new(1024),
+                time_wall_clock: Time::from_seconds(mean),
+                time_user: Time::from_seconds(mean),
+                time_system: Time::zero(),
+                peak_memory_usage: Information::from_bytes(1024),
                 exit_status: ExitStatus::default(),
             }],
         },

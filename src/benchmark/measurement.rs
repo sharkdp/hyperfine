@@ -2,7 +2,10 @@ use std::process::ExitStatus;
 
 use serde::Serialize;
 
-use crate::benchmark::quantity::{max, mean, median, min, standard_deviation, Byte, Second};
+use crate::benchmark::quantity::{
+    max, mean, median, min, second, serialize_information, serialize_time, standard_deviation,
+    Information, Time, TimeQuantity,
+};
 use crate::outlier_detection::modified_zscores;
 use crate::util::exit_code::extract_exit_code;
 
@@ -20,16 +23,20 @@ where
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 pub struct Measurement {
     /// Elapsed wall clock time (real time)
-    pub time_wall_clock: Second,
+    #[serde(serialize_with = "serialize_time")]
+    pub time_wall_clock: Time,
 
     /// Time spent in user mode
-    pub time_user: Second,
+    #[serde(serialize_with = "serialize_time")]
+    pub time_user: Time,
 
     /// Time spent in kernel mode
-    pub time_system: Second,
+    #[serde(serialize_with = "serialize_time")]
+    pub time_system: Time,
 
     /// Maximum memory usage of the process
-    pub peak_memory_usage: Byte,
+    #[serde(serialize_with = "serialize_information")]
+    pub peak_memory_usage: Information,
 
     // The exit status of the process
     #[serde(rename = "exit_code", serialize_with = "serialize_exit_status")]
@@ -58,7 +65,7 @@ impl Measurements {
         self.measurements.push(measurement);
     }
 
-    pub fn wall_clock_times(&self) -> Vec<Second> {
+    pub fn wall_clock_times(&self) -> Vec<Time> {
         self.measurements
             .iter()
             .map(|m| m.time_wall_clock)
@@ -66,12 +73,12 @@ impl Measurements {
     }
 
     /// The average wall clock time
-    pub fn time_wall_clock_mean(&self) -> Second {
+    pub fn time_wall_clock_mean(&self) -> Time {
         mean(&self.wall_clock_times())
     }
 
     /// The standard deviation of all wall clock times. Not available if only one run has been performed
-    pub fn stddev(&self) -> Option<Second> {
+    pub fn stddev(&self) -> Option<Time> {
         let times = self.wall_clock_times();
 
         if times.len() < 2 {
@@ -82,22 +89,22 @@ impl Measurements {
     }
 
     /// The median wall clock time
-    pub fn median(&self) -> Second {
+    pub fn median(&self) -> Time {
         median(&self.wall_clock_times())
     }
 
     /// The minimum wall clock time
-    pub fn min(&self) -> Second {
+    pub fn min(&self) -> Time {
         min(&self.wall_clock_times())
     }
 
     /// The maximum wall clock time
-    pub fn max(&self) -> Second {
+    pub fn max(&self) -> Time {
         max(&self.wall_clock_times())
     }
 
     /// The average user time
-    pub fn time_user_mean(&self) -> Second {
+    pub fn time_user_mean(&self) -> Time {
         mean(
             &self
                 .measurements
@@ -108,7 +115,7 @@ impl Measurements {
     }
 
     /// The average system time
-    pub fn time_system_mean(&self) -> Second {
+    pub fn time_system_mean(&self) -> Time {
         mean(
             &self
                 .measurements
@@ -118,7 +125,7 @@ impl Measurements {
         )
     }
 
-    pub fn peak_memory_usage_mean(&self) -> Byte {
+    pub fn peak_memory_usage_mean(&self) -> Information {
         self.measurements
             .iter()
             .map(|m| m.peak_memory_usage)
@@ -131,7 +138,7 @@ impl Measurements {
             &self
                 .wall_clock_times()
                 .iter()
-                .map(|t| t.value_in::<Second>()) // TODO
+                .map(|t| t.value_in::<second>()) // TODO
                 .collect::<Vec<_>>(),
         )
     }
