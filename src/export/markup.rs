@@ -1,8 +1,7 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::options::SortOrder;
-use crate::output::format::format_duration_value;
-use crate::util::units::Unit;
+use crate::quantity::{format_duration_value, TimeUnit};
 
 use super::Exporter;
 use anyhow::Result;
@@ -13,7 +12,11 @@ pub enum Alignment {
 }
 
 pub trait MarkupExporter {
-    fn table_results(&self, entries: &[BenchmarkResultWithRelativeSpeed], unit: Unit) -> String {
+    fn table_results(
+        &self,
+        entries: &[BenchmarkResultWithRelativeSpeed],
+        unit: TimeUnit,
+    ) -> String {
         // prepare table header strings
         let notation = format!("[{}]", unit.short_name());
 
@@ -95,13 +98,13 @@ pub trait MarkupExporter {
     fn command(&self, size: &str) -> String;
 }
 
-fn determine_unit_from_results(results: &[BenchmarkResult]) -> Unit {
+fn determine_unit_from_results(results: &[BenchmarkResult]) -> TimeUnit {
     if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
         format_duration_value(first_result.mean, None).1
     } else {
         // Default to `Second`.
-        Unit::Second
+        TimeUnit::Second
     }
 }
 
@@ -109,7 +112,7 @@ impl<T: MarkupExporter> Exporter for T {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<Unit>,
+        unit: Option<TimeUnit>,
         sort_order: SortOrder,
     ) -> Result<Vec<u8>> {
         let unit = unit.unwrap_or_else(|| determine_unit_from_results(results));

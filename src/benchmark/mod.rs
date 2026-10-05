@@ -14,11 +14,12 @@ use crate::options::{
 };
 use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::console_writeln;
-use crate::output::format::{format_duration, format_duration_unit};
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{byte, const_time_from_seconds, ratio, second, Time, Zero};
+use crate::quantity::{
+    byte, const_time_from_seconds, format_duration, format_duration_unit, ratio, second, Time, Zero,
+};
 use crate::util::exit_code::extract_exit_code;
 use benchmark_result::BenchmarkResult;
 use measurement::{Measurement, Measurements};

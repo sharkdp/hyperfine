@@ -106,6 +106,31 @@ pub fn standard_deviation<Q: UnsafeRawValue>(values: &[Q], mean: Q) -> Q {
     Q::unsafe_from_raw_value((sum / (values.len() as f64 - 1.0)).sqrt())
 }
 
+/// Compute modifized Z-scores for a given sample. A (unmodified) Z-score is defined by
+/// `(x_i - x_mean)/x_stddev` whereas the modified Z-score is defined by `(x_i - x_median)/MAD`
+/// where MAD is the median absolute deviation.
+///
+/// References:
+/// - <https://en.wikipedia.org/wiki/Median_absolute_deviation>
+pub fn modified_zscores(xs: &[f64]) -> Vec<f64> {
+    assert!(!xs.is_empty());
+
+    // Compute sample median:
+    let x_median = median(xs.iter().copied());
+
+    // Compute the absolute deviations from the median:
+    let deviations: Vec<f64> = xs.iter().map(|x| (x - x_median).abs()).collect();
+
+    // Compute median absolute deviation:
+    let mad = median(deviations.iter().copied());
+
+    // Handle MAD == 0 case
+    let mad = if mad > 0.0 { mad } else { f64::EPSILON };
+
+    // Compute modified Z-scores (x_i - x_median) / MAD
+    xs.iter().map(|&x| (x - x_median) / mad).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

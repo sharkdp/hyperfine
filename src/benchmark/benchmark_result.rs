@@ -2,8 +2,6 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::util::units::Second;
-
 /// Set of values that will be exported.
 // NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
 // `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
@@ -18,29 +16,29 @@ pub struct BenchmarkResult {
     pub command_with_unused_parameters: String,
 
     /// The average run time
-    pub mean: Second,
+    pub mean: f64,
 
     /// The standard deviation of all run times. Not available if only one run has been performed
-    pub stddev: Option<Second>,
+    pub stddev: Option<f64>,
 
     /// The median run time
-    pub median: Second,
+    pub median: f64,
 
     /// Time spent in user mode
-    pub user: Second,
+    pub user: f64,
 
     /// Time spent in kernel mode
-    pub system: Second,
+    pub system: f64,
 
     /// Minimum of all measured times
-    pub min: Second,
+    pub min: f64,
 
     /// Maximum of all measured times
-    pub max: Second,
+    pub max: f64,
 
     /// All run time measurements
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub times: Option<Vec<Second>>,
+    pub times: Option<Vec<f64>>,
 
     /// Maximum memory usage of the process, in bytes
     #[serde(skip_serializing_if = "Option::is_none")]
