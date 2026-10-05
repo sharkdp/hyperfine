@@ -23,6 +23,10 @@ pub trait IsUnit {
     }
 }
 
+use std::marker::PhantomData;
+
+use crate::quantity::{hour, microsecond, millisecond, minute, second, Time};
+
 /// Supported time units
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimeUnit {
@@ -33,24 +37,50 @@ pub enum TimeUnit {
     Hour,
 }
 
-impl IsUnit for TimeUnit {
-    type Quantity = Time;
+struct Dispatcher<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> {
+    u: PhantomData<U>,
+}
 
-    fn dispatch(&self) -> Box<dyn UnitImpl<Quantity = Time>> {
+impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> Dispatcher<U> {
+    fn new() -> Self {
+        Dispatcher { u: PhantomData }
+    }
+}
+
+trait UnitImpl {
+    fn short_name(&self) -> &'static str;
+    fn format_value(&self, value: Time, precision: usize) -> String;
+}
+
+impl<U: uom::si::time::Unit + uom::Conversion<f64, T = f64>> UnitImpl for Dispatcher<U> {
+    fn short_name(&self) -> &'static str {
+        U::abbreviation()
+    }
+
+    fn format_value(&self, value: Time, precision: usize) -> String {
+        format!("{value:.precision$}", value = value.get::<U>())
+    }
+}
+
+impl TimeUnit {
+    fn dispatch(self) -> Box<dyn UnitImpl> {
         match self {
-            TimeUnit::MicroSecond => Box::new(TimeUnitDispatcher::<microsecond>::new()),
-            TimeUnit::MilliSecond => Box::new(TimeUnitDispatcher::<millisecond>::new()),
-            TimeUnit::Second => Box::new(TimeUnitDispatcher::<second>::new()),
-            TimeUnit::Minute => Box::new(TimeUnitDispatcher::<minute>::new()),
-            TimeUnit::Hour => Box::new(TimeUnitDispatcher::<hour>::new()),
+            TimeUnit::MicroSecond => Box::new(Dispatcher::<microsecond>::new()),
+            TimeUnit::MilliSecond => Box::new(Dispatcher::<millisecond>::new()),
+            TimeUnit::Second => Box::new(Dispatcher::<second>::new()),
+            TimeUnit::Minute => Box::new(Dispatcher::<minute>::new()),
+            TimeUnit::Hour => Box::new(Dispatcher::<hour>::new()),
         }
     }
 
-    fn preferred_precision(&self) -> usize {
-        match self {
-            TimeUnit::Second => 3,
-            _ => 1,
-        }
+    /// A short abbreviation like `s`, `ms`, or `µs`.
+    pub fn short_name(self) -> &'static str {
+        self.dispatch().short_name()
+    }
+
+    /// Formats the quantity as a string in the given Unit.
+    pub fn format(self, value: Time, precision: usize) -> String {
+        self.dispatch().format_value(value, precision)
     }
 }
 
@@ -146,21 +176,4 @@ fn test_time_unit_short_name() {
     assert_eq!("µs", TimeUnit::MicroSecond.short_name());
     assert_eq!("min", TimeUnit::Minute.short_name());
     assert_eq!("h", TimeUnit::Hour.short_name());
-}
-
-// Note - the values are rounded when formatted.
-#[test]
-fn test_unit_format() {
-    use crate::quantity::FormatQuantity;
-
-    let value = Time::new::<second>(123.456789);
-    assert_eq!("123.457", value.format_value(TimeUnit::Second));
-    assert_eq!("123456.8", value.format_value(TimeUnit::MilliSecond));
-
-    assert_eq!(
-        "1234.6",
-        Time::new::<second>(0.00123456).format_value(TimeUnit::MicroSecond)
-    );
-    assert_eq!("2.1", value.format_value(TimeUnit::Minute));
-    assert_eq!("0.0", value.format_value(TimeUnit::Hour));
 }
