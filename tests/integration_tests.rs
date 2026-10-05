@@ -930,6 +930,27 @@ fn invalid_command_options_preserve_export_files() {
 }
 
 #[test]
+fn markdown_export_preserves_backticks_and_pipes_in_command_names() {
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=none")
+        .arg("--export-markdown=-")
+        .arg("--command-name=echo `uname` | cat")
+        .arg("sleep 1"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+    |:---|---:|---:|---:|---:|
+    | `` echo `uname` \| cat `` | 1.000 ± 0.000 | 1.000 | 1.000 | 1.00 |
+
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn unused_parameters_are_shown_in_benchmark_name() {
     hyperfine()
         .arg("--runs=2")
