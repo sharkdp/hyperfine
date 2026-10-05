@@ -70,13 +70,13 @@ impl CPUTimer {
         Self {}
     }
 
-    pub fn stop(&self, child: Child) -> Result<(ExitStatus, Time, Time, Information)> {
+    pub fn stop(&self, child: Child) -> Result<(Time, Time, Information, ExitStatus)> {
         let (status, usage) = wait4(child)?;
         Ok((
-            status,
             usage.time_user,
             usage.time_system,
             usage.memory_usage,
+            status,
         ))
     }
 }

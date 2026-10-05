@@ -269,20 +269,20 @@ impl<'a> Benchmark<'a> {
         if let Some(bar) = progress_bar.as_ref() {
             start_initial_measurement(bar, Instant::now());
         }
-        let result = self.executor.run_command_and_measure(
+        let measurement = self.executor.run_command_and_measure(
             self.command,
             benchmark_iteration,
             None,
             output_policy,
         )?;
-        let success = result.exit_status.success();
+        let success = measurement.exit_status.success();
 
         if let Some(bar) = progress_bar.as_ref() {
             let time_unit = self
                 .options
                 .time_unit
-                .unwrap_or(result.time_wall_clock.suitable_unit());
-            let estimate = result.time_wall_clock.format(time_unit);
+                .unwrap_or(measurement.time_wall_clock.suitable_unit());
+            let estimate = measurement.time_wall_clock.format(time_unit);
             finish_initial_measurement(
                 bar,
                 format!("Current estimate: {}", estimate.to_string().green()),
@@ -296,7 +296,7 @@ impl<'a> Benchmark<'a> {
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (result.time_wall_clock
+            / (measurement.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
                 + conclusion_overhead))
@@ -316,13 +316,7 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        measurements.push(Measurement {
-            time_wall_clock: result.time_wall_clock,
-            time_user: result.time_user,
-            time_system: result.time_system,
-            peak_memory_usage: result.peak_memory_usage,
-            exit_status: result.exit_status,
-        });
+        measurements.push(measurement);
 
         all_succeeded = all_succeeded && success;
 
@@ -348,21 +342,14 @@ impl<'a> Benchmark<'a> {
 
             run_preparation_command(benchmark_iteration)?;
 
-            let result = self.executor.run_command_and_measure(
+            let measurement = self.executor.run_command_and_measure(
                 self.command,
                 benchmark_iteration,
                 None,
                 output_policy,
             )?;
-            let success = result.exit_status.success();
-
-            measurements.push(Measurement {
-                time_wall_clock: result.time_wall_clock,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                peak_memory_usage: result.peak_memory_usage,
-                exit_status: result.exit_status,
-            });
+            let success = measurement.exit_status.success();
+            measurements.push(measurement);
 
             all_succeeded = all_succeeded && success;
 
