@@ -735,18 +735,14 @@ fn command_sorted_comparison_and_markup_identify_reference() {
             1.50          sleep 3 (slower)
     ");
     let markdown = std::fs::read_to_string(export_path).unwrap();
-    for (command, relative) in [
-        ("baseline", "1.00 (reference)"),
-        ("sleep 1", "2.00 (faster)"),
-        ("sleep 2", "1.00 (same speed)"),
-        ("sleep 3", "1.50 (slower)"),
-    ] {
-        let row = markdown
-            .lines()
-            .find(|line| line.contains(command))
-            .unwrap();
-        assert!(row.ends_with(&format!("| {relative} |")), "{}", row);
-    }
+    insta::assert_snapshot!(markdown, @r"
+    | Command | Mean [s] | Min [s] | Max [s] | Relative |
+    |:---|---:|---:|---:|---:|
+    | `baseline` | 2.000 | 2.000 | 2.000 | 1.00 (reference) |
+    | `sleep 1` | 1.000 | 1.000 | 1.000 | 2.00 (faster) |
+    | `sleep 2` | 2.000 | 2.000 | 2.000 | 1.00 (same speed) |
+    | `sleep 3` | 3.000 | 3.000 | 3.000 | 1.50 (slower) |
+    ");
 
     // Equal zero times have no meaningful relative factor.
     let output = hyperfine_debug()
