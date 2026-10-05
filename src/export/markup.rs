@@ -1,7 +1,7 @@
 use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
 use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
 use crate::options::SortOrder;
-use crate::quantity::{format_duration_value, TimeUnit};
+use crate::quantity::{second, FormatQuantity, IsUnit, Time, TimeUnit};
 
 use super::Exporter;
 use anyhow::Result;
@@ -50,14 +50,14 @@ pub trait MarkupExporter {
             let cmd_str = measurement
                 .command_with_unused_parameters
                 .replace('|', "\\|");
-            let mean_str = format_duration_value(measurement.mean, Some(unit)).0;
+            let mean_str = Time::new::<second>(measurement.mean).format_value(unit);
             let stddev_str = if let Some(stddev) = measurement.stddev {
-                format!(" ± {}", format_duration_value(stddev, Some(unit)).0)
+                format!(" ± {}", Time::new::<second>(stddev).format_value(unit))
             } else {
                 "".into()
             };
-            let min_str = format_duration_value(measurement.min, Some(unit)).0;
-            let max_str = format_duration_value(measurement.max, Some(unit)).0;
+            let min_str = Time::new::<second>(measurement.min).format_value(unit);
+            let max_str = Time::new::<second>(measurement.max).format_value(unit);
             let rel_str = format!("{:.2}", entry.relative_speed);
             let rel_stddev_str = if entry.is_reference {
                 "".into()
@@ -101,7 +101,7 @@ pub trait MarkupExporter {
 fn determine_unit_from_results(results: &[BenchmarkResult]) -> TimeUnit {
     if let Some(first_result) = results.first() {
         // Use the first BenchmarkResult entry to determine the unit for all entries.
-        format_duration_value(first_result.mean, None).1
+        Time::new::<second>(first_result.mean).suitable_unit()
     } else {
         // Default to `Second`.
         TimeUnit::Second

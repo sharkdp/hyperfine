@@ -17,9 +17,7 @@ use crate::output::console_writeln;
 use crate::output::progress_bar::get_progress_bar;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{
-    byte, const_time_from_seconds, format_duration, format_duration_unit, ratio, second, Time, Zero,
-};
+use crate::quantity::{byte, const_time_from_seconds, ratio, second, FormatQuantity, Time, Zero};
 use crate::util::exit_code::extract_exit_code;
 use benchmark_result::BenchmarkResult;
 use measurement::{Measurement, Measurements};
@@ -294,10 +292,12 @@ impl<'a> Benchmark<'a> {
             run_preparation_command()?;
 
             let msg = {
-                let mean = format_duration(
-                    measurements.time_wall_clock_mean().get::<second>(),
-                    self.options.time_unit,
-                );
+                let t_wall_clock_mean = measurements.time_wall_clock_mean();
+                let time_unit = self
+                    .options
+                    .time_unit
+                    .unwrap_or(t_wall_clock_mean.suitable_unit());
+                let mean = t_wall_clock_mean.format(time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -340,14 +340,14 @@ impl<'a> Benchmark<'a> {
         let system_mean = measurements.time_system_mean();
 
         // Formatting and console output
-        let (mean_str, time_unit) =
-            format_duration_unit(t_mean.get::<second>(), self.options.time_unit);
-        let min_str = format_duration(t_min.get::<second>(), Some(time_unit));
-        let max_str = format_duration(t_max.get::<second>(), Some(time_unit));
+        let time_unit = self.options.time_unit.unwrap_or(t_mean.suitable_unit());
+        let mean_str = t_mean.format(time_unit);
+        let min_str = t_min.format(time_unit);
+        let max_str = t_max.format(time_unit);
         let num_str = format!("{t_num} runs");
 
-        let user_str = format_duration(user_mean.get::<second>(), Some(time_unit));
-        let system_str = format_duration(system_mean.get::<second>(), Some(time_unit));
+        let user_str = user_mean.format(time_unit);
+        let system_str = system_mean.format(time_unit);
 
         if self.options.output_style != OutputStyleOption::Disabled {
             let mut stdout = io::stdout().lock();
@@ -362,8 +362,7 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 )?;
             } else {
-                let stddev_str =
-                    format_duration(t_stddev.unwrap().get::<second>(), Some(time_unit));
+                let stddev_str = t_stddev.unwrap().format(time_unit);
 
                 console_writeln!(
                     stdout,
