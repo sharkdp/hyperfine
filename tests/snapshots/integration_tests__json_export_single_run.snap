@@ -1,0 +1,93 @@
+---
+source: tests/integration_tests.rs
+info:
+  program: hyperfine
+  args:
+    - "--debug-mode"
+    - "--style=none"
+    - "--export-json=-"
+    - "--runs=1"
+    - sleep 1
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+{
+  "schema_version": 2,
+  "metadata": {
+    "hyperfine_version": "[hyperfine_version]",
+    "start_time": "[start_time]",
+    "platform": {
+      "os": "[os]",
+      "architecture": "[architecture]"
+    }
+  },
+  "results": [
+    {
+      "command": "sleep 1",
+      "measurements": [
+        {
+          "time_wall_clock": {
+            "value": 1.0,
+            "unit": "second"
+          },
+          "time_user": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "time_system": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "memory_peak_resident": {
+            "value": 0.0,
+            "unit": "byte"
+          },
+          "exit_code": 0
+        }
+      ],
+      "summary": {
+        "time_wall_clock": {
+          "unit": "second",
+          "count": 1,
+          "mean": 1.0,
+          "stddev": null,
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "time_user": {
+          "unit": "second",
+          "count": 1,
+          "mean": 0.0,
+          "stddev": null,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "time_system": {
+          "unit": "second",
+          "count": 1,
+          "mean": 0.0,
+          "stddev": null,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "memory_peak_resident": {
+          "unit": "byte",
+          "count": 1,
+          "mean": 0.0,
+          "stddev": null,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    }
+  ]
+}
+
+
+----- stderr -----

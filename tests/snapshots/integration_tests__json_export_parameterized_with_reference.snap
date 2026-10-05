@@ -1,0 +1,211 @@
+---
+source: tests/integration_tests.rs
+info:
+  program: hyperfine
+  args:
+    - "--debug-mode"
+    - "--style=none"
+    - "--export-json=-"
+    - "--runs=2"
+    - "-L"
+    - duration
+    - "1,2"
+    - "--command-name=sleep for {duration} seconds"
+    - "--reference=sleep for 2 seconds"
+    - "sleep {duration}"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+{
+  "schema_version": 2,
+  "metadata": {
+    "hyperfine_version": "[hyperfine_version]",
+    "start_time": "[start_time]",
+    "platform": {
+      "os": "[os]",
+      "architecture": "[architecture]"
+    }
+  },
+  "results": [
+    {
+      "command": "sleep 1",
+      "name": "sleep for 1 seconds",
+      "measurements": [
+        {
+          "time_wall_clock": {
+            "value": 1.0,
+            "unit": "second"
+          },
+          "time_user": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "time_system": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "memory_peak_resident": {
+            "value": 0.0,
+            "unit": "byte"
+          },
+          "exit_code": 0
+        },
+        {
+          "time_wall_clock": {
+            "value": 1.0,
+            "unit": "second"
+          },
+          "time_user": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "time_system": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "memory_peak_resident": {
+            "value": 0.0,
+            "unit": "byte"
+          },
+          "exit_code": 0
+        }
+      ],
+      "parameters": {
+        "duration": {
+          "value": "1"
+        }
+      },
+      "summary": {
+        "time_wall_clock": {
+          "unit": "second",
+          "count": 2,
+          "mean": 1.0,
+          "stddev": 0.0,
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "time_user": {
+          "unit": "second",
+          "count": 2,
+          "mean": 0.0,
+          "stddev": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "time_system": {
+          "unit": "second",
+          "count": 2,
+          "mean": 0.0,
+          "stddev": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "memory_peak_resident": {
+          "unit": "byte",
+          "count": 2,
+          "mean": 0.0,
+          "stddev": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    },
+    {
+      "command": "sleep 2",
+      "name": "sleep for 2 seconds",
+      "measurements": [
+        {
+          "time_wall_clock": {
+            "value": 2.0,
+            "unit": "second"
+          },
+          "time_user": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "time_system": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "memory_peak_resident": {
+            "value": 0.0,
+            "unit": "byte"
+          },
+          "exit_code": 0
+        },
+        {
+          "time_wall_clock": {
+            "value": 2.0,
+            "unit": "second"
+          },
+          "time_user": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "time_system": {
+            "value": 0.0,
+            "unit": "second"
+          },
+          "memory_peak_resident": {
+            "value": 0.0,
+            "unit": "byte"
+          },
+          "exit_code": 0
+        }
+      ],
+      "parameters": {
+        "duration": {
+          "value": "2"
+        }
+      },
+      "is_reference": true,
+      "summary": {
+        "time_wall_clock": {
+          "unit": "second",
+          "count": 2,
+          "mean": 2.0,
+          "stddev": 0.0,
+          "median": 2.0,
+          "min": 2.0,
+          "max": 2.0
+        },
+        "time_user": {
+          "unit": "second",
+          "count": 2,
+          "mean": 0.0,
+          "stddev": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "time_system": {
+          "unit": "second",
+          "count": 2,
+          "mean": 0.0,
+          "stddev": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "memory_peak_resident": {
+          "unit": "byte",
+          "count": 2,
+          "mean": 0.0,
+          "stddev": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    }
+  ]
+}
+
+
+----- stderr -----

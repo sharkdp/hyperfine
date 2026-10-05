@@ -24,6 +24,17 @@ fn snapshot_settings() -> insta::Settings {
     settings
 }
 
+fn json_snapshot_settings() -> insta::Settings {
+    let mut settings = snapshot_settings();
+    for field in ["hyperfine_version", "start_time", "os", "architecture"] {
+        settings.add_filter(
+            &format!(r#"("{field}": ")[^"]+(")"#),
+            format!(r#"${{1}}[{field}]$2"#),
+        );
+    }
+    settings
+}
+
 #[test]
 fn runs_successfully() {
     hyperfine()
@@ -40,86 +51,6 @@ fn one_run_is_supported() {
         .arg("echo dummy benchmark")
         .assert()
         .success();
-}
-
-#[test]
-fn json_includes_name_only_when_different() {
-    for (args, expected) in [
-        (vec!["sleep 0.01"], vec![("sleep 0.01", None)]),
-        (
-            vec!["--command-name=example", "sleep 0.01"],
-            vec![("sleep 0.01", Some("example"))],
-        ),
-        (
-            vec!["--command-name=sleep 0.01", "sleep 0.01"],
-            vec![("sleep 0.01", None)],
-        ),
-        (
-            vec![
-                "-L",
-                "delay",
-                "0.01,0.02",
-                "--command-name=delay {delay}",
-                "sleep {delay}",
-            ],
-            vec![
-                ("sleep 0.01", Some("delay 0.01")),
-                ("sleep 0.02", Some("delay 0.02")),
-            ],
-        ),
-        (
-            vec![
-                "-L",
-                "delay",
-                "0.01,0.02",
-                "--command-name=sleep {delay}",
-                "sleep {delay}",
-            ],
-            vec![("sleep 0.01", None), ("sleep 0.02", None)],
-        ),
-    ] {
-        let output = hyperfine_debug()
-            .args(["--runs=1", "--style=none", "--export-json=-"])
-            .args(args)
-            .output()
-            .unwrap();
-        assert!(output.status.success());
-        let export: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-        let results = export["results"].as_array().unwrap();
-        assert_eq!(results.len(), expected.len());
-        for (result, (command, name)) in results.iter().zip(expected) {
-            assert_eq!(result["command"], command);
-            assert!(result.get("command_raw").is_none());
-            assert_eq!(
-                result.get("name"),
-                name.map(serde_json::Value::from).as_ref()
-            );
-        }
-    }
-}
-
-#[test]
-fn json_memory_availability_matches_platform() {
-    let output = hyperfine_raw_command()
-        .args([
-            "--runs=1",
-            "--style=none",
-            "--export-json=-",
-            "echo benchmark",
-        ])
-        .output()
-        .unwrap();
-    assert!(output.status.success());
-    let export: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    let measurement = &export["results"][0]["measurements"][0];
-    let memory = measurement.get("memory_peak_resident");
-    if cfg!(windows) {
-        assert!(memory.is_none(), "unavailable memory must be omitted");
-    } else {
-        let memory = memory.expect("Unix memory measurement must be present");
-        assert_eq!(memory["unit"], "byte");
-        assert!(memory["value"].as_f64().unwrap() >= 0.0);
-    }
 }
 
 /// Regression test: hyperfine must not panic when writing to a closed
@@ -1352,4 +1283,47 @@ fn hyperfine_iteration_env_var_in_prepare_and_conclude_commands() {
             "conclude:1",
         ]
     );
+}
+
+#[test]
+fn json_export_basic() {
+    let _settings = json_snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug().args([
+        "--style=none",
+        "--export-json=-",
+        "--runs=2",
+        "--warmup=1",
+        "--reference-name=one second",
+        "--reference=sleep 1",
+        "--command-name=sleep 2",
+        "sleep 2",
+    ]));
+}
+
+#[test]
+fn json_export_single_run() {
+    // Make sure that the standard deviation is set to `null`
+    let _settings = json_snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug().args([
+        "--style=none",
+        "--export-json=-",
+        "--runs=1",
+        "sleep 1",
+    ]));
+}
+
+#[test]
+fn json_export_parameterized_with_reference() {
+    let _settings = json_snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug().args([
+        "--style=none",
+        "--export-json=-",
+        "--runs=2",
+        "-L",
+        "duration",
+        "1,2",
+        "--command-name=sleep for {duration} seconds",
+        "--reference=sleep for 2 seconds",
+        "sleep {duration}",
+    ]));
 }

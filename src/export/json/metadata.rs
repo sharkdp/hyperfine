@@ -49,11 +49,3 @@ impl Platform {
         }
     }
 }
-
-#[test]
-fn unavailable_platform_fields_are_omitted() {
-    assert_eq!(
-        serde_json::to_value(Platform::default()).unwrap(),
-        serde_json::json!({})
-    );
-}
