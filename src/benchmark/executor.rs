@@ -7,11 +7,11 @@ use crate::options::{
     CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
 };
 use crate::output::progress_bar::get_progress_bar;
-use crate::timer::{execute_and_measure, TimerResult};
+use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
 use crate::util::units::Second;
 
-use super::timing_result::TimingResult;
+use super::measurement::Measurement;
 
 use anyhow::{bail, Context, Result};
 use statistical::mean;
@@ -40,7 +40,7 @@ pub trait Executor {
         iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<(TimingResult, ExitStatus)>;
+    ) -> Result<Measurement>;
 
     /// Perform a calibration of this executor. For example,
     /// when running commands through a shell, we need to
@@ -62,7 +62,7 @@ fn run_command_and_measure_common(
     command_input_policy: &CommandInputPolicy,
     command_output_policy: &CommandOutputPolicy,
     command_name: &str,
-) -> Result<TimerResult> {
+) -> Result<Measurement> {
     let stdin = command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
     command.stdin(stdin).stdout(stdout).stderr(stderr);
@@ -136,25 +136,15 @@ impl Executor for RawExecutor<'_> {
         iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<(TimingResult, ExitStatus)> {
-        let result = run_command_and_measure_common(
+    ) -> Result<Measurement> {
+        run_command_and_measure_common(
             command.get_command()?,
             iteration,
             command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
-        )?;
-
-        Ok((
-            TimingResult {
-                time_real: result.time_real,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                memory_usage_byte: result.memory_usage_byte,
-            },
-            result.status,
-        ))
+        )
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -169,7 +159,7 @@ impl Executor for RawExecutor<'_> {
 pub struct ShellExecutor<'a> {
     options: &'a Options,
     shell: &'a Shell,
-    shell_spawning_time: Option<TimingResult>,
+    shell_spawning_time: Option<Measurement>,
 }
 
 impl<'a> ShellExecutor<'a> {
@@ -189,7 +179,7 @@ impl Executor for ShellExecutor<'_> {
         iteration: BenchmarkIteration,
         command_failure_action: Option<CmdFailureAction>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<(TimingResult, ExitStatus)> {
+    ) -> Result<Measurement> {
         let on_windows_cmd = cfg!(windows) && *self.shell == Shell::Default("cmd.exe");
         let mut command_builder = self.shell.command();
         command_builder.arg(if on_windows_cmd { "/C" } else { "-c" });
@@ -218,15 +208,7 @@ impl Executor for ShellExecutor<'_> {
             result.time_system = (result.time_system - spawning_time.time_system).max(0.0);
         }
 
-        Ok((
-            TimingResult {
-                time_real: result.time_real,
-                time_user: result.time_user,
-                time_system: result.time_system,
-                memory_usage_byte: result.memory_usage_byte,
-            },
-            result.status,
-        ))
+        Ok(result)
     }
 
     /// Measure the average shell spawning time
@@ -268,7 +250,7 @@ impl Executor for ShellExecutor<'_> {
                         shell_cmd
                     );
                 }
-                Ok((r, _)) => {
+                Ok(r) => {
                     times_real.push(r.time_real);
                     times_user.push(r.time_user);
                     times_system.push(r.time_system);
@@ -284,11 +266,12 @@ impl Executor for ShellExecutor<'_> {
             bar.finish_and_clear()
         }
 
-        self.shell_spawning_time = Some(TimingResult {
+        self.shell_spawning_time = Some(Measurement {
             time_real: mean(&times_real),
             time_user: mean(&times_user),
             time_system: mean(&times_system),
             memory_usage_byte: 0,
+            status: ExitStatus::default(),
         });
 
         Ok(())
@@ -326,7 +309,7 @@ impl Executor for MockExecutor {
         _iteration: BenchmarkIteration,
         _command_failure_action: Option<CmdFailureAction>,
         _output_policy: &CommandOutputPolicy,
-    ) -> Result<(TimingResult, ExitStatus)> {
+    ) -> Result<Measurement> {
         #[cfg(unix)]
         let status = {
             use std::os::unix::process::ExitStatusExt;
@@ -339,15 +322,13 @@ impl Executor for MockExecutor {
             ExitStatus::from_raw(0)
         };
 
-        Ok((
-            TimingResult {
-                time_real: Self::extract_time(command.get_command_line()),
-                time_user: 0.0,
-                time_system: 0.0,
-                memory_usage_byte: 0,
-            },
+        Ok(Measurement {
+            time_real: Self::extract_time(command.get_command_line()),
+            time_user: 0.0,
+            time_system: 0.0,
+            memory_usage_byte: 0,
             status,
-        ))
+        })
     }
 
     fn calibrate(&mut self) -> Result<()> {

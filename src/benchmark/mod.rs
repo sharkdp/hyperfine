@@ -1,8 +1,8 @@
 pub mod benchmark_result;
 pub mod executor;
+pub mod measurement;
 pub mod relative_speed;
 pub mod scheduler;
-pub mod timing_result;
 
 use std::cmp;
 use std::io::{self, Write};
@@ -22,7 +22,7 @@ use crate::util::exit_code::extract_exit_code;
 use crate::util::min_max::{max, min};
 use crate::util::units::Second;
 use benchmark_result::BenchmarkResult;
-use timing_result::TimingResult;
+use measurement::Measurement;
 
 use anyhow::{anyhow, Result};
 use colored::*;
@@ -61,7 +61,7 @@ impl<'a> Benchmark<'a> {
         command: &Command<'_>,
         error_output: &'static str,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+    ) -> Result<Measurement> {
         self.executor
             .run_command_and_measure(
                 command,
@@ -69,7 +69,6 @@ impl<'a> Benchmark<'a> {
                 Some(CmdFailureAction::RaiseError),
                 output_policy,
             )
-            .map(|r| r.0)
             .map_err(|_| anyhow!(error_output))
     }
 
@@ -78,7 +77,7 @@ impl<'a> Benchmark<'a> {
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+    ) -> Result<Measurement> {
         let command = self
             .options
             .setup_command
@@ -99,7 +98,7 @@ impl<'a> Benchmark<'a> {
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+    ) -> Result<Measurement> {
         let command = self
             .options
             .cleanup_command
@@ -120,7 +119,7 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+    ) -> Result<Measurement> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
@@ -132,7 +131,7 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+    ) -> Result<Measurement> {
         let error_output = "The conclusion command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
@@ -247,13 +246,13 @@ impl<'a> Benchmark<'a> {
             preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
 
         // Initial timing run
-        let (res, status) = self.executor.run_command_and_measure(
+        let res = self.executor.run_command_and_measure(
             self.command,
             BenchmarkIteration::Benchmark(0),
             None,
             output_policy,
         )?;
-        let success = status.success();
+        let success = res.status.success();
 
         let conclusion_result = run_conclusion_command()?;
         let conclusion_overhead =
@@ -284,7 +283,7 @@ impl<'a> Benchmark<'a> {
         times_user.push(res.time_user);
         times_system.push(res.time_system);
         memory_usage_byte.push(res.memory_usage_byte);
-        exit_codes.push(extract_exit_code(status));
+        exit_codes.push(extract_exit_code(res.status));
 
         all_succeeded = all_succeeded && success;
 
@@ -309,19 +308,19 @@ impl<'a> Benchmark<'a> {
                 bar.set_message(msg.to_owned())
             }
 
-            let (res, status) = self.executor.run_command_and_measure(
+            let res = self.executor.run_command_and_measure(
                 self.command,
                 BenchmarkIteration::Benchmark(i + 1),
                 None,
                 output_policy,
             )?;
-            let success = status.success();
+            let success = res.status.success();
 
             times_real.push(res.time_real);
             times_user.push(res.time_user);
             times_system.push(res.time_system);
             memory_usage_byte.push(res.memory_usage_byte);
-            exit_codes.push(extract_exit_code(status));
+            exit_codes.push(extract_exit_code(res.status));
 
             all_succeeded = all_succeeded && success;
 

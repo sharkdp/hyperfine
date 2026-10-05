@@ -1,8 +1,10 @@
+use std::process::ExitStatus;
+
 use crate::util::units::Second;
 
-/// Results from timing a single command
+/// Performance measurements and exit status from running a single command
 #[derive(Debug, Default, Copy, Clone)]
-pub struct TimingResult {
+pub struct Measurement {
     /// Wall clock time
     pub time_real: Second,
 
@@ -14,4 +16,7 @@ pub struct TimingResult {
 
     /// Maximum amount of memory used, in bytes
     pub memory_usage_byte: u64,
+
+    /// The exit status of the process
+    pub status: ExitStatus,
 }
