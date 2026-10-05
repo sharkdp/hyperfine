@@ -98,6 +98,12 @@ hyperfine \
     'python main.py'
 ```
 
+If you need a unique value for each individual run of a benchmark command, hyperfine also exposes
+the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarked command itself:
+```sh
+hyperfine 'my-command > output-${HYPERFINE_ITERATION}.log'
+```
+
 ### Intermediate shell
 
 By default, commands are executed using `sh` on Unix (resolved through `PATH`) or `cmd.exe` on Windows.
