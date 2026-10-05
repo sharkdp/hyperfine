@@ -208,17 +208,14 @@ pub struct Options {
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
 
-    // Command to use as a reference for relative speed comparison
+    // Standalone reference command, cleared when an existing benchmark is selected.
     pub reference_command: Option<String>,
 
     // Name of the reference command
     pub reference_name: Option<String>,
 
-    // Whether commands are expanded from --parameter-scan or --parameter-list.
-    pub parameterized_mode: bool,
-
-    // Index of the selected command in a parameterized run, if any.
-    pub parameterized_reference_index: Option<usize>,
+    // Index of the reference in the benchmark sequence, if any.
+    pub reference_index: Option<usize>,
 
     /// Command(s) to run before each timing run
     pub preparation_command: Option<Vec<String>>,
@@ -263,8 +260,7 @@ impl Default for Options {
             command_failure_action: CmdFailureAction::RaiseError,
             reference_command: None,
             reference_name: None,
-            parameterized_mode: false,
-            parameterized_reference_index: None,
+            reference_index: None,
             preparation_command: None,
             conclusion_command: None,
             setup_command: None,
@@ -317,8 +313,6 @@ impl Options {
 
         options.setup_command = matches.get_one::<String>("setup").map(String::from);
 
-        options.parameterized_mode = matches.get_many::<String>("parameter-scan").is_some()
-            || matches.get_many::<String>("parameter-list").is_some();
         options.reference_command = matches.get_one::<String>("reference").map(String::from);
         options.reference_name = matches
             .get_one::<String>("reference-name")
@@ -474,8 +468,12 @@ impl Options {
     }
 
     pub fn validate_against_command_list(&mut self, commands: &Commands) -> Result<()> {
-        if self.parameterized_mode {
-            if let Some(reference) = &self.reference_command {
+        if let Some(reference) = &self.reference_command {
+            if commands
+                .iter()
+                .next()
+                .is_some_and(|command| !command.get_parameters().is_empty())
+            {
                 ensure!(
                     self.reference_name.is_none(),
                     "--reference-name cannot be used with a parameterized reference; use --command-name to name the benchmark"
@@ -493,10 +491,13 @@ impl Options {
                     matches.next().is_none(),
                     "Reference '{reference}' matches multiple parameterized benchmarks. Use --command-name to give them unique names."
                 );
-                self.parameterized_reference_index = Some(index);
+                self.reference_index = Some(index);
+                self.reference_command = None;
+            } else {
+                self.reference_index = Some(0);
             }
         }
-        let has_reference_command = self.reference_command.is_some() && !self.parameterized_mode;
+        let has_reference_command = self.reference_command.is_some();
         let num_commands = commands.num_commands(has_reference_command);
 
         if let Some(preparation_command) = &self.preparation_command {

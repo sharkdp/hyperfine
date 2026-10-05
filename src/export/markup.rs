@@ -67,28 +67,19 @@ pub trait MarkupExporter {
                     && !entry.is_reference
                     && entry.relative_ordering == Ordering::Equal
                     && measurement.mean_wall_clock_time() == Time::zero());
-            let rel_str = if relative_unavailable {
+            let relative = if relative_unavailable {
                 "N/A".to_string()
             } else {
-                format!("{:.2}", entry.relative_speed)
-            };
-            let rel_stddev_str = if relative_unavailable || entry.is_reference {
-                "".into()
-            } else if let Some(stddev) = entry.relative_speed_stddev {
-                format!(" ± {stddev:.2}")
-            } else {
-                "".into()
-            };
-            let rel_direction = if relative_unavailable || !explicit_reference {
-                ""
-            } else if entry.is_reference {
-                " (reference)"
-            } else {
-                match entry.relative_ordering {
-                    Ordering::Less => " (faster)",
-                    Ordering::Greater => " (slower)",
-                    Ordering::Equal => " (same speed)",
-                }
+                let stddev = match (entry.is_reference, entry.relative_speed_stddev) {
+                    (false, Some(stddev)) => format!(" ± {stddev:.2}"),
+                    _ => String::new(),
+                };
+                let label = if explicit_reference {
+                    entry.reference_label()
+                } else {
+                    ""
+                };
+                format!("{:.2}{stddev}{label}", entry.relative_speed)
             };
 
             // prepare table row entries
@@ -97,7 +88,7 @@ pub trait MarkupExporter {
                 &format!("{mean_str}{stddev_str}"),
                 &min_str,
                 &max_str,
-                &format!("{rel_str}{rel_stddev_str}{rel_direction}"),
+                &relative,
             ]))
         }
 
@@ -144,11 +135,11 @@ impl<T: MarkupExporter> Exporter for T {
         // Do not report ratios against another benchmark while the selected
         // reference is still pending in an intermediate export.
         let reference_pending = reference_index.is_some_and(|i| i >= results.len());
-        let entries = if let Some(reference) = reference_index.and_then(|i| results.get(i)) {
-            relative_speed::compute_relative_speeds(results, reference, sort_order)
-        } else {
-            relative_speed::compute(results, sort_order)
-        };
+        let entries = relative_speed::compute(
+            results,
+            sort_order,
+            reference_index.and_then(|i| results.get(i)),
+        );
 
         let table =
             self.table_results(&entries, unit, reference_pending, reference_index.is_some());
