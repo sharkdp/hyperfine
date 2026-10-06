@@ -1,22 +1,20 @@
 # hyperfine
-[![CICD](https://github.com/sharkdp/hyperfine/actions/workflows/CICD.yml/badge.svg)](https://github.com/sharkdp/hyperfine/actions/workflows/CICD.yml)
-[![Version info](https://img.shields.io/crates/v/hyperfine.svg)](https://crates.io/crates/hyperfine)
-[中文](https://github.com/chinanf-boy/hyperfine-zh)
 
 A command-line benchmarking tool.
 
-**Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and
-[`find`](https://www.gnu.org/software/findutils/):
+<img width="839" height="205" alt="hyperfine demo" src="https://github.com/user-attachments/assets/13c20b1d-39c1-4da1-8fcb-0c775dd032f5" />
 
-![hyperfine](https://i.imgur.com/z19OYxE.gif)
+*(hyperfine in action, benchmarking [`mypy`](https://mypy-lang.org/) and [`ty`](https://ty.dev/))*
+
 
 ## Features
 
 * Statistical analysis across multiple runs.
+* Support for various performance metrics and hardware counters.
 * Support for arbitrary shell commands.
 * Constant feedback about the benchmark progress and current estimates.
 * Warmup runs can be executed before the actual benchmark.
-* Cache-clearing commands can be set up before each timing run.
+* Cache-clearing commands can be set up before each benchmark run.
 * Statistical outlier detection to detect interference from other programs and caching effects.
 * Export results to various formats: CSV, JSON, Markdown, AsciiDoc.
 * Parameterized benchmarks (e.g. vary the number of threads).
@@ -26,8 +24,9 @@ A command-line benchmarking tool.
 
 ### Basic benchmarks
 
-To run a benchmark, you can simply call `hyperfine <command>...`. The argument(s) can be any
-shell command. For example:
+To run a benchmark, you can simply call `hyperfine <command>...`. Each argument is an executable
+and its arguments. Commands run directly by default; use `-S` for shell syntax such as
+pipes, redirections, and wildcards. For example:
 ```sh
 hyperfine 'sleep 0.3'
 ```
@@ -40,7 +39,7 @@ number of runs, you can use the `-r`/`--runs` option:
 hyperfine --runs 5 'sleep 0.3'
 ```
 
-If you want to compare the runtimes of different programs, you can pass multiple commands:
+If you want to compare different programs, you can pass multiple commands:
 ```sh
 hyperfine 'hexdump file' 'xxd file'
 ```
@@ -54,6 +53,9 @@ Everything after `--` is treated as the executable and its arguments. Hyperfine 
 directly, without an intermediate shell, and preserves argument boundaries exactly. Shell syntax
 such as `*`, `~`, pipes, and redirects is therefore not available in this form.
 
+Commands run and appear in input order. The first command is the reference for all comparisons;
+each subsequent result shows its change from that reference.
+
 ### Warmup runs and preparation commands
 
 For programs that perform a lot of disk I/O, the benchmarking results can be heavily influenced
@@ -62,11 +64,11 @@ by disk caches and whether they are cold or warm.
 If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to
 perform a certain number of program executions before the actual benchmark:
 ```sh
-hyperfine --warmup 3 'grep -R TODO *'
+hyperfine -S --warmup 3 'grep -R TODO *'
 ```
 
 Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
-option to run a special command before *each* timing run. For example, to clear Linux filesystem caches,
+option to run a special command before *each* benchmark run. For example, to clear Linux filesystem caches,
 you can run
 ```sh
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
@@ -74,7 +76,7 @@ sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 To use this specific command with hyperfine, call `sudo -v` to temporarily gain sudo permissions
 and then call:
 ```sh
-hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
+hyperfine -S --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
 ```
 
 ### Parameterized benchmarks
@@ -98,7 +100,7 @@ hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'
 ```
 
 A common use case is comparing the same command across multiple Git branches. Use `--setup`
-to switch branches once before each set of timing runs, so the branch switch is not part of
+to switch branches once before each set of benchmark runs, so the branch switch is not part of
 the measured command:
 ```sh
 hyperfine \
@@ -110,28 +112,34 @@ hyperfine \
 If you need a unique value for each individual run of a benchmark command, hyperfine also exposes
 the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarked command itself:
 ```sh
-hyperfine 'my-command > output-${HYPERFINE_ITERATION}.log'
+hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 ```
 
 ### Intermediate shell
 
-By default, commands are executed using `sh` on Unix (resolved through `PATH`) or `cmd.exe` on Windows.
-If you want to use a different shell, you can use the `-S, --shell <SHELL>` option:
+By default, commands are executed directly, without an intermediate shell (`--shell=none`).
+Arguments are split using shell-like quoting, so quoted arguments containing spaces are supported.
+Shell syntax such as pipes, redirections, environment-variable expansion, `*`, and `~` is not interpreted.
+This avoids shell startup overhead and the noise from correcting for it, especially for fast commands
+(< 5 ms).
+
+To enable shell syntax, use `-S` (an alias for `--shell=default`). This selects `sh`
+on Unix (resolved through `PATH`) or `cmd.exe` on Windows:
+```sh
+hyperfine -S 'sleep 0.1 && echo done'
+```
+
+You can also select a specific shell with `--shell <SHELL>`:
 ```sh
 hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
 ```
 
-Note that hyperfine always *corrects for the shell spawning time*. To do this, it performs a calibration
-procedure where it runs the shell with an empty command (multiple times), to measure the startup time
-of the shell. It will then subtract this time from the total to show the actual time used by the command
-in question.
+The shell setting applies to all commands, including `--setup`, `--prepare`, `--conclude`, and `--cleanup`.
+If any of these commands need shell syntax, enable a shell explicitly.
 
-If you want to run a benchmark *without an intermediate shell*, you can use the `-N` or `--shell=none`
-option. This is helpful for very fast commands (< 5 ms) where the shell startup overhead correction would
-produce a significant amount of noise. Note that you cannot use shell syntax like `*` or `~` in this case.
-```
-hyperfine -N 'grep -R TODO /home/user'
-```
+When a shell is enabled, hyperfine *corrects for the shell spawning time*. It runs the shell with an
+empty command multiple times to measure its startup time, then subtracts this time from each
+time measurement.
 
 
 ### Shell functions
@@ -147,47 +155,111 @@ hyperfine --shell=bash my_function
 Otherwise, inline the function into the benchmarked command:
 
 ```sh
-hyperfine 'my_function() { sleep 1; }; my_function'
+hyperfine -S 'my_function() { sleep 1; }; my_function'
 ```
 
-### Exporting results
+### Choosing metrics and units
 
-Hyperfine has multiple options for exporting benchmark results to CSV, JSON, Markdown and other
-formats (see `--help` text for details).
+By default, hyperfine displays wall-clock time and memory usage
+(`time_wall_clock,memory_peak_resident`). Use `--metrics` with a
+comma-separated list to select a different set of metrics. Each
+metric can have an optional unit after it:
 
-#### Markdown
+```sh
+hyperfine \
+    --metrics memory_peak_resident:MiB,time_wall_clock:ms,instructions \
+    './baseline' './candidate'
+```
 
-You can use the `--export-markdown <file>` option to create tables like the following:
-
-| Command | Mean [s] | Min [s] | Max [s] | Relative |
-|:---|---:|---:|---:|---:|
-| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 | 2.243 | 2.397 | 9.79 ± 0.22 |
-| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | 1.405 | 1.468 | 6.14 ± 0.13 |
-| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | 0.230 | 0.236 | 1.00 |
-
-#### JSON
-
-The JSON export includes the following metrics for each measured run (excluding warmup runs):
+The following metrics are available:
 
 - **`time_wall_clock`**: Time from start to finish, including time spent waiting, in seconds.
 
-- **`time_user`**: CPU time spent running the program's code, summed across threads, in seconds.
+- **`time_user`**: CPU time spent executing application and library code in user mode,
+  summed across threads, in seconds.
 
   - Linux/macOS: Includes child-process time when parents wait for their children to finish.
   - Windows: Includes the command and its child processes.
 
-- **`time_system`**: CPU time spent running operating-system code for the program, for example
+- **`time_system`**: CPU time spent executing kernel code on the program's behalf, for example
   to read files, summed across threads, in seconds.
 
   - Linux/macOS: Includes child-process time when parents wait for their children to finish.
   - Windows: Includes the command and its child processes.
 
+- **`time_cpu`**: Total CPU time, calculated as `time_user + time_system` for each run, in seconds.
+  It excludes time spent sleeping or waiting without executing. CPU time is summed across
+  threads, so it can exceed wall-clock time: four threads running on four cores for one second
+  can consume roughly four CPU-seconds.
+
 - **`memory_peak_resident`**: Peak memory held in physical RAM, in bytes.
 
   - Linux/macOS: Peak resident set size (RSS). This is the largest per-process peak among the
     command and child processes (whose usage is collected when their parents wait for them),
-    *not the simultaneous total memory of the full process tree*.
+    *not the simultaneous total memory of the full process tree*. On Linux, measuring commands
+    with a very small peak RSS (below the peak inherited from hyperfine at startup, which can
+    be a few MiB) will currently result in that inherited value being reported instead.
   - Windows: Currently not supported.
+
+- **`cpu_cycles`**: CPU cycles consumed.
+
+  - Linux: Includes threads and child processes, but excludes kernel and hypervisor execution.
+  - macOS: Includes the process's threads and kernel execution, but excludes child processes.
+  - Windows: Currently not supported.
+
+- **`instructions`**: Completed CPU instructions.
+
+  - Linux/macOS: Same scope as `cpu_cycles`.
+  - Windows: Currently not supported.
+
+- **`cache_references`**: Cache accesses counted by the CPU's generic cache event.
+
+  - Linux: Same scope as `cpu_cycles`. Cache-event definitions depend on the CPU.
+  - macOS/Windows: Currently not supported.
+
+- **`cache_misses`**: Cache misses.
+
+  - Linux: Same scope as `cpu_cycles`. Cache-event definitions depend on the CPU.
+  - macOS/Windows: Currently not supported.
+
+- **`branch_misses`**: Mispredicted branches.
+
+  - Linux: Same scope as `cpu_cycles`.
+  - macOS/Windows: Currently not supported.
+
+Note that hardware counters are not available when a shell is enabled (`--shell=..`).
+
+Time measurements support units `ns`, `us`, `ms`, `s`, `min`, and `h`. Memory measurements
+support `B`, `kB`, `MB`, `GB`, `TB`, `KiB`, `MiB`, `GiB`, and `TiB`. Hardware counters
+support `count` (1), `k` (thousand), `M` (million), and `B` (billion).
+
+You can also use a preset to select a group of metrics:
+
+| Preset | Metrics |
+|:---|:---|
+| `--metrics=default` | `time_wall_clock,memory_peak_resident` |
+| `--metrics=time` | `time_wall_clock,time_cpu,time_user,time_system` |
+| `--metrics=all` | All available metrics |
+
+### Exporting results
+
+Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. Non-JSON formats
+contain only the primary metric, which is the first metric selected by `--metrics`.
+
+#### Markdown
+
+You can use the `--export-markdown <file>` option to create tables like the following:
+
+| Command | Mean Wall Time [s] | Change | Factor |
+|:---|---:|---:|:---|
+| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 |  |  |
+| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | -37.3% | (1.6x faster) |
+| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | -89.8% | (9.8x faster) |
+
+#### JSON
+
+The JSON export includes all available metrics listed in [Choosing metrics and units](#choosing-metrics-and-units)
+for each measured run (excluding warmup runs).
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
@@ -201,7 +273,7 @@ multiple benchmarks:
 
 ### Detailed benchmark flowchart
 
-The following chart explains the execution order of various timing runs when using options
+The following chart explains the execution order of various benchmark runs when using options
 like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`:
 
 ![](doc/execution-order.png)

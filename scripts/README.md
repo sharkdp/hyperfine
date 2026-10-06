@@ -7,6 +7,12 @@ hyperfine 'sleep 0.020' 'sleep 0.021' 'sleep 0.022' --export-json sleep.json
 uv run plot_whisker.py sleep.json
 ```
 
+All plotting and analysis scripts use the JSON export's `primary_metric` by default.
+
+```bash
+uv run plot_histogram.py benchmark.json --metric instructions
+```
+
 ### Prerequisites
 
 Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) and run the

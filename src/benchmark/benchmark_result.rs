@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 
 use crate::benchmark::measurement::Measurements;
-use crate::quantity::Time;
 
 /// Parameter value
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
@@ -46,10 +45,5 @@ pub struct BenchmarkResult {
 impl BenchmarkResult {
     pub fn get_name(&self) -> &str {
         self.name.as_deref().unwrap_or(&self.command)
-    }
-
-    /// The average wall clock time
-    pub fn mean_wall_clock_time(&self) -> Time {
-        self.measurements.time_wall_clock_mean()
     }
 }

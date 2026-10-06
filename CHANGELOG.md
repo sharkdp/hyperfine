@@ -1,3 +1,66 @@
+# v2.0.0-alpha.1
+
+This is the first alpha release of hyperfine 2.0. Command-line options and export formats may change before the stable release. See the breaking changes below when migrating from hyperfine 1.x.
+
+## Features
+
+- Add support for alternative performance metrics (peak memory usage, CPU cycles, instructions, cache misses, branch misses, ...). By default, hyperfine will now display wall-clock time and peak memory usage (wall-clock time only on Windows),
+  but users can use the new `--metrics` option to select different performance metrics.
+- The terminal output now shows an overview of all selected performance metrics, including relative changes.
+- Python plotting and analysis scripts support the new JSON format and can select performance metrics with `--metric`, see #981 and #984 (@sharkdp).
+
+## Breaking changes
+
+- Benchmarked commands are now executed directly by default, without an intermediate shell (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
+- The JSON format for `--export-json` has changed (schema version 2). The new format now includes metadata, per-run measurements, and statistical summaries for all measured quantities, see #790 (@sharkdp). Code that reads those exported JSON files must be updated. For example, `results[i].mean` is now `results[i].summary.time_wall_clock.mean`, and `results[i].times` is replaced by `results[i].measurements[j].time_wall_clock.value`. The new structure looks like this:
+
+  ```python
+  {
+      "schema_version": 2,
+      "primary_metric": "time_wall_clock",
+      "metadata": {
+          "hyperfine_version": "2.0.0-alpha.1",
+          "start_time": "2026-10-06T12:00:00Z",
+          "platform": {"os": "Linux", "architecture": "x86_64"}
+      },
+      "results": [
+          {
+              "command": "sleep 1",  # Actual command after parameter substitution
+              "name": "wait 1s",  # Optional custom name, separate from the command
+              "parameters": {"duration": {"value": "1"}},  # Values are now objects
+              "measurements": [  # One entry per run, excluding warmups
+                  {
+                      "time_wall_clock": {"value": 1.0, "unit": "second"},
+                      "time_user": {"value": 0.0, "unit": "second"},
+                      "time_system": {"value": 0.0, "unit": "second"},
+                      "memory_peak_resident": {"value": 1048576.0, "unit": "byte"},
+                      "exit_code": 0
+                  },
+                  ...  # Further runs omitted
+              ],
+              "summary": {
+                  "time_wall_clock": {
+                      "unit": "second",
+                      "count": 2,
+                      "mean": 1.0,
+                      "stddev": 0.0,
+                      "median": 1.0,
+                      "min": 1.0,
+                      "max": 1.0
+                  }
+                  # Other metrics have the same summary structure.
+              }
+          }
+      ]
+  }
+  ```
+
+  Times are always exported in seconds and memory in bytes.
+- `--time-unit`/`-u` has been removed. Units can now be selected using the `--metrics METRIC[:UNIT],…` option, e.g. `--metrics time_wall_clock:ms,memory_peak_resident:MiB`.
+- `--sort` has been removed. It complicated hyperfine significantly and doesn't make too much sense with the new output format.
+- `--reference` and `--reference-name` have been removed (for now). The first command is always considered as the reference command.
+- The format of Markdown, AsciiDoc, org-mode and CSV exports has also been changed. These formats contain only the primary metric (the first metric selected by `--metrics`). CSV now includes columns with the name and the unit of the primary metric.
+
 # v1.21.0
 
 ## Features

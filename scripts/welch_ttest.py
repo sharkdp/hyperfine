@@ -7,32 +7,37 @@
 # ///
 
 """This script performs Welch's t-test on a JSON export file with two
-benchmark results to test for a difference in their population mean runtimes."""
+benchmark results to test for a difference in their population means."""
 
 import argparse
-import json
-import sys
+import math
 
 from scipy import stats
 
+from plot_utils import METRICS, add_metric_argument, load_results
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("file", help="JSON file with two benchmark results")
+add_metric_argument(parser)
 args = parser.parse_args()
 
-with open(args.file) as f:
-    results = json.load(f)["results"]
+metric, [results] = load_results(parser, [args.file], args.metric)
 
 if len(results) != 2:
-    print("The input file has to contain exactly two benchmarks")
-    sys.exit(1)
+    parser.error("the input file must contain exactly two benchmarks")
 
 a, b = (x.get("name", x["command"]) for x in results[:2])
-X, Y = ([m["time_wall_clock"]["value"] for m in x["measurements"]] for x in results[:2])
+X, Y = ([m[metric]["value"] for m in x["measurements"]] for x in results[:2])
+if min(len(X), len(Y)) < 2:
+    parser.error("Welch's t-test requires at least two measurements per benchmark")
 
+print(f"Metric: {METRICS[metric].label}")
 print(f"Command 1: {a}")
 print(f"Command 2: {b}\n")
 
 t, p = stats.ttest_ind(X, Y, equal_var=False)
+if not math.isfinite(p):
+    parser.error("Welch's t-test is undefined for these measurements")
 th = 0.05
 dispose = p < th
 print(f"t = {t:.3}, p = {p:.3}")
@@ -40,9 +45,9 @@ print()
 
 if dispose:
     print(
-        f"A statistically significant difference in mean runtime was detected (p < {th})."
+        f"A statistically significant difference in mean value was detected (p < {th})."
     )
 else:
     print(
-        f"No statistically significant difference in mean runtime was detected (p >= {th})."
+        f"No statistically significant difference in mean value was detected (p >= {th})."
     )

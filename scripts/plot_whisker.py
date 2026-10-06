@@ -16,11 +16,10 @@ Quoting from the matplotlib documentation:
 """
 
 import argparse
-import json
 
 import matplotlib.pyplot as plt
 
-from plot_utils import METRICS, add_metric_argument, validate_metric
+from plot_utils import METRICS, add_metric_argument, load_results
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_metric_argument(parser)
@@ -33,22 +32,19 @@ parser.add_argument(
 parser.add_argument("-o", "--output", help="Save image to the given filename.")
 
 args = parser.parse_args()
-metric_label, metric_scale = METRICS[args.metric]
-
-with open(args.file, encoding="utf-8") as f:
-    results = json.load(f)["results"]
-validate_metric(parser, results, args.metric)
+metric, [results] = load_results(parser, [args.file], args.metric)
+metric_info = METRICS[metric]
 
 if args.labels:
     labels = args.labels.split(",")
 else:
     labels = [b.get("name", b["command"]) for b in results]
 values = [
-    [m[args.metric]["value"] / metric_scale for m in b["measurements"]] for b in results
+    [m[metric]["value"] / metric_info.scale for m in b["measurements"]] for b in results
 ]
 
 if args.sort_by == "median":
-    medians = [b["summary"][args.metric]["median"] for b in results]
+    medians = [b["summary"][metric]["median"] for b in results]
     indices = sorted(range(len(labels)), key=lambda k: medians[k])
     labels = [labels[i] for i in indices]
     values = [values[i] for i in indices]
@@ -64,7 +60,7 @@ for patch, color in zip(boxplot["boxes"], colors):
 if args.title:
     plt.title(args.title)
 plt.legend(handles=boxplot["boxes"], labels=labels, loc="best", fontsize="medium")
-plt.ylabel(metric_label)
+plt.ylabel(metric_info.axis_label)
 plt.ylim(0, None)
 plt.xticks(list(range(1, len(labels) + 1)), labels, rotation=45)
 if args.output:

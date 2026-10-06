@@ -91,6 +91,16 @@ impl UnsafeRawValue for Information {
     }
 }
 
+impl UnsafeRawValue for Ratio {
+    fn unsafe_raw_value(&self) -> f64 {
+        self.get::<ratio>()
+    }
+
+    fn unsafe_from_raw_value(value: f64) -> Self {
+        Ratio::new::<ratio>(value)
+    }
+}
+
 fn standard_deviation_f64(values: &[f64]) -> f64 {
     let mean_value = mean(values.iter().copied());
 
@@ -134,11 +144,6 @@ pub fn modified_zscores_f64(xs: &[f64]) -> Vec<f64> {
 
     // Compute modified Z-scores (x_i - x_median) / MAD
     xs.iter().map(|&x| (x - x_median) / mad).collect()
-}
-
-pub fn modified_zscores<Q: UnsafeRawValue>(values: &[Q]) -> Vec<f64> {
-    let values: Vec<_> = values.iter().map(|q| q.unsafe_raw_value()).collect();
-    modified_zscores_f64(&values)
 }
 
 #[cfg(test)]

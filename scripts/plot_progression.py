@@ -14,12 +14,11 @@ thermal throttling and similar effects.
 """
 
 import argparse
-import json
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from plot_utils import METRICS, add_metric_argument, validate_metric
+from plot_utils import METRICS, add_metric_argument, load_results
 
 
 def moving_average(values, num_runs):
@@ -50,15 +49,12 @@ parser.add_argument(
 
 
 args = parser.parse_args()
-metric_label, metric_scale = METRICS[args.metric]
-
-with open(args.file) as f:
-    results = json.load(f)["results"]
-validate_metric(parser, results, args.metric)
+metric, [results] = load_results(parser, [args.file], args.metric)
+metric_info = METRICS[metric]
 
 for result in results:
     label = result.get("name", result["command"])
-    values = [m[args.metric]["value"] / metric_scale for m in result["measurements"]]
+    values = [m[metric]["value"] / metric_info.scale for m in result["measurements"]]
     num = len(values)
     nums = range(num)
 
@@ -86,7 +82,7 @@ for result in results:
         legend.append("moving average")
 plt.legend(legend)
 
-plt.ylabel(metric_label)
+plt.ylabel(metric_info.axis_label)
 
 if args.output:
     plt.savefig(args.output)

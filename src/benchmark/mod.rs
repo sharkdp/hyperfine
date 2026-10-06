@@ -1,7 +1,6 @@
 pub mod benchmark_result;
 pub mod executor;
 pub mod measurement;
-pub mod relative_speed;
 pub mod scheduler;
 
 use std::cmp;
@@ -18,14 +17,15 @@ use crate::options::{
 use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::console_writeln;
 use crate::output::progress_bar::{
-    finish_initial_measurement, get_progress_bar, start_initial_measurement,
+    finish_initial_measurement, get_progress_bar, set_benchmark_header, start_initial_measurement,
 };
+use crate::output::report;
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::quantity::{self, const_time_from_seconds, FormatQuantity, Time, Zero};
+use crate::quantity::{self, const_time_from_seconds, Time, Zero};
 use benchmark_result::BenchmarkResult;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, ensure, Result};
 use colored::*;
 
 use self::executor::Executor;
@@ -155,20 +155,21 @@ impl<'a> Benchmark<'a> {
         self.run_intermediate_command(command, error_output, output_policy, iteration)
     }
 
-    /// Run the benchmark for a single command
-    pub fn run(&self) -> Result<BenchmarkResult> {
-        if self.options.output_style != OutputStyleOption::Disabled {
-            console_writeln!(
-                io::stdout(),
-                "{}{}: {}",
-                "Benchmark ".bold(),
-                (self.number + 1).to_string().bold(),
-                self.command.get_name_with_unused_parameters(),
-            )?;
+    fn validate_measurement(&self, measurement: &Measurement) -> Result<()> {
+        if self.options.skip_unavailable_metrics {
+            return Ok(());
         }
+        for selection in &self.options.metrics {
+            ensure!(selection.metric.value(measurement).is_some(),
+                "Metric '{}' is unavailable for '{}'. Check platform support and hardware-counter permissions.",
+                selection.metric.name(), self.command.get_command_line());
+        }
+        Ok(())
+    }
 
+    /// Run the benchmark for a single command
+    pub fn run(&self, reference: Option<&BenchmarkResult>) -> Result<BenchmarkResult> {
         let mut measurements = Measurements::default();
-        let mut all_succeeded = true;
 
         let output_policy = &self.options.command_output_policies[self.number];
 
@@ -213,6 +214,15 @@ impl<'a> Benchmark<'a> {
 
         self.run_setup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
+        let progress_header = format!(
+            "{}: {}",
+            format!("Benchmark {}", self.number + 1).bold(),
+            self.command
+                .get_name_with_unused_parameters()
+                .white()
+                .bold()
+        );
+
         // Warmup phase
         if self.options.warmup_count > 0 {
             let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
@@ -224,6 +234,10 @@ impl<'a> Benchmark<'a> {
             } else {
                 None
             };
+
+            if let Some(bar) = &progress_bar {
+                set_benchmark_header(bar, progress_header.clone());
+            }
 
             for i in 0..self.options.warmup_count {
                 let warmup_iteration = BenchmarkIteration::Warmup(i);
@@ -259,6 +273,10 @@ impl<'a> Benchmark<'a> {
             None
         };
 
+        if let Some(bar) = &progress_bar {
+            set_benchmark_header(bar, progress_header);
+        }
+
         let benchmark_iteration = BenchmarkIteration::Benchmark(0);
         let preparation_result = run_preparation_command(benchmark_iteration)?;
         let preparation_overhead = preparation_result.map_or(Time::zero(), |res| {
@@ -275,18 +293,14 @@ impl<'a> Benchmark<'a> {
             None,
             output_policy,
         )?;
-        let success = measurement.exit_status.success();
+        self.validate_measurement(&measurement)?;
+        let mut all_succeeded = measurement.exit_status.success();
 
         if let Some(bar) = progress_bar.as_ref() {
-            let time_unit = self
-                .options
-                .time_unit
-                .unwrap_or(measurement.time_wall_clock.suitable_unit());
-            let estimate = measurement.time_wall_clock.format(time_unit);
-            finish_initial_measurement(
-                bar,
-                format!("Current estimate: {}", estimate.to_string().green()),
-            );
+            let primary = self.options.metrics[0];
+            let value = primary.metric.value(&measurement).unwrap();
+            let estimate = primary.display_unit(value).format(value);
+            finish_initial_measurement(bar, format!("Current estimate: {}", estimate.green()));
         }
 
         let conclusion_result = run_conclusion_command(benchmark_iteration)?;
@@ -316,9 +330,9 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
+        let primary = self.options.metrics[0];
+        let mut primary_total = primary.metric.value(&measurement).unwrap();
         measurements.push(measurement);
-
-        all_succeeded = all_succeeded && success;
 
         // Re-configure the progress bar
         if let Some(bar) = progress_bar.as_ref() {
@@ -330,18 +344,12 @@ impl<'a> Benchmark<'a> {
         for i in 0..count_remaining {
             let benchmark_iteration = BenchmarkIteration::Benchmark(i + 1);
 
-            let msg = {
-                let t_wall_clock_mean = measurements.time_wall_clock_mean();
-                let time_unit = self
-                    .options
-                    .time_unit
-                    .unwrap_or(t_wall_clock_mean.suitable_unit());
-                let mean = t_wall_clock_mean.format(time_unit);
-                format!("Current estimate: {}", mean.to_string().green())
-            };
-
             if let Some(bar) = progress_bar.as_ref() {
-                bar.set_message(msg.to_owned())
+                let mean = primary_total / measurements.len() as f64;
+                bar.set_message(format!(
+                    "Current estimate: {}",
+                    primary.display_unit(mean).format(mean).green()
+                ));
             }
 
             run_preparation_command(benchmark_iteration)?;
@@ -352,7 +360,9 @@ impl<'a> Benchmark<'a> {
                 None,
                 output_policy,
             )?;
+            self.validate_measurement(&measurement)?;
             let success = measurement.exit_status.success();
+            primary_total += primary.metric.value(&measurement).unwrap();
             measurements.push(measurement);
 
             all_succeeded = all_succeeded && success;
@@ -368,63 +378,27 @@ impl<'a> Benchmark<'a> {
             bar.finish_and_clear()
         }
 
-        // Formatting and console output
-        let t_wall_clock_mean = measurements.time_wall_clock_mean();
-        let time_unit = self
-            .options
-            .time_unit
-            .unwrap_or(t_wall_clock_mean.suitable_unit());
-        let mean_str = t_wall_clock_mean.format(time_unit);
-        let min_str = measurements.min().format(time_unit);
-        let max_str = measurements.max().format(time_unit);
-        let num_str = format!("{num_runs} runs", num_runs = measurements.len());
-
-        let user_str = measurements.time_user_mean().format(time_unit);
-        let system_str = measurements.time_system_mean().format(time_unit);
-
         if self.options.output_style != OutputStyleOption::Disabled {
-            let mut stdout = io::stdout().lock();
-            if measurements.len() == 1 {
-                console_writeln!(
-                    stdout,
-                    "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
-                    "abs".green().bold(),
-                    mean_str.green().bold(),
-                    "        ", // alignment
-                    user_str.blue(),
-                    system_str.blue()
-                )?;
-            } else {
-                let stddev_str = measurements.stddev().unwrap().format(time_unit);
-
-                console_writeln!(
-                    stdout,
-                    "  Time ({} ± {}):     {:>8} ± {:>8}    [User: {}, System: {}]",
-                    "mean".green().bold(),
-                    "σ".green(),
-                    mean_str.green().bold(),
-                    stddev_str.green(),
-                    user_str.blue(),
-                    system_str.blue()
-                )?;
-
-                console_writeln!(
-                    stdout,
-                    "  Range ({} … {}):   {:>8} … {:>8}    {}",
-                    "min".cyan(),
-                    "max".purple(),
-                    min_str.cyan(),
-                    max_str.purple(),
-                    num_str.dimmed()
-                )?;
-            }
+            report::print(
+                self.number,
+                &self.command.get_name_with_unused_parameters(),
+                &measurements,
+                &self.options.metrics,
+                self.options.skip_unavailable_metrics,
+                reference,
+            )?;
         }
 
         // Warnings
         let mut warnings = vec![];
 
         // Check execution time
-        if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
+        if self
+            .options
+            .metrics
+            .iter()
+            .any(|m| m.metric == crate::metric::Metric::TimeWallClock)
+            && matches!(self.options.executor_kind, ExecutorKind::Shell(_))
             && measurements
                 .wall_clock_times()
                 .any(|t| t < MIN_EXECUTION_TIME)
@@ -438,7 +412,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = measurements.modified_zscores();
+        let scores = measurements.modified_zscores(primary.metric);
 
         let outlier_warning_options = OutlierWarningOptions {
             warmup_in_use: self.options.warmup_count > 0,
@@ -452,12 +426,11 @@ impl<'a> Benchmark<'a> {
         };
 
         if scores[0] > OUTLIER_THRESHOLD {
-            warnings.push(Warnings::SlowInitialRun(
-                measurements.wall_clock_times().next().unwrap(),
+            warnings.push(Warnings::InitialRunOutlier(
+                primary,
+                primary.metric.value(&measurements.measurements[0]).unwrap(),
                 outlier_warning_options,
             ));
-        } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
-            warnings.push(Warnings::OutliersDetected(outlier_warning_options));
         }
 
         if !warnings.is_empty() {

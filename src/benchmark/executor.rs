@@ -62,6 +62,7 @@ fn run_command_and_measure_common(
     command_input_policy: &CommandInputPolicy,
     command_output_policy: &CommandOutputPolicy,
     command_name: &str,
+    collect_hardware_counters: bool,
 ) -> Result<Measurement> {
     let stdin = command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
@@ -76,7 +77,7 @@ fn run_command_and_measure_common(
         command.env("HYPERFINE_ITERATION", value);
     }
 
-    let measurement = execute_and_measure(command)
+    let measurement = execute_and_measure(command, collect_hardware_counters)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
     if !measurement.exit_status.success() {
@@ -144,6 +145,7 @@ impl Executor for RawExecutor<'_> {
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
+            matches!(iteration, BenchmarkIteration::Benchmark(_)),
         )
     }
 
@@ -199,6 +201,7 @@ impl Executor for ShellExecutor<'_> {
             &self.options.command_input_policy,
             output_policy,
             &command.get_command_line(),
+            false,
         )?;
 
         // Subtract shell spawning time
@@ -217,6 +220,7 @@ impl Executor for ShellExecutor<'_> {
                 ensure_non_negative(measurement.time_user - spawning_time.time_user);
             measurement.time_system =
                 ensure_non_negative(measurement.time_system - spawning_time.time_system);
+            measurement.time_cpu = measurement.time_user + measurement.time_system;
         }
 
         Ok(measurement)
@@ -275,9 +279,11 @@ impl Executor for ShellExecutor<'_> {
 
         self.shell_spawning_time = Some(Measurement {
             time_wall_clock: measurements.time_wall_clock_mean(),
+            time_cpu: measurements.time_user_mean() + measurements.time_system_mean(),
             time_user: measurements.time_user_mean(),
             time_system: measurements.time_system_mean(),
             memory_peak_resident: None,
+            hardware_counters: Default::default(),
             exit_status: ExitStatus::default(),
         });
 
@@ -333,9 +339,11 @@ impl Executor for MockExecutor {
 
         Ok(Measurement {
             time_wall_clock: Self::extract_time(command.get_command_line()),
+            time_cpu: Time::zero(),
             time_user: Time::zero(),
             time_system: Time::zero(),
             memory_peak_resident: Some(Information::zero()),
+            hardware_counters: Default::default(),
             exit_status,
         })
     }
