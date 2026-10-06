@@ -16,29 +16,36 @@ const DEFAULT_TEMPLATE: &str = " {spinner} {msg:<30} {wide_bar} ETA {eta_precise
 const INITIAL_TEMPLATE: &str =
     " {spinner} Initial run: {initial_elapsed:<17} {wide_bar} ETA {eta_precise} ";
 
+fn style_with_template(bar: &ProgressBar, template: &str) -> ProgressStyle {
+    let template = if bar.prefix().is_empty() {
+        template.to_owned()
+    } else {
+        format!("{{prefix}}\n{template}")
+    };
+    bar.style().template(&template).expect("no template error")
+}
+
+/// Show the benchmark heading above the progress bar, clearing both on completion.
+pub fn set_benchmark_header(bar: &ProgressBar, header: String) {
+    bar.set_prefix(header);
+    bar.set_style(style_with_template(bar, DEFAULT_TEMPLATE));
+}
+
 /// Show the time elapsed since the initial benchmark command started.
 pub fn start_initial_measurement(bar: &ProgressBar, started: Instant) {
-    let style = bar
-        .style()
-        .template(INITIAL_TEMPLATE)
-        .expect("no template error")
-        .with_key(
-            "initial_elapsed",
-            move |_: &ProgressState, w: &mut dyn fmt::Write| {
-                write!(w, "{}", FormattedDuration(started.elapsed())).unwrap();
-            },
-        );
+    let style = style_with_template(bar, INITIAL_TEMPLATE).with_key(
+        "initial_elapsed",
+        move |_: &ProgressState, w: &mut dyn fmt::Write| {
+            write!(w, "{}", FormattedDuration(started.elapsed())).unwrap();
+        },
+    );
     bar.set_style(style);
 }
 
 /// Stop showing the initial timer and display the next phase's message.
 pub fn finish_initial_measurement(bar: &ProgressBar, message: String) {
     bar.set_message(message);
-    bar.set_style(
-        bar.style()
-            .template(DEFAULT_TEMPLATE)
-            .expect("no template error"),
-    );
+    bar.set_style(style_with_template(bar, DEFAULT_TEMPLATE));
 }
 
 /// Return a pre-configured progress bar

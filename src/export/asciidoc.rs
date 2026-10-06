@@ -24,7 +24,7 @@ impl MarkupExporter for AsciidocExporter {
     }
 
     fn table_row(&self, cells: &[&str]) -> String {
-        format!("\n| {} \n", cells.join(" \n| "))
+        format!("\n| {}\n", cells.join("\n| "))
     }
 
     fn table_divider(&self, _cell_aligmnents: &[Alignment]) -> String {
@@ -43,7 +43,7 @@ fn test_asciidoc_exporter_table_data() {
     let data = vec!["a", "b", "c"];
 
     let actual = exporter.table_row(&data);
-    let expect = "\n| a \n| b \n| c \n";
+    let expect = "\n| a\n| b\n| c\n";
 
     assert_eq!(expect, actual);
 }

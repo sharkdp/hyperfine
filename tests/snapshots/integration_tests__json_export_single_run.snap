@@ -23,6 +23,7 @@ exit_code: 0
       "architecture": "[architecture]"
     }
   },
+  "primary_metric": "time_wall_clock",
   "results": [
     {
       "command": "sleep 1",
@@ -48,17 +49,8 @@ exit_code: 0
         }
       ],
       "summary": {
-        "time_wall_clock": {
-          "unit": "second",
-          "count": 1,
-          "mean": 1.0,
-          "stddev": null,
-          "median": 1.0,
-          "min": 1.0,
-          "max": 1.0
-        },
-        "time_user": {
-          "unit": "second",
+        "memory_peak_resident": {
+          "unit": "byte",
           "count": 1,
           "mean": 0.0,
           "stddev": null,
@@ -75,14 +67,23 @@ exit_code: 0
           "min": 0.0,
           "max": 0.0
         },
-        "memory_peak_resident": {
-          "unit": "byte",
+        "time_user": {
+          "unit": "second",
           "count": 1,
           "mean": 0.0,
           "stddev": null,
           "median": 0.0,
           "min": 0.0,
           "max": 0.0
+        },
+        "time_wall_clock": {
+          "unit": "second",
+          "count": 1,
+          "mean": 1.0,
+          "stddev": null,
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
         }
       }
     }

@@ -15,10 +15,6 @@ hyperfine \- command\-line benchmarking tool
 .IR NUM ]
 .RB [ \-\-setup
 .IR CMD ]
-.RB [ \-\-reference
-.IR CMD ]
-.RB [ \-\-reference\-name
-.IR NAME ]
 .RB [ \-\-prepare
 .IR CMD ]
 .RB [ \-\-conclude
@@ -38,10 +34,8 @@ hyperfine \- command\-line benchmarking tool
 .IR SHELL ]
 .RB [ \-\-style
 .IR TYPE ]
-.RB [ \-\-sort
-.IR METHOD ]
-.RB [ \-\-time-unit
-.IR UNIT ]
+.RB [ \-\-metrics
+.IR METRIC[:UNIT],...|default|all ]
 .RB [ \-\-export\-asciidoc
 .IR FILE ]
 .RB [ \-\-export\-csv
@@ -75,7 +69,7 @@ A command\-line benchmarking tool which includes:
 * Warmup runs can be executed before the actual benchmark
 .RE
 .RS
-* Cache-clearing commands can be set up before each timing run
+* Cache-clearing commands can be set up before each benchmark run
 .RE
 .RS
 * Statistical outlier detection to detect interference from other programs and caching effects
@@ -86,6 +80,16 @@ A command\-line benchmarking tool which includes:
 .RS
 * Parameterized benchmarks (e.g. vary the number of threads)
 .RE
+.LP
+Commands run and appear in input order. The first benchmark after parameter
+expansion is always the reference for comparisons. Each command's results are
+printed when it finishes, with one row per selected metric showing mean,
+standard deviation, and range. Standard deviation is unavailable for a
+single run.
+Subsequent commands show the percentage change of their mean from the reference.
+A positive change means more; a negative change means less. These changes do not
+indicate statistical significance. A zero reference produces an undefined change
+(displayed as N/A). All exports preserve input order.
 .SH OPTIONS
 .HP
 \fB\-w\fR, \fB\-\-warmup\fR \fINUM\fP
@@ -109,28 +113,14 @@ Perform exactly \fINUM\fP runs for each command. If this option is not specified
 .HP
 \fB\-s\fR, \fB\-\-setup\fR \fICMD...\fP
 .IP
-Execute \fICMD\fP once before each set of timing runs. This is useful
+Execute \fICMD\fP once before each set of benchmark runs. This is useful
 for compiling your software with the provided parameters, or to do any
 other work that should happen once before a series of benchmark runs,
 not every time as would happen with the \fB\-\-prepare\fR option.
 .HP
-\fB\-\-reference\fR \fICMD\fP
-.IP
-Use \fICMD\fP as the reference for the relative comparison of results. Without
-parameters, benchmark \fICMD\fP as a separate reference command. If this option
-is not specified, the fastest command is used as the reference.
-With \fB\-\-parameter\-scan\fR or \fB\-\-parameter\-list\fR, select an existing
-benchmark by its exact printed name. The name must match exactly one benchmark.
-.HP
-\fB\-\-reference\-name\fR \fINAME\fP
-.IP
-Give a meaningful \fINAME\fP to the reference command.
-Requires \fB\-\-reference\fR.
-Cannot be used with parameterized benchmarks; use \fB\-\-command\-name\fR instead.
-.HP
 \fB\-p\fR, \fB\-\-prepare\fR \fICMD...\fP
 .IP
-Execute \fICMD\fP before each timing run. This is useful for clearing disk caches,
+Execute \fICMD\fP before each benchmark run. This is useful for clearing disk caches,
 for example.
 The \fB\-\-prepare\fR option can be specified once for all commands or multiple times,
 once for each command. In the latter case, each preparation command will be
@@ -138,7 +128,7 @@ run prior to the corresponding benchmark command.
 .HP
 \fB\-C\fR, \fB\-\-conclude\fR \fICMD...\fP
 .IP
-Execute \fICMD\fP after each timing run. This is useful for clearing disk caches,
+Execute \fICMD\fP after each benchmark run. This is useful for clearing disk caches,
 for example.
 The \fB\-\-conclude\fR option can be specified once for all commands or multiple times,
 once for each command. In the latter case, each conclusion command will be
@@ -248,65 +238,77 @@ interactive output without any colors. Set this to 'color' to keep the colors
 without any interactive output. Set this to 'none' to disable all the output
 of the tool.
 .HP
-\fB\-\-sort\fR \fIMETHOD\fP
+\fB\-\-metrics\fR \fIMETRIC[:UNIT],...|default|all\fP
 .IP
-Specify the sort order of the speed comparison summary and the
-exported tables for markup formats (Markdown, AsciiDoc, org\-mode):
+Select the metrics to display, in order, with an optional unit for each.
+Default: \fBtime_wall_clock,memory_peak_resident\fR, or \fBtime_wall_clock\fR
+on Windows, where peak resident memory is not yet supported.
+The first metric is primary: it is emphasized in terminal output and is the only
+metric in non\-JSON exports.
+The first benchmark has no change column; subsequent benchmarks show percentage
+changes from the first benchmark.
+.IP
+Use \fBdefault\fR for the platform defaults or \fBall\fR for all available
+metrics in the order listed below, with wall\-clock time primary.
+Both presets select display units automatically and must be used alone,
+without other metrics or unit suffixes.
+The \fBall\fR preset skips metrics unsupported by the platform or shell,
+or missing from any run of a benchmark. If a metric is unavailable for the
+reference, its change displays as N/A.
+.IP
+Time metrics \fBtime_wall_clock\fR, \fBtime_user\fR, and \fBtime_system\fR
+accept units \fBns\fR, \fBus\fR, \fBms\fR, \fBs\fR, \fBmin\fR, and \fBh\fR.
+Peak memory, \fBmemory_peak_resident\fR, accepts \fBB\fR, \fBkB\fR,
+\fBMB\fR, \fBGB\fR, \fBTB\fR, \fBKiB\fR, \fBMiB\fR, \fBGiB\fR,
+and \fBTiB\fR.
+.IP
+Counter metrics \fBcpu_cycles\fR, \fBinstructions\fR, \fBcache_references\fR,
+\fBcache_misses\fR, and \fBbranch_misses\fR accept \fBcount\fR (unscaled),
+\fBk\fR (thousand), \fBM\fR (million), and \fBB\fR (billion).
+For memory, \fBB\fR instead means bytes.
+.IP
+If a unit is omitted, terminal and markup output automatically select a suitable
+unit. CSV uses base units unless a unit is explicitly selected. JSON always
+uses base units, independently of this option.
+.IP
+Duplicate metrics, invalid units, and unavailable explicitly selected metrics are errors.
+Hardware counters require direct execution (no shell) and platform support.
+Automatic run counts continue to use elapsed time, regardless of the metrics.
 .RS
-.IP "auto (default)"
-the speed comparison will be ordered by time and
-the markup tables will be ordered by command (input order).
-.IP "command"
-order benchmarks in the way they were specified
-.IP "mean\-time"
-order benchmarks by mean runtime
-.RE
-.HP
-\fB\-u\fR, \fB\-\-time\-unit\fR \fIUNIT\fP
-.IP
-Set the time unit to be used. If the option is not given, the time unit is
-determined automatically. Possible values:
+Example:
 .RS
-.IP "microsecond"
-Aliases: µs, us, microseconds.
-.IP "millisecond"
-Aliases: ms, milliseconds.
-.IP "second"
-Aliases: s, seconds.
-.IP "minute"
-Aliases: min, minutes.
-.IP "hour"
-Aliases: h, hours.
+\fBhyperfine\fR \fB\-\-metrics\fR memory_peak_resident:MiB,time_wall_clock:ms,instructions:B './baseline' './candidate'
 .RE
-.IP
-This option affects the standard output as well as all export formats
-except for CSV and JSON.
+.RE
 .HP
 \fB\-\-export\-asciidoc\fR \fIFILE\fP 
 .IP
-Export the timing summary statistics as an AsciiDoc table to the given \fIFILE\fP.
-The output time unit can be changed using the \fB\-\-time\-unit\fR option.
+Export the primary metric's summary statistics as an AsciiDoc table to the given
+\fIFILE\fP. Use its selected unit, or choose a unit automatically when omitted.
 .HP
 \fB\-\-export\-csv\fR \fIFILE\fP
 .IP
-Export the timing summary statistics as CSV to the given \fIFILE\fP. If you need the
-timing results for each individual run, use the JSON export format.
-The output time unit is always seconds.
+Export the primary metric's summary statistics as CSV to the given \fIFILE\fP,
+identifying the metric and unit explicitly. Use the explicitly selected unit,
+or the base unit (seconds, bytes, or unscaled counts) when omitted.
+CSV never scales units automatically. For individual samples, use JSON.
 .HP
 \fB\-\-export\-json\fR \fIFILE\fP
 .IP
-Export the timing summary statistics and timings of individual runs as JSON to
-the given \fIFILE\fP. The output time unit is always seconds.
+Export summary statistics and individual samples for all collected metrics as
+JSON to the given \fIFILE\fP. Include the primary metric, and always use base
+units (seconds, bytes, or unscaled counts), regardless of display settings.
 .HP
 \fB\-\-export\-markdown\fR \fIFILE\fP
 .IP
-Export the timing summary statistics as a Markdown table to the given \fIFILE\fP.
-The output time unit can be changed using the \fB\-\-time\-unit\fR option.
+Export the primary metric's summary statistics as a Markdown table to the given
+\fIFILE\fP. Use its selected unit, or choose a unit automatically when omitted.
 .HP
 \fB\-\-export\-orgmode\fR \fIFILE\fP
 .IP
-Export the timing summary statistics as an Emacs org\-mode table to the
-given \fIFILE\fP. The output time unit can be changed using the \fB\-\-time\-unit\fR option.
+Export the primary metric's summary statistics as an Emacs org\-mode table to
+the given \fIFILE\fP. Use its selected unit, or choose a unit automatically
+when omitted.
 .HP
 \fB\-\-show\-output\fR
 .IP

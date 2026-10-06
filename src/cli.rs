@@ -7,6 +7,12 @@ use clap::{
     crate_version, Arg, ArgAction, ArgMatches, Command, ValueHint,
 };
 
+pub const DEFAULT_METRICS: &str = if cfg!(windows) {
+    "time_wall_clock"
+} else {
+    "time_wall_clock,memory_peak_resident"
+};
+
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
 where
     I: IntoIterator<Item = T>,
@@ -38,11 +44,27 @@ fn build_command() -> Command {
                        line like \"grep -i todo\" or a shell command like \"sleep 0.5 && echo test\". \
                        The latter requires a shell, which can be enabled via '-S' or '--shell=...'. \
                        If multiple commands are given, hyperfine will show a \
-                       comparison of the respective runtimes.")
+                       comparison with the first command as the reference.")
                 .required(true)
                 .action(ArgAction::Append)
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .arg(
+            Arg::new("metrics")
+                .long("metrics")
+                .value_name("PRESET|METRIC[:UNIT],…")
+                .default_value("default")
+                .help("Metrics to display, in order. The first is used for non-JSON exports. \
+                       Compare all commands with the first command. Presets: default (wall-clock \
+                       time and peak RSS; wall-clock time only on Windows), all (all available \
+                       metrics, skipping unavailable measurements). Both presets use automatic \
+                       units with wall-clock time first; use a preset on its own. Metrics: time_wall_clock, \
+                       time_user, time_system, memory_peak_resident, cpu_cycles, instructions, \
+                       cache_references, cache_misses, branch_misses. Optional units: ns/us/ms/s/min/h \
+                       for time, B/kB/MB/GB/TB/KiB/MiB/GiB/TiB for memory, count/k/M/B for counters \
+                       (k = thousand, M = million, B = billion). Example: \
+                       --metrics memory_peak_resident:MiB,time_wall_clock:ms,instructions:B."),
         )
         .arg(
             Arg::new("warmup")
@@ -93,33 +115,11 @@ fn build_command() -> Command {
                 .value_name("CMD")
                 .value_hint(ValueHint::CommandString)
                 .help(
-                    "Execute CMD before each set of timing runs. This is useful for \
+                    "Execute CMD before each set of benchmark runs. This is useful for \
                      compiling your software with the provided parameters, or to do any \
                      other work that should happen once before a series of benchmark runs, \
                      not every time as would happen with the --prepare option."
                 ),
-        )
-        .arg(
-            Arg::new("reference")
-                .long("reference")
-                .action(ArgAction::Set)
-                .value_name("CMD")
-                .help(
-                    "The reference for the relative comparison of results. Without parameters, \
-                    CMD is run as a separate reference command. With --parameter-scan or \
-                    --parameter-list, CMD must exactly match one unique benchmark name as \
-                    shown in the output. If this is unset, results are compared with the \
-                    fastest command as reference."
-                )
-        )
-        .arg(
-            Arg::new("reference-name")
-                .long("reference-name")
-                .action(ArgAction::Set)
-                .value_name("CMD")
-                .help("Give a meaningful name to the reference command. This cannot be used \
-                       with parameterized benchmarks; use --command-name instead.")
-                .requires("reference")
         )
         .arg(
             Arg::new("prepare")
@@ -130,7 +130,7 @@ fn build_command() -> Command {
                 .value_name("CMD")
                 .value_hint(ValueHint::CommandString)
                 .help(
-                    "Execute CMD before each timing run. This is useful for \
+                    "Execute CMD before each benchmark run. This is useful for \
                      clearing disk caches, for example.\nThe --prepare option can \
                      be specified once for all commands or multiple times, once for \
                      each command. In the latter case, each preparation command will \
@@ -146,7 +146,7 @@ fn build_command() -> Command {
                 .value_name("CMD")
                 .value_hint(ValueHint::CommandString)
                 .help(
-                    "Execute CMD after each timing run. This is useful for killing \
+                    "Execute CMD after each benchmark run. This is useful for killing \
                      long-running processes started (e.g. a web server started in --prepare), \
                      for example.\nThe --conclude option can be specified once for all \
                      commands or multiple times, once for each command. In the latter case, \
@@ -276,46 +276,13 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
-            Arg::new("sort")
-            .long("sort")
-            .action(ArgAction::Set)
-            .value_name("METHOD")
-            .value_parser(["auto", "command", "mean-time"])
-            .default_value("auto")
-            .hide_default_value(true)
-            .help(
-                "Specify the sort order of the speed comparison summary and the exported tables for \
-                 markup formats (Markdown, AsciiDoc, org-mode):\n  \
-                   * 'auto' (default): the speed comparison will be ordered by time and\n    \
-                     the markup tables will be ordered by command (input order).\n  \
-                   * 'command': order benchmarks in the way they were specified\n  \
-                   * 'mean-time': order benchmarks by mean runtime\n"
-            ),
-        )
-        .arg(
-            Arg::new("time-unit")
-                .long("time-unit")
-                .short('u')
-                .action(ArgAction::Set)
-                .value_name("UNIT")
-                .value_parser(["µs", "us", "microsecond", "microseconds", "ms", "millisecond", "milliseconds", "s", "second", "seconds", "min", "minute", "minutes", "h", "hour", "hours"])
-                .help("Set the time unit to be used. If the option is not given, the time unit is determined automatically. \
-                       This option affects the standard output as well as all export formats except for CSV and JSON.\n\
-                       Possible values:\n  \
-                         * 'µs', 'us', 'microsecond', 'microseconds'\n  \
-                         * 'ms', 'millisecond', 'milliseconds'\n  \
-                         * 's', 'second', 'seconds'\n  \
-                         * 'min', 'minute', 'minutes'\n  \
-                         * 'h', 'hour', 'hours'"),
-        )
-        .arg(
             Arg::new("export-asciidoc")
                 .long("export-asciidoc")
                 .action(ArgAction::Set)
                 .value_name("FILE")
                 .value_hint(ValueHint::FilePath)
-                .help("Export the timing summary statistics as an AsciiDoc table to the given FILE. \
-                       The output time unit can be changed using the --time-unit option."),
+                .help("Export the primary metric summary statistics as an AsciiDoc table to the given FILE. \
+                       The unit can be set with --metrics METRIC:UNIT."),
         )
         .arg(
             Arg::new("export-csv")
@@ -323,9 +290,9 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("FILE")
                 .value_hint(ValueHint::FilePath)
-                .help("Export the timing summary statistics as CSV to the given FILE. If you need \
-                       the timing results for each individual run, use the JSON export format. \
-                       The output time unit is always seconds."),
+                .help("Export the primary metric summary statistics as CSV to the given FILE. If you need \
+                       all metrics for each individual run, use the JSON export format. \
+                       Use the explicitly selected unit, or the base unit when unspecified."),
         )
         .arg(
             Arg::new("export-json")
@@ -333,8 +300,8 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("FILE")
                 .value_hint(ValueHint::FilePath)
-                .help("Export the timing summary statistics and timings of individual runs as JSON to the given FILE. \
-                       The output time unit is always seconds"),
+                .help("Export all collected metrics and individual runs as JSON to the given FILE. \
+                       Values always use base units (seconds, bytes, counts)."),
         )
         .arg(
             Arg::new("export-markdown")
@@ -342,8 +309,8 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("FILE")
                 .value_hint(ValueHint::FilePath)
-                .help("Export the timing summary statistics as a Markdown table to the given FILE. \
-                       The output time unit can be changed using the --time-unit option."),
+                .help("Export the primary metric summary statistics as a Markdown table to the given FILE. \
+                       The unit can be set with --metrics METRIC:UNIT."),
         )
         .arg(
             Arg::new("export-orgmode")
@@ -351,8 +318,8 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("FILE")
                 .value_hint(ValueHint::FilePath)
-                .help("Export the timing summary statistics as an Emacs org-mode table to the given FILE. \
-                       The output time unit can be changed using the --time-unit option."),
+                .help("Export the primary metric summary statistics as an Emacs org-mode table to the given FILE. \
+                       The unit can be set with --metrics METRIC:UNIT."),
         )
         .arg(
             Arg::new("show-output")

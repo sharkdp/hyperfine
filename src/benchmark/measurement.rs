@@ -2,7 +2,7 @@ use std::process::ExitStatus;
 
 use serde::Serialize;
 
-use crate::quantity::statistics::{max, mean, median, min, modified_zscores, standard_deviation};
+use crate::quantity::statistics::{mean, modified_zscores};
 use crate::quantity::{serialize_information, serialize_time, Information, Time};
 use crate::util::exit_code::extract_exit_code;
 
@@ -129,32 +129,6 @@ impl Measurements {
     /// The average wall clock time
     pub fn time_wall_clock_mean(&self) -> Time {
         mean(self.wall_clock_times())
-    }
-
-    /// The standard deviation of all wall clock times. Not available if only one run has been performed
-    pub fn stddev(&self) -> Option<Time> {
-        let times: Vec<_> = self.wall_clock_times().collect(); // TODO: Avoid collecting
-
-        if times.len() < 2 {
-            None
-        } else {
-            Some(standard_deviation(times))
-        }
-    }
-
-    /// The median wall clock time
-    pub fn median(&self) -> Time {
-        median(self.wall_clock_times())
-    }
-
-    /// The minimum wall clock time
-    pub fn min(&self) -> Time {
-        min(self.wall_clock_times())
-    }
-
-    /// The maximum wall clock time
-    pub fn max(&self) -> Time {
-        max(self.wall_clock_times())
     }
 
     /// Compute modified Z-scores for the wall clock times

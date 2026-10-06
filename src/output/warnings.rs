@@ -1,7 +1,8 @@
 use std::fmt;
 
 use crate::benchmark::MIN_EXECUTION_TIME;
-use crate::quantity::{FormatQuantity, Time, TimeUnit};
+use crate::metric::MetricSelection;
+use crate::quantity::{millisecond, second, Time};
 
 pub struct OutlierWarningOptions {
     pub warmup_in_use: bool,
@@ -13,7 +14,6 @@ pub enum Warnings {
     FastExecutionTime,
     NonZeroExitCode,
     SlowInitialRun(Time, OutlierWarningOptions),
-    OutliersDetected(OutlierWarningOptions),
 }
 
 impl fmt::Display for Warnings {
@@ -21,11 +21,11 @@ impl fmt::Display for Warnings {
         match *self {
             Warnings::FastExecutionTime => write!(
                 f,
-                "Command took less than {} ms to complete. Note that the results might be \
+                "Command took less than {} ms to complete. Note that the wall-clock measurements might be \
                 inaccurate because hyperfine can not calibrate the shell startup time much \
                 more precise than this limit. You can try to use the `-N`/`--shell=none` \
                 option to disable the shell completely.",
-                MIN_EXECUTION_TIME.format_with_precision(TimeUnit::MilliSecond, 0)
+                MIN_EXECUTION_TIME.get::<millisecond>()
             ),
             Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
             Warnings::SlowInitialRun(time_first_run, ref options) => write!(
@@ -33,7 +33,7 @@ impl fmt::Display for Warnings {
                 "The first benchmarking run for this command was significantly slower than the \
                  rest ({time}). This could be caused by (filesystem) caches that were not filled until \
                  after the first run. {hints}",
-                time=time_first_run.format_auto(),
+                time=MetricSelection::default().display_unit(time_first_run.get::<second>()).format(time_first_run.get::<second>()),
                 hints=match (options.warmup_in_use, options.prepare_in_use) {
                     (true, true) => "You are already using both the '--warmup' option as well \
                     as the '--prepare' option. Consider re-running the benchmark on a quiet system. \
@@ -53,16 +53,7 @@ impl fmt::Display for Warnings {
                     option to clear the caches before each timing run."
                 }
             ),
-            Warnings::OutliersDetected(ref options) => write!(
-                f,
-                "Statistical outliers were detected. Consider re-running this benchmark on a quiet \
-                 system without any interferences from other programs.{hint}",
-                hint=if options.warmup_in_use && options.prepare_in_use {
-                    ""
-                } else {
-                    " It might help to use the '--warmup' or '--prepare' options."
-                }
-            ),
+
         }
     }
 }

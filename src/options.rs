@@ -4,12 +4,13 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::{cmp, env, fmt, io};
 
-use anyhow::{bail, ensure};
+use anyhow::ensure;
 use clap::ArgMatches;
 
 use crate::command::Commands;
 use crate::error::OptionsError;
-use crate::quantity::{second, Time, TimeUnit};
+use crate::metric::{Metric, MetricSelection};
+use crate::quantity::{second, Time};
 
 use anyhow::Result;
 
@@ -95,12 +96,6 @@ pub enum OutputStyleOption {
 
     /// Disable all the output
     Disabled,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SortOrder {
-    Command,
-    MeanTime,
 }
 
 /// Bounds for the number of benchmark runs
@@ -202,35 +197,20 @@ pub struct Options {
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
 
-    // Standalone reference command, cleared when an existing benchmark is selected.
-    pub reference_command: Option<String>,
-
-    // Name of the reference command
-    pub reference_name: Option<String>,
-
-    // Index of the reference in the benchmark sequence, if any.
-    pub reference_index: Option<usize>,
-
-    /// Command(s) to run before each timing run
+    /// Command(s) to run before each benchmark run
     pub preparation_command: Option<Vec<String>>,
 
-    /// Command(s) to run after each timing run
+    /// Command(s) to run after each benchmark run
     pub conclusion_command: Option<Vec<String>>,
 
-    /// Command to run before each *batch* of timing runs, i.e. before each individual benchmark
+    /// Command to run before each *batch* of benchmark runs, i.e. before each individual benchmark
     pub setup_command: Option<String>,
 
-    /// Command to run after each *batch* of timing runs, i.e. after each individual benchmark
+    /// Command to run after each *batch* of benchmark runs, i.e. after each individual benchmark
     pub cleanup_command: Option<String>,
 
     /// What color mode to use for the terminal output
     pub output_style: OutputStyleOption,
-
-    /// How to order benchmarks in the relative speed comparison
-    pub sort_order_speed_comparison: SortOrder,
-
-    /// How to order benchmarks in the markup format exports
-    pub sort_order_exports: SortOrder,
 
     /// Determines how we run commands
     pub executor_kind: ExecutorKind,
@@ -241,8 +221,11 @@ pub struct Options {
     /// What to do with the output of the benchmarked commands
     pub command_output_policies: Vec<CommandOutputPolicy>,
 
-    /// Which time unit to use when displaying results
-    pub time_unit: Option<TimeUnit>,
+    /// Displayed metrics, with the primary metric first.
+    pub metrics: Vec<MetricSelection>,
+
+    /// The `all` preset displays only metrics with complete measurements.
+    pub skip_unavailable_metrics: bool,
 }
 
 impl Default for Options {
@@ -252,19 +235,16 @@ impl Default for Options {
             warmup_count: 0,
             min_benchmarking_time: Time::new::<second>(3.0),
             command_failure_action: CmdFailureAction::RaiseError,
-            reference_command: None,
-            reference_name: None,
-            reference_index: None,
             preparation_command: None,
             conclusion_command: None,
             setup_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
-            sort_order_speed_comparison: SortOrder::MeanTime,
-            sort_order_exports: SortOrder::Command,
             executor_kind: ExecutorKind::default(),
             command_output_policies: vec![CommandOutputPolicy::Null],
-            time_unit: None,
+            metrics: MetricSelection::parse_list(crate::cli::DEFAULT_METRICS)
+                .expect("valid default metrics"),
+            skip_unavailable_metrics: false,
             command_input_policy: CommandInputPolicy::Null,
         }
     }
@@ -306,11 +286,6 @@ impl Options {
         };
 
         options.setup_command = matches.get_one::<String>("setup").map(String::from);
-
-        options.reference_command = matches.get_one::<String>("reference").map(String::from);
-        options.reference_name = matches
-            .get_one::<String>("reference-name")
-            .map(String::from);
 
         options.preparation_command = matches
             .get_many::<String>("prepare")
@@ -383,16 +358,6 @@ impl Options {
             OutputStyleOption::Disabled => {}
         };
 
-        (
-            options.sort_order_speed_comparison,
-            options.sort_order_exports,
-        ) = match matches.get_one::<String>("sort").map(|s| s.as_str()) {
-            None | Some("auto") => (SortOrder::MeanTime, SortOrder::Command),
-            Some("command") => (SortOrder::Command, SortOrder::Command),
-            Some("mean-time") => (SortOrder::MeanTime, SortOrder::MeanTime),
-            Some(_) => unreachable!("Unknown sort order"),
-        };
-
         options.executor_kind = if matches.get_flag("no-shell") {
             ExecutorKind::Raw
         } else if matches.get_flag("default-shell") {
@@ -430,14 +395,26 @@ impl Options {
             };
         }
 
-        options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {
-            Some("µs" | "us" | "microsecond" | "microseconds") => Some(TimeUnit::MicroSecond),
-            Some("ms" | "millisecond" | "milliseconds") => Some(TimeUnit::MilliSecond),
-            Some("s" | "second" | "seconds") => Some(TimeUnit::Second),
-            Some("min" | "minute" | "minutes") => Some(TimeUnit::Minute),
-            Some("h" | "hour" | "hours") => Some(TimeUnit::Hour),
-            _ => None,
-        };
+        match matches.get_one::<String>("metrics").unwrap().as_str() {
+            "default" => {}
+            "all" => {
+                let shell = matches!(
+                    options.executor_kind,
+                    ExecutorKind::Shell(_) | ExecutorKind::Mock(Some(_))
+                );
+                options.metrics = Metric::ALL
+                    .iter()
+                    .copied()
+                    .filter(|metric| metric.ensure_available(shell).is_ok())
+                    .map(|metric| MetricSelection { metric, unit: None })
+                    .collect();
+                options.skip_unavailable_metrics = true;
+            }
+            list => {
+                options.metrics = MetricSelection::parse_list(list)
+                    .map_err(|error| OptionsError::InvalidMetrics(error.to_string()))?;
+            }
+        }
 
         if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
             options.min_benchmarking_time = Time::new::<second>(
@@ -466,43 +443,20 @@ impl Options {
     }
 
     pub fn validate_against_command_list(&mut self, commands: &Commands) -> Result<()> {
-        if let Some(reference) = &self.reference_command {
-            if commands
-                .iter()
-                .next()
-                .is_some_and(|command| !command.get_parameters().is_empty())
-            {
-                ensure!(
-                    self.reference_name.is_none(),
-                    "--reference-name cannot be used with a parameterized reference; use --command-name to name the benchmark"
-                );
-                let mut matches = commands
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, command)| command.get_name_with_unused_parameters() == *reference);
-                let Some((index, _)) = matches.next() else {
-                    bail!(
-                        "Reference '{reference}' does not match any parameterized benchmark. Use its full displayed benchmark name."
-                    );
-                };
-                ensure!(
-                    matches.next().is_none(),
-                    "Reference '{reference}' matches multiple parameterized benchmarks. Use --command-name to give them unique names."
-                );
-                self.reference_index = Some(index);
-                self.reference_command = None;
-            } else {
-                self.reference_index = Some(0);
+        if !matches!(self.executor_kind, ExecutorKind::Mock(_)) {
+            for selection in &self.metrics {
+                selection
+                    .metric
+                    .ensure_available(matches!(self.executor_kind, ExecutorKind::Shell(_)))?;
             }
         }
-        let has_reference_command = self.reference_command.is_some();
-        let num_commands = commands.num_commands(has_reference_command);
+        let num_commands = commands.num_commands();
 
         if let Some(preparation_command) = &self.preparation_command {
             ensure!(
                 preparation_command.len() <= 1 || num_commands == preparation_command.len(),
                 "The '--prepare' option has to be provided just once or N times, where N={num_commands} is the \
-                 number of benchmark commands (including a potential reference)."
+                 number of benchmark commands."
             );
         }
 
@@ -510,7 +464,7 @@ impl Options {
             ensure!(
                 conclusion_command.len() <= 1 || num_commands == conclusion_command.len(),
                 "The '--conclude' option has to be provided just once or N times, where N={num_commands} is the \
-                 number of benchmark commands (including a potential reference)."
+                 number of benchmark commands."
             );
         }
 
@@ -521,7 +475,7 @@ impl Options {
             ensure!(
                 self.command_output_policies.len() == num_commands,
                 "The '--output' option has to be provided just once or N times, where N={num_commands} is the \
-                 number of benchmark commands (including a potential reference)."
+                 number of benchmark commands."
             );
         }
 
