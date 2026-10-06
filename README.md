@@ -1,18 +1,16 @@
 # hyperfine
-[![CICD](https://github.com/sharkdp/hyperfine/actions/workflows/CICD.yml/badge.svg)](https://github.com/sharkdp/hyperfine/actions/workflows/CICD.yml)
-[![Version info](https://img.shields.io/crates/v/hyperfine.svg)](https://crates.io/crates/hyperfine)
 
 A command-line benchmarking tool.
 
-**Demo**: Benchmarking [`mypy`](https://mypy-lang.org/) and
-[`ty`](https://ty.dev/):
-
 <img width="839" height="205" alt="hyperfine demo" src="https://github.com/user-attachments/assets/13c20b1d-39c1-4da1-8fcb-0c775dd032f5" />
+
+*(hyperfine in action, benchmarking [`mypy`](https://mypy-lang.org/) and [`ty`](https://ty.dev/))*
 
 
 ## Features
 
 * Statistical analysis across multiple runs.
+* Support for various performance metrics and hardware counters.
 * Support for arbitrary shell commands.
 * Constant feedback about the benchmark progress and current estimates.
 * Warmup runs can be executed before the actual benchmark.
