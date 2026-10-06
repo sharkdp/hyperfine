@@ -14,13 +14,12 @@ Note all the input files must contain results for all commands.
 """
 
 import argparse
-import json
 import pathlib
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from plot_utils import METRICS, add_metric_argument, validate_metric
+from plot_utils import METRICS, add_metric_argument, load_results
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_metric_argument(parser)
@@ -34,7 +33,8 @@ parser.add_argument(
 parser.add_argument("-o", "--output", help="Save image to the given filename")
 
 args = parser.parse_args()
-metric_label, metric_scale = METRICS[args.metric]
+metric, datasets = load_results(parser, args.files, args.metric)
+metric_info = METRICS[metric]
 
 commands = None
 data = []
@@ -45,10 +45,7 @@ if args.benchmark_names:
         "Number of benchmark names must match the number of input files."
     )
 
-for i, filename in enumerate(args.files):
-    with open(filename) as f:
-        results = json.load(f)["results"]
-    validate_metric(parser, results, args.metric)
+for i, (filename, results) in enumerate(zip(args.files, datasets)):
     benchmark_commands = [b.get("name", b["command"]) for b in results]
     if commands is None:
         commands = benchmark_commands
@@ -56,7 +53,7 @@ for i, filename in enumerate(args.files):
         assert commands == benchmark_commands, (
             f"Unexpected commands in {filename}: {benchmark_commands}, expected: {commands}"
         )
-    data.append([b["summary"][args.metric]["mean"] / metric_scale for b in results])
+    data.append([b["summary"][metric]["mean"] / metric_info.scale for b in results])
     if args.benchmark_names:
         inputs.append(args.benchmark_names[i])
     else:
@@ -79,7 +76,7 @@ ax.grid(visible=True, axis="y")
 if args.title:
     plt.title(args.title)
 plt.xlabel("Benchmark")
-plt.ylabel(metric_label)
+plt.ylabel(metric_info.axis_label)
 plt.legend(title="Command")
 
 if args.output:

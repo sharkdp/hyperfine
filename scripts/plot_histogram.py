@@ -11,12 +11,11 @@
 """This program shows `hyperfine` benchmark results as a histogram."""
 
 import argparse
-import json
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from plot_utils import METRICS, add_metric_argument, validate_metric
+from plot_utils import METRICS, add_metric_argument, load_results
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_metric_argument(parser)
@@ -70,18 +69,15 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
-metric_label, metric_scale = METRICS[args.metric]
-
-with open(args.file) as f:
-    results = json.load(f)["results"]
-validate_metric(parser, results, args.metric)
+metric, [results] = load_results(parser, [args.file], args.metric)
+metric_info = METRICS[metric]
 
 if args.labels:
     labels = args.labels.split(",")
 else:
     labels = [b.get("name", b["command"]) for b in results]
 all_values = [
-    [m[args.metric]["value"] / metric_scale for m in b["measurements"]] for b in results
+    [m[metric]["value"] / metric_info.scale for m in b["measurements"]] for b in results
 ]
 
 value_min = (
@@ -113,7 +109,7 @@ plt.legend(
     prop={"size": 10, "family": ["Source Code Pro", "Fira Mono", "Courier New"]},
 )
 
-plt.xlabel(metric_label)
+plt.xlabel(metric_info.axis_label)
 if args.title:
     plt.title(args.title)
 

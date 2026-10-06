@@ -58,9 +58,9 @@ hyperfine \
     './baseline' './candidate'
 ```
 
-Use `--metrics=default` for the platform defaults, `--metrics=speed` for
-`time_wall_clock,time_user,time_system`, or `--metrics=all` for all available metrics in the
-order listed below. The `speed` preset works on all platforms, including with a shell.
+Use `--metrics=default` for the platform defaults, `--metrics=time` for
+`time_wall_clock,time_cpu,time_user,time_system`, or `--metrics=all` for all available metrics in the
+order listed below. The `time` preset works on all platforms, including with a shell.
 All presets keep wall-clock time primary, choose display units automatically, and must be
 used alone, without other metrics or unit suffixes.
 The `all` preset skips metrics unsupported by the platform or shell, or missing from any run
@@ -81,7 +81,7 @@ separate reference selection.
 
 | Metrics | Explicit units |
 |:---|:---|
-| `time_wall_clock`, `time_user`, `time_system` | `ns`, `us`, `ms`, `s`, `min`, `h` |
+| `time_wall_clock`, `time_cpu`, `time_user`, `time_system` | `ns`, `us`, `ms`, `s`, `min`, `h` |
 | `memory_peak_resident` | `B`, `kB`, `MB`, `GB`, `TB`, `KiB`, `MiB`, `GiB`, `TiB` |
 | `cpu_cycles`, `instructions`, `cache_references`, `cache_misses`, `branch_misses` | `count`, `k`, `M`, `B` |
 
@@ -234,16 +234,22 @@ The metrics are:
 
 - **`time_wall_clock`**: Time from start to finish, including time spent waiting, in seconds.
 
-- **`time_user`**: CPU time spent running the program's code, summed across threads, in seconds.
+- **`time_user`**: CPU time spent executing application and library code in user mode,
+  summed across threads, in seconds.
 
   - Linux/macOS: Includes child-process time when parents wait for their children to finish.
   - Windows: Includes the command and its child processes.
 
-- **`time_system`**: CPU time spent running operating-system code for the program, for example
+- **`time_system`**: CPU time spent executing kernel code on the program's behalf, for example
   to read files, summed across threads, in seconds.
 
   - Linux/macOS: Includes child-process time when parents wait for their children to finish.
   - Windows: Includes the command and its child processes.
+
+- **`time_cpu`**: Total CPU time, calculated as `time_user + time_system` for each run, in seconds.
+  It excludes time spent sleeping or waiting without executing. CPU time is summed across
+  threads, so it can exceed wall-clock time: four threads running on four cores for one second
+  can consume roughly four CPU-seconds.
 
 - **`memory_peak_resident`**: Peak memory held in physical RAM, in bytes.
 

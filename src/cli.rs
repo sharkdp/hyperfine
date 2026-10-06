@@ -57,11 +57,11 @@ fn build_command() -> Command {
                 .default_value("default")
                 .help("Metrics to display, in order. The first is used for non-JSON exports. \
                        Compare all commands with the first command. Presets: default (wall-clock \
-                       time and peak RSS; wall-clock time only on Windows), speed (wall-clock, user, \
-                       and system time), all (all available metrics, skipping unavailable \
+                       time and peak RSS; wall-clock time only on Windows), time (wall-clock, total CPU, \
+                       user, and system time), all (all available metrics, skipping unavailable \
                        measurements). All presets use automatic \
                        units with wall-clock time first; use a preset on its own. Metrics: time_wall_clock, \
-                       time_user, time_system, memory_peak_resident, cpu_cycles, instructions, \
+                       time_cpu (user + system), time_user, time_system, memory_peak_resident, cpu_cycles, instructions, \
                        cache_references, cache_misses, branch_misses. Optional units: ns/us/ms/s/min/h \
                        for time, B/kB/MB/GB/TB/KiB/MiB/GiB/TiB for memory, count/k/M/B for counters \
                        (k = thousand, M = million, B = billion). Example: \

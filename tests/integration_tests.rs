@@ -55,7 +55,7 @@ fn runs_successfully() {
 
 #[test]
 fn metric_presets_select_available_metrics() {
-    for preset in ["speed", "all"] {
+    for preset in ["time", "all"] {
         let output = hyperfine_debug()
             .arg(format!("--metrics={preset}"))
             .args(["--style=basic", "--runs=2", "sleep 1", "sleep 2"])
@@ -64,6 +64,7 @@ fn metric_presets_select_available_metrics() {
         assert!(output.status.success(), "{:?}", output);
         let stdout = String::from_utf8(output.stdout).unwrap();
         assert_eq!(stdout.matches("Wall Time").count(), 2);
+        assert_eq!(stdout.matches("CPU time").count(), 2);
         assert_eq!(stdout.matches("User time").count(), 2);
         assert_eq!(stdout.matches("System time").count(), 2);
         assert_eq!(stdout.contains("Memory"), preset == "all" && !cfg!(windows));

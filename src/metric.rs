@@ -9,6 +9,7 @@ use crate::quantity::{byte, ratio, second, Ratio};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Metric {
     TimeWallClock,
+    TimeCpu,
     TimeUser,
     TimeSystem,
     MemoryPeakResident,
@@ -20,8 +21,9 @@ pub enum Metric {
 }
 
 impl Metric {
-    pub const ALL: [Self; 9] = [
+    pub const ALL: [Self; 10] = [
         Self::TimeWallClock,
+        Self::TimeCpu,
         Self::TimeUser,
         Self::TimeSystem,
         Self::MemoryPeakResident,
@@ -35,6 +37,7 @@ impl Metric {
     pub fn name(self) -> &'static str {
         match self {
             Self::TimeWallClock => "time_wall_clock",
+            Self::TimeCpu => "time_cpu",
             Self::TimeUser => "time_user",
             Self::TimeSystem => "time_system",
             Self::MemoryPeakResident => "memory_peak_resident",
@@ -49,6 +52,7 @@ impl Metric {
     pub fn label(self) -> &'static str {
         match self {
             Self::TimeWallClock => "Wall Time",
+            Self::TimeCpu => "CPU time",
             Self::TimeUser => "User time",
             Self::TimeSystem => "System time",
             Self::MemoryPeakResident => "Memory",
@@ -65,6 +69,7 @@ impl Metric {
         let counters = &measurement.hardware_counters;
         match self {
             Self::TimeWallClock => Some(measurement.time_wall_clock.get::<second>()),
+            Self::TimeCpu => Some(measurement.time_cpu().get::<second>()),
             Self::TimeUser => Some(measurement.time_user.get::<second>()),
             Self::TimeSystem => Some(measurement.time_system.get::<second>()),
             Self::MemoryPeakResident => measurement.memory_peak_resident.map(|v| v.get::<byte>()),
@@ -79,7 +84,7 @@ impl Metric {
     pub fn is_time(self) -> bool {
         matches!(
             self,
-            Self::TimeWallClock | Self::TimeUser | Self::TimeSystem
+            Self::TimeWallClock | Self::TimeCpu | Self::TimeUser | Self::TimeSystem
         )
     }
 
@@ -349,7 +354,33 @@ impl Stats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::quantity::Information;
+    use crate::quantity::{Information, Time};
+
+    #[test]
+    fn cpu_time_statistics_use_per_run_totals() {
+        let measurements = Measurements::new(
+            [(1.0, 3.0), (3.0, 1.0)]
+                .iter()
+                .map(|&(user, system)| Measurement {
+                    time_user: Time::new::<second>(user),
+                    time_system: Time::new::<second>(system),
+                    ..Measurement::default()
+                })
+                .collect(),
+        );
+        let selection = MetricSelection::parse_list("time_cpu:ms").unwrap()[0];
+        let stats = selection.metric.summarize(&measurements).unwrap();
+        assert_eq!(selection.csv_unit().format(stats.mean), "4000.0 ms");
+        // User and system time vary, but their per-run total is constant.
+        assert_eq!(stats.stddev, Some(0.0));
+        assert_eq!(stats.min, 4.0);
+        assert_eq!(stats.max, 4.0);
+        let json = serde_json::to_value(&measurements).unwrap();
+        for sample in json["measurements"].as_array().unwrap() {
+            assert_eq!(sample["time_cpu"]["value"], 4.0);
+            assert_eq!(sample["time_cpu"]["unit"], "second");
+        }
+    }
 
     #[test]
     fn selection_units_and_validation() {

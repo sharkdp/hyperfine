@@ -100,8 +100,34 @@ pub struct Measurement {
     pub exit_status: ExitStatus,
 }
 
+impl Measurement {
+    /// Total CPU time for this run, including user and kernel mode.
+    pub fn time_cpu(&self) -> Time {
+        self.time_user + self.time_system
+    }
+}
+
+fn serialize_measurements<S>(measurements: &[Measurement], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    #[derive(Serialize)]
+    struct WithCpuTime<'a> {
+        #[serde(flatten)]
+        measurement: &'a Measurement,
+        #[serde(serialize_with = "serialize_time")]
+        time_cpu: Time,
+    }
+
+    serializer.collect_seq(measurements.iter().map(|measurement| WithCpuTime {
+        measurement,
+        time_cpu: measurement.time_cpu(),
+    }))
+}
+
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct Measurements {
+    #[serde(serialize_with = "serialize_measurements")]
     pub measurements: Vec<Measurement>,
 }
 

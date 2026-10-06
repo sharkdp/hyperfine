@@ -45,12 +45,25 @@ exit_code: 0
             "value": 0.0,
             "unit": "byte"
           },
-          "exit_code": 0
+          "exit_code": 0,
+          "time_cpu": {
+            "value": 0.0,
+            "unit": "second"
+          }
         }
       ],
       "summary": {
         "memory_peak_resident": {
           "unit": "byte",
+          "count": 1,
+          "mean": 0.0,
+          "stddev": null,
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "time_cpu": {
+          "unit": "second",
           "count": 1,
           "mean": 0.0,
           "stddev": null,
