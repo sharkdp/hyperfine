@@ -244,7 +244,7 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 | Command | Mean Wall Time [s] | Change | Factor |
 |:---|---:|---:|:---|
 | `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 |  |  |
-| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | -37.3% |  |
+| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | -37.3% | (1.6x faster) |
 | `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | -89.8% | (9.8x faster) |
 
 #### JSON

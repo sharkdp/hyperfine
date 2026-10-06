@@ -349,7 +349,7 @@ impl Stats {
 
     pub fn format_factor_from(&self, reference: &Self, metric: Metric) -> String {
         if reference.mean > 0.0
-            && (self.mean >= 2.0 * reference.mean || self.mean <= reference.mean / 2.0)
+            && (self.mean >= 1.3 * reference.mean || self.mean <= 0.7 * reference.mean)
         {
             let decrease = self.mean < reference.mean;
             let factor = if decrease {
@@ -384,20 +384,20 @@ mod tests {
     fn large_changes_include_factors() {
         let reference = Stats {
             count: 1,
-            mean: 12.0,
+            mean: 100.0,
             stddev: None,
-            median: 12.0,
-            min: 12.0,
-            max: 12.0,
+            median: 100.0,
+            min: 100.0,
+            max: 100.0,
         };
         for (mean, metric, expected) in [
-            (24.0, Metric::TimeWallClock, "+100.0% (2.0x slower)"),
-            (6.0, Metric::TimeCpu, "-50.0% (2.0x faster)"),
-            (1.2, Metric::Instructions, "-90.0% (10.0x less)"),
-            (120.0, Metric::MemoryPeakResident, "+900.0% (10.0x more)"),
-            (23.9, Metric::TimeWallClock, "+99.2%"),
-            (6.1, Metric::Instructions, "-49.2%"),
-            (12.0, Metric::Instructions, "0.0%"),
+            (130.0, Metric::TimeWallClock, "+30.0% (1.3x slower)"),
+            (70.0, Metric::TimeCpu, "-30.0% (1.4x faster)"),
+            (10.0, Metric::Instructions, "-90.0% (10.0x less)"),
+            (1000.0, Metric::MemoryPeakResident, "+900.0% (10.0x more)"),
+            (129.99, Metric::TimeWallClock, "+30.0%"),
+            (70.01, Metric::Instructions, "-30.0%"),
+            (100.0, Metric::Instructions, "0.0%"),
             (0.0, Metric::Instructions, "-100.0% (∞x less)"),
         ] {
             let stats = Stats { mean, ..reference };

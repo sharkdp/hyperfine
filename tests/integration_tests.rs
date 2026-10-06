@@ -783,7 +783,7 @@ fn shows_benchmark_comparison_relative_to_reference() {
 
     Benchmark 3: sleep 3.0 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s            +50.0%
+      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s            +50.0%  (1.5x slower)
       Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
 
@@ -824,7 +824,7 @@ fn comparison_and_markup_identify_first_command_as_reference() {
     | `baseline` | 2.000 |  |  |
     | `sleep 1` | 1.000 | -50.0% | (2.0x faster) |
     | `sleep 2` | 2.000 | 0.0% |  |
-    | `sleep 3` | 3.000 | +50.0% |  |
+    | `sleep 3` | 3.000 | +50.0% | (1.5x slower) |
     ");
 
     // Equal zero times have no meaningful relative factor.
@@ -873,7 +873,7 @@ fn shows_name_of_first_command() {
 
     Benchmark 3: sleep 3.0 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s            +50.0%
+      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s            +50.0%  (1.5x slower)
       Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
 
@@ -909,12 +909,12 @@ fn performs_all_benchmarks_in_parameter_scan() {
 
     Benchmark 3: sleep 40 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time   40.000 s   ±   0.000 s     40.000 s   …  40.000 s            +33.3%
+      Wall Time   40.000 s   ±   0.000 s     40.000 s   …  40.000 s            +33.3%  (1.3x slower)
       Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
     Benchmark 4: sleep 45 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time   45.000 s   ±   0.000 s     45.000 s   …  45.000 s            +50.0%
+      Wall Time   45.000 s   ±   0.000 s     45.000 s   …  45.000 s            +50.0%  (1.5x slower)
       Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
 
