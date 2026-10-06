@@ -54,14 +54,14 @@ parser.add_argument(
     "--t-min",
     dest="value_min",
     type=float,
-    help="Minimum value to display (seconds, or MiB for memory)",
+    help="Minimum metric value to display",
 )
 parser.add_argument(
     "--max",
     "--t-max",
     dest="value_max",
     type=float,
-    help="Maximum value to display (seconds, or MiB for memory)",
+    help="Maximum metric value to display",
 )
 parser.add_argument(
     "--log-count",
