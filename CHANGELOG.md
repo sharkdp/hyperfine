@@ -1,11 +1,13 @@
 # Unreleased
 
+## Features
+
+- Add support for alternative performance metrics (peak memory usage, CPU cycles, instructions, cache misses, branch misses, ...). By default, hyperfine will now display wall-clock time and peak memory usage,
+  but users can use the new `--metrics` option to select different performance metrics.
+- The terminal output now shows an overview of all measured performance metrics, including relative changes.
+
 ## Breaking changes
 
-- Replace `--time-unit`/`-u` with `--metrics METRIC[:UNIT],…`. Select multiple metrics for terminal output; the first metric is primary for all non-JSON exports. Presets include `default`, `time` (wall-clock, total CPU, user, and system time), and `all` (all available metrics). The `time_cpu` metric sums user and system time for each run. Units are chosen automatically for terminal and markup output when omitted. Counters support decimal `k`, `M`, and `B` suffixes.
-- Remove `--sort`, `--reference`, and `--reference-name`. Commands and exports always remain in input order, and the first expanded benchmark is the reference for every metric.
-- Replace time-only terminal output and the final speed ranking with a per-command metric table. Show wall-clock time and peak resident memory by default (wall-clock time only on Windows), with percentage changes from the first command for subsequent benchmarks. Color all metric rows and make the entire primary row bold.
-- Export only the primary metric to CSV, Markdown, AsciiDoc, and org-mode. CSV uses an explicitly selected unit or the metric's base unit when omitted. JSON continues to contain all collected metrics in base units and identifies the primary metric.
 - Benchmarked commands are now always executed directly, without an intermediate shell (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
 - The JSON format for `--export-json` has changed (schema version 2). The new format now includes metadata, per-run measurements, and statistical summaries for all measured quantities, see #790 (@sharkdp). Code that reads those exported JSON files must be updated. For example, `results[i].mean` is now `results[i].summary.time_wall_clock.mean`, and `results[i].times` is replaced by `results[i].measurements[j].time_wall_clock.value`. The new structure looks like this:
 
@@ -50,6 +52,10 @@
   ```
 
   Times are always exported in seconds and memory in bytes.
+- `--time-unit`/`-u` has been removed. Units can now be selected using the `--metrics METRIC[:UNIT],…` option, e.g. `--metrics time_wall_clock:ms,memory_peak_resident:MiB`.
+- `--sort` has been removed. It complicated hyperfine significantly and doesn't make too much sense with the new output format.
+- `--reference` and `--reference-name` have been removed (for now). The first command is always considered as the reference command.
+- The format of Markdown, AsciiDoc, org-mode and CSV exports has also been changed. CSV now includes columns with the name and the unit of the primary metric.
 
 # v1.21.0
 
