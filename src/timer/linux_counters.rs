@@ -24,7 +24,7 @@ impl CounterGroup {
         use perf_event_open_sys::{bindings, perf_event_open};
         use std::os::fd::{AsRawFd, FromRawFd};
 
-        let mut leader = -1;
+        let mut group_leader = -1;
         let events = [
             bindings::PERF_COUNT_HW_CPU_CYCLES,
             bindings::PERF_COUNT_HW_INSTRUCTIONS,
@@ -39,20 +39,29 @@ impl CounterGroup {
                 config: u64::from(config),
                 ..Default::default()
             };
+            // Don't start counting immediately.
             attr.set_disabled(1);
-            attr.set_inherit(1);
-            attr.set_exclude_kernel(1);
-            attr.set_exclude_hv(1);
+            // Start counting when the child executes the benchmark program.
             attr.set_enable_on_exec(1);
+            // New child processes and threads inherit the counters.
+            attr.set_inherit(1);
+            // Exclude kernel execution.
+            attr.set_exclude_kernel(1);
+            // Exclude hypervisor execution.
+            attr.set_exclude_hv(1);
 
-            // SAFETY: attr is initialized and sized for the kernel API. pid=0 selects
-            // this thread; cpu=-1 follows it across CPUs. All descriptors are owned here.
+            // Attach counters to the calling thread.
+            const CURRENT_THREAD: libc::pid_t = 0;
+            // Count on whichever CPU the task runs on.
+            const ANY_CPU: libc::c_int = -1;
+
+            // SAFETY: attr is initialized and sized for the kernel API.
             let fd = unsafe {
                 perf_event_open(
                     &mut attr,
-                    0,
-                    -1,
-                    leader,
+                    CURRENT_THREAD,
+                    ANY_CPU,
+                    group_leader,
                     bindings::PERF_FLAG_FD_CLOEXEC.into(),
                 )
             };
@@ -61,8 +70,8 @@ impl CounterGroup {
             }
             // SAFETY: perf_event_open returned a new, valid descriptor.
             let event = unsafe { File::from_raw_fd(fd) };
-            if leader == -1 {
-                leader = event.as_raw_fd();
+            if group_leader == -1 {
+                group_leader = event.as_raw_fd();
             }
             Some(event)
         });
