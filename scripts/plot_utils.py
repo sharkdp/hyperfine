@@ -5,6 +5,11 @@ METRICS = {
     "time_user": ("User CPU time [s]", 1),
     "time_system": ("System CPU time [s]", 1),
     "memory_peak_resident": ("Peak resident memory [MiB]", 1024**2),
+    "cpu_cycles": ("CPU cycles", 1),
+    "instructions": ("Completed CPU instructions", 1),
+    "cache_references": ("Cache references", 1),
+    "cache_misses": ("Cache misses", 1),
+    "branch_misses": ("Mispredicted branches", 1),
 }
 
 
@@ -14,7 +19,7 @@ def add_metric_argument(parser):
         choices=METRICS,
         default="time_wall_clock",
         help="Metric to plot (default: time_wall_clock). "
-        "Times are in seconds; memory is in MiB.",
+        "Times are in seconds; memory is in MiB; hardware counters are unscaled counts.",
     )
 
 
