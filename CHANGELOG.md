@@ -2,8 +2,50 @@
 
 ## Breaking changes
 
-- Execute commands directly by default (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
-- Repurpose `-S` as an alias for `--shell=default`. It no longer accepts a shell argument; replace `-S <SHELL>` with `--shell <SHELL>`.
+- Benchmarked commands are now always executed directly, without an intermediate shell (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
+- The JSON format for `--export-json` has changed (schema version 2). The new format now includes metadata, per-run measurements, and statistical summaries for all measured quantities, see #790 (@sharkdp). Code that reads those exported JSON files must be updated. For example, `results[i].mean` is now `results[i].summary.time_wall_clock.mean`, and `results[i].times` is replaced by `results[i].measurements[j].time_wall_clock.value`. The new structure looks like this:
+
+  ```python
+  {
+      "schema_version": 2,
+      "metadata": {
+          "hyperfine_version": "1.21.0",
+          "start_time": "2026-10-06T12:00:00Z",
+          "platform": {"os": "Linux", "architecture": "x86_64"}
+      },
+      "results": [
+          {
+              "command": "sleep 1",  # Actual command after parameter substitution
+              "name": "wait 1s",  # Optional custom name, separate from the command
+              "parameters": {"duration": {"value": "1"}},  # Values are now objects
+              "measurements": [  # One entry per run, excluding warmups
+                  {
+                      "time_wall_clock": {"value": 1.0, "unit": "second"},
+                      "time_user": {"value": 0.0, "unit": "second"},
+                      "time_system": {"value": 0.0, "unit": "second"},
+                      "memory_peak_resident": {"value": 1048576.0, "unit": "byte"},
+                      "exit_code": 0
+                  },
+                  ...  # Further runs omitted
+              ],
+              "summary": {
+                  "time_wall_clock": {
+                      "unit": "second",
+                      "count": 2,
+                      "mean": 1.0,
+                      "stddev": 0.0,
+                      "median": 1.0,
+                      "min": 1.0,
+                      "max": 1.0
+                  }
+                  # Other metrics have the same summary structure.
+              }
+          }
+      ]
+  }
+  ```
+
+  Times are always exported in seconds and memory in bytes.
 
 # v1.21.0
 
