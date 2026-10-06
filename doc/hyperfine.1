@@ -80,16 +80,6 @@ A command\-line benchmarking tool which includes:
 .RS
 * Parameterized benchmarks (e.g. vary the number of threads)
 .RE
-.LP
-Commands run and appear in input order. The first benchmark after parameter
-expansion is always the reference for comparisons. Each command's results are
-printed when it finishes, with one row per selected metric showing mean,
-standard deviation, and range. Standard deviation is unavailable for a
-single run.
-Subsequent commands show the percentage change of their mean from the reference.
-A positive change means more; a negative change means less. These changes do not
-indicate statistical significance. A zero reference produces an undefined change
-(displayed as N/A). All exports preserve input order.
 .SH OPTIONS
 .HP
 \fB\-w\fR, \fB\-\-warmup\fR \fINUM\fP
@@ -243,26 +233,13 @@ of the tool.
 Select the metrics to display, in order, with an optional unit for each.
 Default: \fBtime_wall_clock,memory_peak_resident\fR, or \fBtime_wall_clock\fR
 on Windows, where peak resident memory is not yet supported.
-The first metric is primary: its entire terminal row is bold, and it is the
-only metric in non\-JSON exports. All metric rows use colors when enabled.
-The first benchmark has no change column; subsequent benchmarks show percentage
-changes from the first benchmark. Decreases are green and increases are red
-when colors are enabled.
 .IP
 Use \fBdefault\fR for the platform defaults, \fBtime\fR for
 \fBtime_wall_clock,time_cpu,time_user,time_system\fR, or \fBall\fR for all available
-metrics in the order listed below. The \fBtime\fR preset works on all
-platforms, including with a shell.
-All presets keep wall\-clock time primary, select display units automatically,
-and must be used alone, without other metrics or unit suffixes.
-The \fBall\fR preset skips metrics unsupported by the platform or shell,
-or missing from any run of a benchmark. If a metric is unavailable for the
-reference, its change displays as N/A.
+metrics in the order listed below.
 .IP
 Time metrics \fBtime_wall_clock\fR, \fBtime_cpu\fR, \fBtime_user\fR, and \fBtime_system\fR
 accept units \fBns\fR, \fBus\fR, \fBms\fR, \fBs\fR, \fBmin\fR, and \fBh\fR.
-Total CPU time, \fBtime_cpu\fR, is the sum of user and system time for each run.
-It is summed across threads and can exceed wall\-clock time when work runs in parallel.
 Peak memory, \fBmemory_peak_resident\fR, accepts \fBB\fR, \fBkB\fR,
 \fBMB\fR, \fBGB\fR, \fBTB\fR, \fBKiB\fR, \fBMiB\fR, \fBGiB\fR,
 and \fBTiB\fR.
@@ -270,15 +247,9 @@ and \fBTiB\fR.
 Counter metrics \fBcpu_cycles\fR, \fBinstructions\fR, \fBcache_references\fR,
 \fBcache_misses\fR, and \fBbranch_misses\fR accept \fBcount\fR (unscaled),
 \fBk\fR (thousand), \fBM\fR (million), and \fBB\fR (billion).
-For memory, \fBB\fR instead means bytes.
 .IP
 If a unit is omitted, terminal and markup output automatically select a suitable
-unit. CSV uses base units unless a unit is explicitly selected. JSON always
-uses base units, independently of this option.
-.IP
-Duplicate metrics, invalid units, and unavailable explicitly selected metrics are errors.
-Hardware counters require direct execution (no shell) and platform support.
-Automatic run counts continue to use elapsed time, regardless of the metrics.
+unit.
 .RS
 Example:
 .RS
@@ -296,7 +267,6 @@ Export the primary metric's summary statistics as an AsciiDoc table to the given
 Export the primary metric's summary statistics as CSV to the given \fIFILE\fP,
 identifying the metric and unit explicitly. Use the explicitly selected unit,
 or the base unit (seconds, bytes, or unscaled counts) when omitted.
-CSV never scales units automatically. For individual samples, use JSON.
 .HP
 \fB\-\-export\-json\fR \fIFILE\fP
 .IP
