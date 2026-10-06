@@ -2,7 +2,7 @@
 
 ## Breaking changes
 
-- Change `--export-json` to schema version 2, adding metadata, per-run measurements, and per-metric summaries, see #790 (@sharkdp). Consumers must update: for example, `results[i].mean` is now `results[i].summary.time_wall_clock.mean`, and `results[i].times` is replaced by `results[i].measurements[j].time_wall_clock.value`. The separate `exit_codes` and `memory_usage_byte` arrays also move into each measurement as `exit_code` and `memory_peak_resident`. An abbreviated example (using Python comments for explanation):
+- Change `--export-json` to schema version 2, adding metadata, per-run measurements, and per-metric summaries, see #790 (@sharkdp). Consumers must update: for example, `results[i].mean` is now `results[i].summary.time_wall_clock.mean`, and `results[i].times` is replaced by `results[i].measurements[j].time_wall_clock.value`. The separate `exit_codes` and `memory_usage_byte` arrays also move into each measurement as `exit_code` and `memory_peak_resident`. An abbreviated example:
 
   ```python
   {
