@@ -56,11 +56,6 @@ impl ExecutionOrderTest {
         self.command(output)
     }
 
-    fn reference(&mut self, output: &str) -> &mut Self {
-        self.arg("--reference");
-        self.command(output)
-    }
-
     fn conclude(&mut self, output: &str) -> &mut Self {
         self.arg("--conclude");
         self.command(output)
@@ -373,10 +368,10 @@ fn multiple_parameter_values() {
 }
 
 #[test]
-fn reference_is_executed_first() {
+fn commands_execute_in_input_order() {
     ExecutionOrderTest::new()
         .arg("--runs=1")
-        .reference("reference")
+        .command("reference")
         .command("command 1")
         .command("command 2")
         .expect_output("reference")
@@ -386,10 +381,10 @@ fn reference_is_executed_first() {
 }
 
 #[test]
-fn reference_is_executed_separately_from_commands() {
+fn repeated_commands_execute_separately() {
     ExecutionOrderTest::new()
         .arg("--runs=1")
-        .reference("command 1")
+        .command("command 1")
         .command("command 1")
         .command("command 2")
         .expect_output("command 1")
@@ -405,7 +400,7 @@ fn setup_prepare_reference_conclude_cleanup_combined() {
         .arg("--runs=2")
         .setup("setup")
         .prepare("prepare")
-        .reference("reference")
+        .command("reference")
         .command("command1")
         .command("command2")
         .conclude("conclude")
@@ -497,7 +492,7 @@ fn setup_separate_prepare_reference_separate_conclude_cleanup_combined() {
         .setup("setup")
         .cleanup("cleanup")
         .prepare("prepareref")
-        .reference("reference")
+        .command("reference")
         .conclude("concluderef")
         .prepare("prepare1")
         .command("command1")

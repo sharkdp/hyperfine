@@ -1,11 +1,8 @@
-use crate::benchmark::relative_speed::BenchmarkResultWithRelativeSpeed;
-use crate::benchmark::{benchmark_result::BenchmarkResult, relative_speed};
-use crate::options::SortOrder;
-use crate::quantity::{FormatQuantity, IsUnit, Time, TimeUnit, Zero};
+use crate::benchmark::benchmark_result::BenchmarkResult;
+use crate::metric::{MetricSelection, Stats, Unit};
 
 use super::Exporter;
-use anyhow::Result;
-use std::cmp::Ordering;
+use anyhow::{Context, Result};
 
 pub enum Alignment {
     Left,
@@ -15,132 +12,95 @@ pub enum Alignment {
 pub trait MarkupExporter {
     fn table_results(
         &self,
-        entries: &[BenchmarkResultWithRelativeSpeed],
-        time_unit: TimeUnit,
-        reference_pending: bool,
-        explicit_reference: bool,
+        results: &[BenchmarkResult],
+        summaries: &[Stats],
+        primary: MetricSelection,
+        unit: Unit,
     ) -> String {
-        // prepare table header strings
-        let notation = format!("[{}]", time_unit.short_name());
-
-        // prepare table cells alignment
+        let notation = format!("[{}]", unit.symbol);
         let cells_alignment = [
             Alignment::Left,
             Alignment::Right,
             Alignment::Right,
-            Alignment::Right,
-            Alignment::Right,
+            Alignment::Left,
         ];
-
-        // emit table header format
         let mut table = self.table_header(&cells_alignment);
-
-        // emit table header data
         table.push_str(&self.table_row(&[
             "Command",
-            &format!("Mean {notation}"),
-            &format!("Min {notation}"),
-            &format!("Max {notation}"),
-            "Relative",
+            &format!("Mean {} {notation}", primary.metric.label()),
+            "Change",
+            "Factor",
         ]));
-
-        // emit horizontal line
         table.push_str(&self.table_divider(&cells_alignment));
 
-        for entry in entries {
-            let result = &entry.result;
-            // prepare data row strings
-            let cmd_str = result.display_name.replace('|', "\\|");
-            let mean_str = result.mean_wall_clock_time().format_value(time_unit);
-            let stddev_str = if let Some(stddev) = result.measurements.stddev() {
-                format!(" ± {}", stddev.format_value(time_unit))
+        for (index, (result, stats)) in results.iter().zip(summaries).enumerate() {
+            let command = result.display_name.replace('|', "\\|");
+            let mean = unit.format_value(stats.mean);
+            let stddev = stats
+                .stddev
+                .map(|value| format!(" ± {}", unit.format_value(value)))
+                .unwrap_or_default();
+            let change = if index == 0 {
+                String::new()
             } else {
-                "".into()
+                stats.format_change_from(&summaries[0])
             };
-            let min_str = result.measurements.min().format_value(time_unit);
-            let max_str = result.measurements.max().format_value(time_unit);
-            // The ratio of two zero times is undefined, even if they compare equal.
-            let relative_unavailable = reference_pending
-                || (explicit_reference
-                    && !entry.is_reference
-                    && entry.relative_ordering == Ordering::Equal
-                    && result.mean_wall_clock_time() == Time::zero());
-            let relative = if relative_unavailable {
-                "N/A".to_string()
+            let factor = if index == 0 {
+                String::new()
             } else {
-                let stddev = match (entry.is_reference, entry.relative_speed_stddev) {
-                    (false, Some(stddev)) => format!(" ± {stddev:.2}"),
-                    _ => String::new(),
-                };
-                let label = if explicit_reference {
-                    entry.reference_label()
-                } else {
-                    ""
-                };
-                format!("{:.2}{stddev}{label}", entry.relative_speed)
+                stats.format_factor_from(&summaries[0], primary.metric)
             };
-
-            // prepare table row entries
             table.push_str(&self.table_row(&[
-                &self.command(&cmd_str),
-                &format!("{mean_str}{stddev_str}"),
-                &min_str,
-                &max_str,
-                &relative,
-            ]))
+                &self.command(&command),
+                &format!("{mean}{stddev}"),
+                &change,
+                &factor,
+            ]));
         }
-
-        // emit table footer format
         table.push_str(&self.table_footer(&cells_alignment));
-
         table
     }
 
     fn table_row(&self, cells: &[&str]) -> String;
 
-    fn table_divider(&self, cell_aligmnents: &[Alignment]) -> String;
+    fn table_divider(&self, cell_alignments: &[Alignment]) -> String;
 
-    fn table_header(&self, _cell_aligmnents: &[Alignment]) -> String {
-        "".to_string()
+    fn table_header(&self, _cell_alignments: &[Alignment]) -> String {
+        String::new()
     }
 
-    fn table_footer(&self, _cell_aligmnents: &[Alignment]) -> String {
-        "".to_string()
+    fn table_footer(&self, _cell_alignments: &[Alignment]) -> String {
+        String::new()
     }
 
-    fn command(&self, size: &str) -> String;
-}
-
-fn determine_unit_from_results(results: &[BenchmarkResult]) -> TimeUnit {
-    if let Some(first_result) = results.first() {
-        // Use the first BenchmarkResult entry to determine the unit for all entries.
-        first_result.mean_wall_clock_time().suitable_unit()
-    } else {
-        // Default to `Second`.
-        TimeUnit::Second
-    }
+    fn command(&self, command: &str) -> String;
 }
 
 impl<T: MarkupExporter> Exporter for T {
-    fn serialize(
-        &self,
-        results: &[BenchmarkResult],
-        time_unit: Option<TimeUnit>,
-        sort_order: SortOrder,
-        reference_index: Option<usize>,
-    ) -> Result<Vec<u8>> {
-        let unit = time_unit.unwrap_or_else(|| determine_unit_from_results(results));
-        // Do not report ratios against another benchmark while the selected
-        // reference is still pending in an intermediate export.
-        let reference_pending = reference_index.is_some_and(|i| i >= results.len());
-        let entries = relative_speed::compute(
-            results,
-            sort_order,
-            reference_index.and_then(|i| results.get(i)),
-        );
-
-        let table =
-            self.table_results(&entries, unit, reference_pending, reference_index.is_some());
-        Ok(table.as_bytes().to_vec())
+    fn serialize(&self, results: &[BenchmarkResult], primary: MetricSelection) -> Result<Vec<u8>> {
+        let stats: Vec<_> = results
+            .iter()
+            .map(|result| {
+                primary
+                    .metric
+                    .summarize(&result.measurements)
+                    .with_context(|| {
+                        format!(
+                            "Metric '{}' is unavailable for '{}'",
+                            primary.metric.name(),
+                            result.get_name()
+                        )
+                    })
+            })
+            .collect::<Result<_>>()?;
+        // Use one common unit, avoiding an unscaled column if the reference is zero.
+        let mean = stats
+            .iter()
+            .find(|stats| stats.mean != 0.0)
+            .map_or(0.0, |stats| stats.mean);
+        let unit = primary.display_unit(mean);
+        Ok(self
+            .table_results(results, &stats, primary, unit)
+            .into_bytes())
     }
 }

@@ -7,9 +7,7 @@ hyperfine 'sleep 0.020' 'sleep 0.021' 'sleep 0.022' --export-json sleep.json
 uv run plot_whisker.py sleep.json
 ```
 
-All plotting scripts accept `--metric` to select a metric. Hardware counters
-(`cpu_cycles`, `instructions`, `cache_references`, `cache_misses`, and `branch_misses`)
-are plotted as unscaled counts when available in the JSON export. For example:
+All plotting and analysis scripts use the JSON export's `primary_metric` by default.
 
 ```bash
 uv run plot_histogram.py benchmark.json --metric instructions

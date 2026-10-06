@@ -118,6 +118,7 @@ pub fn execute_and_measure(
 
     Ok(Measurement {
         time_wall_clock,
+        time_cpu: time_user + time_system,
         time_user,
         time_system,
         memory_peak_resident,

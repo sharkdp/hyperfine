@@ -41,6 +41,8 @@ impl From<DecimalError> for ParameterScanError {
 
 #[derive(Debug, Error)]
 pub enum OptionsError<'a> {
+    #[error("{0}")]
+    InvalidMetrics(String),
     #[error(
         "Conflicting requirements for the number of runs (empty range, min is larger than max)"
     )]

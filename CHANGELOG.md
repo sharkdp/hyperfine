@@ -1,5 +1,11 @@
 # Unreleased
 
+## Features
+
+- Add support for alternative performance metrics (peak memory usage, CPU cycles, instructions, cache misses, branch misses, ...). By default, hyperfine will now display wall-clock time and peak memory usage,
+  but users can use the new `--metrics` option to select different performance metrics.
+- The terminal output now shows an overview of all measured performance metrics, including relative changes.
+
 ## Breaking changes
 
 - Benchmarked commands are now always executed directly, without an intermediate shell (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
@@ -46,6 +52,10 @@
   ```
 
   Times are always exported in seconds and memory in bytes.
+- `--time-unit`/`-u` has been removed. Units can now be selected using the `--metrics METRIC[:UNIT],…` option, e.g. `--metrics time_wall_clock:ms,memory_peak_resident:MiB`.
+- `--sort` has been removed. It complicated hyperfine significantly and doesn't make too much sense with the new output format.
+- `--reference` and `--reference-name` have been removed (for now). The first command is always considered as the reference command.
+- The format of Markdown, AsciiDoc, org-mode and CSV exports has also been changed. CSV now includes columns with the name and the unit of the primary metric.
 
 # v1.21.0
 

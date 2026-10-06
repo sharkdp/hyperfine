@@ -11,12 +11,11 @@
 errorbar plot."""
 
 import argparse
-import json
 import sys
 
 import matplotlib.pyplot as plt
 
-from plot_utils import METRICS, add_metric_argument, validate_metric
+from plot_utils import METRICS, add_metric_argument, load_results
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_metric_argument(parser)
@@ -43,7 +42,8 @@ parser.add_argument(
 parser.add_argument("-o", "--output", help="Save image to the given filename.")
 
 args = parser.parse_args()
-metric_label, metric_scale = METRICS[args.metric]
+metric, datasets = load_results(parser, args.file, args.metric)
+metric_info = METRICS[metric]
 if args.parameter_name is not None:
     sys.stderr.write(
         "warning: --parameter-name is deprecated; names are inferred from "
@@ -84,11 +84,7 @@ def unique_parameter(benchmark):
 
 parameter_name = None
 
-for filename in args.file:
-    with open(filename) as f:
-        results = json.load(f)["results"]
-    validate_metric(parser, results, args.metric)
-
+for results in datasets:
     (this_parameter_name, parameter_values) = extract_parameters(results)
     if parameter_name is not None and this_parameter_name != parameter_name:
         die(
@@ -96,17 +92,17 @@ for filename in args.file:
         )
     parameter_name = this_parameter_name
 
-    summaries = [b["summary"][args.metric] for b in results]
-    means = [s["mean"] / metric_scale for s in summaries]
+    summaries = [b["summary"][metric] for b in results]
+    means = [s["mean"] / metric_info.scale for s in summaries]
     stddevs = [
-        s["stddev"] / metric_scale if s["stddev"] is not None else float("nan")
+        s["stddev"] / metric_info.scale if s["stddev"] is not None else float("nan")
         for s in summaries
     ]
 
     plt.errorbar(x=parameter_values, y=means, yerr=stddevs, capsize=2)
 
 plt.xlabel(parameter_name)
-plt.ylabel(metric_label)
+plt.ylabel(metric_info.axis_label)
 
 if args.log_y:
     plt.yscale("log")

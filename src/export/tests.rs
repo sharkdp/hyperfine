@@ -2,19 +2,27 @@ use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::export::asciidoc::AsciidocExporter;
+use crate::export::markdown::MarkdownExporter;
 use crate::export::orgmode::OrgmodeExporter;
-use crate::quantity::{byte, second, Information, Time, TimeUnit, Zero};
-use crate::{export::markdown::MarkdownExporter, options::SortOrder};
+use crate::metric::{MetricSelection, Unit};
+use crate::quantity::{byte, second, Information, Time, Zero};
 use std::collections::BTreeMap;
 use std::process::ExitStatus;
 
-fn get_output<E: Exporter + Default>(
-    results: &[BenchmarkResult],
-    unit: Option<TimeUnit>,
-    sort_order: SortOrder,
-) -> String {
+fn get_output<E: Exporter + Default>(results: &[BenchmarkResult], unit: Option<Unit>) -> String {
     let exporter = E::default();
-    String::from_utf8(exporter.serialize(results, unit, sort_order, None).unwrap()).unwrap()
+    String::from_utf8(
+        exporter
+            .serialize(
+                results,
+                MetricSelection {
+                    unit,
+                    ..MetricSelection::default()
+                },
+            )
+            .unwrap(),
+    )
+    .unwrap()
 }
 
 /// Ensure the makrup output includes the table header and the multiple
@@ -33,6 +41,7 @@ fn test_markup_export_auto_ms() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.09),
+                    time_cpu: Time::new::<second>(0.09),
                     time_user: Time::new::<second>(0.09),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -41,6 +50,7 @@ fn test_markup_export_auto_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.10),
+                    time_cpu: Time::new::<second>(0.10),
                     time_user: Time::new::<second>(0.10),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -49,6 +59,7 @@ fn test_markup_export_auto_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.14),
+                    time_cpu: Time::new::<second>(0.14),
                     time_user: Time::new::<second>(0.14),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -65,6 +76,7 @@ fn test_markup_export_auto_ms() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.0),
+                    time_cpu: Time::new::<second>(2.0),
                     time_user: Time::new::<second>(2.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -73,6 +85,7 @@ fn test_markup_export_auto_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(3.0),
+                    time_cpu: Time::new::<second>(3.0),
                     time_user: Time::new::<second>(3.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -81,6 +94,7 @@ fn test_markup_export_auto_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(4.0),
+                    time_cpu: Time::new::<second>(4.0),
                     time_user: Time::new::<second>(4.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -92,42 +106,39 @@ fn test_markup_export_auto_ms() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None, SortOrder::Command), @r#"
-    | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
-    |:---|---:|---:|---:|---:|
-    | `sleep 0.1` | 110.0 ± 26.5 | 90.0 | 140.0 | 1.00 |
-    | `sleep 2` | 3000.0 ± 1000.0 | 2000.0 | 4000.0 | 27.27 ± 11.21 |
-    "#);
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @"
+    | Command | Mean Wall Time [ms] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 0.1` | 110.0 ± 26.5 |  |  |
+    | `sleep 2` | 3000.0 ± 1000.0 | +2627.3% | (27.3x slower) |
+    ");
 
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None, SortOrder::Command), @r#"
-    [cols="<,>,>,>,>"]
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None), @r#"
+    [cols="<,>,>,<"]
     |===
-    | Command 
-    | Mean [ms] 
-    | Min [ms] 
-    | Max [ms] 
-    | Relative 
+    | Command
+    | Mean Wall Time [ms]
+    | Change
+    | Factor
 
-    | `sleep 0.1` 
-    | 110.0 ± 26.5 
-    | 90.0 
-    | 140.0 
-    | 1.00 
+    | `sleep 0.1`
+    | 110.0 ± 26.5
+    |
+    |
 
-    | `sleep 2` 
-    | 3000.0 ± 1000.0 
-    | 2000.0 
-    | 4000.0 
-    | 27.27 ± 11.21 
+    | `sleep 2`
+    | 3000.0 ± 1000.0
+    | +2627.3%
+    | (27.3x slower)
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None, SortOrder::Command), @r#"
-    | Command  |  Mean [ms] |  Min [ms] |  Max [ms] |  Relative |
-    |--+--+--+--+--|
-    | =sleep 0.1=  |  110.0 ± 26.5 |  90.0 |  140.0 |  1.00 |
-    | =sleep 2=  |  3000.0 ± 1000.0 |  2000.0 |  4000.0 |  27.27 ± 11.21 |
-    "#);
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @"
+    | Command  |  Mean Wall Time [ms] |  Change |  Factor |
+    |--+--+--+--|
+    | =sleep 0.1=  |  110.0 ± 26.5 |   |   |
+    | =sleep 2=  |  3000.0 ± 1000.0 |  +2627.3% |  (27.3x slower) |
+    ");
 }
 
 /// This (again) demonstrates that the first entry's units (s) are used to set
@@ -142,6 +153,7 @@ fn test_markup_export_auto_s() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.1),
+                    time_cpu: Time::new::<second>(2.1),
                     time_user: Time::new::<second>(2.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -150,6 +162,7 @@ fn test_markup_export_auto_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.2),
+                    time_cpu: Time::new::<second>(2.2),
                     time_user: Time::new::<second>(2.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -158,6 +171,7 @@ fn test_markup_export_auto_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.3),
+                    time_cpu: Time::new::<second>(2.3),
                     time_user: Time::new::<second>(2.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -174,6 +188,7 @@ fn test_markup_export_auto_s() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.1),
+                    time_cpu: Time::new::<second>(0.1),
                     time_user: Time::new::<second>(0.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -182,6 +197,7 @@ fn test_markup_export_auto_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.2),
+                    time_cpu: Time::new::<second>(0.2),
                     time_user: Time::new::<second>(0.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -190,6 +206,7 @@ fn test_markup_export_auto_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.3),
+                    time_cpu: Time::new::<second>(0.3),
                     time_user: Time::new::<second>(0.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -201,42 +218,39 @@ fn test_markup_export_auto_s() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None, SortOrder::Command), @r#"
-    | Command | Mean [s] | Min [s] | Max [s] | Relative |
-    |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2.200 ± 0.100 | 2.100 | 2.300 | 11.00 ± 5.52 |
-    | `sleep 0.1` | 0.200 ± 0.100 | 0.100 | 0.300 | 1.00 |
-    "#);
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @"
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 2` | 2.200 ± 0.100 |  |  |
+    | `sleep 0.1` | 0.200 ± 0.100 | -90.9% | (11.0x faster) |
+    ");
 
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None, SortOrder::Command), @r#"
-    [cols="<,>,>,>,>"]
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None), @r#"
+    [cols="<,>,>,<"]
     |===
-    | Command 
-    | Mean [s] 
-    | Min [s] 
-    | Max [s] 
-    | Relative 
+    | Command
+    | Mean Wall Time [s]
+    | Change
+    | Factor
 
-    | `sleep 2` 
-    | 2.200 ± 0.100 
-    | 2.100 
-    | 2.300 
-    | 11.00 ± 5.52 
+    | `sleep 2`
+    | 2.200 ± 0.100
+    |
+    |
 
-    | `sleep 0.1` 
-    | 0.200 ± 0.100 
-    | 0.100 
-    | 0.300 
-    | 1.00 
+    | `sleep 0.1`
+    | 0.200 ± 0.100
+    | -90.9%
+    | (11.0x faster)
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None, SortOrder::Command), @r#"
-    | Command  |  Mean [s] |  Min [s] |  Max [s] |  Relative |
-    |--+--+--+--+--|
-    | =sleep 2=  |  2.200 ± 0.100 |  2.100 |  2.300 |  11.00 ± 5.52 |
-    | =sleep 0.1=  |  0.200 ± 0.100 |  0.100 |  0.300 |  1.00 |
-    "#);
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @"
+    | Command  |  Mean Wall Time [s] |  Change |  Factor |
+    |--+--+--+--|
+    | =sleep 2=  |  2.200 ± 0.100 |   |   |
+    | =sleep 0.1=  |  0.200 ± 0.100 |  -90.9% |  (11.0x faster) |
+    ");
 }
 
 /// This (again) demonstrates that the given time unit (ms) is used to set
@@ -251,6 +265,7 @@ fn test_markup_export_manual_ms() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.1),
+                    time_cpu: Time::new::<second>(2.1),
                     time_user: Time::new::<second>(2.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -259,6 +274,7 @@ fn test_markup_export_manual_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.2),
+                    time_cpu: Time::new::<second>(2.2),
                     time_user: Time::new::<second>(2.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -267,6 +283,7 @@ fn test_markup_export_manual_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.3),
+                    time_cpu: Time::new::<second>(2.3),
                     time_user: Time::new::<second>(2.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -283,6 +300,7 @@ fn test_markup_export_manual_ms() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.1),
+                    time_cpu: Time::new::<second>(0.1),
                     time_user: Time::new::<second>(0.1),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -291,6 +309,7 @@ fn test_markup_export_manual_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.2),
+                    time_cpu: Time::new::<second>(0.2),
                     time_user: Time::new::<second>(0.2),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -299,6 +318,7 @@ fn test_markup_export_manual_ms() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.3),
+                    time_cpu: Time::new::<second>(0.3),
                     time_user: Time::new::<second>(0.3),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -310,42 +330,39 @@ fn test_markup_export_manual_ms() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
-    | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
-    |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2200.0 ± 100.0 | 2100.0 | 2300.0 | 11.00 ± 5.52 |
-    | `sleep 0.1` | 200.0 ± 100.0 | 100.0 | 300.0 | 1.00 |
-    "#);
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @"
+    | Command | Mean Wall Time [ms] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 2` | 2200.0 ± 100.0 |  |  |
+    | `sleep 0.1` | 200.0 ± 100.0 | -90.9% | (11.0x faster) |
+    ");
 
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
-    [cols="<,>,>,>,>"]
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @r#"
+    [cols="<,>,>,<"]
     |===
-    | Command 
-    | Mean [ms] 
-    | Min [ms] 
-    | Max [ms] 
-    | Relative 
+    | Command
+    | Mean Wall Time [ms]
+    | Change
+    | Factor
 
-    | `sleep 2` 
-    | 2200.0 ± 100.0 
-    | 2100.0 
-    | 2300.0 
-    | 11.00 ± 5.52 
+    | `sleep 2`
+    | 2200.0 ± 100.0
+    |
+    |
 
-    | `sleep 0.1` 
-    | 200.0 ± 100.0 
-    | 100.0 
-    | 300.0 
-    | 1.00 
+    | `sleep 0.1`
+    | 200.0 ± 100.0
+    | -90.9%
+    | (11.0x faster)
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(TimeUnit::MilliSecond), SortOrder::Command), @r#"
-    | Command  |  Mean [ms] |  Min [ms] |  Max [ms] |  Relative |
-    |--+--+--+--+--|
-    | =sleep 2=  |  2200.0 ± 100.0 |  2100.0 |  2300.0 |  11.00 ± 5.52 |
-    | =sleep 0.1=  |  200.0 ± 100.0 |  100.0 |  300.0 |  1.00 |
-    "#);
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @"
+    | Command  |  Mean Wall Time [ms] |  Change |  Factor |
+    |--+--+--+--|
+    | =sleep 2=  |  2200.0 ± 100.0 |   |   |
+    | =sleep 0.1=  |  200.0 ± 100.0 |  -90.9% |  (11.0x faster) |
+    ");
 }
 
 /// The given time unit (s) is used to set the units for all entries.
@@ -359,6 +376,7 @@ fn test_markup_export_manual_s() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.01),
+                    time_cpu: Time::new::<second>(2.01),
                     time_user: Time::new::<second>(2.01),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -367,6 +385,7 @@ fn test_markup_export_manual_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.02),
+                    time_cpu: Time::new::<second>(2.02),
                     time_user: Time::new::<second>(2.02),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -375,6 +394,7 @@ fn test_markup_export_manual_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(2.03),
+                    time_cpu: Time::new::<second>(2.03),
                     time_user: Time::new::<second>(2.03),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -391,6 +411,7 @@ fn test_markup_export_manual_s() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.11),
+                    time_cpu: Time::new::<second>(0.11),
                     time_user: Time::new::<second>(0.11),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -399,6 +420,7 @@ fn test_markup_export_manual_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.12),
+                    time_cpu: Time::new::<second>(0.12),
                     time_user: Time::new::<second>(0.12),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -407,6 +429,7 @@ fn test_markup_export_manual_s() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.13),
+                    time_cpu: Time::new::<second>(0.13),
                     time_user: Time::new::<second>(0.13),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -418,40 +441,30 @@ fn test_markup_export_manual_s() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::Command), @r#"
-    | Command | Mean [s] | Min [s] | Max [s] | Relative |
-    |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | 16.83 ± 1.41 |
-    | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
-    "#);
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit { symbol: "s", scale: 1.0 })), @"
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 2` | 2.020 ± 0.010 |  |  |
+    | `sleep 0.1` | 0.120 ± 0.010 | -94.1% | (16.8x faster) |
+    ");
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(TimeUnit::Second), SortOrder::MeanTime), @r#"
-    | Command | Mean [s] | Min [s] | Max [s] | Relative |
-    |:---|---:|---:|---:|---:|
-    | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | 1.00 |
-    | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | 16.83 ± 1.41 |
-    "#);
-
-    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(TimeUnit::Second), SortOrder::Command), @r#"
-    [cols="<,>,>,>,>"]
+    insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(Unit { symbol: "s", scale: 1.0 })), @r#"
+    [cols="<,>,>,<"]
     |===
-    | Command 
-    | Mean [s] 
-    | Min [s] 
-    | Max [s] 
-    | Relative 
+    | Command
+    | Mean Wall Time [s]
+    | Change
+    | Factor
 
-    | `sleep 2` 
-    | 2.020 ± 0.010 
-    | 2.010 
-    | 2.030 
-    | 16.83 ± 1.41 
+    | `sleep 2`
+    | 2.020 ± 0.010
+    |
+    |
 
-    | `sleep 0.1` 
-    | 0.120 ± 0.010 
-    | 0.110 
-    | 0.130 
-    | 1.00 
+    | `sleep 0.1`
+    | 0.120 ± 0.010
+    | -94.1%
+    | (16.8x faster)
     |===
     "#);
 }

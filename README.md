@@ -16,7 +16,7 @@ A command-line benchmarking tool.
 * Support for arbitrary shell commands.
 * Constant feedback about the benchmark progress and current estimates.
 * Warmup runs can be executed before the actual benchmark.
-* Cache-clearing commands can be set up before each timing run.
+* Cache-clearing commands can be set up before each benchmark run.
 * Statistical outlier detection to detect interference from other programs and caching effects.
 * Export results to various formats: CSV, JSON, Markdown, AsciiDoc.
 * Parameterized benchmarks (e.g. vary the number of threads).
@@ -41,10 +41,13 @@ number of runs, you can use the `-r`/`--runs` option:
 hyperfine --runs 5 'sleep 0.3'
 ```
 
-If you want to compare the runtimes of different programs, you can pass multiple commands:
+If you want to compare different programs, you can pass multiple commands:
 ```sh
 hyperfine 'hexdump file' 'xxd file'
 ```
+
+Commands run and appear in input order. The first command is the reference for all comparisons;
+each subsequent result shows its change from that reference.
 
 ### Warmup runs and preparation commands
 
@@ -58,7 +61,7 @@ hyperfine -S --warmup 3 'grep -R TODO *'
 ```
 
 Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
-option to run a special command before *each* timing run. For example, to clear Linux filesystem caches,
+option to run a special command before *each* benchmark run. For example, to clear Linux filesystem caches,
 you can run
 ```sh
 sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
@@ -90,7 +93,7 @@ hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'
 ```
 
 A common use case is comparing the same command across multiple Git branches. Use `--setup`
-to switch branches once before each set of timing runs, so the branch switch is not part of
+to switch branches once before each set of benchmark runs, so the branch switch is not part of
 the measured command:
 ```sh
 hyperfine \
@@ -129,7 +132,7 @@ If any of these commands need shell syntax, enable a shell explicitly.
 
 When a shell is enabled, hyperfine *corrects for the shell spawning time*. It runs the shell with an
 empty command multiple times to measure its startup time, then subtracts this time from each
-measurement.
+time measurement.
 
 
 ### Shell functions
@@ -148,37 +151,39 @@ Otherwise, inline the function into the benchmarked command:
 hyperfine -S 'my_function() { sleep 1; }; my_function'
 ```
 
-### Exporting results
+### Choosing metrics and units
 
-Hyperfine has multiple options for exporting benchmark results to CSV, JSON, Markdown and other
-formats (see `--help` text for details).
+By default, hyperfine displays wall-clock time and memory usage
+(`time_wall_clock,memory_peak_resident`). Use `--metrics` with a
+comma-separated list to select a different set of metrics. Each
+metric can have an optional unit after it:
 
-#### Markdown
+```sh
+hyperfine \
+    --metrics memory_peak_resident:MiB,time_wall_clock:ms,instructions \
+    './baseline' './candidate'
+```
 
-You can use the `--export-markdown <file>` option to create tables like the following:
-
-| Command | Mean [s] | Min [s] | Max [s] | Relative |
-|:---|---:|---:|---:|---:|
-| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 | 2.243 | 2.397 | 9.79 ± 0.22 |
-| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | 1.405 | 1.468 | 6.14 ± 0.13 |
-| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | 0.230 | 0.236 | 1.00 |
-
-#### JSON
-
-The JSON export includes the following metrics for each measured run (excluding warmup runs):
+The following metrics are available:
 
 - **`time_wall_clock`**: Time from start to finish, including time spent waiting, in seconds.
 
-- **`time_user`**: CPU time spent running the program's code, summed across threads, in seconds.
+- **`time_user`**: CPU time spent executing application and library code in user mode,
+  summed across threads, in seconds.
 
   - Linux/macOS: Includes child-process time when parents wait for their children to finish.
   - Windows: Includes the command and its child processes.
 
-- **`time_system`**: CPU time spent running operating-system code for the program, for example
+- **`time_system`**: CPU time spent executing kernel code on the program's behalf, for example
   to read files, summed across threads, in seconds.
 
   - Linux/macOS: Includes child-process time when parents wait for their children to finish.
   - Windows: Includes the command and its child processes.
+
+- **`time_cpu`**: Total CPU time, calculated as `time_user + time_system` for each run, in seconds.
+  It excludes time spent sleeping or waiting without executing. CPU time is summed across
+  threads, so it can exceed wall-clock time: four threads running on four cores for one second
+  can consume roughly four CPU-seconds.
 
 - **`memory_peak_resident`**: Peak memory held in physical RAM, in bytes.
 
@@ -215,7 +220,39 @@ The JSON export includes the following metrics for each measured run (excluding 
   - Linux: Same scope as `cpu_cycles`.
   - macOS/Windows: Currently not supported.
 
-Hardware counters are not available if a `--shell` is used.
+Note that hardware counters are not available if a `--shell` is used.
+
+Time measurements support units `ns`, `us`, `ms`, `s`, `min`, and `h`. Memory measurements
+support `B`, `kB`, `MB`, `GB`, `TB`, `KiB`, `MiB`, `GiB`, and `TiB`. Hardware counters
+support `count` (1), `k` (thousand), `M` (million), and `B` (billion).
+
+You can also use a preset to select a group of metrics:
+
+| Preset | Metrics |
+|:---|:---|
+| `--metrics=default` | `time_wall_clock,memory_peak_resident` |
+| `--metrics=time` | `time_wall_clock,time_cpu,time_user,time_system` |
+| `--metrics=all` | All available metrics |
+
+### Exporting results
+
+Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. Non-JSON formats
+contain only the primary metric.
+
+#### Markdown
+
+You can use the `--export-markdown <file>` option to create tables like the following:
+
+| Command | Mean Wall Time [s] | Change | Factor |
+|:---|---:|---:|:---|
+| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 |  |  |
+| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | -37.3% | (1.6x faster) |
+| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | -89.8% | (9.8x faster) |
+
+#### JSON
+
+The JSON export includes all available metrics listed in [Choosing metrics and units](#choosing-metrics-and-units)
+for each measured run (excluding warmup runs).
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
@@ -229,7 +266,7 @@ multiple benchmarks:
 
 ### Detailed benchmark flowchart
 
-The following chart explains the execution order of various timing runs when using options
+The following chart explains the execution order of various benchmark runs when using options
 like `--warmup`, `--prepare <cmd>`, `--setup <cmd>` or `--cleanup <cmd>`:
 
 ![](doc/execution-order.png)

@@ -220,6 +220,7 @@ impl Executor for ShellExecutor<'_> {
                 ensure_non_negative(measurement.time_user - spawning_time.time_user);
             measurement.time_system =
                 ensure_non_negative(measurement.time_system - spawning_time.time_system);
+            measurement.time_cpu = measurement.time_user + measurement.time_system;
         }
 
         Ok(measurement)
@@ -278,6 +279,7 @@ impl Executor for ShellExecutor<'_> {
 
         self.shell_spawning_time = Some(Measurement {
             time_wall_clock: measurements.time_wall_clock_mean(),
+            time_cpu: measurements.time_user_mean() + measurements.time_system_mean(),
             time_user: measurements.time_user_mean(),
             time_system: measurements.time_system_mean(),
             memory_peak_resident: None,
@@ -337,6 +339,7 @@ impl Executor for MockExecutor {
 
         Ok(Measurement {
             time_wall_clock: Self::extract_time(command.get_command_line()),
+            time_cpu: Time::zero(),
             time_user: Time::zero(),
             time_system: Time::zero(),
             memory_peak_resident: Some(Information::zero()),
