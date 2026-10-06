@@ -100,18 +100,18 @@ fn test_markup_export_auto_ms() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @r#"
-    | Command | Mean Time [ms] | Min [ms] | Max [ms] | Change |
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @"
+    | Command | Mean Wall Time [ms] | Min [ms] | Max [ms] | Change |
     |:---|---:|---:|---:|---:|
     | `sleep 0.1` | 110.0 ± 26.5 | 90.0 | 140.0 | reference |
     | `sleep 2` | 3000.0 ± 1000.0 | 2000.0 | 4000.0 | +2627.3% |
-    "#);
+    ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command
-    | Mean Time [ms]
+    | Mean Wall Time [ms]
     | Min [ms]
     | Max [ms]
     | Change
@@ -130,12 +130,12 @@ fn test_markup_export_auto_ms() {
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @r#"
-    | Command  |  Mean Time [ms] |  Min [ms] |  Max [ms] |  Change |
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @"
+    | Command  |  Mean Wall Time [ms] |  Min [ms] |  Max [ms] |  Change |
     |--+--+--+--+--|
     | =sleep 0.1=  |  110.0 ± 26.5 |  90.0 |  140.0 |  reference |
     | =sleep 2=  |  3000.0 ± 1000.0 |  2000.0 |  4000.0 |  +2627.3% |
-    "#);
+    ");
 }
 
 /// This (again) demonstrates that the first entry's units (s) are used to set
@@ -209,18 +209,18 @@ fn test_markup_export_auto_s() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @r#"
-    | Command | Mean Time [s] | Min [s] | Max [s] | Change |
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @"
+    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
     |:---|---:|---:|---:|---:|
     | `sleep 2` | 2.200 ± 0.100 | 2.100 | 2.300 | reference |
     | `sleep 0.1` | 0.200 ± 0.100 | 0.100 | 0.300 | -90.9% |
-    "#);
+    ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command
-    | Mean Time [s]
+    | Mean Wall Time [s]
     | Min [s]
     | Max [s]
     | Change
@@ -239,12 +239,12 @@ fn test_markup_export_auto_s() {
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @r#"
-    | Command  |  Mean Time [s] |  Min [s] |  Max [s] |  Change |
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @"
+    | Command  |  Mean Wall Time [s] |  Min [s] |  Max [s] |  Change |
     |--+--+--+--+--|
     | =sleep 2=  |  2.200 ± 0.100 |  2.100 |  2.300 |  reference |
     | =sleep 0.1=  |  0.200 ± 0.100 |  0.100 |  0.300 |  -90.9% |
-    "#);
+    ");
 }
 
 /// This (again) demonstrates that the given time unit (ms) is used to set
@@ -318,18 +318,18 @@ fn test_markup_export_manual_ms() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @r#"
-    | Command | Mean Time [ms] | Min [ms] | Max [ms] | Change |
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @"
+    | Command | Mean Wall Time [ms] | Min [ms] | Max [ms] | Change |
     |:---|---:|---:|---:|---:|
     | `sleep 2` | 2200.0 ± 100.0 | 2100.0 | 2300.0 | reference |
     | `sleep 0.1` | 200.0 ± 100.0 | 100.0 | 300.0 | -90.9% |
-    "#);
+    ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command
-    | Mean Time [ms]
+    | Mean Wall Time [ms]
     | Min [ms]
     | Max [ms]
     | Change
@@ -348,12 +348,12 @@ fn test_markup_export_manual_ms() {
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @r#"
-    | Command  |  Mean Time [ms] |  Min [ms] |  Max [ms] |  Change |
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @"
+    | Command  |  Mean Wall Time [ms] |  Min [ms] |  Max [ms] |  Change |
     |--+--+--+--+--|
     | =sleep 2=  |  2200.0 ± 100.0 |  2100.0 |  2300.0 |  reference |
     | =sleep 0.1=  |  200.0 ± 100.0 |  100.0 |  300.0 |  -90.9% |
-    "#);
+    ");
 }
 
 /// The given time unit (s) is used to set the units for all entries.
@@ -426,18 +426,18 @@ fn test_markup_export_manual_s() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit { symbol: "s", scale: 1.0 })), @r#"
-    | Command | Mean Time [s] | Min [s] | Max [s] | Change |
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit { symbol: "s", scale: 1.0 })), @"
+    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
     |:---|---:|---:|---:|---:|
     | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | reference |
     | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | -94.1% |
-    "#);
+    ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(Unit { symbol: "s", scale: 1.0 })), @r#"
     [cols="<,>,>,>,>"]
     |===
     | Command
-    | Mean Time [s]
+    | Mean Wall Time [s]
     | Min [s]
     | Max [s]
     | Change

@@ -397,6 +397,11 @@ impl Options {
 
         match matches.get_one::<String>("metrics").unwrap().as_str() {
             "default" => {}
+            "speed" => {
+                options.metrics = [Metric::TimeWallClock, Metric::TimeUser, Metric::TimeSystem]
+                    .map(|metric| MetricSelection { metric, unit: None })
+                    .to_vec();
+            }
             "all" => {
                 let shell = matches!(
                     options.executor_kind,

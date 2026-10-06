@@ -45,34 +45,33 @@ fn runs_successfully() {
         .unwrap();
     assert!(output.status.success(), "{:?}", output);
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("Time"));
+    assert!(stdout.contains("Wall Time"));
+    assert!(!stdout.contains("User time"));
+    assert!(!stdout.contains("System time"));
     assert_eq!(stdout.contains("Memory"), !cfg!(windows));
     assert!(!stdout.contains("Change"));
     assert!(!stdout.contains("Outliers"));
 }
 
 #[test]
-fn all_metrics_skip_unavailable_counters() {
-    let output = hyperfine_debug()
-        .args([
-            "--metrics=all",
-            "--style=basic",
-            "--runs=2",
-            "sleep 1",
-            "sleep 2",
-        ])
-        .output()
-        .unwrap();
-    assert!(output.status.success(), "{:?}", output);
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert_eq!(stdout.matches("Time").count(), 2);
-    assert_eq!(stdout.matches("User time").count(), 2);
-    assert_eq!(stdout.matches("System time").count(), 2);
-    assert_eq!(stdout.contains("Memory"), !cfg!(windows));
-    assert!(!stdout.contains("CPU cycles"));
-    assert!(!stdout.contains("Instructions"));
-    assert!(!stdout.contains("Change vs #1"));
-    assert!(stdout.contains("+100.0%"));
+fn metric_presets_select_available_metrics() {
+    for preset in ["speed", "all"] {
+        let output = hyperfine_debug()
+            .arg(format!("--metrics={preset}"))
+            .args(["--style=basic", "--runs=2", "sleep 1", "sleep 2"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        assert_eq!(stdout.matches("Wall Time").count(), 2);
+        assert_eq!(stdout.matches("User time").count(), 2);
+        assert_eq!(stdout.matches("System time").count(), 2);
+        assert_eq!(stdout.contains("Memory"), preset == "all" && !cfg!(windows));
+        assert!(!stdout.contains("CPU cycles"));
+        assert!(!stdout.contains("Instructions"));
+        assert!(!stdout.contains("Change vs #1"));
+        assert!(stdout.contains("+100.0%"));
+    }
 
     // Explicit selections still require the metric, unlike the `all` preset.
     hyperfine_debug()
@@ -549,27 +548,27 @@ fn returns_mean_time_in_correct_unit() {
         .arg("sleep 1.234")
         .assert()
         .success()
-        .stdout(predicate::str::is_match(r"Time\s+1\.234 s\s+±").unwrap());
+        .stdout(predicate::str::is_match(r"Wall Time\s+1\.234 s\s+±").unwrap());
 
     hyperfine_debug()
         .arg("sleep 0.123")
         .assert()
         .success()
-        .stdout(predicate::str::is_match(r"Time\s+123\.0 ms\s+±").unwrap());
+        .stdout(predicate::str::is_match(r"Wall Time\s+123\.0 ms\s+±").unwrap());
 
     hyperfine_debug()
         .arg("--metrics=time_wall_clock:ms")
         .arg("sleep 1.234")
         .assert()
         .success()
-        .stdout(predicate::str::is_match(r"Time\s+1234\.0 ms\s+±").unwrap());
+        .stdout(predicate::str::is_match(r"Wall Time\s+1234\.0 ms\s+±").unwrap());
 
     hyperfine_debug()
         .arg("--metrics=time_wall_clock:us")
         .arg("sleep 1.234")
         .assert()
         .success()
-        .stdout(predicate::str::is_match(r"Time\s+1234000\.0 µs\s+±").unwrap());
+        .stdout(predicate::str::is_match(r"Wall Time\s+1234000\.0 µs\s+±").unwrap());
 }
 
 #[test]
@@ -676,19 +675,19 @@ fn shows_multiple_metrics_relative_to_first_command() {
     ----- stdout -----
     Benchmark 1: sleep 0.0817 (36 runs)
                     mean     ±       σ          min     …     max
-      Time          81.7 ms  ±     0.0 ms      81.7 ms  …    81.7 ms
+      Wall Time     81.7 ms  ±     0.0 ms      81.7 ms  …    81.7 ms
       User time      0.0 µs  ±     0.0 µs       0.0 µs  …     0.0 µs
       Memory         0.0 MiB ±     0.0 MiB      0.0 MiB …     0.0 MiB
 
     Benchmark 2: sleep 0.6155 (10 runs)
                     mean     ±       σ          min     …     max
-      Time         615.5 ms  ±     0.0 ms     615.5 ms  …   615.5 ms        +653.4%
+      Wall Time    615.5 ms  ±     0.0 ms     615.5 ms  …   615.5 ms        +653.4%
       User time      0.0 µs  ±     0.0 µs       0.0 µs  …     0.0 µs            N/A
       Memory         0.0 MiB ±     0.0 MiB      0.0 MiB …     0.0 MiB           N/A
 
     Benchmark 3: sleep 0.1707 (17 runs)
                     mean     ±       σ          min     …     max
-      Time         170.7 ms  ±     0.0 ms     170.7 ms  …   170.7 ms        +108.9%
+      Wall Time    170.7 ms  ±     0.0 ms     170.7 ms  …   170.7 ms        +108.9%
       User time      0.0 µs  ±     0.0 µs       0.0 µs  …     0.0 µs            N/A
       Memory         0.0 MiB ±     0.0 MiB      0.0 MiB …     0.0 MiB           N/A
 
@@ -713,24 +712,24 @@ fn shows_benchmark_comparison_with_same_time() {
     exit_code: 0
     ----- stdout -----
     Benchmark 1: A (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      1.000 s   ±   0.000 s      1.000 s   …   1.000 s
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B
+                    mean     ±       σ          min     …     max
+      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B
 
     Benchmark 2: B (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      1.000 s   ±   0.000 s      1.000 s   …   1.000 s            0.0%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s            0.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
     Benchmark 3: sleep 2.0 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      2.000 s   ±   0.000 s      2.000 s   …   2.000 s         +100.0%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time    2.000 s   ±   0.000 s      2.000 s   …   2.000 s         +100.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
     Benchmark 4: sleep 1000.0 (10 runs)
-                  mean     ±       σ           min     …      max
-      Time    1000.000 s   ±   0.000 s    1000.000 s   … 1000.000 s       +99900.0%
-      Memory       0.0 B   ±     0.0 B         0.0 B   …      0.0 B             N/A
+                     mean     ±       σ           min     …      max
+      Wall Time  1000.000 s   ±   0.000 s    1000.000 s   … 1000.000 s       +99900.0%
+      Memory          0.0 B   ±     0.0 B         0.0 B   …      0.0 B             N/A
 
 
     ----- stderr -----
@@ -750,19 +749,19 @@ fn shows_benchmark_comparison_relative_to_reference() {
     exit_code: 0
     ----- stdout -----
     Benchmark 1: sleep 2.0 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      2.000 s   ±   0.000 s      2.000 s   …   2.000 s
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B
+                    mean     ±       σ          min     …     max
+      Wall Time    2.000 s   ±   0.000 s      2.000 s   …   2.000 s
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B
 
     Benchmark 2: sleep 1.0 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      1.000 s   ±   0.000 s      1.000 s   …   1.000 s          -50.0%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s          -50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
     Benchmark 3: sleep 3.0 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      3.000 s   ±   0.000 s      3.000 s   …   3.000 s          +50.0%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s          +50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
 
     ----- stderr -----
@@ -797,7 +796,7 @@ fn comparison_and_markup_identify_first_command_as_reference() {
     assert!(stdout.contains("+50.0%"), "{}", stdout);
     let markdown = std::fs::read_to_string(export_path).unwrap();
     insta::assert_snapshot!(markdown, @"
-    | Command | Mean Time [s] | Min [s] | Max [s] | Change |
+    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
     |:---|---:|---:|---:|---:|
     | `baseline` | 2.000 | 2.000 | 2.000 | reference |
     | `sleep 1` | 1.000 | 1.000 | 1.000 | -50.0% |
@@ -840,19 +839,19 @@ fn shows_name_of_first_command() {
     exit_code: 0
     ----- stdout -----
     Benchmark 1: refabc123 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      2.000 s   ±   0.000 s      2.000 s   …   2.000 s
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B
+                    mean     ±       σ          min     …     max
+      Wall Time    2.000 s   ±   0.000 s      2.000 s   …   2.000 s
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B
 
     Benchmark 2: sleep 1.0 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      1.000 s   ±   0.000 s      1.000 s   …   1.000 s          -50.0%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s          -50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
     Benchmark 3: sleep 3.0 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time      3.000 s   ±   0.000 s      3.000 s   …   3.000 s          +50.0%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s          +50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
 
     ----- stderr -----
@@ -876,24 +875,24 @@ fn performs_all_benchmarks_in_parameter_scan() {
     exit_code: 0
     ----- stdout -----
     Benchmark 1: sleep 30 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time     30.000 s   ±   0.000 s     30.000 s   …  30.000 s
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B
+                    mean     ±       σ          min     …     max
+      Wall Time   30.000 s   ±   0.000 s     30.000 s   …  30.000 s
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B
 
     Benchmark 2: sleep 35 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time     35.000 s   ±   0.000 s     35.000 s   …  35.000 s          +16.7%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time   35.000 s   ±   0.000 s     35.000 s   …  35.000 s          +16.7%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
     Benchmark 3: sleep 40 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time     40.000 s   ±   0.000 s     40.000 s   …  40.000 s          +33.3%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time   40.000 s   ±   0.000 s     40.000 s   …  40.000 s          +33.3%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
     Benchmark 4: sleep 45 (10 runs)
-                 mean     ±       σ          min     …     max
-      Time     45.000 s   ±   0.000 s     45.000 s   …  45.000 s          +50.0%
-      Memory      0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+                    mean     ±       σ          min     …     max
+      Wall Time   45.000 s   ±   0.000 s     45.000 s   …  45.000 s          +50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
 
 
     ----- stderr -----
@@ -1074,7 +1073,7 @@ fn markdown_export_uses_first_parameterized_benchmark_as_reference() {
     exit_code: 0
     ----- stdout -----
 
-    | Command | Mean Time [s] | Min [s] | Max [s] | Change |
+    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
     |:---|---:|---:|---:|---:|
     | `case-1` | 1.000 | 1.000 | 1.000 | reference |
     | `case-2` | 2.000 | 2.000 | 2.000 | +100.0% |
@@ -1098,7 +1097,7 @@ fn intermediate_results_are_not_exported_to_stdout() {
     exit_code: 0
     ----- stdout -----
 
-    | Command | Mean Time [s] | Min [s] | Max [s] | Change |
+    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
     |:---|---:|---:|---:|---:|
     | `sleep 1` | 1.000 ± 0.000 | 1.000 | 1.000 | reference |
     | `sleep 2` | 2.000 ± 0.000 | 2.000 | 2.000 | +100.0% |
@@ -1184,7 +1183,7 @@ fn markdown_export_preserves_backticks_and_pipes_in_command_names() {
     exit_code: 0
     ----- stdout -----
 
-    | Command | Mean Time [s] | Min [s] | Max [s] | Change |
+    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
     |:---|---:|---:|---:|---:|
     | `` echo `uname` \| cat `` | 1.000 ± 0.000 | 1.000 | 1.000 | reference |
 

@@ -35,7 +35,7 @@ hyperfine \- command\-line benchmarking tool
 .RB [ \-\-style
 .IR TYPE ]
 .RB [ \-\-metrics
-.IR METRIC[:UNIT],...|default|all ]
+.IR METRIC[:UNIT],...|default|speed|all ]
 .RB [ \-\-export\-asciidoc
 .IR FILE ]
 .RB [ \-\-export\-csv
@@ -238,20 +238,23 @@ interactive output without any colors. Set this to 'color' to keep the colors
 without any interactive output. Set this to 'none' to disable all the output
 of the tool.
 .HP
-\fB\-\-metrics\fR \fIMETRIC[:UNIT],...|default|all\fP
+\fB\-\-metrics\fR \fIMETRIC[:UNIT],...|default|speed|all\fP
 .IP
 Select the metrics to display, in order, with an optional unit for each.
 Default: \fBtime_wall_clock,memory_peak_resident\fR, or \fBtime_wall_clock\fR
 on Windows, where peak resident memory is not yet supported.
-The first metric is primary: it is emphasized in terminal output and is the only
-metric in non\-JSON exports.
+The first metric is primary: its entire terminal row is bold, and it is the
+only metric in non\-JSON exports. All metric rows use colors when enabled.
 The first benchmark has no change column; subsequent benchmarks show percentage
-changes from the first benchmark.
+changes from the first benchmark. Decreases are green and increases are red
+when colors are enabled.
 .IP
-Use \fBdefault\fR for the platform defaults or \fBall\fR for all available
-metrics in the order listed below, with wall\-clock time primary.
-Both presets select display units automatically and must be used alone,
-without other metrics or unit suffixes.
+Use \fBdefault\fR for the platform defaults, \fBspeed\fR for
+\fBtime_wall_clock,time_user,time_system\fR, or \fBall\fR for all available
+metrics in the order listed below. The \fBspeed\fR preset works on all
+platforms, including with a shell.
+All presets keep wall\-clock time primary, select display units automatically,
+and must be used alone, without other metrics or unit suffixes.
 The \fBall\fR preset skips metrics unsupported by the platform or shell,
 or missing from any run of a benchmark. If a metric is unavailable for the
 reference, its change displays as N/A.

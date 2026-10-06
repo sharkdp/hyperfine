@@ -157,13 +157,7 @@ pub fn print(
                 } else {
                     text.normal().to_string()
                 }
-            } else if column == 1 {
-                if index == 1 {
-                    text.green().bold().to_string()
-                } else {
-                    text.green().to_string()
-                }
-            } else if column == 2 {
+            } else if column == 1 || column == 2 {
                 text.green().to_string()
             } else if column == 3 {
                 text.cyan().to_string()
@@ -184,7 +178,16 @@ pub fn print(
                 line.push_str(&" ".repeat(unit_padding));
             }
         }
-        console_writeln!(stdout, "  {}", line.trim_end())?;
+        let line = line.trim_end();
+        console_writeln!(
+            stdout,
+            "  {}",
+            if index == 1 {
+                line.bold()
+            } else {
+                line.normal()
+            }
+        )?;
     }
     Ok(())
 }

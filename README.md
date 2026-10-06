@@ -58,9 +58,11 @@ hyperfine \
     './baseline' './candidate'
 ```
 
-Use `--metrics=default` for the platform defaults or `--metrics=all` for all available
-metrics in the order listed below, with wall-clock time primary. Both presets choose display
-units automatically and must be used alone, without other metrics or unit suffixes.
+Use `--metrics=default` for the platform defaults, `--metrics=speed` for
+`time_wall_clock,time_user,time_system`, or `--metrics=all` for all available metrics in the
+order listed below. The `speed` preset works on all platforms, including with a shell.
+All presets keep wall-clock time primary, choose display units automatically, and must be
+used alone, without other metrics or unit suffixes.
 The `all` preset skips metrics unsupported by the platform or shell, or missing from any run
 of a benchmark. If a metric is unavailable for the reference, its change displays as `N/A`.
 
@@ -69,12 +71,13 @@ standard deviation, minimum, and maximum. The first benchmark has no change colu
 For subsequent commands, a change of `+50.0%` means
 the mean is 50% greater than the reference; `-20.0%` means it is 20% smaller. These percentages
 describe the observed means, not statistical significance. Decreases are green and increases
-are red when colors are enabled; signs remain visible without color. A percentage change from
-a zero reference is undefined and displays as `N/A`.
+are red when colors are enabled; signs remain visible without color.
+A percentage change from a zero reference is undefined and displays as `N/A`.
 
-The **first metric is primary**: it is emphasized in terminal output and is the only metric
-in non-JSON exports. All comparisons use the first command as their reference, regardless
-of which metric is primary. There is no sorting or separate reference selection.
+The **first metric is primary**: its entire terminal row is bold, and it is the only metric
+in non-JSON exports. All metric rows use colors when enabled. All comparisons use the first
+command as their reference, regardless of which metric is primary. There is no sorting or
+separate reference selection.
 
 | Metrics | Explicit units |
 |:---|:---|

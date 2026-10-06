@@ -48,7 +48,7 @@ impl Metric {
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::TimeWallClock => "Time",
+            Self::TimeWallClock => "Wall Time",
             Self::TimeUser => "User time",
             Self::TimeSystem => "System time",
             Self::MemoryPeakResident => "Memory",
