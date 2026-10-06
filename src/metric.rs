@@ -69,7 +69,7 @@ impl Metric {
         let counters = &measurement.hardware_counters;
         match self {
             Self::TimeWallClock => Some(measurement.time_wall_clock.get::<second>()),
-            Self::TimeCpu => Some(measurement.time_cpu().get::<second>()),
+            Self::TimeCpu => Some(measurement.time_cpu.get::<second>()),
             Self::TimeUser => Some(measurement.time_user.get::<second>()),
             Self::TimeSystem => Some(measurement.time_system.get::<second>()),
             Self::MemoryPeakResident => measurement.memory_peak_resident.map(|v| v.get::<byte>()),
@@ -362,6 +362,7 @@ mod tests {
             [(1.0, 3.0), (3.0, 1.0)]
                 .iter()
                 .map(|&(user, system)| Measurement {
+                    time_cpu: Time::new::<second>(user + system),
                     time_user: Time::new::<second>(user),
                     time_system: Time::new::<second>(system),
                     ..Measurement::default()

@@ -94,6 +94,7 @@ fn test_csv() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(7.0),
+                    time_cpu: Time::new::<second>(7.0),
                     time_user: Time::new::<second>(7.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -102,6 +103,7 @@ fn test_csv() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(8.0),
+                    time_cpu: Time::new::<second>(8.0),
                     time_user: Time::new::<second>(8.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -110,6 +112,7 @@ fn test_csv() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(12.0),
+                    time_cpu: Time::new::<second>(12.0),
                     time_user: Time::new::<second>(12.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -141,6 +144,7 @@ fn test_csv() {
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(17.0),
+                    time_cpu: Time::new::<second>(17.0),
                     time_user: Time::new::<second>(17.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -149,6 +153,7 @@ fn test_csv() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(18.0),
+                    time_cpu: Time::new::<second>(18.0),
                     time_user: Time::new::<second>(18.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
@@ -157,6 +162,7 @@ fn test_csv() {
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(19.0),
+                    time_cpu: Time::new::<second>(19.0),
                     time_user: Time::new::<second>(19.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),

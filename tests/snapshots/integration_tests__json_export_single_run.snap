@@ -1,5 +1,6 @@
 ---
 source: tests/integration_tests.rs
+assertion_line: 1294
 info:
   program: hyperfine
   args:
@@ -33,6 +34,10 @@ exit_code: 0
             "value": 1.0,
             "unit": "second"
           },
+          "time_cpu": {
+            "value": 0.0,
+            "unit": "second"
+          },
           "time_user": {
             "value": 0.0,
             "unit": "second"
@@ -45,11 +50,7 @@ exit_code: 0
             "value": 0.0,
             "unit": "byte"
           },
-          "exit_code": 0,
-          "time_cpu": {
-            "value": 0.0,
-            "unit": "second"
-          }
+          "exit_code": 0
         }
       ],
       "summary": {

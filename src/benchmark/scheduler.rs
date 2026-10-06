@@ -87,6 +87,9 @@ fn scheduler_basic() -> Result<()> {
         - time_wall_clock:
             value: 0.123
             unit: second
+          time_cpu:
+            value: 0
+            unit: second
           time_user:
             value: 0
             unit: second
@@ -97,12 +100,12 @@ fn scheduler_basic() -> Result<()> {
             value: 0
             unit: byte
           exit_code: 0
-          time_cpu:
-            value: 0
-            unit: second
         - time_wall_clock:
             value: 0.123
             unit: second
+          time_cpu:
+            value: 0
+            unit: second
           time_user:
             value: 0
             unit: second
@@ -113,14 +116,14 @@ fn scheduler_basic() -> Result<()> {
             value: 0
             unit: byte
           exit_code: 0
-          time_cpu:
-            value: 0
-            unit: second
     - command: sleep 0.456
       measurements:
         - time_wall_clock:
             value: 0.456
             unit: second
+          time_cpu:
+            value: 0
+            unit: second
           time_user:
             value: 0
             unit: second
@@ -131,12 +134,12 @@ fn scheduler_basic() -> Result<()> {
             value: 0
             unit: byte
           exit_code: 0
-          time_cpu:
-            value: 0
-            unit: second
         - time_wall_clock:
             value: 0.456
             unit: second
+          time_cpu:
+            value: 0
+            unit: second
           time_user:
             value: 0
             unit: second
@@ -147,9 +150,6 @@ fn scheduler_basic() -> Result<()> {
             value: 0
             unit: byte
           exit_code: 0
-          time_cpu:
-            value: 0
-            unit: second
     ");
 
     Ok(())
