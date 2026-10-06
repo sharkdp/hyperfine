@@ -222,6 +222,8 @@ jobs:
         DPKG_CONFLICTS=${{ needs.crate_metadata.outputs.name }}-musl
         case ${{ matrix.job.target }} in *-musl*) DPKG_BASENAME=${{ needs.crate_metadata.outputs.name }}-musl ; DPKG_CONFLICTS=${{ needs.crate_metadata.outputs.name }} ;; esac;
         DPKG_VERSION=${{ needs.crate_metadata.outputs.version }}
+        # Debian prereleases must sort before the corresponding stable version.
+        DPKG_VERSION=${DPKG_VERSION/-/\~}
 
         unset DPKG_ARCH
         case ${{ matrix.job.target }} in
@@ -340,6 +342,8 @@ jobs:
       uses: softprops/action-gh-release@v3
       if: steps.is-release.outputs.IS_RELEASE
       with:
+        prerelease: ${{ contains(needs.crate_metadata.outputs.version, '-') }}
+        make_latest: ${{ contains(needs.crate_metadata.outputs.version, '-') && 'false' || 'true' }}
         files: |
           ${{ steps.package.outputs.PKG_PATH }}
           ${{ steps.debian-package.outputs.DPKG_PATH }}
@@ -350,7 +354,7 @@ jobs:
     name: Publish to Winget
     runs-on: ubuntu-latest
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')
     steps:
       - uses: vedantmgoyal2009/winget-releaser@v2
         with:

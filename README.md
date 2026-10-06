@@ -220,7 +220,7 @@ The following metrics are available:
   - Linux: Same scope as `cpu_cycles`.
   - macOS/Windows: Currently not supported.
 
-Note that hardware counters are not available if a `--shell` is used.
+Note that hardware counters are not available when a shell is enabled (`--shell=..`).
 
 Time measurements support units `ns`, `us`, `ms`, `s`, `min`, and `h`. Memory measurements
 support `B`, `kB`, `MB`, `GB`, `TB`, `KiB`, `MiB`, `GiB`, and `TiB`. Hardware counters
@@ -237,7 +237,7 @@ You can also use a preset to select a group of metrics:
 ### Exporting results
 
 Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. Non-JSON formats
-contain only the primary metric.
+contain only the primary metric, which is the first metric selected by `--metrics`.
 
 #### Markdown
 
