@@ -5,10 +5,11 @@
 
 A command-line benchmarking tool.
 
-**Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and
-[`find`](https://www.gnu.org/software/findutils/):
+**Demo**: Benchmarking [`mypy`](https://mypy-lang.org/) and
+[`ty`](https://ty.dev/):
 
-![hyperfine](https://i.imgur.com/z19OYxE.gif)
+<img width="839" height="205" alt="hyperfine demo" src="https://github.com/user-attachments/assets/13c20b1d-39c1-4da1-8fcb-0c775dd032f5" />
+
 
 ## Features
 
