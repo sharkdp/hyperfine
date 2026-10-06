@@ -2,6 +2,7 @@
 
 ## Breaking changes
 
+- Benchmarked commands are now always executed directly, without an intermediate shell (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
 - The JSON format for `--export-json` has changed (schema version 2). The new format now includes metadata, per-run measurements, and statistical summaries for all measured quantities, see #790 (@sharkdp). Code that reads those exported JSON files must be updated. For example, `results[i].mean` is now `results[i].summary.time_wall_clock.mean`, and `results[i].times` is replaced by `results[i].measurements[j].time_wall_clock.value`. The new structure looks like this:
 
   ```python
@@ -44,10 +45,7 @@
   }
   ```
 
-  Times are exported in seconds and memory in bytes, regardless of `--time-unit`. Unavailable memory metrics are omitted; `stddev` is `null` for a single measurement. Reference benchmarks additionally include `"is_reference": true`.
-
-- Execute commands directly by default (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`.
-- Repurpose `-S` as an alias for `--shell=default`. It no longer accepts a shell argument; replace `-S <SHELL>` with `--shell <SHELL>`.
+  Times are always exported in seconds and memory in bytes.
 
 # v1.21.0
 
