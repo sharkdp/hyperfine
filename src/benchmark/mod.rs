@@ -1,37 +1,37 @@
 pub mod benchmark_result;
 pub mod executor;
+pub mod measurement;
 pub mod relative_speed;
 pub mod scheduler;
-pub mod timing_result;
 
 use std::cmp;
 use std::io::{self, Write};
+use std::time::Instant;
 
+use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
+use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::command::Command;
 use crate::options::{
     CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
 };
-use crate::outlier_detection::{modified_zscores, OUTLIER_THRESHOLD};
+use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::console_writeln;
-use crate::output::format::{format_duration, format_duration_unit};
-use crate::output::progress_bar::get_progress_bar;
+use crate::output::progress_bar::{
+    finish_initial_measurement, get_progress_bar, start_initial_measurement,
+};
 use crate::output::warnings::{OutlierWarningOptions, Warnings};
 use crate::parameter::ParameterNameAndValue;
-use crate::util::exit_code::extract_exit_code;
-use crate::util::min_max::{max, min};
-use crate::util::units::Second;
+use crate::quantity::{self, const_time_from_seconds, FormatQuantity, Time, Zero};
 use benchmark_result::BenchmarkResult;
-use timing_result::TimingResult;
 
 use anyhow::{anyhow, Result};
 use colored::*;
-use statistical::{mean, median, standard_deviation};
 
 use self::executor::Executor;
 
 /// Threshold for warning about fast execution time
-pub const MIN_EXECUTION_TIME: Second = 5e-3;
+pub const MIN_EXECUTION_TIME: Time = const_time_from_seconds(0.005);
 
 pub struct Benchmark<'a> {
     number: usize,
@@ -61,15 +61,15 @@ impl<'a> Benchmark<'a> {
         command: &Command<'_>,
         error_output: &'static str,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+        iteration: executor::BenchmarkIteration,
+    ) -> Result<Measurement> {
         self.executor
             .run_command_and_measure(
                 command,
-                executor::BenchmarkIteration::NonBenchmarkRun,
+                iteration,
                 Some(CmdFailureAction::RaiseError),
                 output_policy,
             )
-            .map(|r| r.0)
             .map_err(|_| anyhow!(error_output))
     }
 
@@ -78,7 +78,7 @@ impl<'a> Benchmark<'a> {
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+    ) -> Result<Measurement> {
         let command = self
             .options
             .setup_command
@@ -89,7 +89,14 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy))
+            .map(|cmd| {
+                self.run_intermediate_command(
+                    &cmd,
+                    error_output,
+                    output_policy,
+                    BenchmarkIteration::NonBenchmarkRun,
+                )
+            })
             .transpose()?
             .unwrap_or_default())
     }
@@ -99,7 +106,7 @@ impl<'a> Benchmark<'a> {
         &self,
         parameters: impl IntoIterator<Item = ParameterNameAndValue<'a>>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+    ) -> Result<Measurement> {
         let command = self
             .options
             .cleanup_command
@@ -110,7 +117,14 @@ impl<'a> Benchmark<'a> {
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
         Ok(command
-            .map(|cmd| self.run_intermediate_command(&cmd, error_output, output_policy))
+            .map(|cmd| {
+                self.run_intermediate_command(
+                    &cmd,
+                    error_output,
+                    output_policy,
+                    BenchmarkIteration::NonBenchmarkRun,
+                )
+            })
             .transpose()?
             .unwrap_or_default())
     }
@@ -120,11 +134,12 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+        iteration: executor::BenchmarkIteration,
+    ) -> Result<Measurement> {
         let error_output = "The preparation command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output, output_policy)
+        self.run_intermediate_command(command, error_output, output_policy, iteration)
     }
 
     /// Run the command specified by `--conclude`.
@@ -132,11 +147,12 @@ impl<'a> Benchmark<'a> {
         &self,
         command: &Command<'_>,
         output_policy: &CommandOutputPolicy,
-    ) -> Result<TimingResult> {
+        iteration: executor::BenchmarkIteration,
+    ) -> Result<Measurement> {
         let error_output = "The conclusion command terminated with a non-zero exit code. \
                             Append ' || true' to the command if you are sure that this can be ignored.";
 
-        self.run_intermediate_command(command, error_output, output_policy)
+        self.run_intermediate_command(command, error_output, output_policy, iteration)
     }
 
     /// Run the benchmark for a single command
@@ -151,11 +167,7 @@ impl<'a> Benchmark<'a> {
             )?;
         }
 
-        let mut times_real: Vec<Second> = vec![];
-        let mut times_user: Vec<Second> = vec![];
-        let mut times_system: Vec<Second> = vec![];
-        let mut memory_usage_byte: Vec<u64> = vec![];
-        let mut exit_codes: Vec<Option<i32>> = vec![];
+        let mut measurements = Measurements::default();
         let mut all_succeeded = true;
 
         let output_policy = &self.options.command_output_policies[self.number];
@@ -173,10 +185,10 @@ impl<'a> Benchmark<'a> {
             )
         });
 
-        let run_preparation_command = || {
+        let run_preparation_command = |iteration: executor::BenchmarkIteration| {
             preparation_command
                 .as_ref()
-                .map(|cmd| self.run_preparation_command(cmd, output_policy))
+                .map(|cmd| self.run_preparation_command(cmd, output_policy, iteration))
                 .transpose()
         };
 
@@ -192,10 +204,10 @@ impl<'a> Benchmark<'a> {
                 self.command.get_parameters().iter().cloned(),
             )
         });
-        let run_conclusion_command = || {
+        let run_conclusion_command = |iteration: executor::BenchmarkIteration| {
             conclusion_command
                 .as_ref()
-                .map(|cmd| self.run_conclusion_command(cmd, output_policy))
+                .map(|cmd| self.run_conclusion_command(cmd, output_policy, iteration))
                 .transpose()
         };
 
@@ -214,14 +226,15 @@ impl<'a> Benchmark<'a> {
             };
 
             for i in 0..self.options.warmup_count {
-                let _ = run_preparation_command()?;
+                let warmup_iteration = BenchmarkIteration::Warmup(i);
+                let _ = run_preparation_command(warmup_iteration)?;
                 let _ = self.executor.run_command_and_measure(
                     self.command,
-                    BenchmarkIteration::Warmup(i),
+                    warmup_iteration,
                     None,
                     output_policy,
                 )?;
-                let _ = run_conclusion_command()?;
+                let _ = run_conclusion_command(warmup_iteration)?;
                 if let Some(bar) = progress_bar.as_ref() {
                     bar.inc(1)
                 }
@@ -235,36 +248,59 @@ impl<'a> Benchmark<'a> {
         let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
             Some(get_progress_bar(
                 self.options.run_bounds.min,
-                "Initial time measurement",
+                if preparation_command.is_some() {
+                    "Running preparation command"
+                } else {
+                    "Initial run"
+                },
                 self.options.output_style,
             ))
         } else {
             None
         };
 
-        let preparation_result = run_preparation_command()?;
-        let preparation_overhead =
-            preparation_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        let benchmark_iteration = BenchmarkIteration::Benchmark(0);
+        let preparation_result = run_preparation_command(benchmark_iteration)?;
+        let preparation_overhead = preparation_result.map_or(Time::zero(), |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Initial timing run
-        let (res, status) = self.executor.run_command_and_measure(
+        if let Some(bar) = progress_bar.as_ref() {
+            start_initial_measurement(bar, Instant::now());
+        }
+        let measurement = self.executor.run_command_and_measure(
             self.command,
-            BenchmarkIteration::Benchmark(0),
+            benchmark_iteration,
             None,
             output_policy,
         )?;
-        let success = status.success();
+        let success = measurement.exit_status.success();
 
-        let conclusion_result = run_conclusion_command()?;
-        let conclusion_overhead =
-            conclusion_result.map_or(0.0, |res| res.time_real + self.executor.time_overhead());
+        if let Some(bar) = progress_bar.as_ref() {
+            let time_unit = self
+                .options
+                .time_unit
+                .unwrap_or(measurement.time_wall_clock.suitable_unit());
+            let estimate = measurement.time_wall_clock.format(time_unit);
+            finish_initial_measurement(
+                bar,
+                format!("Current estimate: {}", estimate.to_string().green()),
+            );
+        }
+
+        let conclusion_result = run_conclusion_command(benchmark_iteration)?;
+        let conclusion_overhead = conclusion_result.map_or(Time::zero(), |res| {
+            res.time_wall_clock + self.executor.time_overhead()
+        });
 
         // Determine number of benchmark runs
         let runs_in_min_time = (self.options.min_benchmarking_time
-            / (res.time_real
+            / (measurement.time_wall_clock
                 + self.executor.time_overhead()
                 + preparation_overhead
-                + conclusion_overhead)) as u64;
+                + conclusion_overhead))
+            .get::<quantity::ratio>() as u64;
 
         let count = {
             let min = cmp::max(runs_in_min_time, self.options.run_bounds.min);
@@ -280,28 +316,27 @@ impl<'a> Benchmark<'a> {
         let count_remaining = count - 1;
 
         // Save the first result
-        times_real.push(res.time_real);
-        times_user.push(res.time_user);
-        times_system.push(res.time_system);
-        memory_usage_byte.push(res.memory_usage_byte);
-        exit_codes.push(extract_exit_code(status));
+        measurements.push(measurement);
 
         all_succeeded = all_succeeded && success;
 
         // Re-configure the progress bar
         if let Some(bar) = progress_bar.as_ref() {
-            bar.set_length(count)
-        }
-        if let Some(bar) = progress_bar.as_ref() {
-            bar.inc(1)
+            bar.set_length(count);
+            bar.inc(1);
         }
 
         // Gather statistics (perform the actual benchmark)
         for i in 0..count_remaining {
-            run_preparation_command()?;
+            let benchmark_iteration = BenchmarkIteration::Benchmark(i + 1);
 
             let msg = {
-                let mean = format_duration(mean(&times_real), self.options.time_unit);
+                let t_wall_clock_mean = measurements.time_wall_clock_mean();
+                let time_unit = self
+                    .options
+                    .time_unit
+                    .unwrap_or(t_wall_clock_mean.suitable_unit());
+                let mean = t_wall_clock_mean.format(time_unit);
                 format!("Current estimate: {}", mean.to_string().green())
             };
 
@@ -309,19 +344,16 @@ impl<'a> Benchmark<'a> {
                 bar.set_message(msg.to_owned())
             }
 
-            let (res, status) = self.executor.run_command_and_measure(
+            run_preparation_command(benchmark_iteration)?;
+
+            let measurement = self.executor.run_command_and_measure(
                 self.command,
-                BenchmarkIteration::Benchmark(i + 1),
+                benchmark_iteration,
                 None,
                 output_policy,
             )?;
-            let success = status.success();
-
-            times_real.push(res.time_real);
-            times_user.push(res.time_user);
-            times_system.push(res.time_system);
-            memory_usage_byte.push(res.memory_usage_byte);
-            exit_codes.push(extract_exit_code(status));
+            let success = measurement.exit_status.success();
+            measurements.push(measurement);
 
             all_succeeded = all_succeeded && success;
 
@@ -329,40 +361,30 @@ impl<'a> Benchmark<'a> {
                 bar.inc(1)
             }
 
-            run_conclusion_command()?;
+            run_conclusion_command(benchmark_iteration)?;
         }
 
         if let Some(bar) = progress_bar.as_ref() {
             bar.finish_and_clear()
         }
 
-        // Compute statistical quantities
-        let t_num = times_real.len();
-        let t_mean = mean(&times_real);
-        let t_stddev = if times_real.len() > 1 {
-            Some(standard_deviation(&times_real, Some(t_mean)))
-        } else {
-            None
-        };
-        let t_median = median(&times_real);
-        let t_min = min(&times_real);
-        let t_max = max(&times_real);
-
-        let user_mean = mean(&times_user);
-        let system_mean = mean(&times_system);
-
         // Formatting and console output
-        let (mean_str, time_unit) = format_duration_unit(t_mean, self.options.time_unit);
-        let min_str = format_duration(t_min, Some(time_unit));
-        let max_str = format_duration(t_max, Some(time_unit));
-        let num_str = format!("{t_num} runs");
+        let t_wall_clock_mean = measurements.time_wall_clock_mean();
+        let time_unit = self
+            .options
+            .time_unit
+            .unwrap_or(t_wall_clock_mean.suitable_unit());
+        let mean_str = t_wall_clock_mean.format(time_unit);
+        let min_str = measurements.min().format(time_unit);
+        let max_str = measurements.max().format(time_unit);
+        let num_str = format!("{num_runs} runs", num_runs = measurements.len());
 
-        let user_str = format_duration(user_mean, Some(time_unit));
-        let system_str = format_duration(system_mean, Some(time_unit));
+        let user_str = measurements.time_user_mean().format(time_unit);
+        let system_str = measurements.time_system_mean().format(time_unit);
 
         if self.options.output_style != OutputStyleOption::Disabled {
             let mut stdout = io::stdout().lock();
-            if times_real.len() == 1 {
+            if measurements.len() == 1 {
                 console_writeln!(
                     stdout,
                     "  Time ({} ≡):        {:>8}  {:>8}     [User: {}, System: {}]",
@@ -373,7 +395,7 @@ impl<'a> Benchmark<'a> {
                     system_str.blue()
                 )?;
             } else {
-                let stddev_str = format_duration(t_stddev.unwrap(), Some(time_unit));
+                let stddev_str = measurements.stddev().unwrap().format(time_unit);
 
                 console_writeln!(
                     stdout,
@@ -403,7 +425,9 @@ impl<'a> Benchmark<'a> {
 
         // Check execution time
         if matches!(self.options.executor_kind, ExecutorKind::Shell(_))
-            && times_real.iter().any(|&t| t < MIN_EXECUTION_TIME)
+            && measurements
+                .wall_clock_times()
+                .any(|t| t < MIN_EXECUTION_TIME)
         {
             warnings.push(Warnings::FastExecutionTime);
         }
@@ -414,7 +438,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = modified_zscores(&times_real);
+        let scores = measurements.modified_zscores();
 
         let outlier_warning_options = OutlierWarningOptions {
             warmup_in_use: self.options.warmup_count > 0,
@@ -429,7 +453,7 @@ impl<'a> Benchmark<'a> {
 
         if scores[0] > OUTLIER_THRESHOLD {
             warnings.push(Warnings::SlowInitialRun(
-                times_real[0],
+                measurements.wall_clock_times().next().unwrap(),
                 outlier_warning_options,
             ));
         } else if scores.iter().any(|&s| s.abs() > OUTLIER_THRESHOLD) {
@@ -451,24 +475,27 @@ impl<'a> Benchmark<'a> {
 
         self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
 
+        let command = self.command.get_command_line();
+        let name = self.command.get_name();
+        let name = (name != command).then_some(name);
+
         Ok(BenchmarkResult {
-            command: self.command.get_name(),
-            command_with_unused_parameters: self.command.get_name_with_unused_parameters(),
-            mean: t_mean,
-            stddev: t_stddev,
-            median: t_median,
-            user: user_mean,
-            system: system_mean,
-            min: t_min,
-            max: t_max,
-            times: Some(times_real),
-            memory_usage_byte: Some(memory_usage_byte),
-            exit_codes,
+            command,
+            name,
+            display_name: self.command.get_name_with_unused_parameters(),
+            measurements,
             parameters: self
                 .command
                 .get_parameters()
                 .iter()
-                .map(|(name, value)| (name.to_string(), value.to_string()))
+                .map(|(name, value)| {
+                    (
+                        name.to_string(),
+                        Parameter {
+                            value: value.to_string(),
+                        },
+                    )
+                })
                 .collect(),
         })
     }

@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 name = "hyperfine"
 readme = "README.md"
 repository = "https://github.com/sharkdp/hyperfine"
-version = "1.20.0"
+version = "1.21.0"
 edition = "2018"
 build = "build.rs"
 rust-version = "1.97.0"
@@ -20,7 +20,6 @@ windows_process_extensions_main_thread_handle = []
 colored = "3.1"
 # Newer versions regress ETA estimates: https://github.com/console-rs/indicatif/issues/580
 indicatif = "=0.17.4"
-statistical = "1.0"
 csv = "1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -29,6 +28,9 @@ rand = "0.10"
 shell-words = "1.1"
 thiserror = "2.0"
 anyhow = "1.0"
+uom = { version = "0.36.0", default-features = false, features = ["std", "si", "f64"] }
+humantime = "2"
+platform-info = "2.2"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"
@@ -64,7 +66,8 @@ features = [
 [dev-dependencies]
 approx = "0.5"
 assert_cmd = "2.2"
-insta = { version = "1.48", features = ["yaml"] }
+insta = { version = "1.48", features = ["yaml", "filters"] }
+insta-cmd = "0.7"
 predicates = "3.1"
 tempfile = "3.27"
 

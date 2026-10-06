@@ -25,6 +25,7 @@ pub mod options;
 pub mod outlier_detection;
 pub mod output;
 pub mod parameter;
+pub mod quantity;
 pub mod timer;
 pub mod util;
 
@@ -36,13 +37,13 @@ fn run() -> Result<()> {
     let cli_arguments = get_cli_arguments(env::args_os());
     let mut options = Options::from_cli_arguments(&cli_arguments)?;
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
+    options.validate_against_command_list(&commands)?;
+
     let export_manager = ExportManager::from_cli_arguments(
         &cli_arguments,
         options.time_unit,
         options.sort_order_exports,
     )?;
-
-    options.validate_against_command_list(&commands)?;
 
     let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
     scheduler.run_benchmarks()?;

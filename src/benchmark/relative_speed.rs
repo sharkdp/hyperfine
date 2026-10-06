@@ -1,20 +1,39 @@
 use std::cmp::Ordering;
 
 use super::benchmark_result::BenchmarkResult;
-use crate::{options::SortOrder, util::units::Scalar};
+use crate::{
+    options::SortOrder,
+    quantity::{self, Ratio, Time, Zero},
+};
 
 #[derive(Debug)]
 pub struct BenchmarkResultWithRelativeSpeed<'a> {
     pub result: &'a BenchmarkResult,
-    pub relative_speed: Scalar,
-    pub relative_speed_stddev: Option<Scalar>,
+    pub relative_speed: f64,
+    pub relative_speed_stddev: Option<f64>,
     pub is_reference: bool,
     // Less means faster
     pub relative_ordering: Ordering,
 }
 
+impl BenchmarkResultWithRelativeSpeed<'_> {
+    pub fn reference_label(&self) -> &'static str {
+        if self.is_reference {
+            " (reference)"
+        } else {
+            match self.relative_ordering {
+                Ordering::Less => " (faster)",
+                Ordering::Equal => " (same speed)",
+                Ordering::Greater => " (slower)",
+            }
+        }
+    }
+}
+
 pub fn compare_mean_time(l: &BenchmarkResult, r: &BenchmarkResult) -> Ordering {
-    l.mean.partial_cmp(&r.mean).unwrap_or(Ordering::Equal)
+    l.mean_wall_clock_time()
+        .partial_cmp(&r.mean_wall_clock_time())
+        .unwrap_or(Ordering::Equal)
 }
 
 pub fn fastest_of(results: &[BenchmarkResult]) -> &BenchmarkResult {
@@ -32,10 +51,13 @@ fn compute_relative_speeds<'a>(
     let mut results: Vec<_> = results
         .iter()
         .map(|result| {
-            let is_reference = result == reference;
+            // Separate benchmarks can have identical names and measurements.
+            let is_reference = std::ptr::eq(result, reference);
             let relative_ordering = compare_mean_time(result, reference);
 
-            if result.mean == 0.0 {
+            if result.mean_wall_clock_time() == Time::zero()
+                || reference.mean_wall_clock_time() == Time::zero()
+            {
                 return BenchmarkResultWithRelativeSpeed {
                     result,
                     relative_speed: if is_reference { 1.0 } else { f64::INFINITY },
@@ -46,18 +68,25 @@ fn compute_relative_speeds<'a>(
             }
 
             let ratio = match relative_ordering {
-                Ordering::Less => reference.mean / result.mean,
-                Ordering::Equal => 1.0,
-                Ordering::Greater => result.mean / reference.mean,
+                Ordering::Less => reference.mean_wall_clock_time() / result.mean_wall_clock_time(),
+                Ordering::Equal => Ratio::new::<quantity::ratio>(1.0),
+                Ordering::Greater => {
+                    result.mean_wall_clock_time() / reference.mean_wall_clock_time()
+                }
             };
 
             // https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulas
-            // Covariance asssumed to be 0, i.e. variables are assumed to be independent
-            let ratio_stddev = match (result.stddev, reference.stddev) {
-                (Some(result_stddev), Some(fastest_stddev)) => Some(
+            // Covariance assumed to be 0, i.e. variables are assumed to be independent
+            let ratio_stddev = match (
+                result.measurements.stddev(),
+                reference.measurements.stddev(),
+            ) {
+                (Some(result_stddev), Some(reference_stddev)) => Some(
                     ratio
-                        * ((result_stddev / result.mean).powi(2)
-                            + (fastest_stddev / reference.mean).powi(2))
+                        * ((result_stddev / result.mean_wall_clock_time())
+                            .powi(uom::typenum::P2::new())
+                            + (reference_stddev / reference.mean_wall_clock_time())
+                                .powi(uom::typenum::P2::new()))
                         .sqrt(),
                 ),
                 _ => None,
@@ -65,8 +94,8 @@ fn compute_relative_speeds<'a>(
 
             BenchmarkResultWithRelativeSpeed {
                 result,
-                relative_speed: ratio,
-                relative_speed_stddev: ratio_stddev,
+                relative_speed: ratio.get::<quantity::ratio>(),
+                relative_speed_stddev: ratio_stddev.map(|r| r.get::<quantity::ratio>()),
                 is_reference,
                 relative_ordering,
             }
@@ -88,7 +117,9 @@ pub fn compute_with_check_from_reference<'a>(
     reference: &'a BenchmarkResult,
     sort_order: SortOrder,
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'a>>> {
-    if fastest_of(results).mean == 0.0 || reference.mean == 0.0 {
+    if fastest_of(results).mean_wall_clock_time() == Time::zero()
+        || reference.mean_wall_clock_time() == Time::zero()
+    {
         return None;
     }
 
@@ -101,40 +132,41 @@ pub fn compute_with_check(
 ) -> Option<Vec<BenchmarkResultWithRelativeSpeed<'_>>> {
     let fastest = fastest_of(results);
 
-    if fastest.mean == 0.0 {
+    if fastest.mean_wall_clock_time() == Time::zero() {
         return None;
     }
 
     Some(compute_relative_speeds(results, fastest, sort_order))
 }
 
-/// Same as compute_with_check, potentially resulting in relative speeds of infinity
-pub fn compute(
-    results: &[BenchmarkResult],
+/// Compute relative speeds against the given reference, or the fastest result.
+pub fn compute<'a>(
+    results: &'a [BenchmarkResult],
     sort_order: SortOrder,
-) -> Vec<BenchmarkResultWithRelativeSpeed<'_>> {
-    let fastest = fastest_of(results);
-
-    compute_relative_speeds(results, fastest, sort_order)
+    reference: Option<&'a BenchmarkResult>,
+) -> Vec<BenchmarkResultWithRelativeSpeed<'a>> {
+    let reference = reference.unwrap_or_else(|| fastest_of(results));
+    compute_relative_speeds(results, reference, sort_order)
 }
 
 #[cfg(test)]
-fn create_result(name: &str, mean: Scalar) -> BenchmarkResult {
+fn create_result(name: &str, mean: f64) -> BenchmarkResult {
     use std::collections::BTreeMap;
+
+    use crate::benchmark::measurement::{Measurement, Measurements};
+    use crate::quantity::second;
 
     BenchmarkResult {
         command: name.into(),
-        command_with_unused_parameters: name.into(),
-        mean,
-        stddev: Some(1.0),
-        median: mean,
-        user: mean,
-        system: 0.0,
-        min: mean,
-        max: mean,
-        times: None,
-        memory_usage_byte: None,
-        exit_codes: Vec::new(),
+        display_name: name.into(),
+        name: None,
+        measurements: Measurements {
+            measurements: vec![Measurement {
+                time_wall_clock: Time::new::<second>(mean),
+                time_user: Time::new::<second>(mean),
+                ..Default::default()
+            }],
+        },
         parameters: BTreeMap::new(),
     }
 }
@@ -177,4 +209,29 @@ fn test_compute_relative_speed_for_zero_times() {
     let annotated_results = compute_with_check(&results, SortOrder::Command);
 
     assert!(annotated_results.is_none());
+}
+
+#[test]
+fn reference_identity_distinguishes_equal_results() {
+    let results = vec![create_result("same", 1.0), create_result("same", 1.0)];
+    let entries = compute_relative_speeds(&results, &results[0], SortOrder::Command);
+
+    assert!(entries[0].is_reference);
+    assert!(!entries[1].is_reference);
+}
+
+#[test]
+fn reference_ratios_handle_zero_times() {
+    let mut results = vec![create_result("reference", 2.0), create_result("zero", 0.0)];
+    for result in &mut results {
+        let measurement = result.measurements.measurements[0].clone();
+        result.measurements.measurements.push(measurement);
+    }
+    let entries = compute_relative_speeds(&results, &results[0], SortOrder::Command);
+    assert_eq!(entries[1].relative_speed, f64::INFINITY);
+
+    let entries = compute_relative_speeds(&results, &results[1], SortOrder::Command);
+    assert_eq!(entries[0].relative_speed, f64::INFINITY);
+    assert_eq!(entries[0].relative_speed_stddev, None);
+    assert_eq!(entries[1].relative_speed, 1.0);
 }

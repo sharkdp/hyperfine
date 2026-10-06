@@ -1,7 +1,10 @@
 #![cfg(windows)]
 #![warn(unsafe_op_in_unsafe_fn)]
 
-use std::{mem, os::windows::io::AsRawHandle, process, ptr};
+use std::process::{self, Child, ExitStatus};
+use std::{mem, os::windows::io::AsRawHandle, ptr};
+
+use anyhow::Result;
 
 use windows_sys::Win32::{
     Foundation::{CloseHandle, HANDLE},
@@ -27,17 +30,15 @@ use windows_sys::{
     },
 };
 
-use crate::util::units::Second;
-
-const HUNDRED_NS_PER_MS: i64 = 10;
+use crate::quantity::{nanosecond, Information, Time, Zero};
 
 #[cfg(not(feature = "windows_process_extensions_main_thread_handle"))]
 #[allow(non_upper_case_globals)]
-static NtResumeProcess: Lazy<unsafe extern "system" fn(ProcessHandle: HANDLE) -> NTSTATUS> =
+static NtResumeProcess: Lazy<unsafe extern "system" fn(process_handle: HANDLE) -> NTSTATUS> =
     Lazy::new(|| {
         // SAFETY: Getting the module handle for ntdll.dll is safe
         let ntdll = unsafe { GetModuleHandleW(w!("ntdll.dll")) };
-        assert!(ntdll != std::ptr::null_mut(), "GetModuleHandleW failed");
+        assert!(!ntdll.is_null(), "GetModuleHandleW failed");
 
         // SAFETY: The ntdll handle is valid
         let nt_resume_process = unsafe { GetProcAddress(ntdll, s!("NtResumeProcess")) };
@@ -56,10 +57,7 @@ impl CPUTimer {
 
         // SAFETY: Creating a new job object is safe
         let job_object = unsafe { CreateJobObjectW(ptr::null_mut(), ptr::null_mut()) };
-        assert!(
-            job_object != std::ptr::null_mut(),
-            "CreateJobObjectW failed"
-        );
+        assert!(!job_object.is_null(), "CreateJobObjectW failed");
 
         // SAFETY: The job object handle is valid
         let ret = unsafe { AssignProcessToJobObject(job_object, child_handle) };
@@ -86,7 +84,9 @@ impl CPUTimer {
         Self { job_object }
     }
 
-    pub fn stop(&self) -> (Second, Second, u64) {
+    pub fn stop(&self, mut child: Child) -> Result<(Time, Time, Option<Information>, ExitStatus)> {
+        let status = child.wait()?;
+
         let mut job_object_info =
             mem::MaybeUninit::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>::uninit();
 
@@ -108,15 +108,17 @@ impl CPUTimer {
             // The `TotalUserTime` is "The total amount of user-mode execution time for
             // all active processes associated with the job, as well as all terminated processes no
             // longer associated with the job, in 100-nanosecond ticks."
-            let user: i64 = job_object_info.TotalUserTime / HUNDRED_NS_PER_MS;
+            let user_time = Time::new::<nanosecond>((job_object_info.TotalUserTime as f64) * 100.0);
 
             // The `TotalKernelTime` is "The total amount of kernel-mode execution time
             // for all active processes associated with the job, as well as all terminated
             // processes no longer associated with the job, in 100-nanosecond ticks."
-            let kernel: i64 = job_object_info.TotalKernelTime / HUNDRED_NS_PER_MS;
-            (user as f64 * 1e-6, kernel as f64 * 1e-6, 0)
+            let system_time =
+                Time::new::<nanosecond>((job_object_info.TotalKernelTime as f64) * 100.0);
+
+            Ok((user_time, system_time, None, status))
         } else {
-            (0.0, 0.0, 0)
+            Ok((Time::zero(), Time::zero(), None, status))
         }
     }
 }

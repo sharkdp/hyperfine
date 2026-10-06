@@ -2,54 +2,54 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::util::units::Second;
+use crate::benchmark::measurement::Measurements;
+use crate::quantity::Time;
 
-/// Set of values that will be exported.
-// NOTE: `serde` is used for JSON serialization, but not for CSV serialization due to the
-// `parameters` map. Update `src/hyperfine/export/csv.rs` with new fields, as appropriate.
+/// Parameter value
+#[derive(Debug, Default, Clone, Serialize, PartialEq)]
+pub struct Parameter {
+    pub value: String,
+}
+
+/// Meta data and performance metrics for a single benchmark
 #[derive(Debug, Default, Clone, Serialize, PartialEq)]
 pub struct BenchmarkResult {
-    /// The full command line of the program that is being benchmarked
+    /// The command line being benchmarked, after parameter substitution.
+    /// For example, `sleep {duration}` with `duration=1` becomes `sleep 1`,
+    /// regardless of any custom name.
     pub command: String,
 
-    /// The full command line of the program that is being benchmarked, possibly including a list of
-    /// parameters that were not used in the command line template.
+    /// The custom name after parameter substitution, if it differs from `command`.
+    /// For example, `--command-name="wait {duration}s"` with `duration=1`
+    /// produces `Some("wait 1s")`. Without a custom name, or when the expanded
+    /// name equals `command`, this is `None`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    /// The custom name (or `command`), followed by parameters not used in the
+    /// command template, in command-line order. For example, `sleep {duration}`
+    /// with `duration=1`, `branch=main`, and the custom name `wait {duration}s`
+    /// produces `wait 1s (branch = main)`. Without the custom name, this is
+    /// `sleep 1 (branch = main)`. Used in summaries and table exports.
     #[serde(skip_serializing)]
-    pub command_with_unused_parameters: String,
+    pub display_name: String,
 
-    /// The average run time
-    pub mean: Second,
-
-    /// The standard deviation of all run times. Not available if only one run has been performed
-    pub stddev: Option<Second>,
-
-    /// The median run time
-    pub median: Second,
-
-    /// Time spent in user mode
-    pub user: Second,
-
-    /// Time spent in kernel mode
-    pub system: Second,
-
-    /// Minimum of all measured times
-    pub min: Second,
-
-    /// Maximum of all measured times
-    pub max: Second,
-
-    /// All run time measurements
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub times: Option<Vec<Second>>,
-
-    /// Maximum memory usage of the process, in bytes
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub memory_usage_byte: Option<Vec<u64>>,
-
-    /// Exit codes of all command invocations
-    pub exit_codes: Vec<Option<i32>>,
+    /// Performance metric measurements and exit codes for each run
+    #[serde(flatten)]
+    pub measurements: Measurements,
 
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub parameters: BTreeMap<String, String>,
+    pub parameters: BTreeMap<String, Parameter>,
+}
+
+impl BenchmarkResult {
+    pub fn get_name(&self) -> &str {
+        self.name.as_deref().unwrap_or(&self.command)
+    }
+
+    /// The average wall clock time
+    pub fn mean_wall_clock_time(&self) -> Time {
+        self.measurements.time_wall_clock_mean()
+    }
 }

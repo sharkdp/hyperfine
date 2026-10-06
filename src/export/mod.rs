@@ -19,7 +19,7 @@ use self::orgmode::OrgmodeExporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::options::SortOrder;
 use crate::output::console_writeln;
-use crate::util::units::Unit;
+use crate::quantity::TimeUnit;
 
 use anyhow::{Context, Result};
 use clap::ArgMatches;
@@ -49,8 +49,9 @@ trait Exporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<Unit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
+        reference_index: Option<usize>,
     ) -> Result<Vec<u8>>;
 }
 
@@ -67,7 +68,7 @@ struct ExporterWithTarget {
 /// Handles the management of multiple file exporters.
 pub struct ExportManager {
     exporters: Vec<ExporterWithTarget>,
-    time_unit: Option<Unit>,
+    time_unit: Option<TimeUnit>,
     sort_order: SortOrder,
 }
 
@@ -76,7 +77,7 @@ impl ExportManager {
     /// in the given ArgMatches
     pub fn from_cli_arguments(
         matches: &ArgMatches,
-        time_unit: Option<Unit>,
+        time_unit: Option<TimeUnit>,
         sort_order: SortOrder,
     ) -> Result<Self> {
         let mut export_manager = Self {
@@ -130,11 +131,18 @@ impl ExportManager {
     /// results are written to all file targets (to always have them up to date, even
     /// if a benchmark fails). In the latter case, we only print to stdout targets (in
     /// order not to clutter the output of hyperfine with intermediate results).
-    pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
+    /// `reference_index` refers to the complete benchmark sequence, so it can
+    /// point past `results` while that benchmark is still pending.
+    pub fn write_results(
+        &self,
+        results: &[BenchmarkResult],
+        intermediate: bool,
+        reference_index: Option<usize>,
+    ) -> Result<()> {
         for e in &self.exporters {
             let content = || {
                 e.exporter
-                    .serialize(results, self.time_unit, self.sort_order)
+                    .serialize(results, self.time_unit, self.sort_order, reference_index)
             };
 
             match e.target {
@@ -158,7 +166,11 @@ impl ExportManager {
 
 /// Write the given content to a file with the specified name
 fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
-    let mut file = OpenOptions::new().write(true).open(filename)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        // Avoid leaving trailing bytes when the new export is shorter.
+        .truncate(true)
+        .open(filename)?;
     file.write_all(content)
         .with_context(|| format!("Failed to export results to '{filename}'"))
 }

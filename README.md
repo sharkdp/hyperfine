@@ -97,6 +97,22 @@ option:
 hyperfine -L compiler g++,clang++ '{compiler} -O2 main.cpp'
 ```
 
+A common use case is comparing the same command across multiple Git branches. Use `--setup`
+to switch branches once before each set of timing runs, so the branch switch is not part of
+the measured command:
+```sh
+hyperfine \
+    --parameter-list branch main,performance-improvements \
+    --setup 'git switch {branch}' \
+    'python main.py'
+```
+
+If you need a unique value for each individual run of a benchmark command, hyperfine also exposes
+the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarked command itself:
+```sh
+hyperfine 'my-command > output-${HYPERFINE_ITERATION}.log'
+```
+
 ### Intermediate shell
 
 By default, commands are executed using `sh` on Unix (resolved through `PATH`) or `cmd.exe` on Windows.
@@ -151,6 +167,28 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 
 #### JSON
 
+The JSON export includes the following metrics for each measured run (excluding warmup runs):
+
+- **`time_wall_clock`**: Time from start to finish, including time spent waiting, in seconds.
+
+- **`time_user`**: CPU time spent running the program's code, summed across threads, in seconds.
+
+  - Linux/macOS: Includes child-process time when parents wait for their children to finish.
+  - Windows: Includes the command and its child processes.
+
+- **`time_system`**: CPU time spent running operating-system code for the program, for example
+  to read files, summed across threads, in seconds.
+
+  - Linux/macOS: Includes child-process time when parents wait for their children to finish.
+  - Windows: Includes the command and its child processes.
+
+- **`memory_peak_resident`**: Peak memory held in physical RAM, in bytes.
+
+  - Linux/macOS: Peak resident set size (RSS). This is the largest per-process peak among the
+    command and child processes (whose usage is collected when their parents wait for them),
+    *not the simultaneous total memory of the full process tree*.
+  - Windows: Currently not supported.
+
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
 of helpful Python programs to further analyze benchmark results and create helpful
@@ -181,8 +219,8 @@ apt install hyperfine
 
 Alternatively, for the latest version, you can download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases) and install it via `dpkg`:
 ```
-wget https://github.com/sharkdp/hyperfine/releases/download/v1.20.0/hyperfine_1.20.0_amd64.deb
-sudo dpkg -i hyperfine_1.20.0_amd64.deb
+wget https://github.com/sharkdp/hyperfine/releases/download/v1.21.0/hyperfine_1.21.0_amd64.deb
+sudo dpkg -i hyperfine_1.21.0_amd64.deb
 ```
 
 ### On Fedora

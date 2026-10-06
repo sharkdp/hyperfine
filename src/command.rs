@@ -128,16 +128,20 @@ impl<'a> Command<'a> {
         &self.parameters
     }
 
+    pub fn is_parameter_unused(&self, parameter: &str) -> bool {
+        let placeholder = format!("{{{parameter}}}");
+        !self.expression.contains(&placeholder)
+            && !self
+                .arguments
+                .iter()
+                .flatten()
+                .any(|argument| argument.contains(&placeholder))
+    }
+
     pub fn get_unused_parameters(&self) -> impl Iterator<Item = &(&'a str, ParameterValue)> {
-        self.parameters.iter().filter(move |(parameter, _)| {
-            let placeholder = format!("{{{parameter}}}");
-            !self.expression.contains(&placeholder)
-                && !self
-                    .arguments
-                    .iter()
-                    .flatten()
-                    .any(|argument| argument.contains(&placeholder))
-        })
+        self.parameters
+            .iter()
+            .filter(move |(parameter, _)| self.is_parameter_unused(parameter))
     }
 
     fn replace_parameters_in(&self, original: &str) -> String {
@@ -436,6 +440,15 @@ fn test_direct_command_preserves_arguments() {
         process.get_args().collect::<Vec<_>>(),
         ["argument with spaces", "argument with 'quotes'"]
     );
+}
+
+#[test]
+fn test_direct_command_parameter_usage_in_arguments() {
+    let cmd = Command::new_direct(None, vec!["program-{program}", "argument-{argument}"]);
+
+    assert!(!cmd.is_parameter_unused("program"));
+    assert!(!cmd.is_parameter_unused("argument"));
+    assert!(cmd.is_parameter_unused("missing"));
 }
 
 #[test]

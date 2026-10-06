@@ -116,13 +116,17 @@ not every time as would happen with the \fB\-\-prepare\fR option.
 .HP
 \fB\-\-reference\fR \fICMD\fP
 .IP
-Benchmark \fICMD\fP as the reference for the relative comparison of results.
-If this option is not specified, the fastest command is used as the reference.
+Use \fICMD\fP as the reference for the relative comparison of results. Without
+parameters, benchmark \fICMD\fP as a separate reference command. If this option
+is not specified, the fastest command is used as the reference.
+With \fB\-\-parameter\-scan\fR or \fB\-\-parameter\-list\fR, select an existing
+benchmark by its exact printed name. The name must match exactly one benchmark.
 .HP
 \fB\-\-reference\-name\fR \fINAME\fP
 .IP
 Give a meaningful \fINAME\fP to the reference command.
 Requires \fB\-\-reference\fR.
+Cannot be used with parameterized benchmarks; use \fB\-\-command\-name\fR instead.
 .HP
 \fB\-p\fR, \fB\-\-prepare\fR \fICMD...\fP
 .IP
@@ -180,7 +184,7 @@ The exact syntax may vary depending on your shell and OS.
 \fB\-D\fR, \fB\-\-parameter\-step\-size\fR \fIDELTA\fP
 .IP
 This argument requires \fB\-\-parameter\-scan\fR to be specified as well. Traverse the
-range \fIMIN..MAX\fP in steps of \fIDELTA\fP.
+range \fIMIN..MAX\fP in steps of \fIDELTA\fP, which must be positive.
 .IP
 .RS
 Example:
@@ -255,8 +259,21 @@ order benchmarks by mean runtime
 .HP
 \fB\-u\fR, \fB\-\-time\-unit\fR \fIUNIT\fP
 .IP
-Set the time unit to be used. Possible values: microsecond, millisecond, second. If
-the option is not given, the time unit is determined automatically.
+Set the time unit to be used. If the option is not given, the time unit is
+determined automatically. Possible values:
+.RS
+.IP "microsecond"
+Aliases: µs, us, microseconds.
+.IP "millisecond"
+Aliases: ms, milliseconds.
+.IP "second"
+Aliases: s, seconds.
+.IP "minute"
+Aliases: min, minutes.
+.IP "hour"
+Aliases: h, hours.
+.RE
+.IP
 This option affects the standard output as well as all export formats
 except for CSV and JSON.
 .HP

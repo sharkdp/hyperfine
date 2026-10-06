@@ -1,8 +1,10 @@
 use std::ffi::OsString;
 
 use clap::{
-    builder::NonEmptyStringValueParser, crate_version, Arg, ArgAction, ArgGroup, ArgMatches,
-    Command, ValueHint,
+    builder::styling::{AnsiColor, Effects},
+    builder::NonEmptyStringValueParser,
+    builder::Styles,
+    crate_version, Arg, ArgAction, ArgGroup, ArgMatches, Command, ValueHint,
 };
 
 pub fn get_cli_arguments<'a, I, T>(args: I) -> ArgMatches
@@ -14,10 +16,17 @@ where
     command.get_matches_from(args)
 }
 
+const STYLES: Styles = Styles::styled()
+    .header(AnsiColor::Green.on_default().effects(Effects::BOLD))
+    .usage(AnsiColor::Green.on_default().effects(Effects::BOLD))
+    .literal(AnsiColor::Cyan.on_default().effects(Effects::BOLD))
+    .placeholder(AnsiColor::Cyan.on_default());
+
 /// Build the clap command for parsing command line arguments
 fn build_command() -> Command {
     Command::new("hyperfine")
         .version(crate_version!())
+        .styles(STYLES)
         .next_line_help(true)
         .hide_possible_values(true)
         .about("A command-line benchmarking tool.")
@@ -118,8 +127,11 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("CMD")
                 .help(
-                    "The reference command for the relative comparison of results. \
-                    If this is unset, results are compared with the fastest command as reference."
+                    "The reference for the relative comparison of results. Without parameters, \
+                    CMD is run as a separate reference command. With --parameter-scan or \
+                    --parameter-list, CMD must exactly match one unique benchmark name as \
+                    shown in the output. If this is unset, results are compared with the \
+                    fastest command as reference."
                 )
         )
         .arg(
@@ -127,7 +139,8 @@ fn build_command() -> Command {
                 .long("reference-name")
                 .action(ArgAction::Set)
                 .value_name("CMD")
-                .help("Give a meaningful name to the reference command.")
+                .help("Give a meaningful name to the reference command. This cannot be used \
+                       with parameterized benchmarks; use --command-name instead.")
                 .requires("reference")
         )
         .arg(
@@ -189,7 +202,7 @@ fn build_command() -> Command {
                      string '{VAR}' in each command by the current parameter value.\n\n  \
                      Example:  hyperfine --prepare 'make clean' -P threads 1 8 'make -j {threads}'\n\n\
                      This performs benchmarks for 'make -j 1', 'make -j 2', …, 'make -j 8'.\n\n\
-                     To have the value increase following different patterns, use shell arithmetics.\n\n  \
+                     To have the value increase following different patterns, use shell arithmetic.\n\n  \
                      Example: hyperfine -P size 0 3 'sleep $((2**{size}))'\n\n\
                      This performs benchmarks with power of 2 increases: 'sleep 1', 'sleep 2', 'sleep 4', …\n\
                      The exact syntax may vary depending on your shell and OS."
@@ -204,7 +217,7 @@ fn build_command() -> Command {
                 .requires("parameter-scan")
                 .help(
                     "This argument requires --parameter-scan to be specified as well. \
-                     Traverse the range MIN..MAX in steps of DELTA.\n\n  \
+                     Traverse the range MIN..MAX in steps of DELTA, which must be positive.\n\n  \
                      Example:  hyperfine -P delay 0.3 0.7 -D 0.2 'sleep {delay}'\n\n\
                      This performs benchmarks for 'sleep 0.3', 'sleep 0.5' and 'sleep 0.7'.",
                 ),
@@ -300,10 +313,15 @@ fn build_command() -> Command {
                 .short('u')
                 .action(ArgAction::Set)
                 .value_name("UNIT")
-                .value_parser(["microsecond", "millisecond", "second"])
-                .help("Set the time unit to be used. Possible values: microsecond, millisecond, second. \
-                       If the option is not given, the time unit is determined automatically. \
-                       This option affects the standard output as well as all export formats except for CSV and JSON."),
+                .value_parser(["µs", "us", "microsecond", "microseconds", "ms", "millisecond", "milliseconds", "s", "second", "seconds", "min", "minute", "minutes", "h", "hour", "hours"])
+                .help("Set the time unit to be used. If the option is not given, the time unit is determined automatically. \
+                       This option affects the standard output as well as all export formats except for CSV and JSON.\n\
+                       Possible values:\n  \
+                         * 'µs', 'us', 'microsecond', 'microseconds'\n  \
+                         * 'ms', 'millisecond', 'milliseconds'\n  \
+                         * 's', 'second', 'seconds'\n  \
+                         * 'min', 'minute', 'minutes'\n  \
+                         * 'h', 'hour', 'hours'"),
         )
         .arg(
             Arg::new("export-asciidoc")

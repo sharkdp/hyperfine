@@ -16,7 +16,10 @@ import sys
 
 import matplotlib.pyplot as plt
 
+from plot_utils import METRICS, add_metric_argument, validate_metric
+
 parser = argparse.ArgumentParser(description=__doc__)
+add_metric_argument(parser)
 parser.add_argument("file", help="JSON file with benchmark results", nargs="+")
 parser.add_argument(
     "--parameter-name",
@@ -28,7 +31,11 @@ parser.add_argument(
     "--log-x", help="Use a logarithmic x (parameter) axis", action="store_true"
 )
 parser.add_argument(
-    "--log-time", help="Use a logarithmic time axis", action="store_true"
+    "--log-y",
+    "--log-time",
+    dest="log_y",
+    help="Use a logarithmic metric axis",
+    action="store_true",
 )
 parser.add_argument(
     "--titles", help="Comma-separated list of titles for the plot legend"
@@ -36,6 +43,7 @@ parser.add_argument(
 parser.add_argument("-o", "--output", help="Save image to the given filename.")
 
 args = parser.parse_args()
+metric_label, metric_scale = METRICS[args.metric]
 if args.parameter_name is not None:
     sys.stderr.write(
         "warning: --parameter-name is deprecated; names are inferred from "
@@ -71,7 +79,7 @@ def unique_parameter(benchmark):
             f"benchmarks must have exactly one parameter, but found multiple: {sorted(params_dict)}"
         )
     [(name, value)] = params_dict.items()
-    return (name, float(value))
+    return (name, float(value["value"]))
 
 
 parameter_name = None
@@ -79,6 +87,7 @@ parameter_name = None
 for filename in args.file:
     with open(filename) as f:
         results = json.load(f)["results"]
+    validate_metric(parser, results, args.metric)
 
     (this_parameter_name, parameter_values) = extract_parameters(results)
     if parameter_name is not None and this_parameter_name != parameter_name:
@@ -87,15 +96,19 @@ for filename in args.file:
         )
     parameter_name = this_parameter_name
 
-    times_mean = [b["mean"] for b in results]
-    times_stddev = [b["stddev"] for b in results]
+    summaries = [b["summary"][args.metric] for b in results]
+    means = [s["mean"] / metric_scale for s in summaries]
+    stddevs = [
+        s["stddev"] / metric_scale if s["stddev"] is not None else float("nan")
+        for s in summaries
+    ]
 
-    plt.errorbar(x=parameter_values, y=times_mean, yerr=times_stddev, capsize=2)
+    plt.errorbar(x=parameter_values, y=means, yerr=stddevs, capsize=2)
 
 plt.xlabel(parameter_name)
-plt.ylabel("Time [s]")
+plt.ylabel(metric_label)
 
-if args.log_time:
+if args.log_y:
     plt.yscale("log")
 else:
     plt.ylim(0, None)
