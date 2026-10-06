@@ -36,8 +36,8 @@ fn build_command() -> Command {
             Arg::new("command")
                 .help("The command to benchmark. This can be the name of an executable, a command \
                        line like \"grep -i todo\" or a shell command like \"sleep 0.5 && echo test\". \
-                       The latter is only available if the shell is not explicitly disabled via \
-                       '--shell=none'. If multiple commands are given, hyperfine will show a \
+                       The latter requires a shell, which can be enabled via '-S' or '--shell=...'. \
+                       If multiple commands are given, hyperfine will show a \
                        comparison of the respective runtimes.")
                 .required(true)
                 .action(ArgAction::Append)
@@ -181,7 +181,7 @@ fn build_command() -> Command {
                      Example:  hyperfine --prepare 'make clean' -P threads 1 8 'make -j {threads}'\n\n\
                      This performs benchmarks for 'make -j 1', 'make -j 2', …, 'make -j 8'.\n\n\
                      To have the value increase following different patterns, use shell arithmetic.\n\n  \
-                     Example: hyperfine -P size 0 3 'sleep $((2**{size}))'\n\n\
+                     Example: hyperfine --shell=bash -P size 0 3 'sleep $((2**{size}))'\n\n\
                      This performs benchmarks with power of 2 increases: 'sleep 1', 'sleep 2', 'sleep 4', …\n\
                      The exact syntax may vary depending on your shell and OS."
                 ),
@@ -220,18 +220,25 @@ fn build_command() -> Command {
         .arg(
             Arg::new("shell")
                 .long("shell")
-                .short('S')
                 .action(ArgAction::Set)
                 .value_name("SHELL")
                 .overrides_with("shell")
                 .value_hint(ValueHint::CommandString)
-                .help("Set the shell to use for executing benchmarked commands. This can be the \
+                .help("Set the shell to use for executing commands (default: none). This can be the \
                        name or the path to the shell executable, or a full command line \
                        like \"bash --norc\". It can also be set to \"default\" to explicitly select \
-                       the default shell on this platform. Finally, this can also be set to \
+                       the platform shell (sh on Unix, cmd.exe on Windows). It can also be set to \
                        \"none\" to disable the shell. In this case, commands will be executed \
                        directly. They can still have arguments, but more complex things like \
-                       \"sleep 0.1; sleep 0.2\" are not possible without a shell.")
+                       \"sleep 0.1; sleep 0.2\" are not possible without a shell. This option also \
+                       applies to setup, prepare, conclude, and cleanup commands.")
+        )
+        .arg(
+            Arg::new("default-shell")
+                .short('S')
+                .action(ArgAction::SetTrue)
+                .conflicts_with_all(["shell", "no-shell", "debug-mode"])
+                .help("An alias for '--shell=default' (sh on Unix, cmd.exe on Windows).")
         )
         .arg(
             Arg::new("no-shell")
@@ -383,7 +390,7 @@ fn build_command() -> Command {
                     This option can be specified once for all commands or multiple times, once for \
                     each command. Note: If you want to log the output of each and every iteration, \
                     you can use a shell redirection and the '$HYPERFINE_ITERATION' environment variable:\n    \
-                    hyperfine 'my-command > output-${HYPERFINE_ITERATION}.log'\n\n",
+                    hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'\n\n",
                 ),
         )
         .arg(

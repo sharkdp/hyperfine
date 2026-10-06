@@ -17,9 +17,11 @@ impl ExecutionOrderTest {
     fn new() -> Self {
         let tempdir = tempdir().unwrap();
         let logfile_path = tempdir.path().join("output.log");
+        let mut cmd = hyperfine();
+        cmd.arg("-S");
 
         ExecutionOrderTest {
-            cmd: hyperfine(),
+            cmd,
             expected_content: String::new(),
             logfile_path,
             tempdir,

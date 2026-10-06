@@ -26,8 +26,9 @@ A command-line benchmarking tool.
 
 ### Basic benchmarks
 
-To run a benchmark, you can simply call `hyperfine <command>...`. The argument(s) can be any
-shell command. For example:
+To run a benchmark, you can simply call `hyperfine <command>...`. Each argument is an executable
+and its arguments. Commands run directly by default; use `-S` for shell syntax such as
+pipes, redirections, and wildcards. For example:
 ```sh
 hyperfine 'sleep 0.3'
 ```
@@ -53,7 +54,7 @@ by disk caches and whether they are cold or warm.
 If you want to run the benchmark on a warm cache, you can use the `-w`/`--warmup` option to
 perform a certain number of program executions before the actual benchmark:
 ```sh
-hyperfine --warmup 3 'grep -R TODO *'
+hyperfine -S --warmup 3 'grep -R TODO *'
 ```
 
 Conversely, if you want to run the benchmark for a cold cache, you can use the `-p`/`--prepare`
@@ -65,7 +66,7 @@ sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
 To use this specific command with hyperfine, call `sudo -v` to temporarily gain sudo permissions
 and then call:
 ```sh
-hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
+hyperfine -S --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
 ```
 
 ### Parameterized benchmarks
@@ -101,28 +102,34 @@ hyperfine \
 If you need a unique value for each individual run of a benchmark command, hyperfine also exposes
 the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarked command itself:
 ```sh
-hyperfine 'my-command > output-${HYPERFINE_ITERATION}.log'
+hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 ```
 
 ### Intermediate shell
 
-By default, commands are executed using `sh` on Unix (resolved through `PATH`) or `cmd.exe` on Windows.
-If you want to use a different shell, you can use the `-S, --shell <SHELL>` option:
+By default, commands are executed directly, without an intermediate shell (`--shell=none`).
+Arguments are split using shell-like quoting, so quoted arguments containing spaces are supported.
+Shell syntax such as pipes, redirections, environment-variable expansion, `*`, and `~` is not interpreted.
+This avoids shell startup overhead and the noise from correcting for it, especially for fast commands
+(< 5 ms).
+
+To enable shell syntax, use `-S` (an alias for `--shell=default`). This selects `sh`
+on Unix (resolved through `PATH`) or `cmd.exe` on Windows:
+```sh
+hyperfine -S 'sleep 0.1 && echo done'
+```
+
+You can also select a specific shell with `--shell <SHELL>`:
 ```sh
 hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
 ```
 
-Note that hyperfine always *corrects for the shell spawning time*. To do this, it performs a calibration
-procedure where it runs the shell with an empty command (multiple times), to measure the startup time
-of the shell. It will then subtract this time from the total to show the actual time used by the command
-in question.
+The shell setting applies to all commands, including `--setup`, `--prepare`, `--conclude`, and `--cleanup`.
+If any of these commands need shell syntax, enable a shell explicitly.
 
-If you want to run a benchmark *without an intermediate shell*, you can use the `-N` or `--shell=none`
-option. This is helpful for very fast commands (< 5 ms) where the shell startup overhead correction would
-produce a significant amount of noise. Note that you cannot use shell syntax like `*` or `~` in this case.
-```
-hyperfine -N 'grep -R TODO /home/user'
-```
+When a shell is enabled, hyperfine *corrects for the shell spawning time*. It runs the shell with an
+empty command multiple times to measure its startup time, then subtracts this time from each
+measurement.
 
 
 ### Shell functions
@@ -138,7 +145,7 @@ hyperfine --shell=bash my_function
 Otherwise, inline the function into the benchmarked command:
 
 ```sh
-hyperfine 'my_function() { sleep 1; }; my_function'
+hyperfine -S 'my_function() { sleep 1; }; my_function'
 ```
 
 ### Exporting results

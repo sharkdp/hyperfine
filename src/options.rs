@@ -29,12 +29,6 @@ pub enum Shell {
     Custom(Vec<String>),
 }
 
-impl Default for Shell {
-    fn default() -> Self {
-        Shell::Default(DEFAULT_SHELL)
-    }
-}
-
 impl fmt::Display for Shell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -45,6 +39,11 @@ impl fmt::Display for Shell {
 }
 
 impl Shell {
+    /// Select the platform shell (sh on Unix, cmd.exe on Windows).
+    pub fn platform_default() -> Self {
+        Shell::Default(DEFAULT_SHELL)
+    }
+
     /// Parse given string as shell command line
     pub fn parse_from_str<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
         let v = shell_words::split(s).map_err(OptionsError::ShellParseError)?;
@@ -181,17 +180,12 @@ impl CommandOutputPolicy {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub enum ExecutorKind {
+    #[default]
     Raw,
     Shell(Shell),
     Mock(Option<String>),
-}
-
-impl Default for ExecutorKind {
-    fn default() -> Self {
-        ExecutorKind::Shell(Shell::default())
-    }
 }
 
 /// The main settings for a hyperfine benchmark session
@@ -401,15 +395,19 @@ impl Options {
 
         options.executor_kind = if matches.get_flag("no-shell") {
             ExecutorKind::Raw
+        } else if matches.get_flag("default-shell") {
+            ExecutorKind::Shell(Shell::platform_default())
         } else {
             match (
                 matches.get_flag("debug-mode"),
                 matches.get_one::<String>("shell"),
             ) {
-                (false, Some(shell)) if shell == "default" => ExecutorKind::Shell(Shell::default()),
+                (false, Some(shell)) if shell == "default" => {
+                    ExecutorKind::Shell(Shell::platform_default())
+                }
                 (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
                 (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
-                (false, None) => ExecutorKind::Shell(Shell::default()),
+                (false, None) => ExecutorKind::default(),
                 (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
                 (true, None) => ExecutorKind::Mock(None),
             }
@@ -532,8 +530,8 @@ impl Options {
 }
 
 #[test]
-fn test_default_shell() {
-    let shell = Shell::default();
+fn test_platform_default_shell() {
+    let shell = Shell::platform_default();
 
     let s = format!("{shell}");
     assert_eq!(&s, DEFAULT_SHELL);
