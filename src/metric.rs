@@ -337,16 +337,40 @@ impl Stats {
     }
 
     pub fn format_change_from(&self, reference: &Self) -> String {
-        match self.change_from(reference) {
-            Some(change) => {
-                let formatted = format!("{change:+.1}%");
-                if formatted == "+0.0%" || formatted == "-0.0%" {
-                    "0.0%".to_owned()
-                } else {
-                    formatted
-                }
-            }
-            None => "N/A".to_owned(),
+        let Some(change) = self.change_from(reference) else {
+            return "N/A".to_owned();
+        };
+        let mut formatted = format!("{change:+.1}%");
+        if formatted == "+0.0%" || formatted == "-0.0%" {
+            formatted = "0.0%".to_owned();
+        }
+        formatted
+    }
+
+    pub fn format_factor_from(&self, reference: &Self, metric: Metric) -> String {
+        if reference.mean > 0.0
+            && (self.mean >= 2.0 * reference.mean || self.mean <= reference.mean / 2.0)
+        {
+            let decrease = self.mean < reference.mean;
+            let factor = if decrease {
+                reference.mean / self.mean
+            } else {
+                self.mean / reference.mean
+            };
+            let direction = match (metric.is_time(), decrease) {
+                (true, true) => "faster",
+                (true, false) => "slower",
+                (false, true) => "less",
+                (false, false) => "more",
+            };
+            let factor = if factor.is_infinite() {
+                "∞".to_owned()
+            } else {
+                format!("{factor:.1}")
+            };
+            format!("({factor}x {direction})")
+        } else {
+            String::new()
         }
     }
 }
@@ -355,6 +379,40 @@ impl Stats {
 mod tests {
     use super::*;
     use crate::quantity::{Information, Time};
+
+    #[test]
+    fn large_changes_include_factors() {
+        let reference = Stats {
+            count: 1,
+            mean: 12.0,
+            stddev: None,
+            median: 12.0,
+            min: 12.0,
+            max: 12.0,
+        };
+        for (mean, metric, expected) in [
+            (24.0, Metric::TimeWallClock, "+100.0% (2.0x slower)"),
+            (6.0, Metric::TimeCpu, "-50.0% (2.0x faster)"),
+            (1.2, Metric::Instructions, "-90.0% (10.0x less)"),
+            (120.0, Metric::MemoryPeakResident, "+900.0% (10.0x more)"),
+            (23.9, Metric::TimeWallClock, "+99.2%"),
+            (6.1, Metric::Instructions, "-49.2%"),
+            (12.0, Metric::Instructions, "0.0%"),
+            (0.0, Metric::Instructions, "-100.0% (∞x less)"),
+        ] {
+            let stats = Stats { mean, ..reference };
+            let (percentage, factor) = expected
+                .split_once(" (")
+                .map_or((expected, String::new()), |(p, f)| (p, format!("({f}")));
+            assert_eq!(stats.format_change_from(&reference), percentage);
+            assert_eq!(stats.format_factor_from(&reference, metric), factor);
+        }
+        let zero = Stats {
+            mean: 0.0,
+            ..reference
+        };
+        assert_eq!(reference.format_change_from(&zero), "N/A");
+    }
 
     #[test]
     fn cpu_time_statistics_use_per_run_totals() {

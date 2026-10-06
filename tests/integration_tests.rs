@@ -663,6 +663,28 @@ fn takes_both_preparation_and_conclusion_command_into_account_for_computing_numb
 }
 
 #[test]
+fn secondary_metrics_include_factors_for_large_changes() {
+    // Mock CPU time is zero; secondary wall time still gets ratio annotations.
+    let output = hyperfine_debug()
+        .args([
+            "--metrics=time_cpu,time_wall_clock",
+            "--style=basic",
+            "--runs=2",
+            "sleep 1",
+            "sleep 10",
+            "sleep 0.1",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("+900.0%"), "{}", stdout);
+    assert!(stdout.contains("-90.0%"), "{}", stdout);
+    assert!(stdout.contains("+900.0%  (10.0x slower)"), "{}", stdout);
+    assert!(stdout.contains("-90.0%  (10.0x faster)"), "{}", stdout);
+}
+
+#[test]
 fn shows_multiple_metrics_relative_to_first_command() {
     let _settings = snapshot_settings().bind_to_scope();
     assert_cmd_snapshot!(hyperfine_debug()
@@ -682,15 +704,15 @@ fn shows_multiple_metrics_relative_to_first_command() {
 
     Benchmark 2: sleep 0.6155 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    615.5 ms  ±     0.0 ms     615.5 ms  …   615.5 ms        +653.4%
-      User time      0.0 µs  ±     0.0 µs       0.0 µs  …     0.0 µs            N/A
-      Memory         0.0 MiB ±     0.0 MiB      0.0 MiB …     0.0 MiB           N/A
+      Wall Time    615.5 ms  ±     0.0 ms     615.5 ms  …   615.5 ms          +653.4%  (7.5x slower)
+      User time      0.0 µs  ±     0.0 µs       0.0 µs  …     0.0 µs              N/A
+      Memory         0.0 MiB ±     0.0 MiB      0.0 MiB …     0.0 MiB             N/A
 
     Benchmark 3: sleep 0.1707 (17 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    170.7 ms  ±     0.0 ms     170.7 ms  …   170.7 ms        +108.9%
-      User time      0.0 µs  ±     0.0 µs       0.0 µs  …     0.0 µs            N/A
-      Memory         0.0 MiB ±     0.0 MiB      0.0 MiB …     0.0 MiB           N/A
+      Wall Time    170.7 ms  ±     0.0 ms     170.7 ms  …   170.7 ms          +108.9%  (2.1x slower)
+      User time      0.0 µs  ±     0.0 µs       0.0 µs  …     0.0 µs              N/A
+      Memory         0.0 MiB ±     0.0 MiB      0.0 MiB …     0.0 MiB             N/A
 
 
     ----- stderr -----
@@ -719,18 +741,18 @@ fn shows_benchmark_comparison_with_same_time() {
 
     Benchmark 2: B (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s            0.0%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s              0.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
     Benchmark 3: sleep 2.0 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    2.000 s   ±   0.000 s      2.000 s   …   2.000 s         +100.0%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time    2.000 s   ±   0.000 s      2.000 s   …   2.000 s           +100.0%  (2.0x slower)
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
     Benchmark 4: sleep 1000.0 (10 runs)
                      mean     ±       σ           min     …      max
-      Wall Time  1000.000 s   ±   0.000 s    1000.000 s   … 1000.000 s       +99900.0%
-      Memory          0.0 B   ±     0.0 B         0.0 B   …      0.0 B             N/A
+      Wall Time  1000.000 s   ±   0.000 s    1000.000 s   … 1000.000 s         +99900.0%  (1000.0x slower)
+      Memory          0.0 B   ±     0.0 B         0.0 B   …      0.0 B               N/A
 
 
     ----- stderr -----
@@ -756,13 +778,13 @@ fn shows_benchmark_comparison_relative_to_reference() {
 
     Benchmark 2: sleep 1.0 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s          -50.0%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s            -50.0%  (2.0x faster)
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
     Benchmark 3: sleep 3.0 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s          +50.0%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s            +50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
 
     ----- stderr -----
@@ -797,12 +819,12 @@ fn comparison_and_markup_identify_first_command_as_reference() {
     assert!(stdout.contains("+50.0%"), "{}", stdout);
     let markdown = std::fs::read_to_string(export_path).unwrap();
     insta::assert_snapshot!(markdown, @"
-    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
-    |:---|---:|---:|---:|---:|
-    | `baseline` | 2.000 | 2.000 | 2.000 | reference |
-    | `sleep 1` | 1.000 | 1.000 | 1.000 | -50.0% |
-    | `sleep 2` | 2.000 | 2.000 | 2.000 | 0.0% |
-    | `sleep 3` | 3.000 | 3.000 | 3.000 | +50.0% |
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `baseline` | 2.000 |  |  |
+    | `sleep 1` | 1.000 | -50.0% | (2.0x faster) |
+    | `sleep 2` | 2.000 | 0.0% |  |
+    | `sleep 3` | 3.000 | +50.0% |  |
     ");
 
     // Equal zero times have no meaningful relative factor.
@@ -823,7 +845,7 @@ fn comparison_and_markup_identify_first_command_as_reference() {
         .lines()
         .find(|line| line.contains("sleep 0"))
         .unwrap();
-    assert!(row.ends_with("| N/A |"), "{}", row);
+    assert!(row.ends_with("| N/A |  |"), "{}", row);
 }
 
 #[test]
@@ -846,13 +868,13 @@ fn shows_name_of_first_command() {
 
     Benchmark 2: sleep 1.0 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s          -50.0%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s            -50.0%  (2.0x faster)
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
     Benchmark 3: sleep 3.0 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s          +50.0%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s            +50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
 
     ----- stderr -----
@@ -882,18 +904,18 @@ fn performs_all_benchmarks_in_parameter_scan() {
 
     Benchmark 2: sleep 35 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time   35.000 s   ±   0.000 s     35.000 s   …  35.000 s          +16.7%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time   35.000 s   ±   0.000 s     35.000 s   …  35.000 s            +16.7%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
     Benchmark 3: sleep 40 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time   40.000 s   ±   0.000 s     40.000 s   …  40.000 s          +33.3%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time   40.000 s   ±   0.000 s     40.000 s   …  40.000 s            +33.3%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
     Benchmark 4: sleep 45 (10 runs)
                     mean     ±       σ          min     …     max
-      Wall Time   45.000 s   ±   0.000 s     45.000 s   …  45.000 s          +50.0%
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B             N/A
+      Wall Time   45.000 s   ±   0.000 s     45.000 s   …  45.000 s            +50.0%
+      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
 
 
     ----- stderr -----
@@ -1051,7 +1073,7 @@ fn intermediate_markdown_retains_completed_reference() {
         .lines()
         .find(|line| line.contains("sleep 0.01"))
         .unwrap();
-    assert!(row.contains("reference"), "{}", row);
+    assert!(row.ends_with("|  |  |"), "{}", row);
 }
 
 #[test]
@@ -1074,11 +1096,11 @@ fn markdown_export_uses_first_parameterized_benchmark_as_reference() {
     exit_code: 0
     ----- stdout -----
 
-    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
-    |:---|---:|---:|---:|---:|
-    | `case-1` | 1.000 | 1.000 | 1.000 | reference |
-    | `case-2` | 2.000 | 2.000 | 2.000 | +100.0% |
-    | `case-3` | 3.000 | 3.000 | 3.000 | +200.0% |
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `case-1` | 1.000 |  |  |
+    | `case-2` | 2.000 | +100.0% | (2.0x slower) |
+    | `case-3` | 3.000 | +200.0% | (3.0x slower) |
 
 
     ----- stderr -----
@@ -1098,10 +1120,10 @@ fn intermediate_results_are_not_exported_to_stdout() {
     exit_code: 0
     ----- stdout -----
 
-    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
-    |:---|---:|---:|---:|---:|
-    | `sleep 1` | 1.000 ± 0.000 | 1.000 | 1.000 | reference |
-    | `sleep 2` | 2.000 ± 0.000 | 2.000 | 2.000 | +100.0% |
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 1` | 1.000 ± 0.000 |  |  |
+    | `sleep 2` | 2.000 ± 0.000 | +100.0% | (2.0x slower) |
 
 
     ----- stderr -----
@@ -1184,9 +1206,9 @@ fn markdown_export_preserves_backticks_and_pipes_in_command_names() {
     exit_code: 0
     ----- stdout -----
 
-    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
-    |:---|---:|---:|---:|---:|
-    | `` echo `uname` \| cat `` | 1.000 ± 0.000 | 1.000 | 1.000 | reference |
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `` echo `uname` \| cat `` | 1.000 ± 0.000 |  |  |
 
 
     ----- stderr -----

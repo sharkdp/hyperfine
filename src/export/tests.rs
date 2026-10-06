@@ -107,40 +107,37 @@ fn test_markup_export_auto_ms() {
     ];
 
     insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @"
-    | Command | Mean Wall Time [ms] | Min [ms] | Max [ms] | Change |
-    |:---|---:|---:|---:|---:|
-    | `sleep 0.1` | 110.0 ± 26.5 | 90.0 | 140.0 | reference |
-    | `sleep 2` | 3000.0 ± 1000.0 | 2000.0 | 4000.0 | +2627.3% |
+    | Command | Mean Wall Time [ms] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 0.1` | 110.0 ± 26.5 |  |  |
+    | `sleep 2` | 3000.0 ± 1000.0 | +2627.3% | (27.3x slower) |
     ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None), @r#"
-    [cols="<,>,>,>,>"]
+    [cols="<,>,>,<"]
     |===
     | Command
     | Mean Wall Time [ms]
-    | Min [ms]
-    | Max [ms]
     | Change
+    | Factor
 
     | `sleep 0.1`
     | 110.0 ± 26.5
-    | 90.0
-    | 140.0
-    | reference
+    |
+    |
 
     | `sleep 2`
     | 3000.0 ± 1000.0
-    | 2000.0
-    | 4000.0
     | +2627.3%
+    | (27.3x slower)
     |===
     "#);
 
     insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @"
-    | Command  |  Mean Wall Time [ms] |  Min [ms] |  Max [ms] |  Change |
-    |--+--+--+--+--|
-    | =sleep 0.1=  |  110.0 ± 26.5 |  90.0 |  140.0 |  reference |
-    | =sleep 2=  |  3000.0 ± 1000.0 |  2000.0 |  4000.0 |  +2627.3% |
+    | Command  |  Mean Wall Time [ms] |  Change |  Factor |
+    |--+--+--+--|
+    | =sleep 0.1=  |  110.0 ± 26.5 |   |   |
+    | =sleep 2=  |  3000.0 ± 1000.0 |  +2627.3% |  (27.3x slower) |
     ");
 }
 
@@ -222,40 +219,37 @@ fn test_markup_export_auto_s() {
     ];
 
     insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @"
-    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
-    |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2.200 ± 0.100 | 2.100 | 2.300 | reference |
-    | `sleep 0.1` | 0.200 ± 0.100 | 0.100 | 0.300 | -90.9% |
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 2` | 2.200 ± 0.100 |  |  |
+    | `sleep 0.1` | 0.200 ± 0.100 | -90.9% | (11.0x faster) |
     ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, None), @r#"
-    [cols="<,>,>,>,>"]
+    [cols="<,>,>,<"]
     |===
     | Command
     | Mean Wall Time [s]
-    | Min [s]
-    | Max [s]
     | Change
+    | Factor
 
     | `sleep 2`
     | 2.200 ± 0.100
-    | 2.100
-    | 2.300
-    | reference
+    |
+    |
 
     | `sleep 0.1`
     | 0.200 ± 0.100
-    | 0.100
-    | 0.300
     | -90.9%
+    | (11.0x faster)
     |===
     "#);
 
     insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @"
-    | Command  |  Mean Wall Time [s] |  Min [s] |  Max [s] |  Change |
-    |--+--+--+--+--|
-    | =sleep 2=  |  2.200 ± 0.100 |  2.100 |  2.300 |  reference |
-    | =sleep 0.1=  |  0.200 ± 0.100 |  0.100 |  0.300 |  -90.9% |
+    | Command  |  Mean Wall Time [s] |  Change |  Factor |
+    |--+--+--+--|
+    | =sleep 2=  |  2.200 ± 0.100 |   |   |
+    | =sleep 0.1=  |  0.200 ± 0.100 |  -90.9% |  (11.0x faster) |
     ");
 }
 
@@ -337,40 +331,37 @@ fn test_markup_export_manual_ms() {
     ];
 
     insta::assert_snapshot!(get_output::<MarkdownExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @"
-    | Command | Mean Wall Time [ms] | Min [ms] | Max [ms] | Change |
-    |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2200.0 ± 100.0 | 2100.0 | 2300.0 | reference |
-    | `sleep 0.1` | 200.0 ± 100.0 | 100.0 | 300.0 | -90.9% |
+    | Command | Mean Wall Time [ms] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 2` | 2200.0 ± 100.0 |  |  |
+    | `sleep 0.1` | 200.0 ± 100.0 | -90.9% | (11.0x faster) |
     ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @r#"
-    [cols="<,>,>,>,>"]
+    [cols="<,>,>,<"]
     |===
     | Command
     | Mean Wall Time [ms]
-    | Min [ms]
-    | Max [ms]
     | Change
+    | Factor
 
     | `sleep 2`
     | 2200.0 ± 100.0
-    | 2100.0
-    | 2300.0
-    | reference
+    |
+    |
 
     | `sleep 0.1`
     | 200.0 ± 100.0
-    | 100.0
-    | 300.0
     | -90.9%
+    | (11.0x faster)
     |===
     "#);
 
     insta::assert_snapshot!(get_output::<OrgmodeExporter>(&timing_results, Some(Unit { symbol: "ms", scale: 0.001 })), @"
-    | Command  |  Mean Wall Time [ms] |  Min [ms] |  Max [ms] |  Change |
-    |--+--+--+--+--|
-    | =sleep 2=  |  2200.0 ± 100.0 |  2100.0 |  2300.0 |  reference |
-    | =sleep 0.1=  |  200.0 ± 100.0 |  100.0 |  300.0 |  -90.9% |
+    | Command  |  Mean Wall Time [ms] |  Change |  Factor |
+    |--+--+--+--|
+    | =sleep 2=  |  2200.0 ± 100.0 |   |   |
+    | =sleep 0.1=  |  200.0 ± 100.0 |  -90.9% |  (11.0x faster) |
     ");
 }
 
@@ -451,32 +442,29 @@ fn test_markup_export_manual_s() {
     ];
 
     insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, Some(Unit { symbol: "s", scale: 1.0 })), @"
-    | Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
-    |:---|---:|---:|---:|---:|
-    | `sleep 2` | 2.020 ± 0.010 | 2.010 | 2.030 | reference |
-    | `sleep 0.1` | 0.120 ± 0.010 | 0.110 | 0.130 | -94.1% |
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `sleep 2` | 2.020 ± 0.010 |  |  |
+    | `sleep 0.1` | 0.120 ± 0.010 | -94.1% | (16.8x faster) |
     ");
 
     insta::assert_snapshot!(get_output::<AsciidocExporter>(&results, Some(Unit { symbol: "s", scale: 1.0 })), @r#"
-    [cols="<,>,>,>,>"]
+    [cols="<,>,>,<"]
     |===
     | Command
     | Mean Wall Time [s]
-    | Min [s]
-    | Max [s]
     | Change
+    | Factor
 
     | `sleep 2`
     | 2.020 ± 0.010
-    | 2.010
-    | 2.030
-    | reference
+    |
+    |
 
     | `sleep 0.1`
     | 0.120 ± 0.010
-    | 0.110
-    | 0.130
     | -94.1%
+    | (16.8x faster)
     |===
     "#);
 }

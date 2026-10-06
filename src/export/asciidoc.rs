@@ -24,7 +24,16 @@ impl MarkupExporter for AsciidocExporter {
     }
 
     fn table_row(&self, cells: &[&str]) -> String {
-        format!("\n| {}\n", cells.join("\n| "))
+        let mut row = String::from("\n");
+        for cell in cells {
+            row.push('|');
+            if !cell.is_empty() {
+                row.push(' ');
+                row.push_str(cell);
+            }
+            row.push('\n');
+        }
+        row
     }
 
     fn table_divider(&self, _cell_aligmnents: &[Alignment]) -> String {

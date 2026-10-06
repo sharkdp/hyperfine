@@ -11,7 +11,7 @@ use crate::output::console_writeln;
 // independently printed benchmarks keep the same layout.
 const MIN_VALUE_WIDTH: usize = 7;
 const MIN_UNIT_WIDTH: usize = 3;
-const MIN_CHANGE_WIDTH: usize = 12;
+const MIN_CHANGE_WIDTH: usize = 14;
 
 /// Print a completed benchmark immediately, comparing every metric with benchmark 1.
 pub fn print(
@@ -37,7 +37,7 @@ pub fn print(
         header[1] = "Value".to_owned();
     }
     if comparison {
-        header.push(String::new());
+        header.extend([String::new(), String::new()]);
     }
     let mut rows = vec![(header, "")];
     for selection in metrics {
@@ -71,6 +71,9 @@ pub fn print(
                 || "N/A".to_owned(),
                 |baseline| summary.format_change_from(baseline),
             ));
+            row.push(baseline.as_ref().map_or_else(String::new, |baseline| {
+                summary.format_factor_from(baseline, selection.metric)
+            }));
         }
         rows.push((
             row,
@@ -131,7 +134,8 @@ pub fn print(
     for (index, (row, unit)) in rows.iter().enumerate() {
         let mut line = String::new();
         for (column, value) in row.iter().enumerate() {
-            let is_change = comparison && column == row.len() - 1;
+            let is_factor = comparison && column == row.len() - 1;
+            let is_change = comparison && column >= row.len() - 2;
             if index == 0 && is_change {
                 break;
             }
@@ -150,9 +154,9 @@ pub fn print(
                 value.clone()
             };
             let styled = if is_change {
-                if value.starts_with('-') {
+                if row[row.len() - 2].starts_with('-') {
                     text.green().to_string()
-                } else if value.starts_with('+') {
+                } else if row[row.len() - 2].starts_with('+') {
                     text.red().to_string()
                 } else {
                     text.normal().to_string()
@@ -166,7 +170,7 @@ pub fn print(
             } else {
                 text.normal().to_string()
             };
-            if column == 0 {
+            if column == 0 || is_factor {
                 line.push_str(&format!("{styled}{padding}"));
             } else {
                 line.push_str(&format!("{padding}{styled}"));

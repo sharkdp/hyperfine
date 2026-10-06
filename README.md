@@ -241,11 +241,11 @@ contain only the primary metric.
 
 You can use the `--export-markdown <file>` option to create tables like the following:
 
-| Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
-|:---|---:|---:|---:|---:|
-| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 | 2.243 | 2.397 |  |
-| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | 1.405 | 1.468 | -37.3% |
-| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | 0.230 | 0.236 | -89.8% (9.8x faster) |
+| Command | Mean Wall Time [s] | Change | Factor |
+|:---|---:|---:|:---|
+| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 |  |  |
+| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | -37.3% |  |
+| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | -89.8% | (9.8x faster) |
 
 #### JSON
 

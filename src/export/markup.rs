@@ -22,16 +22,14 @@ pub trait MarkupExporter {
             Alignment::Left,
             Alignment::Right,
             Alignment::Right,
-            Alignment::Right,
-            Alignment::Right,
+            Alignment::Left,
         ];
         let mut table = self.table_header(&cells_alignment);
         table.push_str(&self.table_row(&[
             "Command",
             &format!("Mean {} {notation}", primary.metric.label()),
-            &format!("Min {notation}"),
-            &format!("Max {notation}"),
             "Change",
+            "Factor",
         ]));
         table.push_str(&self.table_divider(&cells_alignment));
 
@@ -43,16 +41,20 @@ pub trait MarkupExporter {
                 .map(|value| format!(" ± {}", unit.format_value(value)))
                 .unwrap_or_default();
             let change = if index == 0 {
-                "reference".to_owned()
+                String::new()
             } else {
                 stats.format_change_from(&summaries[0])
+            };
+            let factor = if index == 0 {
+                String::new()
+            } else {
+                stats.format_factor_from(&summaries[0], primary.metric)
             };
             table.push_str(&self.table_row(&[
                 &self.command(&command),
                 &format!("{mean}{stddev}"),
-                &unit.format_value(stats.min),
-                &unit.format_value(stats.max),
                 &change,
+                &factor,
             ]));
         }
         table.push_str(&self.table_footer(&cells_alignment));
