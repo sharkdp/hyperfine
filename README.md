@@ -184,7 +184,9 @@ The JSON export includes the following metrics for each measured run (excluding 
 
   - Linux/macOS: Peak resident set size (RSS). This is the largest per-process peak among the
     command and child processes (whose usage is collected when their parents wait for them),
-    *not the simultaneous total memory of the full process tree*.
+    *not the simultaneous total memory of the full process tree*. On Linux, measuring commands
+    with a very small peak RSS (below the peak inherited from hyperfine at startup, which can
+    be a few MiB) will currently result in that inherited value being reported instead.
   - Windows: Currently not supported.
 
 - **`cpu_cycles`**: CPU cycles consumed.
