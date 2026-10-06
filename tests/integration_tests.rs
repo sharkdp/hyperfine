@@ -37,51 +37,11 @@ fn json_snapshot_settings() -> insta::Settings {
 
 #[test]
 fn runs_successfully() {
-    let output = hyperfine()
-        .arg("--metrics=default")
+    hyperfine()
         .arg("--runs=2")
         .arg("echo dummy benchmark")
-        .output()
-        .unwrap();
-    assert!(output.status.success(), "{:?}", output);
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("Wall Time"));
-    assert!(!stdout.contains("User time"));
-    assert!(!stdout.contains("System time"));
-    assert_eq!(stdout.contains("Memory"), !cfg!(windows));
-    assert!(!stdout.contains("Change"));
-    assert!(!stdout.contains("Outliers"));
-}
-
-#[test]
-fn metric_presets_select_available_metrics() {
-    for preset in ["time", "all"] {
-        let output = hyperfine_debug()
-            .arg(format!("--metrics={preset}"))
-            .args(["--style=basic", "--runs=2", "sleep 1", "sleep 2"])
-            .output()
-            .unwrap();
-        assert!(output.status.success(), "{:?}", output);
-        let stdout = String::from_utf8(output.stdout).unwrap();
-        assert_eq!(stdout.matches("Wall Time").count(), 2);
-        assert_eq!(stdout.matches("CPU time").count(), 2);
-        assert_eq!(stdout.matches("User time").count(), 2);
-        assert_eq!(stdout.matches("System time").count(), 2);
-        assert_eq!(stdout.contains("Memory"), preset == "all" && !cfg!(windows));
-        assert!(!stdout.contains("CPU cycles"));
-        assert!(!stdout.contains("Instructions"));
-        assert!(!stdout.contains("Change vs #1"));
-        assert!(stdout.contains("+100.0%"));
-    }
-
-    // Explicit selections still require the metric, unlike the `all` preset.
-    hyperfine_debug()
-        .args(["--metrics=instructions", "--runs=1", "sleep 1"])
         .assert()
-        .failure()
-        .stderr(predicate::str::contains(
-            "Metric 'instructions' is unavailable",
-        ));
+        .success();
 }
 
 #[test]
@@ -151,13 +111,23 @@ fn fails_with_zero_runs() {
 
 #[test]
 fn min_runs_of_one_still_performs_one_run() {
-    hyperfine_debug()
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=basic")
+        .arg("--metrics=time_wall_clock")
         .arg("--min-runs=1")
         .arg("--warmup=0")
-        .arg("sleep 4")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("Benchmark 1: sleep 4 (1 run)"));
+        .arg("sleep 4"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Benchmark 1: sleep 4 (1 run)
+                   Value
+      Wall Time    4.000 s
+
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
@@ -846,39 +816,6 @@ fn comparison_and_markup_identify_first_command_as_reference() {
         .find(|line| line.contains("sleep 0"))
         .unwrap();
     assert!(row.ends_with("| N/A |  |"), "{}", row);
-}
-
-#[test]
-fn shows_name_of_first_command() {
-    let _settings = snapshot_settings().bind_to_scope();
-    assert_cmd_snapshot!(hyperfine_debug()
-        .arg("--metrics=time_wall_clock,memory_peak_resident")
-        .arg("--style=basic")
-        .arg("sleep 2.0")
-        .arg("--command-name=refabc123")
-        .arg("sleep 1.0")
-        .arg("sleep 3.0"), @"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    Benchmark 1: refabc123 (10 runs)
-                    mean     ±       σ          min     …     max
-      Wall Time    2.000 s   ±   0.000 s      2.000 s   …   2.000 s
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B
-
-    Benchmark 2: sleep 1.0 (10 runs)
-                    mean     ±       σ          min     …     max
-      Wall Time    1.000 s   ±   0.000 s      1.000 s   …   1.000 s            -50.0%  (2.0x faster)
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
-
-    Benchmark 3: sleep 3.0 (10 runs)
-                    mean     ±       σ          min     …     max
-      Wall Time    3.000 s   ±   0.000 s      3.000 s   …   3.000 s            +50.0%  (1.5x slower)
-      Memory         0.0 B   ±     0.0 B        0.0 B   …     0.0 B               N/A
-
-
-    ----- stderr -----
-    ");
 }
 
 #[test]

@@ -55,17 +55,28 @@ fn build_command() -> Command {
                 .long("metrics")
                 .value_name("PRESET|METRIC[:UNIT],…")
                 .default_value("default")
-                .help("Metrics to display, in order. The first is used for non-JSON exports. \
-                       Compare all commands with the first command. Presets: default (wall-clock \
-                       time and peak RSS; wall-clock time only on Windows), time (wall-clock, total CPU, \
-                       user, and system time), all (all available metrics, skipping unavailable \
-                       measurements). All presets use automatic \
-                       units with wall-clock time first; use a preset on its own. Metrics: time_wall_clock, \
-                       time_cpu (user + system), time_user, time_system, memory_peak_resident, cpu_cycles, instructions, \
-                       cache_references, cache_misses, branch_misses. Optional units: ns/us/ms/s/min/h \
-                       for time, B/kB/MB/GB/TB/KiB/MiB/GiB/TiB for memory, count/k/M/B for counters \
-                       (k = thousand, M = million, B = billion). Example: \
-                       --metrics memory_peak_resident:MiB,time_wall_clock:ms,instructions:B."),
+                .hide_default_value(true)
+                .help("Performance metrics to measure, in order.\n\n\
+                       This is either a preset name, or a comma-separated list of metrics with optional units. \
+                       The first metric is used for non-JSON exports, \
+                       JSON always includes all collected metrics.\n\n\
+                       Presets (use one on its own):\n  \
+                         default  Wall-clock time and peak RSS\n  \
+                         time     Wall-clock, CPU, user, and system time\n  \
+                         all      All available metrics\n\n\
+                       Presets use automatic units.\n\n\
+                       Metrics and optional units:\n  \
+                         Time: time_wall_clock, time_cpu, time_user, time_system\n    \
+                           Units: ns, us, ms, s, min, h\n  \
+                         Memory: memory_peak_resident\n    \
+                           Units: B, kB, MB, GB, TB, KiB, MiB, GiB, TiB\n  \
+                         Counters: cpu_cycles, instructions, cache_references,\n    \
+                           cache_misses, branch_misses\n    \
+                           Units: count, k (thousand), M (million), B (billion)\n\n\
+                       Examples:\n  \
+                       --metrics time_cpu,instructions\n  \
+                       --metrics memory_peak_resident:MiB,time_wall_clock:ms\n  \
+                       --metrics time"),
         )
         .arg(
             Arg::new("warmup")
