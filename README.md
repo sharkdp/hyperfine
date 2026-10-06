@@ -187,6 +187,34 @@ The JSON export includes the following metrics for each measured run (excluding 
     *not the simultaneous total memory of the full process tree*.
   - Windows: Currently not supported.
 
+- **`cpu_cycles`**: CPU cycles consumed.
+
+  - Linux: Includes threads and child processes, but excludes kernel and hypervisor execution.
+  - macOS: Includes the process's threads and kernel execution, but excludes child processes.
+  - Windows: Currently not supported.
+
+- **`instructions`**: Completed CPU instructions.
+
+  - Linux/macOS: Same scope as `cpu_cycles`.
+  - Windows: Currently not supported.
+
+- **`cache_references`**: Cache accesses counted by the CPU's generic cache event.
+
+  - Linux: Same scope as `cpu_cycles`. Cache-event definitions depend on the CPU.
+  - macOS/Windows: Currently not supported.
+
+- **`cache_misses`**: Cache misses.
+
+  - Linux: Same scope as `cpu_cycles`. Cache-event definitions depend on the CPU.
+  - macOS/Windows: Currently not supported.
+
+- **`branch_misses`**: Mispredicted branches.
+
+  - Linux: Same scope as `cpu_cycles`.
+  - macOS/Windows: Currently not supported.
+
+Hardware counters are not available if a `--shell` is used.
+
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
 of helpful Python programs to further analyze benchmark results and create helpful

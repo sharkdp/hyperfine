@@ -1,5 +1,10 @@
 mod wall_clock_timer;
 
+#[cfg(target_os = "linux")]
+mod linux_counters;
+#[cfg(target_os = "macos")]
+mod macos_counters;
+
 #[cfg(windows)]
 mod windows_timer;
 
@@ -56,7 +61,12 @@ fn discard(output: ChildStdout) {
 }
 
 /// Execute the given command and return a timing summary
-pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
+pub fn execute_and_measure(
+    mut command: Command,
+    _collect_hardware_counters: bool,
+) -> Result<Measurement> {
+    #[cfg(target_os = "linux")]
+    let counters = _collect_hardware_counters.then(linux_counters::CounterGroup::new);
     #[cfg(not(windows))]
     let cpu_timer = self::unix_timer::CPUTimer::start();
 
@@ -82,14 +92,36 @@ pub fn execute_and_measure(mut command: Command) -> Result<Measurement> {
         discard(output);
     }
 
+    #[cfg(target_os = "macos")]
+    let (time_wall_clock, hardware_counters) =
+        if _collect_hardware_counters && macos_counters::wait(&mut child).is_ok() {
+            // Stop timing before querying counters, but leave the child available for wait4.
+            (
+                Some(wallclock_timer.stop()),
+                macos_counters::read(child.id()),
+            )
+        } else {
+            (None, Default::default())
+        };
     let (time_user, time_system, memory_peak_resident, exit_status) = cpu_timer.stop(child)?;
+    #[cfg(target_os = "macos")]
+    let time_wall_clock = time_wall_clock.unwrap_or_else(|| wallclock_timer.stop());
+    #[cfg(not(target_os = "macos"))]
     let time_wall_clock = wallclock_timer.stop();
+
+    #[cfg(target_os = "linux")]
+    let hardware_counters = counters
+        .map(linux_counters::CounterGroup::read)
+        .unwrap_or_default();
+    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+    let hardware_counters = Default::default();
 
     Ok(Measurement {
         time_wall_clock,
         time_user,
         time_system,
         memory_peak_resident,
+        hardware_counters,
         exit_status,
     })
 }

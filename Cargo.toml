@@ -50,6 +50,9 @@ once_cell = "1.21"
 [target.'cfg(target_os="linux")'.dependencies]
 nix = { version = "0.31", features = ["zerocopy"] }
 
+[target.'cfg(all(target_os = "linux", target_pointer_width = "64", any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "powerpc64", target_arch = "loongarch64")))'.dependencies]
+perf-event-open-sys = "6"
+
 [dependencies.clap]
 version = "4"
 default-features = false

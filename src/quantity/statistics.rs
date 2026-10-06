@@ -91,6 +91,16 @@ impl UnsafeRawValue for Information {
     }
 }
 
+impl UnsafeRawValue for Ratio {
+    fn unsafe_raw_value(&self) -> f64 {
+        self.get::<ratio>()
+    }
+
+    fn unsafe_from_raw_value(value: f64) -> Self {
+        Ratio::new::<ratio>(value)
+    }
+}
+
 fn standard_deviation_f64(values: &[f64]) -> f64 {
     let mean_value = mean(values.iter().copied());
 

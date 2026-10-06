@@ -89,6 +89,7 @@ fn test_csv() {
                     time_user: Time::new::<second>(7.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -96,6 +97,7 @@ fn test_csv() {
                     time_user: Time::new::<second>(8.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -103,6 +105,7 @@ fn test_csv() {
                     time_user: Time::new::<second>(12.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -133,6 +136,7 @@ fn test_csv() {
                     time_user: Time::new::<second>(17.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -140,6 +144,7 @@ fn test_csv() {
                     time_user: Time::new::<second>(18.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
@@ -147,6 +152,7 @@ fn test_csv() {
                     time_user: Time::new::<second>(19.0),
                     time_system: Time::zero(),
                     memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
