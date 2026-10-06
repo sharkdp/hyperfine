@@ -5,9 +5,14 @@
 
 A command-line benchmarking tool.
 
+**Demo**: Benchmarking [`fd`](https://github.com/sharkdp/fd) and
+[`find`](https://www.gnu.org/software/findutils/):
+
+![hyperfine](https://i.imgur.com/z19OYxE.gif)
+
 ## Features
 
-* Statistical analysis across multiple runs, for time, peak memory, and hardware counters.
+* Statistical analysis across multiple runs.
 * Support for arbitrary shell commands.
 * Constant feedback about the benchmark progress and current estimates.
 * Warmup runs can be executed before the actual benchmark.
@@ -42,61 +47,7 @@ hyperfine 'hexdump file' 'xxd file'
 ```
 
 Commands run and appear in input order. The first command is the reference for all comparisons;
-each subsequent result shows its percentage change from that reference. With parameterized
-benchmarks, the first command after parameter expansion is the reference.
-
-### Choosing metrics and units
-
-By default, hyperfine displays wall-clock time and peak resident memory
-(`time_wall_clock,memory_peak_resident`). On Windows, the default is wall-clock time only,
-because peak resident memory is not yet supported. Use `--metrics` to select a
-comma-separated list of metrics, with an optional unit after each metric:
-
-```sh
-hyperfine \
-    --metrics memory_peak_resident:MiB,time_wall_clock:ms,instructions:B \
-    './baseline' './candidate'
-```
-
-Use `--metrics=default` for the platform defaults, `--metrics=time` for
-`time_wall_clock,time_cpu,time_user,time_system`, or `--metrics=all` for all available metrics in the
-order listed below. The `time` preset works on all platforms, including with a shell.
-All presets keep wall-clock time primary, choose display units automatically, and must be
-used alone, without other metrics or unit suffixes.
-The `all` preset skips metrics unsupported by the platform or shell, or missing from any run
-of a benchmark. If a metric is unavailable for the reference, its change displays as `N/A`.
-
-Each completed benchmark displays one row per metric, in the selected order, with its mean,
-standard deviation, minimum, and maximum. The first benchmark has no change column.
-For subsequent commands, a change of `+50.0%` means
-the mean is 50% greater than the reference; `-20.0%` means it is 20% smaller. These percentages
-describe the observed means, not statistical significance. Decreases are green and increases
-are red when colors are enabled; signs remain visible without color.
-A percentage change from a zero reference is undefined and displays as `N/A`.
-
-The **first metric is primary**: its entire terminal row is bold, and it is the only metric
-in non-JSON exports. All metric rows use colors when enabled. All comparisons use the first
-command as their reference, regardless of which metric is primary. There is no sorting or
-separate reference selection.
-
-| Metrics | Explicit units |
-|:---|:---|
-| `time_wall_clock`, `time_cpu`, `time_user`, `time_system` | `ns`, `us`, `ms`, `s`, `min`, `h` |
-| `memory_peak_resident` | `B`, `kB`, `MB`, `GB`, `TB`, `KiB`, `MiB`, `GiB`, `TiB` |
-| `cpu_cycles`, `instructions`, `cache_references`, `cache_misses`, `branch_misses` | `count`, `k`, `M`, `B` |
-
-Counter suffixes use decimal scaling: `k` is a thousand, `M` a million, and `B` a billion.
-For example, `instructions:B` can display `143.2 B`. The metric determines the meaning of
-`B`: billion for counters, bytes for memory.
-
-When a unit is omitted, terminal and markup output choose a suitable scale automatically.
-CSV instead uses the base unit unless a unit is explicitly selected. JSON always uses base
-units. Duplicate metrics, invalid units, and unavailable explicitly selected metrics are errors.
-See [JSON](#json) below for metric definitions and platform availability.
-
-For peak memory, each sample is one run's peak; the displayed mean is the average of those
-peaks, and the maximum is the largest observed peak. Automatic run counts still use elapsed
-time to estimate the benchmark effort, regardless of the selected metrics.
+each subsequent result shows its change from that reference.
 
 ### Warmup runs and preparation commands
 
@@ -181,7 +132,7 @@ If any of these commands need shell syntax, enable a shell explicitly.
 
 When a shell is enabled, hyperfine *corrects for the shell spawning time*. It runs the shell with an
 empty command multiple times to measure its startup time, then subtracts this time from each
-time measurement. Memory and counter measurements are not calibrated this way.
+time measurement.
 
 
 ### Shell functions
@@ -200,37 +151,20 @@ Otherwise, inline the function into the benchmarked command:
 hyperfine -S 'my_function() { sleep 1; }; my_function'
 ```
 
-### Exporting results
+### Choosing metrics and units
 
-Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. All exports
-preserve input order. Non-JSON formats contain only the primary metric.
-
-CSV includes the metric and unit explicitly. An explicit unit in `--metrics` also applies
-to CSV; otherwise, CSV uses seconds, bytes, or unscaled counts, without automatic scaling.
-For example, `--metrics memory_peak_resident:MiB` exports memory in MiB, while
-`--metrics memory_peak_resident` exports bytes.
-
-#### Markdown
-
-Markdown, AsciiDoc, and org-mode tables use the primary metric's selected unit, or choose
-a suitable unit automatically when it is omitted. For example:
+By default, hyperfine displays wall-clock time and memory usage
+(`time_wall_clock,memory_peak_resident`). Use `--metrics` with a
+comma-separated list to select a different set of metrics. Each
+metric can have an optional unit after it:
 
 ```sh
-hyperfine --metrics memory_peak_resident:MiB,time_wall_clock:ms \
-    --export-markdown results.md './baseline' './candidate'
+hyperfine \
+    --metrics memory_peak_resident:MiB,time_wall_clock:ms,instructions \
+    './baseline' './candidate'
 ```
 
-The table contains peak-RSS statistics and comparisons against `./baseline`. Wall-clock time
-still appears in the terminal and JSON, but not in this table.
-
-#### JSON
-
-JSON records the primary metric and includes all collected metrics, regardless of the display
-selection. Values use base units (seconds, bytes, and unscaled counts), independently of
-any units selected with `--metrics`. Individual samples exclude warmup runs.
-Results preserve input order; the first result is the reference.
-
-The metrics are:
+The following metrics are available:
 
 - **`time_wall_clock`**: Time from start to finish, including time spent waiting, in seconds.
 
@@ -284,9 +218,39 @@ The metrics are:
   - Linux: Same scope as `cpu_cycles`.
   - macOS/Windows: Currently not supported.
 
-Hardware counters are not available when a shell is enabled. Availability also depends on the
-platform and permissions. An unavailable metric can be omitted from JSON when it was not
-explicitly selected; naming it in a `--metrics` list requires it to be collected.
+Note that hardware counters are not available if a `--shell` is used.
+
+Time measurements support units `ns`, `us`, `ms`, `s`, `min`, and `h`. Memory measurements
+support `B`, `kB`, `MB`, `GB`, `TB`, `KiB`, `MiB`, `GiB`, and `TiB`. Hardware counters
+support `count` (1), `k` (thousand), `M` (million), and `B` (billion).
+
+You can also use a preset to select a group of metrics:
+
+| Preset | Metrics |
+|:---|:---|
+| `--metrics=default` | `time_wall_clock,memory_peak_resident` |
+| `--metrics=time` | `time_wall_clock,time_cpu,time_user,time_system` |
+| `--metrics=all` | All available metrics |
+
+### Exporting results
+
+Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. Non-JSON formats
+contain only the primary metric.
+
+#### Markdown
+
+You can use the `--export-markdown <file>` option to create tables like the following:
+
+| Command | Mean Wall Time [s] | Min [s] | Max [s] | Change |
+|:---|---:|---:|---:|---:|
+| `find . -iregex '.*[0-9]\.jpg$'` | 2.275 ± 0.046 | 2.243 | 2.397 |  |
+| `find . -iname '*[0-9].jpg'` | 1.427 ± 0.026 | 1.405 | 1.468 | -37.3% |
+| `fd -HI '.*[0-9]\.jpg$'` | 0.232 ± 0.002 | 0.230 | 0.236 | -89.8% (9.8x faster) |
+
+#### JSON
+
+The JSON export includes all available metrics listed in [Choosing metrics and units](#choosing-metrics-and-units)
+for each measured run (excluding warmup runs).
 
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
