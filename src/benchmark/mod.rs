@@ -412,7 +412,7 @@ impl<'a> Benchmark<'a> {
         }
 
         // Run outlier detection
-        let scores = measurements.modified_zscores();
+        let scores = measurements.modified_zscores(primary.metric);
 
         let outlier_warning_options = OutlierWarningOptions {
             warmup_in_use: self.options.warmup_count > 0,
@@ -425,15 +425,10 @@ impl<'a> Benchmark<'a> {
                 > 0,
         };
 
-        if self
-            .options
-            .metrics
-            .iter()
-            .any(|m| m.metric == crate::metric::Metric::TimeWallClock)
-            && scores[0] > OUTLIER_THRESHOLD
-        {
-            warnings.push(Warnings::SlowInitialRun(
-                measurements.wall_clock_times().next().unwrap(),
+        if scores[0] > OUTLIER_THRESHOLD {
+            warnings.push(Warnings::InitialRunOutlier(
+                primary,
+                primary.metric.value(&measurements.measurements[0]).unwrap(),
                 outlier_warning_options,
             ));
         }

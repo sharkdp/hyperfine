@@ -146,11 +146,6 @@ pub fn modified_zscores_f64(xs: &[f64]) -> Vec<f64> {
     xs.iter().map(|&x| (x - x_median) / mad).collect()
 }
 
-pub fn modified_zscores<Q: UnsafeRawValue>(values: &[Q]) -> Vec<f64> {
-    let values: Vec<_> = values.iter().map(|q| q.unsafe_raw_value()).collect();
-    modified_zscores_f64(&values)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

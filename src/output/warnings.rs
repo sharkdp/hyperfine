@@ -1,8 +1,8 @@
 use std::fmt;
 
 use crate::benchmark::MIN_EXECUTION_TIME;
-use crate::metric::MetricSelection;
-use crate::quantity::{millisecond, second, Time};
+use crate::metric::{Metric, MetricSelection};
+use crate::quantity::millisecond;
 
 pub struct OutlierWarningOptions {
     pub warmup_in_use: bool,
@@ -13,7 +13,7 @@ pub struct OutlierWarningOptions {
 pub enum Warnings {
     FastExecutionTime,
     NonZeroExitCode,
-    SlowInitialRun(Time, OutlierWarningOptions),
+    InitialRunOutlier(MetricSelection, f64, OutlierWarningOptions),
 }
 
 impl fmt::Display for Warnings {
@@ -28,12 +28,18 @@ impl fmt::Display for Warnings {
                 MIN_EXECUTION_TIME.get::<millisecond>()
             ),
             Warnings::NonZeroExitCode => write!(f, "Ignoring non-zero exit code."),
-            Warnings::SlowInitialRun(time_first_run, ref options) => write!(
+            Warnings::InitialRunOutlier(selection, value, _) if selection.metric != Metric::TimeWallClock => write!(
+                f,
+                "The first benchmarking run for this command had an unusually high value for the primary '{}' metric ({}) compared with the rest.",
+                selection.metric.name(),
+                selection.display_unit(value).format(value),
+            ),
+            Warnings::InitialRunOutlier(selection, value, ref options) => write!(
                 f,
                 "The first benchmarking run for this command was significantly slower than the \
                  rest ({time}). This could be caused by (filesystem) caches that were not filled until \
                  after the first run. {hints}",
-                time=MetricSelection::default().display_unit(time_first_run.get::<second>()).format(time_first_run.get::<second>()),
+                time=selection.display_unit(value).format(value),
                 hints=match (options.warmup_in_use, options.prepare_in_use) {
                     (true, true) => "You are already using both the '--warmup' option as well \
                     as the '--prepare' option. Consider re-running the benchmark on a quiet system. \
