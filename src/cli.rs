@@ -236,14 +236,15 @@ fn build_command() -> Command {
                 .value_name("SHELL")
                 .overrides_with("shell")
                 .value_hint(ValueHint::CommandString)
-                .help("Set the shell to use for executing commands (default: none). This can be the \
-                       name or the path to the shell executable, or a full command line \
+                .help("Set the shell to use for executing benchmarked commands, including warmup runs \
+                       (default: none). This can be the name or the path to the shell executable, or a full command line \
                        like \"bash --norc\". It can also be set to \"default\" to explicitly select \
                        the platform shell (sh on Unix, cmd.exe on Windows). It can also be set to \
-                       \"none\" to disable the shell. In this case, commands will be executed \
+                       \"none\" to disable the shell. In this case, benchmarked commands will be executed \
                        directly. They can still have arguments, but more complex things like \
-                       \"sleep 0.1; sleep 0.2\" are not possible without a shell. This option also \
-                       applies to setup, prepare, conclude, and cleanup commands.")
+                       \"sleep 0.1; sleep 0.2\" are not possible without a shell. Setup, prepare, conclude, \
+                       and cleanup commands always use a shell: the selected shell, or the platform \
+                       shell when this option is omitted or set to \"none\".")
         )
         .arg(
             Arg::new("default-shell")
