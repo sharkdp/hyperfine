@@ -215,6 +215,7 @@ impl Executor for ShellExecutor<'_> {
     ) -> Result<Measurement> {
         let on_windows_cmd = cfg!(windows) && *self.shell == Shell::Default("cmd.exe");
         let mut command_builder = self.shell.command();
+        command_builder.envs(command.get_environment());
         command_builder.arg(if on_windows_cmd { "/C" } else { "-c" });
 
         // Windows needs special treatment for its behavior on parsing cmd arguments

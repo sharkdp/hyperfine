@@ -53,6 +53,66 @@ fn one_run_is_supported() {
         .success();
 }
 
+#[test]
+fn environment_basic_usage() {
+    let command = if cfg!(windows) {
+        "echo %HYPERFINE_TEST%"
+    } else {
+        "echo \"$HYPERFINE_TEST\""
+    };
+    hyperfine()
+        .args(["--shell=default", "--runs=1", "--show-output"])
+        .arg("--command-name=env-test")
+        .args(["--env", r#"HYPERFINE_TEST="hello, world""#])
+        .arg(command)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("hello, world"));
+}
+
+#[test]
+fn environment_parameter_expansion() {
+    let command = if cfg!(windows) {
+        "echo %HYPERFINE_TEST%"
+    } else {
+        "echo \"$HYPERFINE_TEST\""
+    };
+    hyperfine()
+        .args(["--shell=default", "--runs=1", "--show-output"])
+        .arg("--command-name=env-test")
+        .args(["-P", "value", "1", "2"])
+        .args(["--env", "HYPERFINE_TEST=hello-{value}"])
+        .arg(command)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("hello-1"))
+        .stdout(predicate::str::contains("hello-2"));
+}
+
+#[test]
+fn rejects_invalid_environment() {
+    hyperfine()
+        .args(["--env", "OMP_NUM_THREADS"])
+        .arg("my_command")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Invalid value 'OMP_NUM_THREADS' for '--env': expected an assignment like NAME=value or NAME=\"quoted value\".",
+        ));
+}
+
+#[test]
+fn requires_explicit_shell_for_environment_assignments() {
+    // Without an explicit shell choice, report the leading variable assignment.
+    hyperfine()
+        .args(["--runs=1", "SOME_ENV_VAR=$HOME my_command"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "starts with a variable assignment",
+        ));
+}
+
 /// Regression test: hyperfine must not panic when writing to a closed
 /// stdout pipe (e.g. `hyperfine ... | head -n 1` or a downstream process
 /// that terminates early). A `BrokenPipe` error should result in a quiet

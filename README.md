@@ -155,6 +155,31 @@ Otherwise, inline the function into the benchmarked command:
 hyperfine -S 'my_function() { sleep 1; }; my_function'
 ```
 
+### Environment variables
+
+Use `--env` to set environment variables for benchmark commands and their respective setup, prepare, conclude,
+and cleanup commands. Assignments are space-separated and support shell-style quoting,
+but no shell expansion:
+
+```sh
+hyperfine --env 'OMP_NUM_THREADS=8 CFLAGS="-O3 -march=native"' 'my_command'
+```
+
+Specify once for all commands or once per benchmark command:
+
+```sh
+hyperfine \
+  --env 'OMP_NUM_THREADS=8' './benchmark-cpp' \
+  --env 'RAYON_NUM_THREADS=8' './benchmark-rust'
+```
+
+Use an empty `--env=''` for no overrides. Values can contain parameter placeholders.
+For example, the following benchmarks `my_command` with `OMP_NUM_THREADS` ranging from 1 to 8:
+
+```sh
+hyperfine -P threads 1 8 --env 'OMP_NUM_THREADS={threads}' 'my_command'
+```
+
 ### Choosing metrics and units
 
 By default, hyperfine displays wall-clock time and memory usage

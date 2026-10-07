@@ -35,6 +35,7 @@ fn get_output<E: Exporter + Default>(results: &[BenchmarkResult], unit: Option<U
 fn test_markup_export_auto_ms() {
     let results = [
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 0.1"),
             name: None,
             display_name: String::from("sleep 0.1"),
@@ -70,6 +71,7 @@ fn test_markup_export_auto_ms() {
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 2"),
             name: None,
             display_name: String::from("sleep 2"),
@@ -147,6 +149,7 @@ fn test_markup_export_auto_ms() {
 fn test_markup_export_auto_s() {
     let results = [
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 2"),
             name: None,
             display_name: String::from("sleep 2"),
@@ -182,6 +185,7 @@ fn test_markup_export_auto_s() {
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 0.1"),
             name: None,
             display_name: String::from("sleep 0.1"),
@@ -259,6 +263,7 @@ fn test_markup_export_auto_s() {
 fn test_markup_export_manual_ms() {
     let timing_results = [
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 2"),
             name: None,
             display_name: String::from("sleep 2"),
@@ -294,6 +299,7 @@ fn test_markup_export_manual_ms() {
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 0.1"),
             name: None,
             display_name: String::from("sleep 0.1"),
@@ -370,6 +376,7 @@ fn test_markup_export_manual_ms() {
 fn test_markup_export_manual_s() {
     let results = [
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 2"),
             name: None,
             display_name: String::from("sleep 2"),
@@ -405,6 +412,7 @@ fn test_markup_export_manual_s() {
             parameters: BTreeMap::new(),
         },
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("sleep 0.1"),
             name: None,
             display_name: String::from("sleep 0.1"),

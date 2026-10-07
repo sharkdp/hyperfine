@@ -1,7 +1,31 @@
-//! Conservative detection of shell operators in commands run without a shell.
+//! Conservative detection of shell syntax in commands run without a shell.
 
 use std::iter::Peekable;
 use std::str::CharIndices;
+
+/// Detects the variable assignment at the start of a command like
+/// `OMP_NUM_THREADS=8 my_command`.
+pub fn starts_with_assignment(command: &str) -> bool {
+    let Some(token) = tokenize(command).next() else {
+        return false;
+    };
+    let mut bytes = token.bytes();
+    if !bytes
+        .next()
+        .is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_')
+    {
+        return false;
+    }
+    for byte in bytes {
+        if byte == b'=' {
+            return true;
+        }
+        if !byte.is_ascii_alphanumeric() && byte != b'_' {
+            return false;
+        }
+    }
+    false
+}
 
 /// Find the first standalone operator that is neither quoted nor escaped.
 ///
@@ -90,7 +114,30 @@ impl<'a> Iterator for Tokens<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{first_unquoted_operator, tokenize};
+    use super::{first_unquoted_operator, starts_with_assignment, tokenize};
+
+    #[test]
+    fn detects_leading_assignments() {
+        assert!(starts_with_assignment("A=1 command"));
+        assert!(starts_with_assignment("A=$HOME command"));
+        assert!(starts_with_assignment("A= command"));
+        assert!(starts_with_assignment("_A2='hello world' B=2 command"));
+        assert!(starts_with_assignment("A=1"));
+        assert!(starts_with_assignment(" # comment\n A=1 command"));
+
+        assert!(!starts_with_assignment(""));
+        assert!(!starts_with_assignment("# A=1 command"));
+        assert!(!starts_with_assignment("command A=1"));
+        assert!(!starts_with_assignment("env A=1 command"));
+        assert!(!starts_with_assignment("'A=1' command"));
+        assert!(!starts_with_assignment("\"A\"=1 command"));
+        assert!(!starts_with_assignment(r"A\=1 command"));
+        assert!(!starts_with_assignment("./A=1 command"));
+        assert!(!starts_with_assignment("1A=1 command"));
+        assert!(!starts_with_assignment("A-B=1 command"));
+        assert!(!starts_with_assignment("=1 command"));
+        assert!(!starts_with_assignment("A"));
+    }
 
     #[test]
     fn tokenizer_preserves_words_quotes_and_escapes() {

@@ -91,6 +91,7 @@ fn test_csv() {
 
     let results = vec![
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("echo command_a"),
             name: Some(String::from("command_a")),
             display_name: String::from("command_a"),
@@ -141,6 +142,7 @@ fn test_csv() {
             },
         },
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("command_b"),
             name: None,
             display_name: String::from("command_b"),
