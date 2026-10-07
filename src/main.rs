@@ -11,9 +11,9 @@ use cli::get_cli_arguments;
 use command::Commands;
 use error::ConsoleOutputError;
 use export::ExportManager;
-use options::Options;
+use options::{ExecutorKind, Options};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use colored::*;
 
 pub mod benchmark;
@@ -27,6 +27,7 @@ pub mod outlier_detection;
 pub mod output;
 pub mod parameter;
 pub mod quantity;
+pub mod shell_syntax;
 pub mod timer;
 pub mod util;
 
@@ -39,6 +40,27 @@ fn run() -> Result<()> {
     let mut options = Options::from_cli_arguments(&cli_arguments)?;
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
     options.validate_against_command_list(&commands)?;
+
+    if matches!(options.executor_kind, ExecutorKind::Raw)
+        && !cli_arguments.get_flag("no-shell")
+        && cli_arguments.get_one::<String>("shell").is_none()
+    {
+        for command in commands.iter() {
+            let command_line = command.get_command_line();
+            if let Some(operator) = shell_syntax::first_unquoted_operator(&command_line) {
+                bail!(
+                    concat!(
+                        "Command '{command_line}' contains unquoted shell syntax ('{operator}').\n",
+                        "Explicitly choose how to execute it:\n",
+                        "  -S / --shell=default  Interpret shell syntax.\n",
+                        "  -N / --shell=none     Run directly, passing '{operator}' as a literal argument.",
+                    ),
+                    command_line = command_line,
+                    operator = operator,
+                );
+            }
+        }
+    }
 
     let export_manager = ExportManager::from_cli_arguments(&cli_arguments, options.metrics[0])?;
 

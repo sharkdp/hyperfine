@@ -114,6 +114,10 @@ Shell syntax such as pipes, redirections, environment-variable expansion, `*`, a
 This avoids shell startup overhead and the noise from correcting for it, especially for fast commands
 (< 5 ms).
 
+Commands containing unquoted, standalone shell operators such as `&&` or `>` require an explicit
+choice: use `-S` / `--shell=default` to interpret shell syntax, or `-N` / `--shell=none` to pass
+the operators as literal arguments.
+
 To enable shell syntax, use `-S` (an alias for `--shell=default`). This selects `sh`
 on Unix (resolved through `PATH`) or `cmd.exe` on Windows:
 ```sh
