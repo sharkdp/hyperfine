@@ -108,7 +108,7 @@ hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 
 ### Intermediate shell
 
-By default, commands are executed directly, without an intermediate shell (`--shell=none`).
+By default, benchmarked commands, including warmup runs, are executed directly, without an intermediate shell (`--shell=none`).
 Arguments are split using shell-like quoting, so quoted arguments containing spaces are supported.
 Shell syntax such as pipes, redirections, environment-variable expansion, `*`, and `~` is not interpreted.
 This avoids shell startup overhead and the noise from correcting for it, especially for fast commands
@@ -125,10 +125,11 @@ You can also select a specific shell with `--shell <SHELL>`:
 hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
 ```
 
-The shell setting applies to all commands, including `--setup`, `--prepare`, `--conclude`, and `--cleanup`.
-If any of these commands need shell syntax, enable a shell explicitly.
+The `--setup`, `--prepare`, `--conclude`, and `--cleanup` commands always run through a shell.
+They use the shell selected by `--shell`, or the platform shell (`sh` on Unix, `cmd.exe` on Windows)
+when `--shell` is omitted or set to `none`.
 
-When a shell is enabled, hyperfine *corrects for the shell spawning time*. It runs the shell with an
+When benchmarked commands use a shell, hyperfine *corrects for the shell spawning time*. It runs the shell with an
 empty command multiple times to measure its startup time, then subtracts this time from each
 time measurement.
 

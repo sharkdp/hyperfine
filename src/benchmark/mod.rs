@@ -11,9 +11,7 @@ use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::command::Command;
-use crate::options::{
-    CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
-};
+use crate::options::{CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption};
 use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::console_writeln;
 use crate::output::progress_bar::{
@@ -25,7 +23,7 @@ use crate::parameter::ParameterNameAndValue;
 use crate::quantity::{self, const_time_from_seconds, Time, Zero};
 use benchmark_result::BenchmarkResult;
 
-use anyhow::{ensure, Context, Result};
+use anyhow::{anyhow, ensure, Result};
 use colored::*;
 
 use self::executor::Executor;
@@ -64,22 +62,14 @@ impl<'a> Benchmark<'a> {
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
         self.executor
-            .run_command_and_measure(
-                command,
-                iteration,
-                Some(CmdFailureAction::RaiseError),
-                output_policy,
-            )
-            .with_context(|| {
-                let ignore_failure = if cfg!(windows) {
-                    " || exit /b 0"
+            .run_intermediate_command_and_measure(command, iteration, output_policy)
+            .map_err(|error| {
+                let hint = if cfg!(windows) {
+                    "Append ' || exit /b 0' to the command if this failure can be ignored."
                 } else {
-                    " || true"
+                    "Append ' || true' to the command if this failure can be ignored."
                 };
-                format!(
-                    "The {kind} command failed. If this failure can be ignored, \
-                     use '-S'/'--shell=default' and append '{ignore_failure}' to the command"
-                )
+                anyhow!("The {kind} command failed: {error:#} {hint}")
             })
     }
 

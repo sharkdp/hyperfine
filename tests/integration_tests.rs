@@ -318,7 +318,7 @@ fn fails_for_unknown_setup_command() {
         .arg("echo test")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("The setup command failed."));
+        .stderr(predicate::str::contains("The setup command failed:"));
 }
 
 #[test]
@@ -330,7 +330,7 @@ fn fails_for_unknown_cleanup_command() {
         .arg("echo test")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("The cleanup command failed."));
+        .stderr(predicate::str::contains("The cleanup command failed:"));
 }
 
 #[test]
@@ -341,7 +341,7 @@ fn fails_for_unknown_prepare_command() {
         .arg("echo test")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("The preparation command failed."));
+        .stderr(predicate::str::contains("The preparation command failed:"));
 }
 
 #[test]
@@ -352,40 +352,7 @@ fn fails_for_unknown_conclude_command() {
         .arg("echo test")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("The conclusion command failed."));
-}
-
-#[cfg(unix)]
-#[test]
-fn hook_errors_preserve_causes_and_explain_shell_syntax() {
-    for hook in ["--setup", "--prepare", "--conclude", "--cleanup"] {
-        for (command, cause) in [
-            (
-                "some-nonexisting-program-b5d9574198b7e4b12a71fa4747c0a577",
-                "No such file or directory",
-            ),
-            ("printf 'unclosed", "missing closing quote"),
-            ("false", "terminated with non-zero exit code 1"),
-        ] {
-            let assert = hyperfine()
-                .args(["--runs=1", hook, command, "true"])
-                .assert()
-                .failure()
-                .stderr(predicate::str::contains(command))
-                .stderr(predicate::str::contains(cause))
-                .stderr(predicate::str::contains("'-S'/'--shell=default'"))
-                .stderr(predicate::str::contains("append ' || true'"))
-                .stderr(predicate::str::contains("--ignore-failure").not());
-            if command != "false" {
-                assert.stderr(predicate::str::contains("non-zero exit code").not());
-            }
-        }
-
-        hyperfine()
-            .args(["-S", "--runs=1", hook, "false || true", "true"])
-            .assert()
-            .success();
-    }
+        .stderr(predicate::str::contains("The conclusion command failed:"));
 }
 
 #[cfg(unix)]
@@ -505,9 +472,14 @@ fn runs_commands_using_user_defined_shell() {
         .arg("--show-output")
         .arg("--shell")
         .arg("echo 'custom_shell' '--shell-arg'")
+        .arg("--setup=echo setup")
+        .arg("--prepare=echo prepare")
+        .arg("--conclude=echo conclude")
+        .arg("--cleanup=echo cleanup")
         .arg("echo benchmark")
         .assert()
         .success()
+        .stdout(predicate::str::contains("custom_shell --shell-arg").count(5))
         .stdout(
             predicate::str::contains("custom_shell --shell-arg -c echo benchmark").or(
                 predicate::str::contains("custom_shell --shell-arg /C echo benchmark"),

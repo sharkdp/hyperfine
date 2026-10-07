@@ -40,6 +40,21 @@ pub trait Executor {
         output_policy: &CommandOutputPolicy,
     ) -> Result<Measurement>;
 
+    /// Run a lifecycle command through a shell, always treating failures as errors.
+    fn run_intermediate_command_and_measure(
+        &self,
+        command: &Command<'_>,
+        iteration: BenchmarkIteration,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<Measurement> {
+        self.run_command_and_measure(
+            command,
+            iteration,
+            Some(CmdFailureAction::RaiseError),
+            output_policy,
+        )
+    }
+
     /// Perform a calibration of this executor. For example,
     /// when running commands through a shell, we need to
     /// measure the shell spawning time separately in order
@@ -151,6 +166,18 @@ impl Executor for RawExecutor<'_> {
             &command.get_command_line(),
             matches!(iteration, BenchmarkIteration::Benchmark(_)),
         )
+    }
+
+    fn run_intermediate_command_and_measure(
+        &self,
+        command: &Command<'_>,
+        iteration: BenchmarkIteration,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<Measurement> {
+        // Keep shell startup in the hook's duration: raw benchmarks have no
+        // calibrated shell overhead to add back when estimating the run count.
+        ShellExecutor::new(&Shell::platform_default(), self.options)
+            .run_intermediate_command_and_measure(command, iteration, output_policy)
     }
 
     fn calibrate(&mut self) -> Result<()> {
