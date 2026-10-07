@@ -331,8 +331,8 @@ apt install hyperfine
 
 Alternatively, for the latest version, you can download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases) and install it via `dpkg`:
 ```
-wget https://github.com/sharkdp/hyperfine/releases/download/v1.21.0/hyperfine_1.21.0_amd64.deb
-sudo dpkg -i hyperfine_1.21.0_amd64.deb
+wget https://github.com/sharkdp/hyperfine/releases/download/v2.0.0/hyperfine_2.0.0_amd64.deb
+sudo dpkg -i hyperfine_2.0.0_amd64.deb
 ```
 
 ### On Fedora
