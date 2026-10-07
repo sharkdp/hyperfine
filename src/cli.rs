@@ -50,6 +50,19 @@ fn build_command() -> Command {
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
         )
+        // Retain the removed option to provide migration guidance for old invocations.
+        .arg(
+            Arg::new("reference")
+                .long("reference")
+                .hide(true)
+                .value_name("CMD")
+                .num_args(0..=1)
+                .default_missing_value("")
+                .value_parser(|_: &str| -> Result<String, String> {
+                    Err("The --reference option has been removed. Put your reference command first instead.".into())
+                })
+                .help("Removed: put your reference command first instead."),
+        )
         .arg(
             Arg::new("metrics")
                 .long("metrics")
