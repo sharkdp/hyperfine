@@ -25,7 +25,7 @@ use crate::parameter::ParameterNameAndValue;
 use crate::quantity::{self, const_time_from_seconds, Time, Zero};
 use benchmark_result::BenchmarkResult;
 
-use anyhow::{anyhow, ensure, Result};
+use anyhow::{ensure, Context, Result};
 use colored::*;
 
 use self::executor::Executor;
@@ -55,11 +55,11 @@ impl<'a> Benchmark<'a> {
         }
     }
 
-    /// Run setup, cleanup, or preparation commands
+    /// Run setup, cleanup, preparation, or conclusion commands
     fn run_intermediate_command(
         &self,
         command: &Command<'_>,
-        error_output: &'static str,
+        kind: &'static str,
         output_policy: &CommandOutputPolicy,
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
@@ -70,7 +70,17 @@ impl<'a> Benchmark<'a> {
                 Some(CmdFailureAction::RaiseError),
                 output_policy,
             )
-            .map_err(|_| anyhow!(error_output))
+            .with_context(|| {
+                let ignore_failure = if cfg!(windows) {
+                    " || exit /b 0"
+                } else {
+                    " || true"
+                };
+                format!(
+                    "The {kind} command failed. If this failure can be ignored, \
+                     use '-S'/'--shell=default' and append '{ignore_failure}' to the command"
+                )
+            })
     }
 
     /// Run the command specified by `--setup`.
@@ -85,14 +95,11 @@ impl<'a> Benchmark<'a> {
             .as_ref()
             .map(|setup_command| Command::new_parametrized(None, setup_command, parameters));
 
-        let error_output = "The setup command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
         Ok(command
             .map(|cmd| {
                 self.run_intermediate_command(
                     &cmd,
-                    error_output,
+                    "setup",
                     output_policy,
                     BenchmarkIteration::NonBenchmarkRun,
                 )
@@ -113,14 +120,11 @@ impl<'a> Benchmark<'a> {
             .as_ref()
             .map(|cleanup_command| Command::new_parametrized(None, cleanup_command, parameters));
 
-        let error_output = "The cleanup command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
         Ok(command
             .map(|cmd| {
                 self.run_intermediate_command(
                     &cmd,
-                    error_output,
+                    "cleanup",
                     output_policy,
                     BenchmarkIteration::NonBenchmarkRun,
                 )
@@ -136,10 +140,7 @@ impl<'a> Benchmark<'a> {
         output_policy: &CommandOutputPolicy,
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
-        let error_output = "The preparation command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
-        self.run_intermediate_command(command, error_output, output_policy, iteration)
+        self.run_intermediate_command(command, "preparation", output_policy, iteration)
     }
 
     /// Run the command specified by `--conclude`.
@@ -149,10 +150,7 @@ impl<'a> Benchmark<'a> {
         output_policy: &CommandOutputPolicy,
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
-        let error_output = "The conclusion command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
-        self.run_intermediate_command(command, error_output, output_policy, iteration)
+        self.run_intermediate_command(command, "conclusion", output_policy, iteration)
     }
 
     fn validate_measurement(&self, measurement: &Measurement) -> Result<()> {

@@ -5,9 +5,7 @@ use std::process::ExitStatus;
 use crate::benchmark::measurement::Measurement;
 use crate::benchmark::measurement::Measurements;
 use crate::command::Command;
-use crate::options::{
-    CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
-};
+use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
 use crate::quantity::{second, Information, Time, Zero};
 use crate::timer::execute_and_measure;
@@ -58,13 +56,13 @@ pub trait Executor {
 fn run_command_and_measure_common(
     mut command: std::process::Command,
     iteration: BenchmarkIteration,
-    command_failure_action: CmdFailureAction,
-    command_input_policy: &CommandInputPolicy,
+    command_failure_action: Option<CmdFailureAction>,
+    options: &Options,
     command_output_policy: &CommandOutputPolicy,
     command_name: &str,
     collect_hardware_counters: bool,
 ) -> Result<Measurement> {
-    let stdin = command_input_policy.get_stdin()?;
+    let stdin = options.command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
     command.stdin(stdin).stdout(stdout).stderr(stderr);
 
@@ -83,10 +81,14 @@ fn run_command_and_measure_common(
     if !measurement.exit_status.success() {
         use crate::util::exit_code::extract_exit_code;
 
-        let should_fail = match command_failure_action {
+        let show_ignore_failure_hint = command_failure_action.is_none();
+        let should_fail = match command_failure_action
+            .as_ref()
+            .unwrap_or(&options.command_failure_action)
+        {
             CmdFailureAction::RaiseError => true,
             CmdFailureAction::IgnoreAllFailures => false,
-            CmdFailureAction::IgnoreSpecificFailures(ref codes) => {
+            CmdFailureAction::IgnoreSpecificFailures(codes) => {
                 // Only fail if the exit code is not in the list of codes to ignore
                 if let Some(exit_code) = extract_exit_code(measurement.exit_status) {
                     !codes.contains(&exit_code)
@@ -105,15 +107,17 @@ fn run_command_and_measure_common(
                 BenchmarkIteration::Benchmark(0) => "the first benchmark run".to_string(),
                 BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
             };
-            bail!(
-                "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-                Alternatively, use the '--show-output' option to debug what went wrong.",
-                cause=measurement.exit_status.code().map_or(
-                    "The process has been terminated by a signal".into(),
-                    |c| format!("Command terminated with non-zero exit code {c}")
-
-                ),
+            let cause = measurement.exit_status.code().map_or_else(
+                || "was terminated by a signal".to_owned(),
+                |code| format!("terminated with non-zero exit code {code}"),
             );
+            let hint = if show_ignore_failure_hint {
+                " Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+                 Alternatively, use the '--show-output' option to debug what went wrong."
+            } else {
+                " Use the '--show-output' option to debug what went wrong."
+            };
+            bail!("Command '{command_name}' {cause} in {when}.{hint}");
         }
     }
 
@@ -141,8 +145,8 @@ impl Executor for RawExecutor<'_> {
         run_command_and_measure_common(
             command.get_command()?,
             iteration,
-            command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
-            &self.options.command_input_policy,
+            command_failure_action,
+            self.options,
             output_policy,
             &command.get_command_line(),
             matches!(iteration, BenchmarkIteration::Benchmark(_)),
@@ -197,8 +201,8 @@ impl Executor for ShellExecutor<'_> {
         let mut measurement = run_command_and_measure_common(
             command_builder,
             iteration,
-            command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
-            &self.options.command_input_policy,
+            command_failure_action,
+            self.options,
             output_policy,
             &command.get_command_line(),
             false,
