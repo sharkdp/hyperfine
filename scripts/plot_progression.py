@@ -29,62 +29,67 @@ def moving_average(values, num_runs):
     return np.convolve(values_padded, kernel, mode="valid")
 
 
-parser = argparse.ArgumentParser(description=__doc__)
-add_metric_argument(parser)
-parser.add_argument("file", help="JSON file with benchmark results")
-parser.add_argument("--title", help="Plot Title")
-parser.add_argument("-o", "--output", help="Save image to the given filename.")
-parser.add_argument(
-    "-w",
-    "--moving-average-width",
-    type=int,
-    metavar="num_runs",
-    help="Width of the moving-average window (default: N/5)",
-)
-parser.add_argument(
-    "--no-moving-average",
-    action="store_true",
-    help="Do not show moving average curve",
-)
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    add_metric_argument(parser)
+    parser.add_argument("file", help="JSON file with benchmark results")
+    parser.add_argument("--title", help="Plot Title")
+    parser.add_argument("-o", "--output", help="Save image to the given filename.")
+    parser.add_argument(
+        "-w",
+        "--moving-average-width",
+        type=int,
+        metavar="num_runs",
+        help="Width of the moving-average window (default: N/5)",
+    )
+    parser.add_argument(
+        "--no-moving-average",
+        action="store_true",
+        help="Do not show moving average curve",
+    )
+
+    args = parser.parse_args()
+    metric, [results] = load_results(parser, [args.file], args.metric)
+    metric_info = METRICS[metric]
+
+    for result in results:
+        values = [
+            m[metric]["value"] / metric_info.scale for m in result["measurements"]
+        ]
+        num = len(values)
+        nums = range(num)
+
+        plt.scatter(x=nums, y=values, marker=".")
+        plt.ylim([0, None])
+        plt.xlim([-1, num])
+
+        if not args.no_moving_average:
+            moving_average_width = (
+                max(1, num // 5)
+                if args.moving_average_width is None
+                else args.moving_average_width
+            )
+
+            average = moving_average(values, moving_average_width)
+            plt.plot(nums, average, "-")
+
+    if args.title:
+        plt.title(args.title)
+
+    legend = []
+    for result in results:
+        legend.append(result.get("name", result["command"]))
+        if not args.no_moving_average:
+            legend.append("moving average")
+    plt.legend(legend)
+
+    plt.ylabel(metric_info.axis_label)
+
+    if args.output:
+        plt.savefig(args.output)
+    else:
+        plt.show()
 
 
-args = parser.parse_args()
-metric, [results] = load_results(parser, [args.file], args.metric)
-metric_info = METRICS[metric]
-
-for result in results:
-    label = result.get("name", result["command"])
-    values = [m[metric]["value"] / metric_info.scale for m in result["measurements"]]
-    num = len(values)
-    nums = range(num)
-
-    plt.scatter(x=nums, y=values, marker=".")
-    plt.ylim([0, None])
-    plt.xlim([-1, num])
-
-    if not args.no_moving_average:
-        moving_average_width = (
-            max(1, num // 5)
-            if args.moving_average_width is None
-            else args.moving_average_width
-        )
-
-        average = moving_average(values, moving_average_width)
-        plt.plot(nums, average, "-")
-
-if args.title:
-    plt.title(args.title)
-
-legend = []
-for result in results:
-    legend.append(result.get("name", result["command"]))
-    if not args.no_moving_average:
-        legend.append("moving average")
-plt.legend(legend)
-
-plt.ylabel(metric_info.axis_label)
-
-if args.output:
-    plt.savefig(args.output)
-else:
-    plt.show()
+if __name__ == "__main__":
+    main()

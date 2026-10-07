@@ -1,0 +1,36 @@
+[project]
+name = "hyperfine-scripts"
+version = "0.1.0"
+description = "Plot and analyze hyperfine JSON benchmark results"
+requires-python = ">=3.10"
+license-files = ["LICENSE-APACHE", "LICENSE-MIT"]
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "pyqt6",
+    "scipy",
+]
+
+[project.scripts]
+advanced_statistics = "advanced_statistics:main"
+plot_benchmark_comparison = "plot_benchmark_comparison:main"
+plot_histogram = "plot_histogram:main"
+plot_parametrized = "plot_parametrized:main"
+plot_progression = "plot_progression:main"
+plot_whisker = "plot_whisker:main"
+welch_ttest = "welch_ttest:main"
+
+[tool.uv.build-backend]
+module-root = "scripts"
+module-name = ""
+namespace = true
+source-exclude = [
+    "/scripts/README.md",
+    "/scripts/ruff.toml",
+    "/scripts/.*",
+    "*.egg-info",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13"]
+build-backend = "uv_build"

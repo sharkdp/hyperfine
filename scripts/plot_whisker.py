@@ -21,49 +21,56 @@ import matplotlib.pyplot as plt
 
 from plot_utils import METRICS, add_metric_argument, load_results
 
-parser = argparse.ArgumentParser(description=__doc__)
-add_metric_argument(parser)
-parser.add_argument("file", help="JSON file with benchmark results")
-parser.add_argument("--title", help="Plot Title")
-parser.add_argument("--sort-by", choices=["median"], help="Sort method")
-parser.add_argument(
-    "--labels", help="Comma-separated list of entries for the plot legend"
-)
-parser.add_argument("-o", "--output", help="Save image to the given filename.")
 
-args = parser.parse_args()
-metric, [results] = load_results(parser, [args.file], args.metric)
-metric_info = METRICS[metric]
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    add_metric_argument(parser)
+    parser.add_argument("file", help="JSON file with benchmark results")
+    parser.add_argument("--title", help="Plot Title")
+    parser.add_argument("--sort-by", choices=["median"], help="Sort method")
+    parser.add_argument(
+        "--labels", help="Comma-separated list of entries for the plot legend"
+    )
+    parser.add_argument("-o", "--output", help="Save image to the given filename.")
 
-if args.labels:
-    labels = args.labels.split(",")
-else:
-    labels = [b.get("name", b["command"]) for b in results]
-values = [
-    [m[metric]["value"] / metric_info.scale for m in b["measurements"]] for b in results
-]
+    args = parser.parse_args()
+    metric, [results] = load_results(parser, [args.file], args.metric)
+    metric_info = METRICS[metric]
 
-if args.sort_by == "median":
-    medians = [b["summary"][metric]["median"] for b in results]
-    indices = sorted(range(len(labels)), key=lambda k: medians[k])
-    labels = [labels[i] for i in indices]
-    values = [values[i] for i in indices]
+    if args.labels:
+        labels = args.labels.split(",")
+    else:
+        labels = [b.get("name", b["command"]) for b in results]
+    values = [
+        [m[metric]["value"] / metric_info.scale for m in b["measurements"]]
+        for b in results
+    ]
 
-plt.figure(figsize=(10, 6), constrained_layout=True)
-boxplot = plt.boxplot(values, vert=True, patch_artist=True)
-cmap = plt.get_cmap("rainbow")
-colors = [cmap(val / len(values)) for val in range(len(values))]
+    if args.sort_by == "median":
+        medians = [b["summary"][metric]["median"] for b in results]
+        indices = sorted(range(len(labels)), key=lambda k: medians[k])
+        labels = [labels[i] for i in indices]
+        values = [values[i] for i in indices]
 
-for patch, color in zip(boxplot["boxes"], colors):
-    patch.set_facecolor(color)
+    plt.figure(figsize=(10, 6), constrained_layout=True)
+    boxplot = plt.boxplot(values, vert=True, patch_artist=True)
+    cmap = plt.get_cmap("rainbow")
+    colors = [cmap(val / len(values)) for val in range(len(values))]
 
-if args.title:
-    plt.title(args.title)
-plt.legend(handles=boxplot["boxes"], labels=labels, loc="best", fontsize="medium")
-plt.ylabel(metric_info.axis_label)
-plt.ylim(0, None)
-plt.xticks(list(range(1, len(labels) + 1)), labels, rotation=45)
-if args.output:
-    plt.savefig(args.output)
-else:
-    plt.show()
+    for patch, color in zip(boxplot["boxes"], colors):
+        patch.set_facecolor(color)
+
+    if args.title:
+        plt.title(args.title)
+    plt.legend(handles=boxplot["boxes"], labels=labels, loc="best", fontsize="medium")
+    plt.ylabel(metric_info.axis_label)
+    plt.ylim(0, None)
+    plt.xticks(list(range(1, len(labels) + 1)), labels, rotation=45)
+    if args.output:
+        plt.savefig(args.output)
+    else:
+        plt.show()
+
+
+if __name__ == "__main__":
+    main()

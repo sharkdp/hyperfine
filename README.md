@@ -257,7 +257,16 @@ The JSON output is useful if you want to analyze the benchmark results in more d
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
 of helpful Python programs to further analyze benchmark results and create helpful
 visualizations, like a histogram of runtimes or a whisker plot to compare
-multiple benchmarks:
+multiple benchmarks.
+
+For example, these two commands create the following plots:
+
+```bash
+uvx --from 'git+https://github.com/sharkdp/hyperfine' \
+  plot_histogram results.json
+uvx --from 'git+https://github.com/sharkdp/hyperfine' \
+  plot_whisker results.json
+```
 
 | ![](doc/histogram.png) | ![](doc/whisker.png) |
 |---:|---:|
