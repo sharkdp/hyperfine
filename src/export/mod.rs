@@ -44,8 +44,12 @@ pub enum ExportType {
 
 /// Interface for different exporters.
 trait Exporter {
-    /// Export the given entries in the serialized form.
-    fn serialize(&self, results: &[BenchmarkResult], primary: MetricSelection) -> Result<Vec<u8>>;
+    /// Export the given entries using a nonempty list of selected metrics, primary first.
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        metrics: &[MetricSelection],
+    ) -> Result<Vec<u8>>;
 }
 
 pub enum ExportTarget {
@@ -61,16 +65,16 @@ struct ExporterWithTarget {
 /// Handles the management of multiple file exporters.
 pub struct ExportManager {
     exporters: Vec<ExporterWithTarget>,
-    primary: MetricSelection,
+    metrics: Vec<MetricSelection>,
 }
 
 impl ExportManager {
     /// Build the ExportManager that will export the results specified
     /// in the given ArgMatches
-    pub fn from_cli_arguments(matches: &ArgMatches, primary: MetricSelection) -> Result<Self> {
+    pub fn from_cli_arguments(matches: &ArgMatches, metrics: &[MetricSelection]) -> Result<Self> {
         let mut export_manager = Self {
             exporters: vec![],
-            primary,
+            metrics: metrics.to_vec(),
         };
         {
             let mut add_exporter = |flag, exporttype| -> Result<()> {
@@ -120,7 +124,7 @@ impl ExportManager {
     /// order not to clutter the output of hyperfine with intermediate results).
     pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
         for e in &self.exporters {
-            let content = || e.exporter.serialize(results, self.primary);
+            let content = || e.exporter.serialize(results, &self.metrics);
 
             match e.target {
                 ExportTarget::File(ref filename) => {

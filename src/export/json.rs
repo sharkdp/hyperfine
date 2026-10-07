@@ -65,7 +65,12 @@ pub struct JsonExporter {
 }
 
 impl Exporter for JsonExporter {
-    fn serialize(&self, results: &[BenchmarkResult], primary: MetricSelection) -> Result<Vec<u8>> {
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        metrics: &[MetricSelection],
+    ) -> Result<Vec<u8>> {
+        let primary = metrics[0];
         let mut output = to_vec_pretty(&HyperfineSummary {
             schema_version: JSON_SCHEMA_VERSION,
             metadata: &self.metadata,

@@ -240,8 +240,9 @@ You can also use a preset to select a group of metrics:
 
 ### Exporting results
 
-Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. Non-JSON formats
-contain only the primary metric, which is the first metric selected by `--metrics`.
+Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. CSV exports all
+selected metrics, while Markdown, AsciiDoc, and org-mode contain only the primary metric,
+which is the first metric selected by `--metrics`.
 
 #### Markdown
 
@@ -276,6 +277,14 @@ uvx --from 'git+https://github.com/sharkdp/hyperfine' \
 | ![](doc/histogram.png) | ![](doc/whisker.png) |
 |---:|---:|
 
+
+#### CSV
+
+Use `--export-csv <file>` to export one row per command. Each metric selected by `--metrics`
+contributes a group of columns, in selection order: `<metric>_unit`, `<metric>_mean`,
+`<metric>_stddev`, `<metric>_median`, `<metric>_min`, and `<metric>_max`.
+
+CSV uses explicitly selected units, or base units (seconds, bytes, or counts) when omitted.
 
 ### Detailed benchmark flowchart
 

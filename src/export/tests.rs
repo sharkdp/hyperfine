@@ -15,10 +15,10 @@ fn get_output<E: Exporter + Default>(results: &[BenchmarkResult], unit: Option<U
         exporter
             .serialize(
                 results,
-                MetricSelection {
+                &[MetricSelection {
                     unit,
                     ..MetricSelection::default()
-                },
+                }],
             )
             .unwrap(),
     )
