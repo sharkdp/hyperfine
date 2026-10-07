@@ -69,7 +69,7 @@ fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
     assert_eq!(options.executor_kind, ExecutorKind::Mock(None));
 
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
-    let export_manager = ExportManager::from_cli_arguments(&cli_arguments, options.metrics[0])?;
+    let export_manager = ExportManager::from_cli_arguments(&cli_arguments, &options.metrics)?;
 
     options.validate_against_command_list(&commands)?;
 

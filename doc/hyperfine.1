@@ -232,7 +232,7 @@ of the tool.
 .HP
 \fB\-\-metrics\fR \fIMETRIC[:UNIT],...|default|time|all\fP
 .IP
-Select the metrics to display, in order, with an optional unit for each.
+Select the metrics to measure, in order, with an optional unit for each.
 Default: \fBtime_wall_clock,memory_peak_resident\fR, or \fBtime_wall_clock\fR
 on Windows, where peak resident memory is not yet supported.
 .IP
@@ -266,9 +266,11 @@ Export the primary metric's summary statistics as an AsciiDoc table to the given
 .HP
 \fB\-\-export\-csv\fR \fIFILE\fP
 .IP
-Export the primary metric's summary statistics as CSV to the given \fIFILE\fP,
-identifying the metric and unit explicitly. Use the explicitly selected unit,
-or the base unit (seconds, bytes, or unscaled counts) when omitted.
+Export summary statistics for all selected metrics as CSV to the given \fIFILE\fP,
+one row per command. Each metric contributes columns for unit, mean, stddev, median,
+min, and max, prefixed with the metric name, in selection order. The command column
+comes first and parameter columns come last. Use the explicitly selected units,
+or base units (seconds, bytes, or unscaled counts) when omitted.
 .HP
 \fB\-\-export\-json\fR \fIFILE\fP
 .IP

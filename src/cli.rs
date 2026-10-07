@@ -58,7 +58,7 @@ fn build_command() -> Command {
                 .hide_default_value(true)
                 .help("Performance metrics to measure, in order.\n\n\
                        This is either a preset name, or a comma-separated list of metrics with optional units. \
-                       The first metric is used for non-JSON exports, \
+                       CSV exports all selected metrics; markup exports use the first metric. \
                        JSON always includes all collected metrics.\n\n\
                        Presets (use one on its own):\n  \
                          default  Wall-clock time and peak RSS\n  \
@@ -303,9 +303,10 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("FILE")
                 .value_hint(ValueHint::FilePath)
-                .help("Export the primary metric summary statistics as CSV to the given FILE. If you need \
+                .help("Export summary statistics for all selected metrics as CSV to the given FILE. If you need \
                        all metrics for each individual run, use the JSON export format. \
-                       Use the explicitly selected unit, or the base unit when unspecified."),
+                       Column names are prefixed with the metric name. \
+                       Use the explicitly selected units, or base units when unspecified."),
         )
         .arg(
             Arg::new("export-json")
