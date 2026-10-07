@@ -402,6 +402,7 @@ dependencies = [
  "serde_json",
  "shell-words",
  "tempfile",
+ "terminal_size",
  "thiserror",
  "uom",
  "windows-sys 0.61.2",

@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::{self, IsTerminal, Write};
 
 use anyhow::{ensure, Result};
 use colored::Colorize;
@@ -12,6 +12,8 @@ use crate::output::console_writeln;
 const MIN_VALUE_WIDTH: usize = 7;
 const MIN_UNIT_WIDTH: usize = 3;
 const MIN_CHANGE_WIDTH: usize = 14;
+// Leave room for long metric labels and comparison factors in the full layout.
+const COMPACT_WIDTH_THRESHOLD: u16 = 110;
 
 /// Print a completed benchmark immediately, comparing every metric with benchmark 1.
 pub fn print(
@@ -22,6 +24,10 @@ pub fn print(
     skip_unavailable_metrics: bool,
     reference: Option<&BenchmarkResult>,
 ) -> Result<()> {
+    // Only adapt interactive output; redirected reports keep their usual layout.
+    let compact = io::stdout().is_terminal()
+        && terminal_size::terminal_size()
+            .is_some_and(|(terminal_size::Width(width), _)| width < COMPACT_WIDTH_THRESHOLD);
     let comparison = reference.is_some();
     let multiple_runs = measurements.len() > 1;
     let value_columns = 1..if multiple_runs { 5 } else { 2 };
@@ -57,10 +63,12 @@ pub fn print(
             .unwrap_or(&summary)
             .mean;
         let unit = selection.display_unit(scale_mean);
-        let mut row = vec![
-            selection.metric.label().to_owned(),
-            unit.format_value(summary.mean),
-        ];
+        let label = if compact && unit.symbol != "count" {
+            format!("{} [{}]", selection.metric.label(), unit.symbol)
+        } else {
+            selection.metric.label().to_owned()
+        };
+        let mut row = vec![label, unit.format_value(summary.mean)];
         if let Some(stddev) = summary.stddev {
             row.push(unit.format_value(stddev));
             row.push(unit.format_value(summary.min));
@@ -108,9 +116,9 @@ pub fn print(
             if column == 0 {
                 width.max(metric_width)
             } else if value_columns.contains(&column) {
-                width.max(MIN_VALUE_WIDTH)
+                width.max(if compact { 5 } else { MIN_VALUE_WIDTH })
             } else {
-                width.max(MIN_CHANGE_WIDTH)
+                width.max(if compact { 7 } else { MIN_CHANGE_WIDTH })
             }
         })
         .collect();
@@ -147,7 +155,7 @@ pub fn print(
                 });
             }
             let padding = " ".repeat(widths[column] - value.chars().count());
-            let has_unit = value_columns.contains(&column);
+            let has_unit = !compact && value_columns.contains(&column);
             let text = if has_unit && !unit.is_empty() {
                 format!("{value} {unit}")
             } else {
