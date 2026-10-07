@@ -47,6 +47,14 @@ fn run() -> Result<()> {
     {
         for command in commands.iter() {
             let command_line = command.get_command_line();
+            if shell_syntax::starts_with_assignment(&command_line) {
+                bail!(
+                    "Cannot run '{command_line}' directly because it starts with a variable assignment.\n\
+                     Use the --env option to set environment variables, for example:\n\n  \
+                       hyperfine --env 'OMP_NUM_THREADS=8 CFLAGS=\"-O3 -march=native\"' 'my_command'\n\n\
+                     Alternatively, use -S / --shell=default to run the command in a shell."
+                );
+            }
             if let Some(operator) = shell_syntax::first_unquoted_operator(&command_line) {
                 bail!(
                     concat!(

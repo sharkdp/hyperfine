@@ -61,8 +61,9 @@ impl<'a> Benchmark<'a> {
         output_policy: &CommandOutputPolicy,
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
+        let command = command.clone().with_environment_from(self.command);
         self.executor
-            .run_intermediate_command_and_measure(command, iteration, output_policy)
+            .run_intermediate_command_and_measure(&command, iteration, output_policy)
             .map_err(|error| {
                 let hint = if cfg!(windows) {
                     "Append ' || exit /b 0' to the command if this failure can be ignored."
@@ -443,6 +444,11 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command,
             name,
+            environment: self
+                .command
+                .get_environment()
+                .map(|(name, value)| (name.to_owned(), value))
+                .collect(),
             display_name: self.command.get_name_with_unused_parameters(),
             measurements,
             parameters: self

@@ -192,6 +192,17 @@ This performs benchmarks for 'g++ \-O2 main.cpp' and 'clang++ \-O2 main.cpp'.
 The option can be specified multiple times to run benchmarks for all
 possible parameter combinations.
 .HP
+\fB\-\-env\fR \fIASSIGNMENTS\fP
+.IP
+Set environment variables for benchmark commands and their respective setup, prepare, conclude,
+and cleanup commands. Assignments are space-separated and support shell-style quoting,
+but no shell expansion, e.g. \fB\-\-env\fR 'OMP_NUM_THREADS=8 CFLAGS="\-O3 \-march=native"'.
+Specify once for all commands or once per benchmark command, like \fB\-\-prepare\fR.
+Use an empty string for no overrides. Values can contain parameter placeholders.
+.IP
+For example, \fBhyperfine \-P threads 1 8 \-\-env\fR 'OMP_NUM_THREADS={threads}' 'my_command'
+benchmarks 'my_command' with OMP_NUM_THREADS ranging from 1 to 8.
+.HP
 \fB\-\-shell\fR \fISHELL\fP
 .IP
 Set the shell to use for executing benchmarked commands, including warmup runs

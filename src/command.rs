@@ -14,8 +14,10 @@ use crate::{
 
 use clap::{parser::ValuesRef, ArgMatches};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use rust_decimal::Decimal;
+
+type Environment = Vec<(String, String)>;
 
 /// A command that should be benchmarked.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -28,6 +30,9 @@ pub struct Command<'a> {
 
     /// Zero or more parameter values.
     parameters: Vec<ParameterNameAndValue<'a>>,
+
+    /// Environment overrides, before parameter substitution.
+    environment: Environment,
 }
 
 impl<'a> Command<'a> {
@@ -36,6 +41,7 @@ impl<'a> Command<'a> {
             name,
             expression,
             parameters: Vec::new(),
+            environment: Vec::new(),
         }
     }
 
@@ -48,14 +54,26 @@ impl<'a> Command<'a> {
             name,
             expression,
             parameters: parameters.into_iter().collect(),
+            environment: Vec::new(),
         }
     }
 
     pub fn get_name(&self) -> String {
-        self.name.map_or_else(
-            || self.get_command_line(),
-            |name| self.replace_parameters_in(name),
-        )
+        match self.name {
+            Some(name) => self.replace_parameters_in(name),
+            None => {
+                let environment = self
+                    .get_environment()
+                    .map(|(name, value)| format!("{name}={}", shell_words::quote(&value)))
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                if environment.is_empty() {
+                    self.get_command_line()
+                } else {
+                    format!("{environment} {}", self.get_command_line())
+                }
+            }
+        }
     }
 
     pub fn get_name_with_unused_parameters(&self) -> String {
@@ -87,6 +105,7 @@ impl<'a> Command<'a> {
         if let Some(program_name) = tokens.next() {
             let mut command_builder = std::process::Command::new(program_name);
             command_builder.args(tokens);
+            command_builder.envs(self.get_environment());
             Ok(command_builder)
         } else {
             bail!("Can not execute empty command")
@@ -97,8 +116,24 @@ impl<'a> Command<'a> {
         &self.parameters
     }
 
+    pub fn get_environment(&self) -> impl Iterator<Item = (&str, String)> {
+        self.environment
+            .iter()
+            .map(move |(name, value)| (name.as_str(), self.replace_parameters_in(value)))
+    }
+
+    pub fn with_environment_from(mut self, command: &Command<'_>) -> Self {
+        self.environment = command.environment.clone();
+        self
+    }
+
     pub fn is_parameter_unused(&self, parameter: &str) -> bool {
-        !self.expression.contains(&format!("{{{parameter}}}"))
+        let placeholder = format!("{{{parameter}}}");
+        !self.expression.contains(&placeholder)
+            && !self
+                .environment
+                .iter()
+                .any(|(_, value)| value.contains(&placeholder))
     }
 
     pub fn get_unused_parameters(&self) -> impl Iterator<Item = &(&'a str, ParameterValue)> {
@@ -137,8 +172,58 @@ impl<'a> Command<'a> {
 /// A collection of commands that should be benchmarked
 pub struct Commands<'a>(Vec<Command<'a>>);
 
+fn parse_environment(value: &str) -> Result<Environment> {
+    let mut environment = Environment::new();
+    for assignment in shell_words::split(value).context("Failed to parse '--env' assignments")? {
+        let (name, value) = assignment.split_once('=').with_context(|| {
+            format!(
+                "Invalid value '{assignment}' for '--env': expected an assignment like NAME=value or NAME=\"quoted value\"."
+            )
+        })?;
+        ensure!(
+            !name.is_empty()
+                && name.bytes().enumerate().all(|(index, byte)| {
+                    byte == b'_'
+                        || byte.is_ascii_alphabetic()
+                        || (index > 0 && byte.is_ascii_digit())
+                }),
+            "Invalid environment variable name '{name}' in '--env'"
+        );
+        // Keep only the last assignment, including case variants on Windows.
+        environment.retain(|(key, _)| {
+            if cfg!(windows) {
+                !key.eq_ignore_ascii_case(name)
+            } else {
+                key != name
+            }
+        });
+        environment.push((name.to_owned(), value.to_owned()));
+    }
+    Ok(environment)
+}
+
 impl<'a> Commands<'a> {
     pub fn from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'a>> {
+        let mut commands = Self::build_from_cli_arguments(matches)?;
+        if let Some(values) = matches.get_many::<String>("env") {
+            let environments = values
+                .map(|value| parse_environment(value))
+                .collect::<Result<Vec<_>>>()?;
+            let num_commands = commands.num_commands();
+            ensure!(
+                environments.len() == 1 || environments.len() == num_commands,
+                "The '--env' option has to be provided just once or N times, where N={num_commands} is the \
+                 number of benchmark commands."
+            );
+            for (index, command) in commands.0.iter_mut().enumerate() {
+                command.environment =
+                    environments[if environments.len() == 1 { 0 } else { index }].clone();
+            }
+        }
+        Ok(commands)
+    }
+
+    fn build_from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'a>> {
         let command_names = matches.get_many::<String>("command-name");
         let command_strings = matches
             .get_many::<String>("command")

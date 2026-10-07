@@ -120,6 +120,28 @@ fn build_command() -> Command {
                        hyperfine automatically determines the number of runs."),
         )
         .arg(
+            Arg::new("env")
+                .long("env")
+                .action(ArgAction::Append)
+                .num_args(1)
+                .value_name("ASSIGNMENTS")
+                .help("Set environment variables for benchmark commands and their respective setup, \
+                       prepare, conclude, and cleanup commands. Assignments are space-separated and \
+                       support shell-style quoting, but no shell expansion:\n\n  \
+                       hyperfine \\\n    \
+                         --env 'OMP_NUM_THREADS=8 CFLAGS=\"-O3 -march=native\"' \\\n    \
+                         'my_command'\n\n\
+                       Specify once for all commands or once per benchmark command:\n\n  \
+                       hyperfine \\\n    \
+                         --env 'OMP_NUM_THREADS=8' './benchmark-cpp' \\\n    \
+                         --env 'RAYON_NUM_THREADS=8' './benchmark-rust'\n\n\
+                       Use an empty --env='' for no overrides. Values can contain parameter placeholders. \
+                       For example, the following benchmarks 'my_command' with OMP_NUM_THREADS ranging \
+                       from 1 to 8:\n\n  \
+                       hyperfine -P threads 1 8 \\\n    \
+                         --env 'OMP_NUM_THREADS={threads}' 'my_command'"),
+        )
+        .arg(
             Arg::new("setup")
                 .long("setup")
                 .short('s')
