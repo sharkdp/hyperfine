@@ -45,6 +45,25 @@ fn runs_successfully() {
 }
 
 #[test]
+fn rejects_removed_reference_option_with_migration_guidance() {
+    for args in [
+        vec!["--reference", "echo reference", "echo comparison"],
+        vec!["echo comparison", "--reference=echo reference"],
+        vec!["--reference", "echo reference"],
+        vec!["--reference"],
+    ] {
+        hyperfine()
+            .args(args)
+            .assert()
+            .code(2)
+            .stdout("")
+            .stderr(predicate::str::contains(
+            "The --reference option has been removed. Put your reference command first instead.",
+        ));
+    }
+}
+
+#[test]
 fn one_run_is_supported() {
     hyperfine()
         .arg("--runs=1")
