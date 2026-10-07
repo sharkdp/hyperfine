@@ -267,6 +267,42 @@ fn fails_with_duplicate_parameter_names() {
 }
 
 #[test]
+fn requires_explicit_shell_for_shell_syntax() {
+    let directory = tempfile::tempdir().unwrap();
+
+    let assert = hyperfine()
+        .current_dir(directory.path())
+        .arg("rm -rf cache/ && ./my_command")
+        .assert()
+        .failure();
+
+    insta::assert_snapshot!(String::from_utf8_lossy(&assert.get_output().stderr), @"
+    Error: Command 'rm -rf cache/ && ./my_command' contains unquoted shell syntax ('&&').
+    Explicitly choose how to execute it:
+      -S / --shell=default  Interpret shell syntax.
+      -N / --shell=none     Run directly, passing '&&' as a literal argument.
+    ");
+
+    hyperfine()
+        .arg("--show-output")
+        .arg("--command-name=benchmark")
+        .args(["--shell=default", "--runs=1", "echo before && echo after"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("before"))
+        .stdout(predicate::str::contains("after"))
+        .stdout(predicate::str::contains("&&").not());
+
+    hyperfine()
+        .arg("--show-output")
+        .arg("--command-name=benchmark")
+        .args(["--shell=none", "--runs=1", "echo before && echo after"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("before && echo after"));
+}
+
+#[test]
 fn fails_for_unknown_command() {
     hyperfine()
         .arg("--shell=default")
