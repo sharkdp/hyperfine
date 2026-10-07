@@ -2,7 +2,8 @@
 
 A command-line benchmarking tool.
 
-<img width="839" height="205" alt="hyperfine demo" src="https://github.com/user-attachments/assets/e9b4a7eb-5f3d-437e-b3dd-3951d263596f" />
+<img width="800" height="195" alt="hyperfine-demo-800" src="https://github.com/user-attachments/assets/9a5a45d3-df3f-4e0e-8cc9-5d8153f39e48" />
+
 
 *(hyperfine in action, benchmarking [`mypy`](https://mypy-lang.org/) and [`ty`](https://ty.dev/))*
 
