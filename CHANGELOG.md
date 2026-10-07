@@ -1,3 +1,12 @@
+# v2.0.0-alpha.2
+
+## Changes
+
+- Always run `--setup`, `--prepare`, `--conclude`, and `--cleanup` commands in a shell, even when benchmarked commands run directly. Improve error messages for these commands, see #990 (@sharkdp).
+- Require an explicit shell choice for commands containing unquoted, standalone shell operators such as `&&` or `>`: use `-S` to interpret shell syntax or `-N` to pass operators as literal arguments (@sharkdp).
+- Use a compact output layout on narrow terminals (@sharkdp).
+- Make plotting and analysis scripts runnable directly from GitHub with `uvx --from 'git+https://github.com/sharkdp/hyperfine' <script>` (@sharkdp).
+
 # v2.0.0-alpha.1
 
 This is the first alpha release of hyperfine 2.0. Command-line options and export formats may change before the stable release. See the breaking changes below when migrating from hyperfine 1.x.
