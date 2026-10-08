@@ -45,6 +45,15 @@ If you want to compare different programs, you can pass multiple commands:
 hyperfine 'hexdump file' 'xxd file'
 ```
 
+To benchmark one executable without quoting its full command line, use `--` to end hyperfine's
+option parsing:
+```sh
+hyperfine -- grep -R TODO /home/user
+```
+Everything after `--` is treated as the executable and its arguments. Hyperfine executes it
+directly, without an intermediate shell, and preserves argument boundaries exactly. Shell syntax
+such as `*`, `~`, pipes, and redirects is therefore not available in this form.
+
 Commands run and appear in input order. The first command is the reference for all comparisons;
 each subsequent result shows its change from that reference.
 

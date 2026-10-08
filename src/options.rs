@@ -358,25 +358,26 @@ impl Options {
             OutputStyleOption::Disabled => {}
         };
 
-        options.executor_kind = if matches.get_flag("no-shell") {
-            ExecutorKind::Raw
-        } else if matches.get_flag("default-shell") {
-            ExecutorKind::Shell(Shell::platform_default())
-        } else {
-            match (
-                matches.get_flag("debug-mode"),
-                matches.get_one::<String>("shell"),
-            ) {
-                (false, Some(shell)) if shell == "default" => {
-                    ExecutorKind::Shell(Shell::platform_default())
+        options.executor_kind =
+            if matches.contains_id("command-args") || matches.get_flag("no-shell") {
+                ExecutorKind::Raw
+            } else if matches.get_flag("default-shell") {
+                ExecutorKind::Shell(Shell::platform_default())
+            } else {
+                match (
+                    matches.get_flag("debug-mode"),
+                    matches.get_one::<String>("shell"),
+                ) {
+                    (false, Some(shell)) if shell == "default" => {
+                        ExecutorKind::Shell(Shell::platform_default())
+                    }
+                    (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
+                    (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
+                    (false, None) => ExecutorKind::default(),
+                    (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
+                    (true, None) => ExecutorKind::Mock(None),
                 }
-                (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
-                (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
-                (false, None) => ExecutorKind::default(),
-                (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
-                (true, None) => ExecutorKind::Mock(None),
-            }
-        };
+            };
 
         if let Some(mode) = matches.get_one::<String>("ignore-failure") {
             options.command_failure_action = match mode.as_str() {

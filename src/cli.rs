@@ -4,7 +4,7 @@ use clap::{
     builder::styling::{AnsiColor, Effects},
     builder::NonEmptyStringValueParser,
     builder::Styles,
-    crate_version, Arg, ArgAction, ArgMatches, Command, ValueHint,
+    crate_version, Arg, ArgAction, ArgGroup, ArgMatches, Command, ValueHint,
 };
 
 pub const DEFAULT_METRICS: &str = if cfg!(windows) {
@@ -45,7 +45,6 @@ fn build_command() -> Command {
                        The latter requires a shell, which can be enabled via '-S' or '--shell=...'. \
                        If multiple commands are given, hyperfine will show a \
                        comparison with the first command as the reference.")
-                .required(true)
                 .action(ArgAction::Append)
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
@@ -62,6 +61,29 @@ fn build_command() -> Command {
                     Err("The --reference option has been removed. Put your reference command first instead.".into())
                 })
                 .help("Removed: put your reference command first instead."),
+        )
+        .arg(
+            Arg::new("command-args")
+                .help("The executable and arguments to benchmark directly. Everything after '--' \
+                       is treated as one command and passed to the executable without an \
+                       intermediate shell, preserving argument boundaries.")
+                .last(true)
+                .num_args(1..)
+                .conflicts_with_all([
+                    "shell",
+                    "no-shell",
+                    "debug-mode",
+                    "parameter-scan",
+                    "parameter-step-size",
+                    "parameter-list",
+                ])
+                .value_hint(ValueHint::CommandWithArguments)
+                .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .group(
+            ArgGroup::new("benchmark-command")
+                .args(["command", "command-args"])
+                .required(true),
         )
         .arg(
             Arg::new("metrics")

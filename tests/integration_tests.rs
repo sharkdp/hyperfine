@@ -109,6 +109,23 @@ fn environment_parameter_expansion() {
 }
 
 #[test]
+fn direct_command_environment_basic_usage() {
+    let command = if cfg!(windows) {
+        vec!["cmd.exe", "/C", "echo %HYPERFINE_TEST%"]
+    } else {
+        vec!["sh", "-c", "printf '%s\n' \"$HYPERFINE_TEST\""]
+    };
+    hyperfine()
+        .args(["--runs=1", "--show-output", "--command-name=env-test"])
+        .args(["--env", r#"HYPERFINE_TEST="hello, world""#])
+        .arg("--")
+        .args(command)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("hello, world"));
+}
+
+#[test]
 fn rejects_invalid_environment() {
     hyperfine()
         .args(["--env", "OMP_NUM_THREADS"])
@@ -219,6 +236,38 @@ fn can_run_commands_without_a_shell() {
         .assert()
         .success()
         .stdout(predicate::str::contains("hello world argument2"));
+}
+
+#[test]
+fn double_dash_preserves_command_arguments() {
+    let hyperfine_executable = assert_cmd::cargo::cargo_bin!("hyperfine");
+    let value_with_spaces_and_quotes = "value with spaces and 'quotes'";
+
+    hyperfine()
+        .arg("--runs=1")
+        .arg("--show-output")
+        .arg("--")
+        .arg(hyperfine_executable)
+        .arg("--debug-mode")
+        .arg("--command-name")
+        .arg(value_with_spaces_and_quotes)
+        .arg("sleep 0.01")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(value_with_spaces_and_quotes));
+}
+
+#[test]
+fn positional_arguments_remain_separate_benchmarks() {
+    hyperfine_debug()
+        .arg("sleep 0.01")
+        .arg("sleep 0.02")
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("Benchmark 1: sleep 0.01")
+                .and(predicate::str::contains("Benchmark 2: sleep 0.02")),
+        );
 }
 
 #[test]
