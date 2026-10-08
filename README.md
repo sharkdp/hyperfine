@@ -107,6 +107,21 @@ the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarke
 hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 ```
 
+### Comparison
+
+You can compare the results of a command to a reference command. The `--reference` option will execute a special command before the others that serves as a reference. The results of the other commands will be compared to this reference command.
+
+```sh
+hyperfine --reference 'sleep 0.1' 'sleep 0.2'
+```
+
+You can also give a name to the reference command using the `--reference-name` option. This is useful when you want to compare multiple commands to a single reference.
+
+```sh
+hyperfine --reference 'sleep 0.1' --reference-name 'fast' 'sleep 0.2' 'sleep 0.3'
+```
+This will show the `fast` command as the reference in the output table.
+
 ### Intermediate shell
 
 By default, benchmarked commands, including warmup runs, are executed directly, without an intermediate shell (`--shell=none`).
