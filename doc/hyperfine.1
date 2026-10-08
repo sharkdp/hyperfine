@@ -80,6 +80,16 @@ A command\-line benchmarking tool which includes:
 .RS
 * Parameterized benchmarks (e.g. vary the number of threads)
 .RE
+.SH BENCHMARK RESULTS
+The \fBmean\fR column is the average of the measured runs.
+The \fBσ\fR column is their corrected sample standard deviation.
+It describes the spread of individual results around the mean, using
+\fIn \- 1\fR in the calculation. A larger \fBσ\fR means more variation
+between runs.
+The displayed \fB± σ\fR is not a confidence interval or the standard
+error of the mean.
+With \fB\-\-runs 1\fR, hyperfine shows only the measured value because a sample
+standard deviation needs at least two runs.
 .SH OPTIONS
 .HP
 \fB\-w\fR, \fB\-\-warmup\fR \fINUM\fP
