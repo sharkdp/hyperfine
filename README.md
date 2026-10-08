@@ -2,7 +2,8 @@
 
 A command-line benchmarking tool.
 
-<img width="839" height="205" alt="hyperfine demo" src="https://github.com/user-attachments/assets/13c20b1d-39c1-4da1-8fcb-0c775dd032f5" />
+<img width="800" height="195" alt="hyperfine-demo-800" src="https://github.com/user-attachments/assets/9a5a45d3-df3f-4e0e-8cc9-5d8153f39e48" />
+
 
 *(hyperfine in action, benchmarking [`mypy`](https://mypy-lang.org/) and [`ty`](https://ty.dev/))*
 
@@ -117,11 +118,15 @@ hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 
 ### Intermediate shell
 
-By default, commands are executed directly, without an intermediate shell (`--shell=none`).
+By default, benchmarked commands, including warmup runs, are executed directly, without an intermediate shell (`--shell=none`).
 Arguments are split using shell-like quoting, so quoted arguments containing spaces are supported.
 Shell syntax such as pipes, redirections, environment-variable expansion, `*`, and `~` is not interpreted.
 This avoids shell startup overhead and the noise from correcting for it, especially for fast commands
 (< 5 ms).
+
+Commands containing unquoted, standalone shell operators such as `&&` or `>` require an explicit
+choice: use `-S` / `--shell=default` to interpret shell syntax, or `-N` / `--shell=none` to pass
+the operators as literal arguments.
 
 To enable shell syntax, use `-S` (an alias for `--shell=default`). This selects `sh`
 on Unix (resolved through `PATH`) or `cmd.exe` on Windows:
@@ -134,10 +139,11 @@ You can also select a specific shell with `--shell <SHELL>`:
 hyperfine --shell zsh 'for i in {1..10000}; do echo test; done'
 ```
 
-The shell setting applies to all commands, including `--setup`, `--prepare`, `--conclude`, and `--cleanup`.
-If any of these commands need shell syntax, enable a shell explicitly.
+The `--setup`, `--prepare`, `--conclude`, and `--cleanup` commands always run through a shell.
+They use the shell selected by `--shell`, or the platform shell (`sh` on Unix, `cmd.exe` on Windows)
+when `--shell` is omitted or set to `none`.
 
-When a shell is enabled, hyperfine *corrects for the shell spawning time*. It runs the shell with an
+When benchmarked commands use a shell, hyperfine *corrects for the shell spawning time*. It runs the shell with an
 empty command multiple times to measure its startup time, then subtracts this time from each
 time measurement.
 
@@ -156,6 +162,31 @@ Otherwise, inline the function into the benchmarked command:
 
 ```sh
 hyperfine -S 'my_function() { sleep 1; }; my_function'
+```
+
+### Environment variables
+
+Use `--env` to set environment variables for benchmark commands and their respective setup, prepare, conclude,
+and cleanup commands. Assignments are space-separated and support shell-style quoting,
+but no shell expansion:
+
+```sh
+hyperfine --env 'OMP_NUM_THREADS=8 CFLAGS="-O3 -march=native"' 'my_command'
+```
+
+Specify once for all commands or once per benchmark command:
+
+```sh
+hyperfine \
+  --env 'OMP_NUM_THREADS=8' './benchmark-cpp' \
+  --env 'RAYON_NUM_THREADS=8' './benchmark-rust'
+```
+
+Use an empty `--env=''` for no overrides. Values can contain parameter placeholders.
+For example, the following benchmarks `my_command` with `OMP_NUM_THREADS` ranging from 1 to 8:
+
+```sh
+hyperfine -P threads 1 8 --env 'OMP_NUM_THREADS={threads}' 'my_command'
 ```
 
 ### Choosing metrics and units
@@ -243,8 +274,9 @@ You can also use a preset to select a group of metrics:
 
 ### Exporting results
 
-Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. Non-JSON formats
-contain only the primary metric, which is the first metric selected by `--metrics`.
+Hyperfine can export results to CSV, JSON, Markdown, AsciiDoc, and org-mode. CSV exports all
+selected metrics, while Markdown, AsciiDoc, and org-mode contain only the primary metric,
+which is the first metric selected by `--metrics`.
 
 #### Markdown
 
@@ -265,11 +297,28 @@ The JSON output is useful if you want to analyze the benchmark results in more d
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
 of helpful Python programs to further analyze benchmark results and create helpful
 visualizations, like a histogram of runtimes or a whisker plot to compare
-multiple benchmarks:
+multiple benchmarks.
+
+For example, these two commands create the following plots:
+
+```bash
+uvx --from 'git+https://github.com/sharkdp/hyperfine' \
+  plot_histogram results.json
+uvx --from 'git+https://github.com/sharkdp/hyperfine' \
+  plot_whisker results.json
+```
 
 | ![](doc/histogram.png) | ![](doc/whisker.png) |
 |---:|---:|
 
+
+#### CSV
+
+Use `--export-csv <file>` to export one row per command. Each metric selected by `--metrics`
+contributes a group of columns, in selection order: `<metric>_unit`, `<metric>_mean`,
+`<metric>_stddev`, `<metric>_median`, `<metric>_min`, and `<metric>_max`.
+
+CSV uses explicitly selected units, or base units (seconds, bytes, or counts) when omitted.
 
 ### Detailed benchmark flowchart
 
@@ -291,8 +340,8 @@ apt install hyperfine
 
 Alternatively, for the latest version, you can download the appropriate `.deb` package from the [Release page](https://github.com/sharkdp/hyperfine/releases) and install it via `dpkg`:
 ```
-wget https://github.com/sharkdp/hyperfine/releases/download/v1.21.0/hyperfine_1.21.0_amd64.deb
-sudo dpkg -i hyperfine_1.21.0_amd64.deb
+wget https://github.com/sharkdp/hyperfine/releases/download/v2.0.0/hyperfine_2.0.0_amd64.deb
+sudo dpkg -i hyperfine_2.0.0_amd64.deb
 ```
 
 ### On Fedora

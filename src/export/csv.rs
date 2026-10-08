@@ -4,23 +4,34 @@ use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
 use crate::metric::MetricSelection;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 #[derive(Default)]
 pub struct CsvExporter {}
 
 impl Exporter for CsvExporter {
-    fn serialize(&self, results: &[BenchmarkResult], primary: MetricSelection) -> Result<Vec<u8>> {
-        // CSV never chooses units automatically: an omitted suffix means base units.
-        let unit = primary.csv_unit();
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        metrics: &[MetricSelection],
+    ) -> Result<Vec<u8>> {
+        // Omit metrics unavailable for all commands (possible with `--metrics all`).
+        let metrics: Vec<_> = metrics
+            .iter()
+            .filter(|selection| {
+                results
+                    .iter()
+                    .any(|result| selection.metric.summarize(&result.measurements).is_some())
+            })
+            .collect();
         let mut writer = WriterBuilder::new().from_writer(vec![]);
-        let mut headers: Vec<String> = [
-            "command", "metric", "unit", "mean", "stddev", "median", "min", "max",
-        ]
-        .iter()
-        .copied()
-        .map(str::to_owned)
-        .collect();
+        let mut headers = vec!["command".to_owned()];
+        for selection in &metrics {
+            headers.extend(
+                ["unit", "mean", "stddev", "median", "min", "max"]
+                    .map(|field| format!("{}_{field}", selection.metric.name())),
+            );
+        }
         if let Some(result) = results.first() {
             headers.extend(
                 result
@@ -32,36 +43,28 @@ impl Exporter for CsvExporter {
         writer.write_record(headers)?;
 
         for result in results {
-            let stats = primary
-                .metric
-                .summarize(&result.measurements)
-                .with_context(|| {
-                    format!(
-                        "Metric '{}' is unavailable for '{}'",
-                        primary.metric.name(),
-                        result.get_name()
-                    )
-                })?;
-            let mut fields = vec![
-                result.get_name().to_owned(),
-                primary.metric.name().to_owned(),
-                unit.symbol.to_owned(),
-            ];
-            // Preserve numeric precision rather than using rounded display values.
-            fields.extend(
-                [
-                    Some(stats.mean),
-                    stats.stddev,
-                    Some(stats.median),
-                    Some(stats.min),
-                    Some(stats.max),
-                ]
-                .map(|value| {
-                    value
-                        .map(|value| (value / unit.scale).to_string())
-                        .unwrap_or_default()
-                }),
-            );
+            let mut fields = vec![result.get_name().to_owned()];
+            for selection in &metrics {
+                // CSV never chooses units automatically: an omitted suffix means base units.
+                let unit = selection.csv_unit();
+                let stats = selection.metric.summarize(&result.measurements);
+                fields.push(unit.symbol.to_owned());
+                // Preserve numeric precision rather than using rounded display values.
+                fields.extend(
+                    [
+                        stats.map(|stats| stats.mean),
+                        stats.and_then(|stats| stats.stddev),
+                        stats.map(|stats| stats.median),
+                        stats.map(|stats| stats.min),
+                        stats.map(|stats| stats.max),
+                    ]
+                    .map(|value| {
+                        value
+                            .map(|value| (value / unit.scale).to_string())
+                            .unwrap_or_default()
+                    }),
+                );
+            }
             fields.extend(
                 result
                     .parameters
@@ -88,6 +91,7 @@ fn test_csv() {
 
     let results = vec![
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("echo command_a"),
             name: Some(String::from("command_a")),
             display_name: String::from("command_a"),
@@ -138,6 +142,7 @@ fn test_csv() {
             },
         },
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("command_b"),
             name: None,
             display_name: String::from("command_b"),
@@ -191,15 +196,18 @@ fn test_csv() {
 
     let actual = String::from_utf8(
         exporter
-            .serialize(&results, MetricSelection::default())
+            .serialize(
+                &results,
+                &MetricSelection::parse_list("time_wall_clock,memory_peak_resident").unwrap(),
+            )
             .unwrap(),
     )
     .unwrap();
 
     insta::assert_snapshot!(actual, @r#"
-    command,metric,unit,mean,stddev,median,min,max,parameter_bar,parameter_foo
-    command_a,time_wall_clock,s,9,2.6457513110645907,8,7,12,two,one
-    command_b,time_wall_clock,s,18,1,18,17,19,seven,one
+    command,time_wall_clock_unit,time_wall_clock_mean,time_wall_clock_stddev,time_wall_clock_median,time_wall_clock_min,time_wall_clock_max,memory_peak_resident_unit,memory_peak_resident_mean,memory_peak_resident_stddev,memory_peak_resident_median,memory_peak_resident_min,memory_peak_resident_max,parameter_bar,parameter_foo
+    command_a,s,9,2.6457513110645907,8,7,12,B,1024,0,1024,1024,1024,two,one
+    command_b,s,18,1,18,17,19,B,1024,0,1024,1024,1024,seven,one
     "#);
 
     for (selection, unit, mean) in [
@@ -207,12 +215,11 @@ fn test_csv() {
         ("memory_peak_resident:KiB", "KiB", "1"),
     ] {
         let output = exporter
-            .serialize(&results, MetricSelection::parse_list(selection).unwrap()[0])
+            .serialize(&results, &MetricSelection::parse_list(selection).unwrap())
             .unwrap();
         let mut reader = csv::Reader::from_reader(output.as_slice());
         let row = reader.records().next().unwrap().unwrap();
-        assert_eq!(&row[1], "memory_peak_resident");
-        assert_eq!(&row[2], unit);
-        assert_eq!(&row[3], mean);
+        assert_eq!(&row[1], unit);
+        assert_eq!(&row[2], mean);
     }
 }

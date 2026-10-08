@@ -192,16 +192,29 @@ This performs benchmarks for 'g++ \-O2 main.cpp' and 'clang++ \-O2 main.cpp'.
 The option can be specified multiple times to run benchmarks for all
 possible parameter combinations.
 .HP
+\fB\-\-env\fR \fIASSIGNMENTS\fP
+.IP
+Set environment variables for benchmark commands and their respective setup, prepare, conclude,
+and cleanup commands. Assignments are space-separated and support shell-style quoting,
+but no shell expansion, e.g. \fB\-\-env\fR 'OMP_NUM_THREADS=8 CFLAGS="\-O3 \-march=native"'.
+Specify once for all commands or once per benchmark command, like \fB\-\-prepare\fR.
+Use an empty string for no overrides. Values can contain parameter placeholders.
+.IP
+For example, \fBhyperfine \-P threads 1 8 \-\-env\fR 'OMP_NUM_THREADS={threads}' 'my_command'
+benchmarks 'my_command' with OMP_NUM_THREADS ranging from 1 to 8.
+.HP
 \fB\-\-shell\fR \fISHELL\fP
 .IP
-Set the shell to use for executing commands (default: none). This can be
-the name or the path to the shell executable, or a full command line
+Set the shell to use for executing benchmarked commands, including warmup runs
+(default: none). This can be the name or the path to the shell executable,
+or a full command line
 like "bash \fB\-\-norc\fR". It can also be set to "default" to explicitly
 select the platform shell (sh on Unix, cmd.exe on Windows). Finally, this can also be
-set to "none" to disable the shell. In this case, commands will be
+set to "none" to disable the shell. In this case, benchmarked commands will be
 executed directly. They can still have arguments, but more complex
 things like "sleep 0.1; sleep 0.2" are not possible without a shell.
-This option also applies to setup, prepare, conclude, and cleanup commands.
+Setup, prepare, conclude, and cleanup commands always use a shell: the selected
+shell, or the platform shell when this option is omitted or set to "none".
 .HP
 \fB\-S\fR
 .IP
@@ -230,7 +243,7 @@ of the tool.
 .HP
 \fB\-\-metrics\fR \fIMETRIC[:UNIT],...|default|time|all\fP
 .IP
-Select the metrics to display, in order, with an optional unit for each.
+Select the metrics to measure, in order, with an optional unit for each.
 Default: \fBtime_wall_clock,memory_peak_resident\fR, or \fBtime_wall_clock\fR
 on Windows, where peak resident memory is not yet supported.
 .IP
@@ -264,9 +277,11 @@ Export the primary metric's summary statistics as an AsciiDoc table to the given
 .HP
 \fB\-\-export\-csv\fR \fIFILE\fP
 .IP
-Export the primary metric's summary statistics as CSV to the given \fIFILE\fP,
-identifying the metric and unit explicitly. Use the explicitly selected unit,
-or the base unit (seconds, bytes, or unscaled counts) when omitted.
+Export summary statistics for all selected metrics as CSV to the given \fIFILE\fP,
+one row per command. Each metric contributes columns for unit, mean, stddev, median,
+min, and max, prefixed with the metric name, in selection order. The command column
+comes first and parameter columns come last. Use the explicitly selected units,
+or base units (seconds, bytes, or unscaled counts) when omitted.
 .HP
 \fB\-\-export\-json\fR \fIFILE\fP
 .IP

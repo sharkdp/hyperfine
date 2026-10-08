@@ -49,6 +49,19 @@ fn build_command() -> Command {
                 .value_hint(ValueHint::CommandString)
                 .value_parser(NonEmptyStringValueParser::new()),
         )
+        // Retain the removed option to provide migration guidance for old invocations.
+        .arg(
+            Arg::new("reference")
+                .long("reference")
+                .hide(true)
+                .value_name("CMD")
+                .num_args(0..=1)
+                .default_missing_value("")
+                .value_parser(|_: &str| -> Result<String, String> {
+                    Err("The --reference option has been removed. Put your reference command first instead.".into())
+                })
+                .help("Removed: put your reference command first instead."),
+        )
         .arg(
             Arg::new("command-args")
                 .help("The executable and arguments to benchmark directly. Everything after '--' \
@@ -80,7 +93,7 @@ fn build_command() -> Command {
                 .hide_default_value(true)
                 .help("Performance metrics to measure, in order.\n\n\
                        This is either a preset name, or a comma-separated list of metrics with optional units. \
-                       The first metric is used for non-JSON exports, \
+                       CSV exports all selected metrics; markup exports use the first metric. \
                        JSON always includes all collected metrics.\n\n\
                        Presets (use one on its own):\n  \
                          default  Wall-clock time and peak RSS\n  \
@@ -140,6 +153,28 @@ fn build_command() -> Command {
                 .value_parser(clap::value_parser!(u64).range(1..))
                 .help("Perform exactly NUM runs for each command. If this option is not specified, \
                        hyperfine automatically determines the number of runs."),
+        )
+        .arg(
+            Arg::new("env")
+                .long("env")
+                .action(ArgAction::Append)
+                .num_args(1)
+                .value_name("ASSIGNMENTS")
+                .help("Set environment variables for benchmark commands and their respective setup, \
+                       prepare, conclude, and cleanup commands. Assignments are space-separated and \
+                       support shell-style quoting, but no shell expansion:\n\n  \
+                       hyperfine \\\n    \
+                         --env 'OMP_NUM_THREADS=8 CFLAGS=\"-O3 -march=native\"' \\\n    \
+                         'my_command'\n\n\
+                       Specify once for all commands or once per benchmark command:\n\n  \
+                       hyperfine \\\n    \
+                         --env 'OMP_NUM_THREADS=8' './benchmark-cpp' \\\n    \
+                         --env 'RAYON_NUM_THREADS=8' './benchmark-rust'\n\n\
+                       Use an empty --env='' for no overrides. Values can contain parameter placeholders. \
+                       For example, the following benchmarks 'my_command' with OMP_NUM_THREADS ranging \
+                       from 1 to 8:\n\n  \
+                       hyperfine -P threads 1 8 \\\n    \
+                         --env 'OMP_NUM_THREADS={threads}' 'my_command'"),
         )
         .arg(
             Arg::new("setup")
@@ -258,14 +293,15 @@ fn build_command() -> Command {
                 .value_name("SHELL")
                 .overrides_with("shell")
                 .value_hint(ValueHint::CommandString)
-                .help("Set the shell to use for executing commands (default: none). This can be the \
-                       name or the path to the shell executable, or a full command line \
+                .help("Set the shell to use for executing benchmarked commands, including warmup runs \
+                       (default: none). This can be the name or the path to the shell executable, or a full command line \
                        like \"bash --norc\". It can also be set to \"default\" to explicitly select \
                        the platform shell (sh on Unix, cmd.exe on Windows). It can also be set to \
-                       \"none\" to disable the shell. In this case, commands will be executed \
+                       \"none\" to disable the shell. In this case, benchmarked commands will be executed \
                        directly. They can still have arguments, but more complex things like \
-                       \"sleep 0.1; sleep 0.2\" are not possible without a shell. This option also \
-                       applies to setup, prepare, conclude, and cleanup commands.")
+                       \"sleep 0.1; sleep 0.2\" are not possible without a shell. Setup, prepare, conclude, \
+                       and cleanup commands always use a shell: the selected shell, or the platform \
+                       shell when this option is omitted or set to \"none\".")
         )
         .arg(
             Arg::new("default-shell")
@@ -324,9 +360,10 @@ fn build_command() -> Command {
                 .action(ArgAction::Set)
                 .value_name("FILE")
                 .value_hint(ValueHint::FilePath)
-                .help("Export the primary metric summary statistics as CSV to the given FILE. If you need \
+                .help("Export summary statistics for all selected metrics as CSV to the given FILE. If you need \
                        all metrics for each individual run, use the JSON export format. \
-                       Use the explicitly selected unit, or the base unit when unspecified."),
+                       Column names are prefixed with the metric name. \
+                       Use the explicitly selected units, or base units when unspecified."),
         )
         .arg(
             Arg::new("export-json")

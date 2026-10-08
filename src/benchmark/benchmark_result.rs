@@ -18,15 +18,13 @@ pub struct BenchmarkResult {
     /// regardless of any custom name.
     pub command: String,
 
-    /// The custom name after parameter substitution, if it differs from `command`.
-    /// For example, `--command-name="wait {duration}s"` with `duration=1`
-    /// produces `Some("wait 1s")`. Without a custom name, or when the expanded
-    /// name equals `command`, this is `None`.
+    /// The custom or automatically generated name after parameter substitution,
+    /// if it differs from `command`. Automatic names include environment overrides.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
-    /// The custom name (or `command`), followed by parameters not used in the
-    /// command template, in command-line order. For example, `sleep {duration}`
+    /// The name, followed by parameters not used in the command or environment
+    /// templates, in command-line order. For example, `sleep {duration}`
     /// with `duration=1`, `branch=main`, and the custom name `wait {duration}s`
     /// produces `wait 1s (branch = main)`. Without the custom name, this is
     /// `sleep 1 (branch = main)`. Used in summaries and table exports.
@@ -40,6 +38,10 @@ pub struct BenchmarkResult {
     /// Parameter values for this benchmark
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub parameters: BTreeMap<String, Parameter>,
+
+    /// Explicit environment overrides after parameter substitution.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub environment: BTreeMap<String, String>,
 }
 
 impl BenchmarkResult {

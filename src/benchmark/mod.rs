@@ -11,9 +11,7 @@ use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
 use crate::benchmark::measurement::{Measurement, Measurements};
 use crate::command::Command;
-use crate::options::{
-    CmdFailureAction, CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption,
-};
+use crate::options::{CommandOutputPolicy, ExecutorKind, Options, OutputStyleOption};
 use crate::outlier_detection::OUTLIER_THRESHOLD;
 use crate::output::console_writeln;
 use crate::output::progress_bar::{
@@ -55,22 +53,25 @@ impl<'a> Benchmark<'a> {
         }
     }
 
-    /// Run setup, cleanup, or preparation commands
+    /// Run setup, cleanup, preparation, or conclusion commands
     fn run_intermediate_command(
         &self,
         command: &Command<'_>,
-        error_output: &'static str,
+        kind: &'static str,
         output_policy: &CommandOutputPolicy,
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
+        let command = command.clone().with_environment_from(self.command);
         self.executor
-            .run_command_and_measure(
-                command,
-                iteration,
-                Some(CmdFailureAction::RaiseError),
-                output_policy,
-            )
-            .map_err(|_| anyhow!(error_output))
+            .run_intermediate_command_and_measure(&command, iteration, output_policy)
+            .map_err(|error| {
+                let hint = if cfg!(windows) {
+                    "Append ' || exit /b 0' to the command if this failure can be ignored."
+                } else {
+                    "Append ' || true' to the command if this failure can be ignored."
+                };
+                anyhow!("The {kind} command failed: {error:#} {hint}")
+            })
     }
 
     /// Run the command specified by `--setup`.
@@ -85,14 +86,11 @@ impl<'a> Benchmark<'a> {
             .as_ref()
             .map(|setup_command| Command::new_parametrized(None, setup_command, parameters));
 
-        let error_output = "The setup command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
         Ok(command
             .map(|cmd| {
                 self.run_intermediate_command(
                     &cmd,
-                    error_output,
+                    "setup",
                     output_policy,
                     BenchmarkIteration::NonBenchmarkRun,
                 )
@@ -113,14 +111,11 @@ impl<'a> Benchmark<'a> {
             .as_ref()
             .map(|cleanup_command| Command::new_parametrized(None, cleanup_command, parameters));
 
-        let error_output = "The cleanup command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
         Ok(command
             .map(|cmd| {
                 self.run_intermediate_command(
                     &cmd,
-                    error_output,
+                    "cleanup",
                     output_policy,
                     BenchmarkIteration::NonBenchmarkRun,
                 )
@@ -136,10 +131,7 @@ impl<'a> Benchmark<'a> {
         output_policy: &CommandOutputPolicy,
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
-        let error_output = "The preparation command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
-        self.run_intermediate_command(command, error_output, output_policy, iteration)
+        self.run_intermediate_command(command, "preparation", output_policy, iteration)
     }
 
     /// Run the command specified by `--conclude`.
@@ -149,10 +141,7 @@ impl<'a> Benchmark<'a> {
         output_policy: &CommandOutputPolicy,
         iteration: executor::BenchmarkIteration,
     ) -> Result<Measurement> {
-        let error_output = "The conclusion command terminated with a non-zero exit code. \
-                            Append ' || true' to the command if you are sure that this can be ignored.";
-
-        self.run_intermediate_command(command, error_output, output_policy, iteration)
+        self.run_intermediate_command(command, "conclusion", output_policy, iteration)
     }
 
     fn validate_measurement(&self, measurement: &Measurement) -> Result<()> {
@@ -455,6 +444,11 @@ impl<'a> Benchmark<'a> {
         Ok(BenchmarkResult {
             command,
             name,
+            environment: self
+                .command
+                .get_environment()
+                .map(|(name, value)| (name.to_owned(), value))
+                .collect(),
             display_name: self.command.get_name_with_unused_parameters(),
             measurements,
             parameters: self

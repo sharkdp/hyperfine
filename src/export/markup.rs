@@ -77,7 +77,12 @@ pub trait MarkupExporter {
 }
 
 impl<T: MarkupExporter> Exporter for T {
-    fn serialize(&self, results: &[BenchmarkResult], primary: MetricSelection) -> Result<Vec<u8>> {
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        metrics: &[MetricSelection],
+    ) -> Result<Vec<u8>> {
+        let primary = metrics[0];
         let stats: Vec<_> = results
             .iter()
             .map(|result| {

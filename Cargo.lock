@@ -377,7 +377,7 @@ checksum = "15cdd26707701c53297e2fa6afb323d55fbc1d0810c3aec078ae3ef0424c3c15"
 
 [[package]]
 name = "hyperfine"
-version = "2.0.0-alpha.1"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "approx",
@@ -402,6 +402,7 @@ dependencies = [
  "serde_json",
  "shell-words",
  "tempfile",
+ "terminal_size",
  "thiserror",
  "uom",
  "windows-sys 0.61.2",
