@@ -24,6 +24,8 @@ impl MarkupExporter for MarkdownExporter {
     }
 
     fn command(&self, cmd: &str) -> String {
+        // Code spans render line endings as spaces, but table rows cannot contain them.
+        let cmd = cmd.replace("\r\n", " ").replace(['\r', '\n'], " ");
         let longest_backtick_run = cmd
             .split(|character| character != '`')
             .map(str::len)
@@ -70,5 +72,26 @@ fn test_markdown_formatter_command_with_backticks() {
         (" echo `uname` ", "``  echo `uname`  ``"),
     ] {
         assert_eq!(formatter.command(command), expected, "{command:?}");
+    }
+}
+
+#[test]
+fn test_markdown_formatter_command_with_line_endings() {
+    let formatter = MarkdownExporter::default();
+
+    for (command, expected) in [
+        ("echo one\necho two", "`echo one echo two`"),
+        ("echo one\recho two", "`echo one echo two`"),
+        ("echo one\r\necho two", "`echo one echo two`"),
+        ("echo one\n\necho two", "`echo one  echo two`"),
+        ("echo one\r\n\r\necho two", "`echo one  echo two`"),
+        ("echo `uname`\ncat", "`` echo `uname` cat ``"),
+        ("\necho\n", "` echo `"),
+        ("echo\r", "`echo `"),
+    ] {
+        let formatted = formatter.command(command);
+        assert_eq!(formatted, expected, "{command:?}");
+        let row = formatter.table_row(&[&formatted, "1.000", "", ""]);
+        assert_eq!(row.lines().count(), 1, "{command:?}");
     }
 }

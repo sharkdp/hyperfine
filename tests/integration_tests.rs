@@ -1268,6 +1268,27 @@ fn markdown_export_preserves_backticks_and_pipes_in_command_names() {
 }
 
 #[test]
+fn markdown_export_keeps_multiline_command_names_in_one_row() {
+    let _settings = snapshot_settings().bind_to_scope();
+    assert_cmd_snapshot!(hyperfine_debug()
+        .arg("--style=none")
+        .arg("--export-markdown=-")
+        .arg("--command-name=echo `uname` |\n\ncat")
+        .arg("sleep 1"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    | Command | Mean Wall Time [s] | Change | Factor |
+    |:---|---:|---:|:---|
+    | `` echo `uname` \|  cat `` | 1.000 ± 0.000 |  |  |
+
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn unused_parameters_are_shown_in_benchmark_name() {
     hyperfine()
         .arg("--runs=2")
