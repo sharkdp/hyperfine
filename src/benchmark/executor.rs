@@ -2,16 +2,14 @@
 use std::os::windows::process::CommandExt;
 use std::process::ExitStatus;
 
+use crate::benchmark::measurement::Measurement;
+use crate::benchmark::measurement::Measurements;
 use crate::command::Command;
-use crate::options::{
-    CmdFailureAction, CommandInputPolicy, CommandOutputPolicy, Options, OutputStyleOption, Shell,
-};
+use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
 use crate::quantity::{second, Information, Time, Zero};
 use crate::timer::execute_and_measure;
 use crate::util::randomized_environment_offset;
-
-use super::measurement::{Measurement, Measurements};
 
 use anyhow::{bail, Context, Result};
 
@@ -42,6 +40,21 @@ pub trait Executor {
         output_policy: &CommandOutputPolicy,
     ) -> Result<Measurement>;
 
+    /// Run a lifecycle command through a shell, always treating failures as errors.
+    fn run_intermediate_command_and_measure(
+        &self,
+        command: &Command<'_>,
+        iteration: BenchmarkIteration,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<Measurement> {
+        self.run_command_and_measure(
+            command,
+            iteration,
+            Some(CmdFailureAction::RaiseError),
+            output_policy,
+        )
+    }
+
     /// Perform a calibration of this executor. For example,
     /// when running commands through a shell, we need to
     /// measure the shell spawning time separately in order
@@ -58,12 +71,13 @@ pub trait Executor {
 fn run_command_and_measure_common(
     mut command: std::process::Command,
     iteration: BenchmarkIteration,
-    command_failure_action: CmdFailureAction,
-    command_input_policy: &CommandInputPolicy,
+    command_failure_action: Option<CmdFailureAction>,
+    options: &Options,
     command_output_policy: &CommandOutputPolicy,
     command_name: &str,
+    collect_hardware_counters: bool,
 ) -> Result<Measurement> {
-    let stdin = command_input_policy.get_stdin()?;
+    let stdin = options.command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
     command.stdin(stdin).stdout(stdout).stderr(stderr);
 
@@ -76,18 +90,22 @@ fn run_command_and_measure_common(
         command.env("HYPERFINE_ITERATION", value);
     }
 
-    let result = execute_and_measure(command)
+    let measurement = execute_and_measure(command, collect_hardware_counters)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
-    if !result.exit_status.success() {
+    if !measurement.exit_status.success() {
         use crate::util::exit_code::extract_exit_code;
 
-        let should_fail = match command_failure_action {
+        let show_ignore_failure_hint = command_failure_action.is_none();
+        let should_fail = match command_failure_action
+            .as_ref()
+            .unwrap_or(&options.command_failure_action)
+        {
             CmdFailureAction::RaiseError => true,
             CmdFailureAction::IgnoreAllFailures => false,
-            CmdFailureAction::IgnoreSpecificFailures(ref codes) => {
+            CmdFailureAction::IgnoreSpecificFailures(codes) => {
                 // Only fail if the exit code is not in the list of codes to ignore
-                if let Some(exit_code) = extract_exit_code(result.exit_status) {
+                if let Some(exit_code) = extract_exit_code(measurement.exit_status) {
                     !codes.contains(&exit_code)
                 } else {
                     // If we can't extract an exit code, treat it as a failure
@@ -104,19 +122,21 @@ fn run_command_and_measure_common(
                 BenchmarkIteration::Benchmark(0) => "the first benchmark run".to_string(),
                 BenchmarkIteration::Benchmark(i) => format!("benchmark iteration {i}"),
             };
-            bail!(
-                "{cause} in {when}. Use the '-i'/'--ignore-failure' option if you want to ignore this. \
-                Alternatively, use the '--show-output' option to debug what went wrong.",
-                cause=result.exit_status.code().map_or(
-                    "The process has been terminated by a signal".into(),
-                    |c| format!("Command terminated with non-zero exit code {c}")
-
-                ),
+            let cause = measurement.exit_status.code().map_or_else(
+                || "was terminated by a signal".to_owned(),
+                |code| format!("terminated with non-zero exit code {code}"),
             );
+            let hint = if show_ignore_failure_hint {
+                " Use the '-i'/'--ignore-failure' option if you want to ignore this. \
+                 Alternatively, use the '--show-output' option to debug what went wrong."
+            } else {
+                " Use the '--show-output' option to debug what went wrong."
+            };
+            bail!("Command '{command_name}' {cause} in {when}.{hint}");
         }
     }
 
-    Ok(result)
+    Ok(measurement)
 }
 
 pub struct RawExecutor<'a> {
@@ -140,11 +160,24 @@ impl Executor for RawExecutor<'_> {
         run_command_and_measure_common(
             command.get_command()?,
             iteration,
-            command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
-            &self.options.command_input_policy,
+            command_failure_action,
+            self.options,
             output_policy,
             &command.get_command_line(),
+            matches!(iteration, BenchmarkIteration::Benchmark(_)),
         )
+    }
+
+    fn run_intermediate_command_and_measure(
+        &self,
+        command: &Command<'_>,
+        iteration: BenchmarkIteration,
+        output_policy: &CommandOutputPolicy,
+    ) -> Result<Measurement> {
+        // Keep shell startup in the hook's duration: raw benchmarks have no
+        // calibrated shell overhead to add back when estimating the run count.
+        ShellExecutor::new(&Shell::platform_default(), self.options)
+            .run_intermediate_command_and_measure(command, iteration, output_policy)
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -182,6 +215,7 @@ impl Executor for ShellExecutor<'_> {
     ) -> Result<Measurement> {
         let on_windows_cmd = cfg!(windows) && *self.shell == Shell::Default("cmd.exe");
         let mut command_builder = self.shell.command();
+        command_builder.envs(command.get_environment());
         command_builder.arg(if on_windows_cmd { "/C" } else { "-c" });
 
         // Windows needs special treatment for its behavior on parsing cmd arguments
@@ -192,24 +226,36 @@ impl Executor for ShellExecutor<'_> {
             command_builder.arg(command.get_command_line());
         }
 
-        let mut result = run_command_and_measure_common(
+        let mut measurement = run_command_and_measure_common(
             command_builder,
             iteration,
-            command_failure_action.unwrap_or_else(|| self.options.command_failure_action.clone()),
-            &self.options.command_input_policy,
+            command_failure_action,
+            self.options,
             output_policy,
             &command.get_command_line(),
+            false,
         )?;
 
         // Subtract shell spawning time
-        if let Some(spawning_time) = self.shell_spawning_time {
-            result.time_wall_clock =
-                (result.time_wall_clock - spawning_time.time_wall_clock).max(Time::zero());
-            result.time_user = (result.time_user - spawning_time.time_user).max(Time::zero());
-            result.time_system = (result.time_system - spawning_time.time_system).max(Time::zero());
+        fn ensure_non_negative(time: Time) -> Time {
+            if time < Time::zero() {
+                Time::zero()
+            } else {
+                time
+            }
         }
 
-        Ok(result)
+        if let Some(ref spawning_time) = self.shell_spawning_time {
+            measurement.time_wall_clock =
+                ensure_non_negative(measurement.time_wall_clock - spawning_time.time_wall_clock);
+            measurement.time_user =
+                ensure_non_negative(measurement.time_user - spawning_time.time_user);
+            measurement.time_system =
+                ensure_non_negative(measurement.time_system - spawning_time.time_system);
+            measurement.time_cpu = measurement.time_user + measurement.time_system;
+        }
+
+        Ok(measurement)
     }
 
     /// Measure the average shell spawning time
@@ -229,14 +275,14 @@ impl Executor for ShellExecutor<'_> {
 
         for _ in 0..COUNT {
             // Just run the shell without any command
-            let res = self.run_command_and_measure(
+            let measurement = self.run_command_and_measure(
                 &Command::new(None, ""),
                 BenchmarkIteration::NonBenchmarkRun,
                 None,
                 &CommandOutputPolicy::Null,
             );
 
-            match res {
+            match measurement {
                 Err(_) => {
                     let shell_cmd = if cfg!(windows) {
                         format!("{} /C \"\"", self.shell)
@@ -249,8 +295,8 @@ impl Executor for ShellExecutor<'_> {
                         shell_cmd
                     );
                 }
-                Ok(r) => {
-                    measurements.push(r);
+                Ok(result) => {
+                    measurements.push(result);
                 }
             }
 
@@ -265,9 +311,11 @@ impl Executor for ShellExecutor<'_> {
 
         self.shell_spawning_time = Some(Measurement {
             time_wall_clock: measurements.time_wall_clock_mean(),
+            time_cpu: measurements.time_user_mean() + measurements.time_system_mean(),
             time_user: measurements.time_user_mean(),
             time_system: measurements.time_system_mean(),
-            peak_memory_usage: measurements.peak_memory_usage_mean(),
+            memory_peak_resident: None,
+            hardware_counters: Default::default(),
             exit_status: ExitStatus::default(),
         });
 
@@ -275,7 +323,7 @@ impl Executor for ShellExecutor<'_> {
     }
 
     fn time_overhead(&self) -> Time {
-        self.shell_spawning_time.unwrap().time_wall_clock
+        self.shell_spawning_time.as_ref().unwrap().time_wall_clock
     }
 }
 
@@ -323,9 +371,11 @@ impl Executor for MockExecutor {
 
         Ok(Measurement {
             time_wall_clock: Self::extract_time(command.get_command_line()),
+            time_cpu: Time::zero(),
             time_user: Time::zero(),
             time_system: Time::zero(),
-            peak_memory_usage: Information::zero(),
+            memory_peak_resident: Some(Information::zero()),
+            hardware_counters: Default::default(),
             exit_status,
         })
     }

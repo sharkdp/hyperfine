@@ -1,11 +1,8 @@
-use std::borrow::Cow;
-
 use csv::WriterBuilder;
 
 use super::Exporter;
 use crate::benchmark::benchmark_result::BenchmarkResult;
-use crate::options::SortOrder;
-use crate::quantity::{FormatQuantity, TimeUnit};
+use crate::metric::MetricSelection;
 
 use anyhow::Result;
 
@@ -16,49 +13,64 @@ impl Exporter for CsvExporter {
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        _unit: Option<TimeUnit>,
-        _sort_order: SortOrder,
+        metrics: &[MetricSelection],
     ) -> Result<Vec<u8>> {
-        const CSV_UNIT: TimeUnit = TimeUnit::Second;
-        const CSV_PRECISION: usize = 6;
-
-        let mut writer = WriterBuilder::new().from_writer(vec![]);
-
-        {
-            let mut headers: Vec<Cow<[u8]>> = [
-                // The list of times and exit codes cannot be exported to the CSV file - omit them.
-                "command", "mean", "stddev", "median", "user", "system", "min", "max",
-            ]
+        // Omit metrics unavailable for all commands (possible with `--metrics all`).
+        let metrics: Vec<_> = metrics
             .iter()
-            .map(|x| Cow::Borrowed(x.as_bytes()))
+            .filter(|selection| {
+                results
+                    .iter()
+                    .any(|result| selection.metric.summarize(&result.measurements).is_some())
+            })
             .collect();
-            if let Some(res) = results.first() {
-                for param_name in res.parameters.keys() {
-                    headers.push(Cow::Owned(format!("parameter_{param_name}").into_bytes()));
-                }
-            }
-            writer.write_record(headers)?;
+        let mut writer = WriterBuilder::new().from_writer(vec![]);
+        let mut headers = vec!["command".to_owned()];
+        for selection in &metrics {
+            headers.extend(
+                ["unit", "mean", "stddev", "median", "min", "max"]
+                    .map(|field| format!("{}_{field}", selection.metric.name())),
+            );
         }
+        if let Some(result) = results.first() {
+            headers.extend(
+                result
+                    .parameters
+                    .keys()
+                    .map(|name| format!("parameter_{name}")),
+            );
+        }
+        writer.write_record(headers)?;
 
-        for res in results {
-            let mut fields = vec![Cow::Borrowed(res.command.as_bytes())];
-            for f in &[
-                res.mean_wall_clock_time(),
-                res.measurements.stddev().unwrap_or_default(),
-                res.measurements.median(),
-                res.measurements.time_user_mean(),
-                res.measurements.time_system_mean(),
-                res.measurements.min(),
-                res.measurements.max(),
-            ] {
-                fields.push(Cow::Owned(
-                    f.format_with_precision(CSV_UNIT, CSV_PRECISION)
-                        .into_bytes(),
-                ))
+        for result in results {
+            let mut fields = vec![result.get_name().to_owned()];
+            for selection in &metrics {
+                // CSV never chooses units automatically: an omitted suffix means base units.
+                let unit = selection.csv_unit();
+                let stats = selection.metric.summarize(&result.measurements);
+                fields.push(unit.symbol.to_owned());
+                // Preserve numeric precision rather than using rounded display values.
+                fields.extend(
+                    [
+                        stats.map(|stats| stats.mean),
+                        stats.and_then(|stats| stats.stddev),
+                        stats.map(|stats| stats.median),
+                        stats.map(|stats| stats.min),
+                        stats.map(|stats| stats.max),
+                    ]
+                    .map(|value| {
+                        value
+                            .map(|value| (value / unit.scale).to_string())
+                            .unwrap_or_default()
+                    }),
+                );
             }
-            for v in res.parameters.values() {
-                fields.push(Cow::Borrowed(v.value.as_bytes()))
-            }
+            fields.extend(
+                result
+                    .parameters
+                    .values()
+                    .map(|parameter| parameter.value.clone()),
+            );
             writer.write_record(fields)?;
         }
 
@@ -79,28 +91,36 @@ fn test_csv() {
 
     let results = vec![
         BenchmarkResult {
-            command: String::from("command_a"),
-            command_with_unused_parameters: String::from("command_a"),
+            environment: BTreeMap::new(),
+            command: String::from("echo command_a"),
+            name: Some(String::from("command_a")),
+            display_name: String::from("command_a"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(7.0),
+                    time_cpu: Time::new::<second>(7.0),
                     time_user: Time::new::<second>(7.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(8.0),
+                    time_cpu: Time::new::<second>(8.0),
                     time_user: Time::new::<second>(8.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(12.0),
+                    time_cpu: Time::new::<second>(12.0),
                     time_user: Time::new::<second>(12.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -110,42 +130,48 @@ fn test_csv() {
                     "foo".into(),
                     Parameter {
                         value: "one".into(),
-                        is_unused: false,
                     },
                 );
                 params.insert(
                     "bar".into(),
                     Parameter {
                         value: "two".into(),
-                        is_unused: false,
                     },
                 );
                 params
             },
         },
         BenchmarkResult {
+            environment: BTreeMap::new(),
             command: String::from("command_b"),
-            command_with_unused_parameters: String::from("command_b"),
+            name: None,
+            display_name: String::from("command_b"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(17.0),
+                    time_cpu: Time::new::<second>(17.0),
                     time_user: Time::new::<second>(17.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(18.0),
+                    time_cpu: Time::new::<second>(18.0),
                     time_user: Time::new::<second>(18.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
                 Measurement {
                     time_wall_clock: Time::new::<second>(19.0),
+                    time_cpu: Time::new::<second>(19.0),
                     time_user: Time::new::<second>(19.0),
                     time_system: Time::zero(),
-                    peak_memory_usage: Information::new::<byte>(1024.),
+                    memory_peak_resident: Some(Information::new::<byte>(1024.)),
+                    hardware_counters: Default::default(),
                     exit_status: ExitStatus::default(),
                 },
             ]),
@@ -155,14 +181,12 @@ fn test_csv() {
                     "foo".into(),
                     Parameter {
                         value: "one".into(),
-                        is_unused: false,
                     },
                 );
                 params.insert(
                     "bar".into(),
                     Parameter {
                         value: "seven".into(),
-                        is_unused: false,
                     },
                 );
                 params
@@ -172,14 +196,30 @@ fn test_csv() {
 
     let actual = String::from_utf8(
         exporter
-            .serialize(&results, Some(TimeUnit::Second), SortOrder::Command)
+            .serialize(
+                &results,
+                &MetricSelection::parse_list("time_wall_clock,memory_peak_resident").unwrap(),
+            )
             .unwrap(),
     )
     .unwrap();
 
     insta::assert_snapshot!(actual, @r#"
-    command,mean,stddev,median,user,system,min,max,parameter_bar,parameter_foo
-    command_a,9.000000,2.645751,8.000000,9.000000,0.000000,7.000000,12.000000,two,one
-    command_b,18.000000,1.000000,18.000000,18.000000,0.000000,17.000000,19.000000,seven,one
+    command,time_wall_clock_unit,time_wall_clock_mean,time_wall_clock_stddev,time_wall_clock_median,time_wall_clock_min,time_wall_clock_max,memory_peak_resident_unit,memory_peak_resident_mean,memory_peak_resident_stddev,memory_peak_resident_median,memory_peak_resident_min,memory_peak_resident_max,parameter_bar,parameter_foo
+    command_a,s,9,2.6457513110645907,8,7,12,B,1024,0,1024,1024,1024,two,one
+    command_b,s,18,1,18,17,19,B,1024,0,1024,1024,1024,seven,one
     "#);
+
+    for (selection, unit, mean) in [
+        ("memory_peak_resident", "B", "1024"),
+        ("memory_peak_resident:KiB", "KiB", "1"),
+    ] {
+        let output = exporter
+            .serialize(&results, &MetricSelection::parse_list(selection).unwrap())
+            .unwrap();
+        let mut reader = csv::Reader::from_reader(output.as_slice());
+        let row = reader.records().next().unwrap().unwrap();
+        assert_eq!(&row[1], unit);
+        assert_eq!(&row[2], mean);
+    }
 }

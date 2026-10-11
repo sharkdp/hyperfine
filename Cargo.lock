@@ -370,8 +370,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
 
 [[package]]
+name = "humantime"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15cdd26707701c53297e2fa6afb323d55fbc1d0810c3aec078ae3ef0424c3c15"
+
+[[package]]
 name = "hyperfine"
-version = "1.20.0"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "approx",
@@ -380,12 +386,15 @@ dependencies = [
  "clap_complete",
  "colored",
  "csv",
+ "humantime",
  "indicatif",
  "insta",
  "insta-cmd",
  "libc",
  "nix",
  "once_cell",
+ "perf-event-open-sys",
+ "platform-info",
  "predicates",
  "rand 0.10.3",
  "rust_decimal",
@@ -393,6 +402,7 @@ dependencies = [
  "serde_json",
  "shell-words",
  "tempfile",
+ "terminal_size",
  "thiserror",
  "uom",
  "windows-sys 0.61.2",
@@ -530,6 +540,25 @@ name = "once_cell_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
+
+[[package]]
+name = "perf-event-open-sys"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5f8d1487a4ffa23c80a1c355dd27235f9b66fb71ba0f261eb417e4fe8451347"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "platform-info"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba7c3f5af00d3596a148cc80178ac690152b71c283d15a8bcea0cddfea759a36"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
+]
 
 [[package]]
 name = "portable-atomic"

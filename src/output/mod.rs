@@ -1,4 +1,5 @@
 pub mod progress_bar;
+pub mod report;
 pub mod warnings;
 
 /// Mark console write errors so broken pipes can be handled separately from file errors.
