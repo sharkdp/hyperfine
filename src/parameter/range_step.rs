@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::ops::{Add, AddAssign, Div, Sub};
 
 use crate::error::ParameterScanError;
@@ -84,6 +84,18 @@ impl<T: Numeric> Iterator for RangeStep<T> {
 fn range_step_size_hint<T: Numeric>(start: T, end: T, step: T) -> (usize, Option<usize>) {
     if step == T::from(0) {
         return (usize::MAX, None);
+    }
+
+    // Integer scans are stored as i32. Computing `(end - start + 1) / step`
+    // in i32 overflows for a full-width span (`i32::MIN..=i32::MAX`) and for
+    // ranges where `end - start` itself fits but `+ 1` does not (`0..=i32::MAX`).
+    // Those ranges are far above MAX_PARAMETERS; evaluate them in i64 so we
+    // can reject them instead of panicking in debug / wrapping in release.
+    if let (Number::Int(s), Number::Int(e), Number::Int(st)) =
+        (start.into(), end.into(), step.into())
+    {
+        let steps = (i64::from(e) - i64::from(s) + 1) / i64::from(st);
+        return usize::try_from(steps).map_or((usize::MAX, None), |u| (u, Some(u)));
     }
 
     let steps = (end - start + T::from(1)) / step;
@@ -176,6 +188,25 @@ mod tests {
         );
 
         let result = RangeStep::new(0, 100_001, 1);
+        assert_eq!(
+            format!("{}", result.unwrap_err()),
+            "Parameter range is too large"
+        );
+    }
+
+    #[test]
+    fn full_i32_span_is_too_large_not_overflow() {
+        let result = RangeStep::new(i32::MIN, i32::MAX, 1);
+        assert_eq!(
+            format!("{}", result.unwrap_err()),
+            "Parameter range is too large"
+        );
+    }
+
+    #[test]
+    fn i32_add_overflow_span_is_too_large_not_overflow() {
+        // `(end - start + 1)` overflows i32 even though `end - start` does not.
+        let result = RangeStep::new(0, i32::MAX, 1);
         assert_eq!(
             format!("{}", result.unwrap_err()),
             "Parameter range is too large"
