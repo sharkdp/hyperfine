@@ -28,6 +28,9 @@ pub struct Command<'a> {
     /// The command that should be executed (without parameter substitution)
     expression: &'a str,
 
+    /// Arguments supplied separately after `--`. The first item is the executable.
+    arguments: Option<Vec<&'a str>>,
+
     /// Zero or more parameter values.
     parameters: Vec<ParameterNameAndValue<'a>>,
 
@@ -40,6 +43,7 @@ impl<'a> Command<'a> {
         Command {
             name,
             expression,
+            arguments: None,
             parameters: Vec::new(),
             environment: Vec::new(),
         }
@@ -53,7 +57,18 @@ impl<'a> Command<'a> {
         Command {
             name,
             expression,
+            arguments: None,
             parameters: parameters.into_iter().collect(),
+            environment: Vec::new(),
+        }
+    }
+
+    pub fn new_direct(name: Option<&'a str>, arguments: Vec<&'a str>) -> Command<'a> {
+        Command {
+            name,
+            expression: arguments[0],
+            arguments: Some(arguments),
+            parameters: Vec::new(),
             environment: Vec::new(),
         }
     }
@@ -93,10 +108,28 @@ impl<'a> Command<'a> {
     }
 
     pub fn get_command_line(&self) -> String {
-        self.replace_parameters_in(self.expression)
+        match &self.arguments {
+            Some(arguments) => shell_words::join(
+                arguments
+                    .iter()
+                    .map(|argument| self.replace_parameters_in(argument)),
+            ),
+            None => self.replace_parameters_in(self.expression),
+        }
     }
 
     pub fn get_command(&self) -> Result<std::process::Command> {
+        if let Some(arguments) = &self.arguments {
+            let mut arguments = arguments
+                .iter()
+                .map(|argument| self.replace_parameters_in(argument));
+            let program_name = arguments.next().expect("direct command is non-empty");
+            let mut command_builder = std::process::Command::new(program_name);
+            command_builder.args(arguments);
+            command_builder.envs(self.get_environment());
+            return Ok(command_builder);
+        }
+
         let command_line = self.get_command_line();
         let mut tokens = shell_words::split(&command_line)
             .with_context(|| format!("Failed to parse command '{command_line}'"))?
@@ -130,6 +163,11 @@ impl<'a> Command<'a> {
     pub fn is_parameter_unused(&self, parameter: &str) -> bool {
         let placeholder = format!("{{{parameter}}}");
         !self.expression.contains(&placeholder)
+            && !self
+                .arguments
+                .iter()
+                .flatten()
+                .any(|argument| argument.contains(&placeholder))
             && !self
                 .environment
                 .iter()
@@ -225,6 +263,19 @@ impl<'a> Commands<'a> {
 
     fn build_from_cli_arguments(matches: &'a ArgMatches) -> Result<Commands<'a>> {
         let command_names = matches.get_many::<String>("command-name");
+        if let Some(arguments) = matches.get_many::<String>("command-args") {
+            let command_names = command_names.map_or(vec![], |names| {
+                names.map(|value| value.as_str()).collect::<Vec<_>>()
+            });
+            if command_names.len() > 1 {
+                return Err(OptionsError::TooManyCommandNames(1).into());
+            }
+            let arguments = arguments.map(|value| value.as_str()).collect();
+            return Ok(Self(vec![Command::new_direct(
+                command_names.first().copied(),
+                arguments,
+            )]));
+        }
         let command_strings = matches
             .get_many::<String>("command")
             .unwrap_or_default()
@@ -460,6 +511,65 @@ fn test_get_command_line_nonoverlapping() {
         ],
     );
     assert_eq!(cmd.get_command_line(), "echo {bar} baz quux");
+}
+
+#[test]
+fn test_direct_command_preserves_arguments() {
+    let cmd = Command::new_direct(
+        None,
+        vec!["program", "argument with spaces", "argument with 'quotes'"],
+    );
+    let process = cmd.get_command().unwrap();
+
+    assert_eq!(process.get_program(), "program");
+    assert_eq!(
+        process.get_args().collect::<Vec<_>>(),
+        ["argument with spaces", "argument with 'quotes'"]
+    );
+}
+
+#[test]
+fn test_direct_command_parameter_usage_in_arguments() {
+    let cmd = Command::new_direct(None, vec!["program-{program}", "argument-{argument}"]);
+
+    assert!(!cmd.is_parameter_unused("program"));
+    assert!(!cmd.is_parameter_unused("argument"));
+    assert!(cmd.is_parameter_unused("missing"));
+}
+
+#[test]
+fn test_direct_command_environment_and_parameter_usage() {
+    use crate::cli::get_cli_arguments;
+
+    let matches = get_cli_arguments(vec![
+        "hyperfine",
+        "--env",
+        "HYPERFINE_TEST=hello-{environment}",
+        "--",
+        "program-{program}",
+        "argument-{argument}",
+        "argument with spaces",
+    ]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap();
+    let command = &commands.0[0];
+    assert!(!command.is_parameter_unused("program"));
+    assert!(!command.is_parameter_unused("argument"));
+    assert!(!command.is_parameter_unused("environment"));
+    assert!(command.is_parameter_unused("missing"));
+
+    let process = command.get_command().unwrap();
+    assert_eq!(process.get_program(), "program-{program}");
+    assert_eq!(
+        process.get_args().collect::<Vec<_>>(),
+        ["argument-{argument}", "argument with spaces"]
+    );
+    assert_eq!(
+        process.get_envs().collect::<Vec<_>>(),
+        [(
+            std::ffi::OsStr::new("HYPERFINE_TEST"),
+            Some(std::ffi::OsStr::new("hello-{environment}"))
+        )]
+    );
 }
 
 #[test]
