@@ -48,6 +48,12 @@ hyperfine 'hexdump file' 'xxd file'
 Commands run and appear in input order. The first command is the reference for all comparisons;
 each subsequent result shows its change from that reference.
 
+The `mean` column is the average of the measured runs. The `σ` column is their corrected sample
+standard deviation. It describes the spread of individual results around the mean, using
+`n - 1` in the calculation. A larger `σ` means more variation between runs. The displayed
+`± σ` is not a confidence interval or the standard error of the mean. With `--runs 1`, hyperfine
+shows only the measured value because a sample standard deviation needs at least two runs.
+
 ### Warmup runs and preparation commands
 
 For programs that perform a lot of disk I/O, the benchmarking results can be heavily influenced
