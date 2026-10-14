@@ -100,7 +100,7 @@ pub struct Measurement {
     #[serde(flatten)]
     pub hardware_counters: HardwareCounters,
 
-    // The exit status of the process
+    /// The exit status of the process
     #[serde(rename = "exit_code", serialize_with = "serialize_exit_status")]
     pub exit_status: ExitStatus,
 }
