@@ -17,7 +17,7 @@ A command-line benchmarking tool.
 * Warmup runs can be executed before the actual benchmark.
 * Cache-clearing commands can be set up before each benchmark run.
 * Statistical outlier detection to detect interference from other programs and caching effects.
-* Export results to various formats: CSV, JSON, Markdown, AsciiDoc.
+* Export results to various formats: CSV, JSON, Markdown, AsciiDoc, and org-mode.
 * Parameterized benchmarks (e.g. vary the number of threads).
 * Cross-platform
 
