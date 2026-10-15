@@ -402,7 +402,9 @@ fn build_command() -> Command {
                      \n  \
                        inherit:  Don't redirect the output at all (same as '--show-output').\n\
                      \n  \
-                       <FILE>:   Write the output to the given file.\n\n\
+                       <FILE>:   Write the output to the given file. A path \
+                     without a directory component (like 'out.log') is reported \
+                     as an unknown output policy, so write './out.log'.\n\n\
                     This option can be specified once for all commands or multiple times, once for \
                     each command. Note: If you want to log the output of each and every iteration, \
                     you can use a shell redirection and the '$HYPERFINE_ITERATION' environment variable:\n    \
