@@ -74,7 +74,7 @@ fn build_command() -> Command {
                        CSV exports all selected metrics; markup exports use the first metric. \
                        JSON always includes all collected metrics.\n\n\
                        Presets (use one on its own):\n  \
-                         default  Wall-clock time and peak RSS\n  \
+                         default  Wall-clock time, plus peak RSS on Linux/macOS\n  \
                          time     Wall-clock, CPU, user, and system time\n  \
                          all      All available metrics\n\n\
                        Presets use automatic units.\n\n\

@@ -183,7 +183,8 @@ hyperfine -P threads 1 8 --env 'OMP_NUM_THREADS={threads}' 'my_command'
 ### Choosing metrics and units
 
 By default, hyperfine displays wall-clock time and memory usage
-(`time_wall_clock,memory_peak_resident`). Use `--metrics` with a
+(`time_wall_clock,memory_peak_resident`; on Windows, where peak RSS is not
+supported, only `time_wall_clock`). Use `--metrics` with a
 comma-separated list to select a different set of metrics. Each
 metric can have an optional unit after it:
 
@@ -259,7 +260,7 @@ You can also use a preset to select a group of metrics:
 
 | Preset | Metrics |
 |:---|:---|
-| `--metrics=default` | `time_wall_clock,memory_peak_resident` |
+| `--metrics=default` | `time_wall_clock,memory_peak_resident` (`time_wall_clock` on Windows) |
 | `--metrics=time` | `time_wall_clock,time_cpu,time_user,time_system` |
 | `--metrics=all` | All available metrics |
 
