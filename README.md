@@ -102,7 +102,9 @@ hyperfine \
 ```
 
 If you need a unique value for each individual run of a benchmark command, hyperfine also exposes
-the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarked command itself:
+the `$HYPERFINE_ITERATION` environment variable inside the benchmarked command itself. It is
+zero-based for the benchmark runs and is `warmup-<n>` during warmup runs, so it is not always an
+integer:
 ```sh
 hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 ```
