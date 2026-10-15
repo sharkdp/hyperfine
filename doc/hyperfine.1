@@ -322,7 +322,9 @@ Feed the output through a pipe before discarding it.
 .IP inherit
 Don't redirect the output at all (same as \&'\-\-show\-output').
 .IP "<FILE>"
-Write the output to the given file.
+Write the output to the given file. A path without a directory
+component (like 'out.log') is reported as an unknown output policy,
+so write './out.log'.
 .RE
 .IP
 This option can be specified once for all commands or multiple times,
