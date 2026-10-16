@@ -101,7 +101,7 @@ limit.
 Perform exactly \fINUM\fP runs for each command. If this option is not specified,
 \fBhyperfine\fR automatically determines the number of runs.
 .HP
-\fB\-s\fR, \fB\-\-setup\fR \fICMD...\fP
+\fB\-s\fR, \fB\-\-setup\fR \fICMD\fP
 .IP
 Execute \fICMD\fP once before each set of benchmark runs. This is useful
 for compiling your software with the provided parameters, or to do any
@@ -124,7 +124,7 @@ The \fB\-\-conclude\fR option can be specified once for all commands or multiple
 once for each command. In the latter case, each conclusion command will be
 run after the corresponding benchmark command.
 .HP
-\fB\-c\fR, \fB\-\-cleanup\fR \fICMD...\fP
+\fB\-c\fR, \fB\-\-cleanup\fR \fICMD\fP
 .IP
 Execute \fICMD\fP after the completion of all benchmarking runs for each individual
 command to be benchmarked. This is useful if the commands to be benchmarked
