@@ -433,7 +433,7 @@ fn build_command() -> Command {
                 .help("Give a meaningful name to a command. This can be specified multiple times \
                        if several commands are benchmarked."),
         )
-        // This option is hidden for now, as it is not yet clear yet if we want to 'stabilize' this,
+        // This option is hidden for now, as it is not yet clear if we want to 'stabilize' this,
         // see discussion in https://github.com/sharkdp/hyperfine/issues/527
         .arg(
             Arg::new("min-benchmarking-time")
