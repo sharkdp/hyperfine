@@ -78,8 +78,10 @@ threads), you can use the `-P`/`--parameter-scan` option and call:
 ```sh
 hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num_threads}'
 ```
-This also works with decimal numbers. The `-D`/`--parameter-step-size` option can be used
-to control the step size:
+This also works with decimal numbers, but `-D`/`--parameter-step-size` is then required to
+say how large each step should be: hyperfine only defaults to a step of 1 for integer
+ranges, and otherwise exits with "A step size is required when the range bounds are floating
+point numbers".
 ```sh
 hyperfine --parameter-scan delay 0.3 0.7 -D 0.2 'sleep {delay}'
 ```
