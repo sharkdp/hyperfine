@@ -9,7 +9,7 @@ impl MarkupExporter for OrgmodeExporter {
         format!(
             "| {}  |  {} |\n",
             cells.first().unwrap(),
-            &cells[1..].join(" |  ")
+            cells[1..].join(" |  ")
         )
     }
 

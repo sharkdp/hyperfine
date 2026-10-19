@@ -9,7 +9,8 @@ use clap::ArgMatches;
 
 use crate::command::Commands;
 use crate::error::OptionsError;
-use crate::util::units::{Second, Unit};
+use crate::metric::{Metric, MetricSelection};
+use crate::quantity::{second, Time};
 
 use anyhow::Result;
 
@@ -29,12 +30,6 @@ pub enum Shell {
     Custom(Vec<String>),
 }
 
-impl Default for Shell {
-    fn default() -> Self {
-        Shell::Default(DEFAULT_SHELL)
-    }
-}
-
 impl fmt::Display for Shell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -45,6 +40,11 @@ impl fmt::Display for Shell {
 }
 
 impl Shell {
+    /// Select the platform shell (sh on Unix, cmd.exe on Windows).
+    pub fn platform_default() -> Self {
+        Shell::Default(DEFAULT_SHELL)
+    }
+
     /// Parse given string as shell command line
     pub fn parse_from_str<'a>(s: &str) -> Result<Self, OptionsError<'a>> {
         let v = shell_words::split(s).map_err(OptionsError::ShellParseError)?;
@@ -96,12 +96,6 @@ pub enum OutputStyleOption {
 
     /// Disable all the output
     Disabled,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SortOrder {
-    Command,
-    MeanTime,
 }
 
 /// Bounds for the number of benchmark runs
@@ -181,17 +175,12 @@ impl CommandOutputPolicy {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub enum ExecutorKind {
+    #[default]
     Raw,
     Shell(Shell),
     Mock(Option<String>),
-}
-
-impl Default for ExecutorKind {
-    fn default() -> Self {
-        ExecutorKind::Shell(Shell::default())
-    }
 }
 
 /// The main settings for a hyperfine benchmark session
@@ -203,37 +192,25 @@ pub struct Options {
     pub warmup_count: u64,
 
     /// Minimum benchmarking time
-    pub min_benchmarking_time: Second,
+    pub min_benchmarking_time: Time,
 
     /// Whether or not to ignore non-zero exit codes
     pub command_failure_action: CmdFailureAction,
 
-    // Command to use as a reference for relative speed comparison
-    pub reference_command: Option<String>,
-
-    // Name of the reference command
-    pub reference_name: Option<String>,
-
-    /// Command(s) to run before each timing run
+    /// Command(s) to run before each benchmark run
     pub preparation_command: Option<Vec<String>>,
 
-    /// Command(s) to run after each timing run
+    /// Command(s) to run after each benchmark run
     pub conclusion_command: Option<Vec<String>>,
 
-    /// Command to run before each *batch* of timing runs, i.e. before each individual benchmark
+    /// Command to run before each *batch* of benchmark runs, i.e. before each individual benchmark
     pub setup_command: Option<String>,
 
-    /// Command to run after each *batch* of timing runs, i.e. after each individual benchmark
+    /// Command to run after each *batch* of benchmark runs, i.e. after each individual benchmark
     pub cleanup_command: Option<String>,
 
     /// What color mode to use for the terminal output
     pub output_style: OutputStyleOption,
-
-    /// How to order benchmarks in the relative speed comparison
-    pub sort_order_speed_comparison: SortOrder,
-
-    /// How to order benchmarks in the markup format exports
-    pub sort_order_exports: SortOrder,
 
     /// Determines how we run commands
     pub executor_kind: ExecutorKind,
@@ -244,8 +221,11 @@ pub struct Options {
     /// What to do with the output of the benchmarked commands
     pub command_output_policies: Vec<CommandOutputPolicy>,
 
-    /// Which time unit to use when displaying results
-    pub time_unit: Option<Unit>,
+    /// Displayed metrics, with the primary metric first.
+    pub metrics: Vec<MetricSelection>,
+
+    /// The `all` preset displays only metrics with complete measurements.
+    pub skip_unavailable_metrics: bool,
 }
 
 impl Default for Options {
@@ -253,20 +233,18 @@ impl Default for Options {
         Options {
             run_bounds: RunBounds::default(),
             warmup_count: 0,
-            min_benchmarking_time: 3.0,
+            min_benchmarking_time: Time::new::<second>(3.0),
             command_failure_action: CmdFailureAction::RaiseError,
-            reference_command: None,
-            reference_name: None,
             preparation_command: None,
             conclusion_command: None,
             setup_command: None,
             cleanup_command: None,
             output_style: OutputStyleOption::Full,
-            sort_order_speed_comparison: SortOrder::MeanTime,
-            sort_order_exports: SortOrder::Command,
             executor_kind: ExecutorKind::default(),
             command_output_policies: vec![CommandOutputPolicy::Null],
-            time_unit: None,
+            metrics: MetricSelection::parse_list(crate::cli::DEFAULT_METRICS)
+                .expect("valid default metrics"),
+            skip_unavailable_metrics: false,
             command_input_policy: CommandInputPolicy::Null,
         }
     }
@@ -275,22 +253,15 @@ impl Default for Options {
 impl Options {
     pub fn from_cli_arguments<'a>(matches: &ArgMatches) -> Result<Self, OptionsError<'a>> {
         let mut options = Self::default();
-        let param_to_u64 = |param| {
-            matches
-                .get_one::<String>(param)
-                .map(|n| {
-                    n.parse::<u64>()
-                        .map_err(|e| OptionsError::IntParsingError(param, e))
-                })
-                .transpose()
-        };
+        options.warmup_count = matches
+            .get_one::<u64>("warmup")
+            .copied()
+            .unwrap_or(options.warmup_count);
 
-        options.warmup_count = param_to_u64("warmup")?.unwrap_or(options.warmup_count);
+        let mut min_runs = matches.get_one::<u64>("min-runs").copied();
+        let mut max_runs = matches.get_one::<u64>("max-runs").copied();
 
-        let mut min_runs = param_to_u64("min-runs")?;
-        let mut max_runs = param_to_u64("max-runs")?;
-
-        if let Some(runs) = param_to_u64("runs")? {
+        if let Some(&runs) = matches.get_one::<u64>("runs") {
             min_runs = Some(runs);
             max_runs = Some(runs);
         }
@@ -315,11 +286,6 @@ impl Options {
         };
 
         options.setup_command = matches.get_one::<String>("setup").map(String::from);
-
-        options.reference_command = matches.get_one::<String>("reference").map(String::from);
-        options.reference_name = matches
-            .get_one::<String>("reference-name")
-            .map(String::from);
 
         options.preparation_command = matches
             .get_many::<String>("prepare")
@@ -392,27 +358,21 @@ impl Options {
             OutputStyleOption::Disabled => {}
         };
 
-        (
-            options.sort_order_speed_comparison,
-            options.sort_order_exports,
-        ) = match matches.get_one::<String>("sort").map(|s| s.as_str()) {
-            None | Some("auto") => (SortOrder::MeanTime, SortOrder::Command),
-            Some("command") => (SortOrder::Command, SortOrder::Command),
-            Some("mean-time") => (SortOrder::MeanTime, SortOrder::MeanTime),
-            Some(_) => unreachable!("Unknown sort order"),
-        };
-
         options.executor_kind = if matches.get_flag("no-shell") {
             ExecutorKind::Raw
+        } else if matches.get_flag("default-shell") {
+            ExecutorKind::Shell(Shell::platform_default())
         } else {
             match (
                 matches.get_flag("debug-mode"),
                 matches.get_one::<String>("shell"),
             ) {
-                (false, Some(shell)) if shell == "default" => ExecutorKind::Shell(Shell::default()),
+                (false, Some(shell)) if shell == "default" => {
+                    ExecutorKind::Shell(Shell::platform_default())
+                }
                 (false, Some(shell)) if shell == "none" => ExecutorKind::Raw,
                 (false, Some(shell)) => ExecutorKind::Shell(Shell::parse_from_str(shell)?),
-                (false, None) => ExecutorKind::Shell(Shell::default()),
+                (false, None) => ExecutorKind::default(),
                 (true, Some(shell)) => ExecutorKind::Mock(Some(shell.into())),
                 (true, None) => ExecutorKind::Mock(None),
             }
@@ -435,17 +395,42 @@ impl Options {
             };
         }
 
-        options.time_unit = match matches.get_one::<String>("time-unit").map(|s| s.as_str()) {
-            Some("microsecond") => Some(Unit::MicroSecond),
-            Some("millisecond") => Some(Unit::MilliSecond),
-            Some("second") => Some(Unit::Second),
-            _ => None,
-        };
+        match matches.get_one::<String>("metrics").unwrap().as_str() {
+            "default" => {}
+            "time" => {
+                options.metrics = [
+                    Metric::TimeWallClock,
+                    Metric::TimeCpu,
+                    Metric::TimeUser,
+                    Metric::TimeSystem,
+                ]
+                .map(|metric| MetricSelection { metric, unit: None })
+                .to_vec();
+            }
+            "all" => {
+                let shell = matches!(
+                    options.executor_kind,
+                    ExecutorKind::Shell(_) | ExecutorKind::Mock(Some(_))
+                );
+                options.metrics = Metric::ALL
+                    .iter()
+                    .copied()
+                    .filter(|metric| metric.ensure_available(shell).is_ok())
+                    .map(|metric| MetricSelection { metric, unit: None })
+                    .collect();
+                options.skip_unavailable_metrics = true;
+            }
+            list => {
+                options.metrics = MetricSelection::parse_list(list)
+                    .map_err(|error| OptionsError::InvalidMetrics(error.to_string()))?;
+            }
+        }
 
         if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
-            options.min_benchmarking_time = time
-                .parse::<f64>()
-                .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;
+            options.min_benchmarking_time = Time::new::<second>(
+                time.parse::<f64>()
+                    .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?,
+            );
         }
 
         options.command_input_policy = if let Some(path_str) = matches.get_one::<String>("input") {
@@ -468,14 +453,20 @@ impl Options {
     }
 
     pub fn validate_against_command_list(&mut self, commands: &Commands) -> Result<()> {
-        let has_reference_command = self.reference_command.is_some();
-        let num_commands = commands.num_commands(has_reference_command);
+        if !matches!(self.executor_kind, ExecutorKind::Mock(_)) {
+            for selection in &self.metrics {
+                selection
+                    .metric
+                    .ensure_available(matches!(self.executor_kind, ExecutorKind::Shell(_)))?;
+            }
+        }
+        let num_commands = commands.num_commands();
 
         if let Some(preparation_command) = &self.preparation_command {
             ensure!(
                 preparation_command.len() <= 1 || num_commands == preparation_command.len(),
                 "The '--prepare' option has to be provided just once or N times, where N={num_commands} is the \
-                 number of benchmark commands (including a potential reference)."
+                 number of benchmark commands."
             );
         }
 
@@ -483,7 +474,7 @@ impl Options {
             ensure!(
                 conclusion_command.len() <= 1 || num_commands == conclusion_command.len(),
                 "The '--conclude' option has to be provided just once or N times, where N={num_commands} is the \
-                 number of benchmark commands (including a potential reference)."
+                 number of benchmark commands."
             );
         }
 
@@ -494,7 +485,7 @@ impl Options {
             ensure!(
                 self.command_output_policies.len() == num_commands,
                 "The '--output' option has to be provided just once or N times, where N={num_commands} is the \
-                 number of benchmark commands (including a potential reference)."
+                 number of benchmark commands."
             );
         }
 
@@ -503,8 +494,8 @@ impl Options {
 }
 
 #[test]
-fn test_default_shell() {
-    let shell = Shell::default();
+fn test_platform_default_shell() {
+    let shell = Shell::platform_default();
 
     let s = format!("{shell}");
     assert_eq!(&s, DEFAULT_SHELL);

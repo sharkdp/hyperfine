@@ -18,7 +18,7 @@ jobs:
     name: Extract crate metadata
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
     - name: Extract crate information
       id: crate_metadata
       run: |
@@ -49,7 +49,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: rustfmt
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
     - run: cargo fmt -- --check
 
   min_version:
@@ -58,7 +58,7 @@ jobs:
     needs: crate_metadata
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     - name: Install rust toolchain (v${{ needs.crate_metadata.outputs.msrv }})
       uses: dtolnay/rust-toolchain@master
@@ -79,6 +79,7 @@ jobs:
       matrix:
         job:
           - { target: aarch64-unknown-linux-gnu   , os: ubuntu-24.04, use-cross: true }
+          - { target: aarch64-unknown-linux-musl  , os: ubuntu-24.04, use-cross: true }
           - { target: arm-unknown-linux-gnueabihf , os: ubuntu-24.04, use-cross: true }
           - { target: arm-unknown-linux-musleabihf, os: ubuntu-24.04, use-cross: true }
           - { target: i686-pc-windows-msvc        , os: windows-2022                  }
@@ -88,13 +89,14 @@ jobs:
           - { target: aarch64-apple-darwin        , os: macos-15                      }
           # - { target: x86_64-pc-windows-gnu       , os: windows-2022                  }
           - { target: x86_64-pc-windows-msvc      , os: windows-2022                  }
+          - { target: aarch64-pc-windows-msvc     , os: windows-11-arm                }
           - { target: x86_64-unknown-linux-gnu    , os: ubuntu-24.04, use-cross: true }
           - { target: x86_64-unknown-linux-musl   , os: ubuntu-24.04, use-cross: true }
     env:
       BUILD_CMD: cargo
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     - name: Install prerequisites
       shell: bash
@@ -159,7 +161,7 @@ jobs:
       run: |
         # test only library unit tests and binary for arm-type targets
         unset CARGO_TEST_OPTIONS
-        unset CARGO_TEST_OPTIONS ; case ${{ matrix.job.target }} in arm-* | aarch64-*) CARGO_TEST_OPTIONS="--bin ${{ steps.bin.outputs.BIN_NAME }}" ;; esac;
+        unset CARGO_TEST_OPTIONS ; case ${{ matrix.job.target }} in arm-* | aarch64-*) CARGO_TEST_OPTIONS="--bin ${{ needs.crate_metadata.outputs.bin-name }}" ;; esac;
         echo "CARGO_TEST_OPTIONS=${CARGO_TEST_OPTIONS}" >> $GITHUB_OUTPUT
 
     - name: Run tests
@@ -220,6 +222,8 @@ jobs:
         DPKG_CONFLICTS=${{ needs.crate_metadata.outputs.name }}-musl
         case ${{ matrix.job.target }} in *-musl*) DPKG_BASENAME=${{ needs.crate_metadata.outputs.name }}-musl ; DPKG_CONFLICTS=${{ needs.crate_metadata.outputs.name }} ;; esac;
         DPKG_VERSION=${{ needs.crate_metadata.outputs.version }}
+        # Debian prereleases must sort before the corresponding stable version.
+        DPKG_VERSION=${DPKG_VERSION/-/\~}
 
         unset DPKG_ARCH
         case ${{ matrix.job.target }} in
@@ -335,9 +339,11 @@ jobs:
         echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
 
     - name: Publish archives and packages
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       if: steps.is-release.outputs.IS_RELEASE
       with:
+        prerelease: ${{ contains(needs.crate_metadata.outputs.version, '-') }}
+        make_latest: ${{ contains(needs.crate_metadata.outputs.version, '-') && 'false' || 'true' }}
         files: |
           ${{ steps.package.outputs.PKG_PATH }}
           ${{ steps.debian-package.outputs.DPKG_PATH }}
@@ -348,7 +354,7 @@ jobs:
     name: Publish to Winget
     runs-on: ubuntu-latest
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')
     steps:
       - uses: vedantmgoyal2009/winget-releaser@v2
         with:

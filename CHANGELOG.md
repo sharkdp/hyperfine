@@ -1,3 +1,110 @@
+# v2.0.0
+
+See the breaking changes below when migrating from hyperfine 1.x.
+
+## Features
+
+- Add support for alternative performance metrics (peak memory usage, instructions, CPU cycles, cache misses, branch misses, ...). By default, hyperfine will now display wall-clock time and peak memory usage, but users can use the [new `--metrics` option](README.md#choosing-metrics-and-units) to select different performance metrics. The terminal output now shows an overview of all selected performance metrics, including relative changes.
+- Add `--env` to set environment variables even without an intermediate shell (which is the new default behavior, see below). For example:
+
+  ```sh
+  # Parameterized benchmark, comparing different thread counts:
+  hyperfine -P threads 1 8 --env 'OMP_NUM_THREADS={threads}' 'my_command'
+  ```
+
+- The plotting and analysis scripts now support different metrics as well, see #981 and #984 (@sharkdp).
+
+## Breaking changes
+
+- Benchmarked commands are now executed directly by default, without an intermediate shell (`--shell=none`). Use `-S` (an alias for `--shell=default`) to restore the previous behavior (`sh` on Unix, `cmd.exe` on Windows), or select a shell with `--shell <SHELL>`. See [the rationale for this change](https://github.com/sharkdp/hyperfine/issues/787#issuecomment-6038898252).
+- Always run `--setup`, `--prepare`, `--conclude`, and `--cleanup` commands in a shell, even when using `--shell=none` (the new default behavior), see #990 (@sharkdp).
+- The JSON format for `--export-json` has changed (schema version 2). The [new format](README.md#json) now includes metadata, per-run measurements, and statistical summaries for all measured quantities, see #790 (@sharkdp). Code that reads those exported JSON files must be updated. For example, `results[i].mean` is now `results[i].summary.time_wall_clock.mean`, and `results[i].times` is replaced by `results[i].measurements[j].time_wall_clock.value`. The new structure looks like this:
+
+  ```python
+  {
+      "schema_version": 2,
+      "primary_metric": "time_wall_clock",
+      "metadata": {
+          "hyperfine_version": "2.0.0",
+          "start_time": "2026-10-06T12:00:00Z",
+          "platform": {"os": "Linux", "architecture": "x86_64"}
+      },
+      "results": [
+          {
+              "command": "sleep 1",  # Actual command after parameter substitution
+              "name": "wait 1s",  # Optional custom or automatically generated name
+              "parameters": {"duration": {"value": "1"}},  # Values are now objects
+              "environment": {"OMP_NUM_THREADS": "8"},  # Only present with --env overrides
+              "measurements": [  # One entry per run, excluding warmups
+                  {
+                      "time_wall_clock": {"value": 1.0, "unit": "second"},
+                      "time_cpu": {"value": 0.0, "unit": "second"},
+                      "time_user": {"value": 0.0, "unit": "second"},
+                      "time_system": {"value": 0.0, "unit": "second"},
+                      "memory_peak_resident": {"value": 1048576.0, "unit": "byte"},
+                      "cpu_cycles": {"value": 5000000},  # Hardware counters, when available
+                      "instructions": {"value": 10000000},
+                      "exit_code": 0
+                  },
+                  ...  # Further runs omitted
+              ],
+              "summary": {
+                  "time_wall_clock": {
+                      "unit": "second",
+                      "count": 2,
+                      "mean": 1.0,
+                      "stddev": 0.0,
+                      "median": 1.0,
+                      "min": 1.0,
+                      "max": 1.0
+                  }
+                  # Other metrics have the same summary structure.
+              }
+          }
+      ]
+  }
+  ```
+
+  Times are always exported in seconds and memory in bytes. Hardware counters and their summaries have no `unit` field. Unavailable memory measurements and hardware counters are omitted; other available counters may also be included. `stddev` is `null` for a single run.
+- `--time-unit`/`-u` has been removed. Units can now be selected using the `--metrics METRIC[:UNIT],…` option, e.g. `--metrics time_wall_clock:ms,memory_peak_resident:MiB`.
+- `--sort` has been removed. It complicated hyperfine significantly and doesn't make too much sense with the new output format.
+- `--reference` and `--reference-name` have been removed (for now). The first command is always considered as the reference command. Invocations using `--reference` now show migration guidance to put the reference command first.
+- The format of [Markdown](README.md#markdown), AsciiDoc and org-mode, and [CSV](README.md#csv) exports has also been changed. Markdown, AsciiDoc, and org-mode contain only the primary metric (the first metric selected by `--metrics`). CSV exports all selected metrics side by side.
+
+# v1.21.0
+
+## Features
+
+- Add support for minutes and hours in `--time-unit`, as well as short and plural aliases such as `ms`, `seconds`, and `min`, see #960 (@sharkdp)
+- Expose `$HYPERFINE_ITERATION` to `--prepare` and `--conclude` commands, see #781 and #807 (@willcl-ark)
+- Show elapsed time during the initial benchmark run, see #416 and #581 (@devonhollowood)
+- Add colors to `--help` output, see #841 (@starsep)
+
+## Changes
+
+- With `--parameter-scan` or `--parameter-list`, `--reference` now selects an existing benchmark by its full displayed name instead of running a separate reference command. The name must match exactly one benchmark; use `--command-name` instead of `--reference-name` in this mode, see #847 and #979 (@sharkdp)
+- Format times in CSV exports with six decimal places, see #966 and #972 (@sharkdp)
+- Update dependencies and raise the minimum supported Rust version to 1.97, see #934 (@sharkdp)
+
+## Bugfixes
+
+- Make Markdown, AsciiDoc, and Org-mode exports compare against the specified reference, and label faster and slower results in command-sorted comparisons with `--reference`, see #811 and #979 (@sharkdp)
+- Reject zero values for `--runs`, `--min-runs`, and `--max-runs` instead of allowing invalid run counts, see #923 (@VXNCXNX, @sharkdp)
+- Reject negative parameter-scan steps before expanding ranges, avoiding hangs and excessive memory use, see #951 (@Likio3000)
+- Preserve existing export files when command options are invalid, see #950 (@Likio3000)
+- Truncate export files when rewriting results to avoid leaving trailing bytes, see #970 (@sharkdp)
+- Preserve backticks in command names in Markdown exports, see #947 (@Likio3000)
+- Handle broken output pipes gracefully instead of panicking, see #932 (@Mathjk)
+- Collect peak memory usage separately for each command on Unix, so commands no longer inherit the peak memory usage of earlier commands, see #965 (@sharkdp)
+- Preserve 100-nanosecond precision in Windows CPU times, see #964 (@sharkdp)
+- Python scripts: Correct the interpretation of Welch's t-test results, see #943 (@sharkdp)
+
+## Other
+
+- Build binaries for Windows ARM64 and Linux ARM64 musl, see #922 and #924 (@meop)
+- Refactor measurement, statistics, and formatting code to use typed quantities, see #954, #958, #961, #967, #969, #971, and #976 (@sharkdp)
+- Improve documentation and examples, including comparisons across Git branches, iteration variables, reference commands, and selective failure handling, see #899, #900, #929, and #940 (@xfocus3, @ded-furby, @Likio3000, @sharkdp)
+
 # v1.20.0
 
 ## Features
@@ -5,7 +112,7 @@
 - Add `--reference-name` option to give a meaningful name to the reference command, see #808 (@niklasdewally)
 - The `--ignore-failure` option now supports a comma-separated list of exit codes to ignore (e.g., `--ignore-failure=1,2`), see #836 (@sharkdp)
 - Python scripts: Add `--time-unit` option to `advanced_statistics.py` (@sharkdp)
-- Python scripts: Add new `plot_benchmarks.py` script for plotting collections of benchmarks, see #806 (@marxin)
+- Python scripts: Add new `plot_benchmark_comparison.py` script for plotting collections of benchmarks, see #806 (@marxin)
 
 ## Bugfixes
 
@@ -99,7 +206,7 @@
 ## Other
 
 - Thanks to @berombau for working on dependency upgrades, see #584
-- Fixed installationm on Windows, see #595 and #596 (@AntoniosBarotsis)
+- Fixed installation on Windows, see #595 and #596 (@AntoniosBarotsis)
 
 
 # v1.15.0
@@ -244,10 +351,10 @@ Package authors: note that Hyperfine now comes with a set of shell completion fi
 - The new `--parameter-list <VAR> <VALUES>` option can be used to run
   a parametrized benchmark on a user-specified list of values.
   This is similar to `--parameter-scan <VAR> <MIN> <MAX>`, but doesn't
-  necessarily required numeric arguments.
+  necessarily require numeric arguments.
 
   ``` bash
-  hyperfine --parameter-list compiler "gcc,clang" \
+  hyperfine --parameter-list compiler "g++,clang++" \
       "{compiler} -O2 main.cpp"
   ```
 
@@ -415,7 +522,7 @@ for reviewing pull requests and for giving very valuable feedback.
 ## Other
 
 - [Arch Linux package](https://aur.archlinux.org/packages/hyperfine) for Hyperfine (@jD91mZM2).
-- Ubuntu/Debian packages are now are available.
+- Ubuntu/Debian packages are now available.
 
 # v0.2.0
 

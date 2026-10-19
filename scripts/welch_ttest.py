@@ -7,39 +7,53 @@
 # ///
 
 """This script performs Welch's t-test on a JSON export file with two
-benchmark results to test whether or not the two distributions are
-the same."""
+benchmark results to test for a difference in their population means."""
 
 import argparse
-import json
-import sys
+import math
 
 from scipy import stats
 
-parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("file", help="JSON file with two benchmark results")
-args = parser.parse_args()
+from plot_utils import METRICS, add_metric_argument, load_results
 
-with open(args.file) as f:
-    results = json.load(f)["results"]
 
-if len(results) != 2:
-    print("The input file has to contain exactly two benchmarks")
-    sys.exit(1)
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("file", help="JSON file with two benchmark results")
+    add_metric_argument(parser)
+    args = parser.parse_args()
 
-a, b = (x["command"] for x in results[:2])
-X, Y = (x["times"] for x in results[:2])
+    metric, [results] = load_results(parser, [args.file], args.metric)
 
-print(f"Command 1: {a}")
-print(f"Command 2: {b}\n")
+    if len(results) != 2:
+        parser.error("the input file must contain exactly two benchmarks")
 
-t, p = stats.ttest_ind(X, Y, equal_var=False)
-th = 0.05
-dispose = p < th
-print(f"t = {t:.3}, p = {p:.3}")
-print()
+    a, b = (x.get("name", x["command"]) for x in results[:2])
+    X, Y = ([m[metric]["value"] for m in x["measurements"]] for x in results[:2])
+    if min(len(X), len(Y)) < 2:
+        parser.error("Welch's t-test requires at least two measurements per benchmark")
 
-if dispose:
-    print(f"There is a difference between the two benchmarks (p < {th}).")
-else:
-    print(f"The two benchmarks are almost the same (p >= {th}).")
+    print(f"Metric: {METRICS[metric].label}")
+    print(f"Command 1: {a}")
+    print(f"Command 2: {b}\n")
+
+    t, p = stats.ttest_ind(X, Y, equal_var=False)
+    if not math.isfinite(p):
+        parser.error("Welch's t-test is undefined for these measurements")
+    th = 0.05
+    dispose = p < th
+    print(f"t = {t:.3}, p = {p:.3}")
+    print()
+
+    if dispose:
+        print(
+            f"A statistically significant difference in mean value was detected (p < {th})."
+        )
+    else:
+        print(
+            f"No statistically significant difference in mean value was detected (p >= {th})."
+        )
+
+
+if __name__ == "__main__":
+    main()

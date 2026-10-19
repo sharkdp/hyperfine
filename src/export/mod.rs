@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::Write;
+use std::io::{self, Write};
 
 mod asciidoc;
 mod csv;
@@ -17,8 +17,8 @@ use self::markdown::MarkdownExporter;
 use self::orgmode::OrgmodeExporter;
 
 use crate::benchmark::benchmark_result::BenchmarkResult;
-use crate::options::SortOrder;
-use crate::util::units::Unit;
+use crate::metric::MetricSelection;
+use crate::output::console_writeln;
 
 use anyhow::{Context, Result};
 use clap::ArgMatches;
@@ -44,12 +44,11 @@ pub enum ExportType {
 
 /// Interface for different exporters.
 trait Exporter {
-    /// Export the given entries in the serialized form.
+    /// Export the given entries using a nonempty list of selected metrics, primary first.
     fn serialize(
         &self,
         results: &[BenchmarkResult],
-        unit: Option<Unit>,
-        sort_order: SortOrder,
+        metrics: &[MetricSelection],
     ) -> Result<Vec<u8>>;
 }
 
@@ -66,22 +65,16 @@ struct ExporterWithTarget {
 /// Handles the management of multiple file exporters.
 pub struct ExportManager {
     exporters: Vec<ExporterWithTarget>,
-    time_unit: Option<Unit>,
-    sort_order: SortOrder,
+    metrics: Vec<MetricSelection>,
 }
 
 impl ExportManager {
     /// Build the ExportManager that will export the results specified
     /// in the given ArgMatches
-    pub fn from_cli_arguments(
-        matches: &ArgMatches,
-        time_unit: Option<Unit>,
-        sort_order: SortOrder,
-    ) -> Result<Self> {
+    pub fn from_cli_arguments(matches: &ArgMatches, metrics: &[MetricSelection]) -> Result<Self> {
         let mut export_manager = Self {
             exporters: vec![],
-            time_unit,
-            sort_order,
+            metrics: metrics.to_vec(),
         };
         {
             let mut add_exporter = |flag, exporttype| -> Result<()> {
@@ -131,10 +124,7 @@ impl ExportManager {
     /// order not to clutter the output of hyperfine with intermediate results).
     pub fn write_results(&self, results: &[BenchmarkResult], intermediate: bool) -> Result<()> {
         for e in &self.exporters {
-            let content = || {
-                e.exporter
-                    .serialize(results, self.time_unit, self.sort_order)
-            };
+            let content = || e.exporter.serialize(results, &self.metrics);
 
             match e.target {
                 ExportTarget::File(ref filename) => {
@@ -144,8 +134,9 @@ impl ExportManager {
                 }
                 ExportTarget::Stdout => {
                     if !intermediate {
-                        println!();
-                        println!("{}", String::from_utf8(content()?).unwrap());
+                        let mut stdout = io::stdout().lock();
+                        console_writeln!(stdout)?;
+                        console_writeln!(stdout, "{}", String::from_utf8(content()?).unwrap())?;
                     }
                 }
             }
@@ -156,7 +147,11 @@ impl ExportManager {
 
 /// Write the given content to a file with the specified name
 fn write_to_file(filename: &str, content: &[u8]) -> Result<()> {
-    let mut file = OpenOptions::new().write(true).open(filename)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        // Avoid leaving trailing bytes when the new export is shorter.
+        .truncate(true)
+        .open(filename)?;
     file.write_all(content)
         .with_context(|| format!("Failed to export results to '{filename}'"))
 }
