@@ -427,10 +427,17 @@ impl Options {
         }
 
         if let Some(time) = matches.get_one::<String>("min-benchmarking-time") {
-            options.min_benchmarking_time = Time::new::<second>(
-                time.parse::<f64>()
-                    .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?,
-            );
+            let seconds = time
+                .parse::<f64>()
+                .map_err(|e| OptionsError::FloatParsingError("min-benchmarking-time", e))?;
+            // The run count is derived by dividing this by the measured runtime and casting to
+            // u64, where a non-finite value saturates to u64::MAX and a non-positive one
+            // collapses to zero. Reject both here so the benchmark cannot be asked to perform
+            // an unbounded number of runs.
+            if !seconds.is_finite() || seconds <= 0.0 {
+                return Err(OptionsError::NonPositiveDuration("min-benchmarking-time"));
+            }
+            options.min_benchmarking_time = Time::new::<second>(seconds);
         }
 
         options.command_input_policy = if let Some(path_str) = matches.get_one::<String>("input") {
@@ -502,6 +509,42 @@ fn test_platform_default_shell() {
 
     let cmd = shell.command();
     assert_eq!(cmd.get_program(), DEFAULT_SHELL);
+}
+
+#[test]
+fn test_min_benchmarking_time_rejects_non_positive_and_non_finite() {
+    use crate::cli::get_cli_arguments;
+
+    // Pass the value with `=` so clap does not mistake a leading `-` for a flag, which is
+    // also the only form in which a user can supply a negative number.
+    let parse = |value: &str| {
+        let matches = get_cli_arguments(vec![
+            "hyperfine",
+            &format!("--min-benchmarking-time={value}"),
+            "true",
+        ]);
+        Options::from_cli_arguments(&matches).map(|o| o.min_benchmarking_time)
+    };
+
+    // A finite, positive value is accepted and reaches the options unchanged.
+    assert_eq!(
+        parse("5").unwrap(),
+        Time::new::<second>(5.0),
+        "a positive duration should be accepted"
+    );
+
+    // `inf` parses as an f64, and the run count is derived by dividing it by the measured
+    // runtime and casting to u64, which saturates to u64::MAX -- an unbounded benchmark.
+    for value in ["inf", "infinity", "nan", "0", "-1"] {
+        assert!(
+            matches!(
+                parse(value).unwrap_err(),
+                OptionsError::NonPositiveDuration("min-benchmarking-time")
+            ),
+            "--min-benchmarking-time {} should be rejected",
+            value
+        );
+    }
 }
 
 #[test]

@@ -55,6 +55,8 @@ pub enum OptionsError<'a> {
     IntParsingError(&'a str, ParseIntError),
     #[error("Could not read numeric floating point argument to '--{0}': {1}")]
     FloatParsingError(&'a str, ParseFloatError),
+    #[error("The argument to '--{0}' must be a finite, positive number")]
+    NonPositiveDuration(&'a str),
     #[error("An empty command has been specified for the '--shell <command>' option")]
     EmptyShell,
     #[error("Failed to parse '--shell <command>' expression as command line: {0}")]
