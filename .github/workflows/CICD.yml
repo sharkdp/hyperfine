@@ -12,13 +12,18 @@ on:
       - master
     tags:
       - '*'
+permissions:
+  contents: read
+
 
 jobs:
   crate_metadata:
     name: Extract crate metadata
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
     - name: Extract crate information
       id: crate_metadata
       run: |
@@ -46,10 +51,13 @@ jobs:
     name: Ensure 'cargo fmt' has been run
     runs-on: ubuntu-24.04
     steps:
-    - uses: dtolnay/rust-toolchain@stable
+    - uses: dtolnay/rust-toolchain@master
       with:
+        toolchain: stable
         components: rustfmt
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
     - run: cargo fmt -- --check
 
   min_version:
@@ -58,7 +66,9 @@ jobs:
     needs: crate_metadata
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
 
     - name: Install rust toolchain (v${{ needs.crate_metadata.outputs.msrv }})
       uses: dtolnay/rust-toolchain@master
@@ -71,6 +81,8 @@ jobs:
       run: cargo test --locked ${{ env.MSRV_FEATURES }}
 
   build:
+    permissions:
+      contents: write
     name: ${{ matrix.job.target }} (${{ matrix.job.os }})
     runs-on: ${{ matrix.job.os }}
     needs: crate_metadata
@@ -96,7 +108,9 @@ jobs:
       BUILD_CMD: cargo
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v7
+      uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
 
     - name: Install prerequisites
       shell: bash
@@ -107,13 +121,14 @@ jobs:
         esac
 
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@master
       with:
+        toolchain: stable
         targets: ${{ matrix.job.target }}
 
     - name: Install cross
       if: matrix.job.use-cross
-      uses: taiki-e/install-action@v2
+      uses: taiki-e/install-action@v2.87.31
       with:
         tool: cross
 
@@ -319,13 +334,13 @@ jobs:
         fakeroot dpkg-deb --build "${DPKG_DIR}" "${DPKG_PATH}"
 
     - name: "Artifact upload: tarball"
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v7.0.2
       with:
         name: ${{ steps.package.outputs.PKG_NAME }}
         path: ${{ steps.package.outputs.PKG_PATH }}
 
     - name: "Artifact upload: Debian package"
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v7.0.2
       if: steps.debian-package.outputs.DPKG_NAME
       with:
         name: ${{ steps.debian-package.outputs.DPKG_NAME }}
@@ -339,7 +354,7 @@ jobs:
         echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
 
     - name: Publish archives and packages
-      uses: softprops/action-gh-release@v3
+      uses: softprops/action-gh-release@v3.0.3
       if: steps.is-release.outputs.IS_RELEASE
       with:
         prerelease: ${{ contains(needs.crate_metadata.outputs.version, '-') }}
@@ -356,7 +371,7 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')
     steps:
-      - uses: vedantmgoyal2009/winget-releaser@v2
+      - uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: sharkdp.hyperfine
           installers-regex: '-pc-windows-msvc\.zip$'
