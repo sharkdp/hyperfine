@@ -63,6 +63,37 @@ fn build_command() -> Command {
                 })
                 .help("Removed: put your reference command first instead."),
         )
+        // Retain the removed option to provide migration guidance for old invocations.
+        .arg(
+            Arg::new("time-unit")
+                .long("time-unit")
+                .short('u')
+                .hide(true)
+                .value_name("UNIT")
+                .num_args(0..=1)
+                .default_missing_value("")
+                .value_parser(|_: &str| -> Result<String, String> {
+                    Err("The --time-unit option has been removed. Select the unit with --metrics, \
+                         e.g. --metrics time_wall_clock:ms."
+                        .into())
+                })
+                .help("Removed: select the unit with --metrics METRIC:UNIT instead."),
+        )
+        // Retain the removed option to provide migration guidance for old invocations.
+        .arg(
+            Arg::new("sort")
+                .long("sort")
+                .hide(true)
+                .value_name("KEY")
+                .num_args(0..=1)
+                .default_missing_value("")
+                .value_parser(|_: &str| -> Result<String, String> {
+                    Err("The --sort option has been removed. Results are listed in command order, \
+                         with the first command as the reference."
+                        .into())
+                })
+                .help("Removed: results follow the order of the given commands."),
+        )
         .arg(
             Arg::new("metrics")
                 .long("metrics")

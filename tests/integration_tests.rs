@@ -64,6 +64,43 @@ fn rejects_removed_reference_option_with_migration_guidance() {
 }
 
 #[test]
+fn rejects_removed_time_unit_option_with_migration_guidance() {
+    for args in [
+        vec!["--time-unit", "millisecond", "echo dummy benchmark"],
+        vec!["echo dummy benchmark", "--time-unit=second"],
+        vec!["-u", "microsecond", "echo dummy benchmark"],
+        vec!["-umillisecond", "echo dummy benchmark"],
+    ] {
+        hyperfine()
+            .args(args)
+            .assert()
+            .code(2)
+            .stdout("")
+            .stderr(predicate::str::contains(
+                "The --time-unit option has been removed. Select the unit with --metrics, e.g. --metrics time_wall_clock:ms.",
+            ));
+    }
+}
+
+#[test]
+fn rejects_removed_sort_option_with_migration_guidance() {
+    for args in [
+        vec!["--sort", "command", "echo dummy benchmark"],
+        vec!["echo comparison", "--sort=relative"],
+        vec!["--sort=none", "echo dummy benchmark"],
+    ] {
+        hyperfine()
+            .args(args)
+            .assert()
+            .code(2)
+            .stdout("")
+            .stderr(predicate::str::contains(
+                "The --sort option has been removed. Results are listed in command order, with the first command as the reference.",
+            ));
+    }
+}
+
+#[test]
 fn one_run_is_supported() {
     hyperfine()
         .arg("--runs=1")
