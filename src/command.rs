@@ -520,6 +520,17 @@ fn test_build_commands_cross_product() {
 }
 
 #[test]
+fn test_command_name_accepts_leading_hyphen() {
+    use crate::cli::get_cli_arguments;
+
+    let matches = get_cli_arguments(vec!["hyperfine", "-n", "--shared-blocks", "ls"]);
+    let commands = Commands::from_cli_arguments(&matches).unwrap().0;
+    assert_eq!(commands.len(), 1);
+    assert_eq!(commands[0].get_name(), "--shared-blocks");
+    assert_eq!(commands[0].get_command_line(), "ls");
+}
+
+#[test]
 fn test_build_parameter_list_commands() {
     use crate::cli::get_cli_arguments;
 
