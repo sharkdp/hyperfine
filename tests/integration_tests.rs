@@ -233,6 +233,22 @@ fn fails_with_wrong_number_of_command_name_arguments() {
 }
 
 #[test]
+fn accepts_command_name_starting_with_a_dash() {
+    hyperfine_debug()
+        .arg("--runs=2")
+        .arg("-n")
+        .arg("--shared-blocks")
+        .arg("--command-name")
+        .arg("-x")
+        .arg("sleep 0.01")
+        .arg("sleep 0.02")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Benchmark 1: --shared-blocks"))
+        .stdout(predicate::str::contains("Benchmark 2: -x"));
+}
+
+#[test]
 fn fails_with_wrong_number_of_prepare_options() {
     hyperfine()
         .arg("--runs=1")

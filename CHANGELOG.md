@@ -1,3 +1,9 @@
+# unreleased
+
+## Bugfixes
+
+- `-n`/`--command-name` now accepts a name that starts with a dash (e.g. `-n --shared-blocks`), like `--parameter-scan` and `--parameter-list` already do, see #1017
+
 # v2.0.0
 
 See the breaking changes below when migrating from hyperfine 1.x.
