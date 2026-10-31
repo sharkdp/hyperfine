@@ -244,12 +244,24 @@ impl MetricSelection {
         } else {
             self.metric.units()
         };
-        units
+        let index = units
             .iter()
-            .rev()
-            .find(|unit| mean.abs() >= unit.scale)
-            .copied()
-            .unwrap_or(units[0])
+            .rposition(|unit| mean.abs() >= unit.scale)
+            .unwrap_or(0);
+        let unit = units[index];
+        // A mean just below the next unit can round up to it when formatted
+        // (0.99996 s would print as "1000.0 ms"), so show it in that unit.
+        match units.get(index + 1) {
+            Some(&next)
+                if unit
+                    .format_value(mean.abs())
+                    .parse::<f64>()
+                    .is_ok_and(|shown| shown >= (next.scale / unit.scale).round()) =>
+            {
+                next
+            }
+            _ => unit,
+        }
     }
 
     /// CSV never automatically scales values.
@@ -439,6 +451,23 @@ mod tests {
             assert_eq!(sample["time_cpu"]["value"], 4.0);
             assert_eq!(sample["time_cpu"]["unit"], "second");
         }
+    }
+
+    #[test]
+    fn display_unit_moves_up_when_the_mean_rounds_to_the_next_unit() {
+        let display = |metric: &str, value: f64| {
+            let selection = MetricSelection::parse_list(metric).unwrap()[0];
+            selection.display_unit(value).format(value)
+        };
+        assert_eq!(display("time_wall_clock", 0.99994), "999.9 ms");
+        assert_eq!(display("time_wall_clock", 0.99996), "1.000 s");
+        assert_eq!(display("time_wall_clock", 59.9996), "1.0 min");
+        assert_eq!(display("time_wall_clock", 999.96e-6), "1.0 ms");
+        assert_eq!(display("memory_peak_resident", 1_048_524.0), "1023.9 KiB");
+        assert_eq!(display("memory_peak_resident", 1_048_575.0), "1.0 MiB");
+        assert_eq!(display("instructions", 999_960.0), "1.0 M");
+        // The largest unit has nothing to move up to.
+        assert_eq!(display("instructions", 2.5e12), "2500.0 B");
     }
 
     #[test]
