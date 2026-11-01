@@ -552,9 +552,9 @@ dependencies = [
 
 [[package]]
 name = "platform-info"
-version = "2.2.0"
+version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba7c3f5af00d3596a148cc80178ac690152b71c283d15a8bcea0cddfea759a36"
+checksum = "aa5c6ef5da99ec17edc36267860ddb03504a916e0cc74c0c4dd1c5cdb19637f8"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
