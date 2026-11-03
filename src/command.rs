@@ -96,6 +96,29 @@ impl<'a> Command<'a> {
         self.replace_parameters_in(self.expression)
     }
 
+    #[cfg(windows)]
+    pub fn get_command(&self) -> Result<std::process::Command> {
+        use std::os::windows::process::CommandExt;
+
+        // Windows programs parse their own command line, so splitting it with
+        // POSIX rules would eat backslashes in paths (#796). Only the program
+        // name is split off, following CreateProcess rules; the rest is passed
+        // through unchanged.
+        let command_line = self.get_command_line();
+        let (program_name, args) = split_windows_program(&command_line);
+        if program_name.is_empty() {
+            bail!("Can not execute empty command")
+        }
+
+        let mut command_builder = std::process::Command::new(program_name);
+        if !args.is_empty() {
+            command_builder.raw_arg(args);
+        }
+        command_builder.envs(self.get_environment());
+        Ok(command_builder)
+    }
+
+    #[cfg(not(windows))]
     pub fn get_command(&self) -> Result<std::process::Command> {
         let command_line = self.get_command_line();
         let mut tokens = shell_words::split(&command_line)
@@ -171,6 +194,35 @@ impl<'a> Command<'a> {
 
 /// A collection of commands that should be benchmarked
 pub struct Commands<'a>(Vec<Command<'a>>);
+
+/// Split a Windows command line into the program name and the remaining
+/// arguments. The program name ends at the closing quote if it starts with
+/// one, otherwise at the first whitespace; backslashes are never escapes.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn split_windows_program(command_line: &str) -> (&str, &str) {
+    let command_line = command_line.trim_start();
+    let (program_name, rest) = match command_line.strip_prefix('"') {
+        Some(quoted) => quoted.split_once('"').unwrap_or((quoted, "")),
+        None => command_line
+            .split_once(char::is_whitespace)
+            .unwrap_or((command_line, "")),
+    };
+    (program_name, rest.trim_start())
+}
+
+#[test]
+fn test_split_windows_program() {
+    assert_eq!(
+        split_windows_program(r"Downloads\in.exe C:\x\y.txt"),
+        (r"Downloads\in.exe", r"C:\x\y.txt")
+    );
+    assert_eq!(
+        split_windows_program(r#""C:\Program Files\a.exe" "b c" d"#),
+        (r"C:\Program Files\a.exe", r#""b c" d"#)
+    );
+    assert_eq!(split_windows_program("  prog  "), ("prog", ""));
+    assert_eq!(split_windows_program(""), ("", ""));
+}
 
 fn parse_environment(value: &str) -> Result<Environment> {
     let mut environment = Environment::new();
