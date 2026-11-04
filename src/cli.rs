@@ -1,9 +1,11 @@
 use std::ffi::OsString;
+use std::path::PathBuf;
 
 use clap::{
     builder::styling::{AnsiColor, Effects},
     builder::NonEmptyStringValueParser,
     builder::Styles,
+    builder::TypedValueParser,
     crate_version, Arg, ArgAction, ArgMatches, Command, ValueHint,
 };
 
@@ -262,6 +264,27 @@ fn build_command() -> Command {
                      This performs benchmarks for 'g++ -O2 main.cpp' and 'clang++ -O2 main.cpp'.\n\n\
                      The option can be specified multiple times to run benchmarks for all \
                      possible parameter combinations.\n"
+                ),
+        )
+        .arg(
+            Arg::new("cwd")
+                .long("cwd")
+                .value_name("DIR")
+                .value_hint(ValueHint::DirPath)
+                .value_parser(clap::builder::PathBufValueParser::new().try_map(|path: PathBuf| {
+                    let resolved = path.canonicalize()?;
+                    if !resolved.is_dir() {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::NotADirectory,
+                            "working directory must be a directory",
+                        ));
+                    }
+                    Ok(resolved)
+                }))
+                .help(
+                    "Run benchmark, warmup, setup, prepare, conclude, and cleanup commands in DIR. \
+                     Relative input, output, and export paths are resolved from the directory \
+                     where hyperfine was invoked.",
                 ),
         )
         .arg(

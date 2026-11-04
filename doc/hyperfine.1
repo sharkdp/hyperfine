@@ -203,6 +203,12 @@ Use an empty string for no overrides. Values can contain parameter placeholders.
 For example, \fBhyperfine \-P threads 1 8 \-\-env\fR 'OMP_NUM_THREADS={threads}' 'my_command'
 benchmarks 'my_command' with OMP_NUM_THREADS ranging from 1 to 8.
 .HP
+\fB\-\-cwd\fR \fIDIR\fP
+.IP
+Run benchmark and warmup commands, as well as setup, prepare, conclude, and cleanup
+commands, in DIR. Relative paths passed to input, output, and export options are
+resolved from the directory where hyperfine was invoked.
+.HP
 \fB\-\-shell\fR \fISHELL\fP
 .IP
 Set the shell to use for executing benchmarked commands, including warmup runs
