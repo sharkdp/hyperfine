@@ -34,7 +34,6 @@ def main():
             "upper center",
             "lower center",
             "right",
-            "left",
             "best",
             "upper left",
             "upper right",
