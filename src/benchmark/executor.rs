@@ -5,6 +5,7 @@ use std::process::ExitStatus;
 use crate::benchmark::measurement::Measurement;
 use crate::benchmark::measurement::Measurements;
 use crate::command::Command;
+use crate::metric::Metric;
 use crate::options::{CmdFailureAction, CommandOutputPolicy, Options, OutputStyleOption, Shell};
 use crate::output::progress_bar::get_progress_bar;
 use crate::quantity::{second, Information, Time, Zero};
@@ -90,7 +91,11 @@ fn run_command_and_measure_common(
         command.env("HYPERFINE_ITERATION", value);
     }
 
-    let measurement = execute_and_measure(command, collect_hardware_counters)
+    let measure_memory = options
+        .metrics
+        .iter()
+        .any(|selection| selection.metric == Metric::MemoryPeakResident);
+    let measurement = execute_and_measure(command, collect_hardware_counters, measure_memory)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
 
     if !measurement.exit_status.success() {
