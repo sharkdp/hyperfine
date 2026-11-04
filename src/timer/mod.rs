@@ -64,6 +64,7 @@ fn discard(output: ChildStdout) {
 pub fn execute_and_measure(
     mut command: Command,
     _collect_hardware_counters: bool,
+    _measure_memory: bool,
 ) -> Result<Measurement> {
     #[cfg(target_os = "linux")]
     let counters = _collect_hardware_counters.then(linux_counters::CounterGroup::new);
@@ -76,6 +77,20 @@ pub fn execute_and_measure(
 
         // Create the process in a suspended state so that we don't miss any cpu time between process creation and `CPUTimer` start.
         command.creation_flags(CREATE_SUSPENDED);
+    }
+
+    #[cfg(target_os = "linux")]
+    if _measure_memory {
+        use std::os::unix::process::CommandExt;
+
+        // A child started with posix_spawn starts out with hyperfine's own peak RSS as
+        // its peak RSS. A forked child only starts out with hyperfine's current anonymous
+        // memory. Any pre_exec hook makes the standard library fork instead, which costs
+        // more to spawn, so this is only done when peak RSS is actually measured.
+        // SAFETY: the hook does nothing, so it cannot violate async-signal-safety.
+        unsafe {
+            command.pre_exec(|| Ok(()));
+        }
     }
 
     let wallclock_timer = WallClockTimer::start();
@@ -125,4 +140,36 @@ pub fn execute_and_measure(
         hardware_counters,
         exit_status,
     })
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::*;
+    use crate::quantity::mebibyte;
+
+    fn peak_rss_of_true() -> f64 {
+        let measurement = execute_and_measure(Command::new("true"), false, true).unwrap();
+        measurement.memory_peak_resident.unwrap().get::<mebibyte>()
+    }
+
+    #[test]
+    fn peak_rss_excludes_memory_hyperfine_has_released() {
+        const RELEASED_MIB: usize = 64;
+        let before = peak_rss_of_true();
+
+        let mut released = vec![0u8; RELEASED_MIB << 20];
+        for page in released.chunks_mut(4096) {
+            page[0] = 1;
+        }
+        std::hint::black_box(&released);
+        drop(released);
+
+        let after = peak_rss_of_true();
+        assert!(
+            after < before + (RELEASED_MIB / 2) as f64,
+            "peak RSS of `true` grew from {} MiB to {} MiB",
+            before,
+            after
+        );
+    }
 }
