@@ -107,6 +107,19 @@ the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarke
 hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 ```
 
+### Working directory
+
+Use `--cwd DIR` to run benchmark commands from another directory. Warmup runs and
+the setup, prepare, conclude, and cleanup commands also run there.
+
+```sh
+hyperfine --cwd 'path/to/project' './benchmark'
+hyperfine --cwd 'path/to/project' --shell=none './benchmark --iterations 100'
+```
+
+Relative paths passed to `--input`, `--output`, and the export options are resolved
+from the directory where hyperfine was invoked.
+
 ### Intermediate shell
 
 By default, benchmarked commands, including warmup runs, are executed directly, without an intermediate shell (`--shell=none`).

@@ -77,6 +77,9 @@ fn run_command_and_measure_common(
     command_name: &str,
     collect_hardware_counters: bool,
 ) -> Result<Measurement> {
+    if let Some(directory) = &options.working_directory {
+        command.current_dir(directory);
+    }
     let stdin = options.command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
     command.stdin(stdin).stdout(stdout).stderr(stderr);
@@ -158,7 +161,7 @@ impl Executor for RawExecutor<'_> {
         output_policy: &CommandOutputPolicy,
     ) -> Result<Measurement> {
         run_command_and_measure_common(
-            command.get_command()?,
+            command.get_command(self.options.working_directory.as_deref())?,
             iteration,
             command_failure_action,
             self.options,

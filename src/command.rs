@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::fmt;
+use std::path::Path;
 use std::str::FromStr;
 
 use crate::parameter::tokenize::tokenize;
@@ -96,14 +97,22 @@ impl<'a> Command<'a> {
         self.replace_parameters_in(self.expression)
     }
 
-    pub fn get_command(&self) -> Result<std::process::Command> {
+    pub fn get_command(&self, working_directory: Option<&Path>) -> Result<std::process::Command> {
         let command_line = self.get_command_line();
         let mut tokens = shell_words::split(&command_line)
             .with_context(|| format!("Failed to parse command '{command_line}'"))?
             .into_iter();
 
         if let Some(program_name) = tokens.next() {
-            let mut command_builder = std::process::Command::new(program_name);
+            // Resolve explicit relative executable paths before spawning: Command::current_dir
+            // alone has platform-dependent behavior for a relative program path.
+            let program = match working_directory {
+                Some(directory) if Path::new(&program_name).components().count() > 1 => {
+                    directory.join(program_name)
+                }
+                _ => program_name.into(),
+            };
+            let mut command_builder = std::process::Command::new(program);
             command_builder.args(tokens);
             command_builder.envs(self.get_environment());
             Ok(command_builder)

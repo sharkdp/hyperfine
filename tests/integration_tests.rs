@@ -45,6 +45,77 @@ fn runs_successfully() {
 }
 
 #[test]
+fn working_directory_applies_to_benchmarks_and_hooks() {
+    let temp = tempfile::tempdir().unwrap();
+    let work = temp.path().join("working directory");
+    std::fs::create_dir(&work).unwrap();
+    std::fs::write(
+        temp.path().join("input.txt"),
+        "input from the invocation directory",
+    )
+    .unwrap();
+    hyperfine()
+        .current_dir(temp.path())
+        .args(["--cwd", "working directory", "--runs=1", "--warmup=1", "-S"])
+        .args(["--setup", "echo setup > setup.txt"])
+        .args(["--prepare", "echo prepare > prepare.txt"])
+        .args(["--conclude", "echo conclude > conclude.txt"])
+        .args(["--cleanup", "echo cleanup > cleanup.txt"])
+        .args(["--export-json", "results.json"])
+        .args(["--input", "input.txt", "--output", "./output.txt"])
+        .arg("echo benchmark > benchmark.txt")
+        .assert()
+        .success();
+    for name in ["setup", "prepare", "conclude", "cleanup", "benchmark"] {
+        let output = format!("{name}.txt");
+        assert_eq!(
+            std::fs::read_to_string(work.join(&output)).unwrap().trim(),
+            name
+        );
+        assert!(!temp.path().join(output).exists());
+    }
+    assert!(temp.path().join("results.json").is_file());
+    assert!(temp.path().join("output.txt").is_file());
+    assert!(!work.join("results.json").exists());
+}
+
+#[test]
+fn working_directory_resolves_relative_raw_executables() {
+    let temp = tempfile::tempdir().unwrap();
+    let work = temp.path().join("working directory");
+    std::fs::create_dir(&work).unwrap();
+    let executable = format!("runner{}", std::env::consts::EXE_SUFFIX);
+    std::fs::copy(
+        assert_cmd::cargo::cargo_bin!("hyperfine"),
+        work.join(&executable),
+    )
+    .unwrap();
+    hyperfine()
+        .current_dir(temp.path())
+        .args(["--cwd", "working directory", "--runs=1", "-N"])
+        .args(["--setup", "echo setup > setup.txt"])
+        .arg(format!("./{executable} --version"))
+        .assert()
+        .success();
+    assert!(work.join("setup.txt").is_file());
+}
+
+#[test]
+fn working_directory_rejects_missing_directories_and_files() {
+    let temp = tempfile::tempdir().unwrap();
+    std::fs::write(temp.path().join("file"), "").unwrap();
+    for path in ["missing", "file"] {
+        hyperfine()
+            .current_dir(temp.path())
+            .args(["--cwd", path, "echo ran > unexpected.txt"])
+            .assert()
+            .code(2)
+            .stderr(predicate::str::contains("--cwd"));
+        assert!(!temp.path().join("unexpected.txt").exists());
+    }
+}
+
+#[test]
 fn rejects_removed_reference_option_with_migration_guidance() {
     for args in [
         vec!["--reference", "echo reference", "echo comparison"],

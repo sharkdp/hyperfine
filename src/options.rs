@@ -209,6 +209,9 @@ pub struct Options {
     /// Command to run after each *batch* of benchmark runs, i.e. after each individual benchmark
     pub cleanup_command: Option<String>,
 
+    /// Absolute working directory for benchmark commands and hooks
+    pub working_directory: Option<PathBuf>,
+
     /// What color mode to use for the terminal output
     pub output_style: OutputStyleOption,
 
@@ -239,6 +242,7 @@ impl Default for Options {
             conclusion_command: None,
             setup_command: None,
             cleanup_command: None,
+            working_directory: None,
             output_style: OutputStyleOption::Full,
             executor_kind: ExecutorKind::default(),
             command_output_policies: vec![CommandOutputPolicy::Null],
@@ -253,6 +257,7 @@ impl Default for Options {
 impl Options {
     pub fn from_cli_arguments<'a>(matches: &ArgMatches) -> Result<Self, OptionsError<'a>> {
         let mut options = Self::default();
+        options.working_directory = matches.get_one::<PathBuf>("cwd").cloned();
         options.warmup_count = matches
             .get_one::<u64>("warmup")
             .copied()
