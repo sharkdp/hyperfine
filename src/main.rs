@@ -21,6 +21,7 @@ pub mod cli;
 pub mod command;
 pub mod error;
 pub mod export;
+pub mod hardware;
 pub mod metric;
 pub mod options;
 pub mod outlier_detection;
