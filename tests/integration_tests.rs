@@ -26,12 +26,17 @@ fn snapshot_settings() -> insta::Settings {
 
 fn json_snapshot_settings() -> insta::Settings {
     let mut settings = snapshot_settings();
-    for field in ["hyperfine_version", "start_time", "os", "architecture"] {
+    for field in ["hyperfine_version", "start_time"] {
         settings.add_filter(
             &format!(r#"("{field}": ")[^"]+(")"#),
             format!(r#"${{1}}[{field}]$2"#),
         );
     }
+    // Everything inside the `platform` block describes the machine that runs the
+    // benchmark: its values, and even which properties can be detected, differ
+    // between machines and operating systems. The serialized shape is covered by
+    // the `src/export/json/metadata.rs` tests instead.
+    settings.add_filter(r#"(?s)("platform": )\{.*?\n    \}"#, "$1[platform]");
     settings
 }
 

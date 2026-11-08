@@ -1,3 +1,9 @@
+# Unreleased
+
+## Features
+
+- The JSON export now describes the machine that ran the benchmark in its `metadata` block: the CPU model and physical/logical core counts, the total amount of memory, and the size and free space of the disk that backs the working directory. Properties that cannot be determined on the current platform are omitted, see #711.
+
 # v2.0.0
 
 See the breaking changes below when migrating from hyperfine 1.x.

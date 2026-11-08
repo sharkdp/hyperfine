@@ -1,6 +1,5 @@
 ---
 source: tests/integration_tests.rs
-assertion_line: 1278
 info:
   program: hyperfine
   args:
@@ -23,10 +22,7 @@ exit_code: 0
   "metadata": {
     "hyperfine_version": "[hyperfine_version]",
     "start_time": "[start_time]",
-    "platform": {
-      "os": "[os]",
-      "architecture": "[architecture]"
-    }
+    "platform": [platform]
   },
   "primary_metric": "time_wall_clock",
   "results": [

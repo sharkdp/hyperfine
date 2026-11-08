@@ -284,6 +284,12 @@ You can use the `--export-markdown <file>` option to create tables like the foll
 The JSON export includes all available metrics listed in [Choosing metrics and units](#choosing-metrics-and-units)
 for each measured run (excluding warmup runs).
 
+Every export also carries a `metadata` block that describes the benchmark and the machine it ran on:
+the hyperfine version, the benchmark start time, the operating system and architecture, the CPU model
+with its physical and logical core counts, the total amount of memory, and the size and free space of
+the disk that backs the working directory. Properties that cannot be determined on the current platform
+are omitted instead of being reported as zero, so the block can be smaller on some systems.
+
 The JSON output is useful if you want to analyze the benchmark results in more detail. The
 [`scripts/`](https://github.com/sharkdp/hyperfine/tree/master/scripts) folder includes a lot
 of helpful Python programs to further analyze benchmark results and create helpful
