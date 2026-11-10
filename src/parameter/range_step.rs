@@ -1,5 +1,5 @@
 use std::convert::TryInto;
-use std::ops::{Add, AddAssign, Div, Sub};
+use std::ops::{Add, AddAssign, Div, Rem, Sub};
 
 use crate::error::ParameterScanError;
 use crate::util::number::Number;
@@ -8,6 +8,7 @@ pub trait Numeric:
     Add<Output = Self>
     + Sub<Output = Self>
     + Div<Output = Self>
+    + Rem<Output = Self>
     + AddAssign
     + PartialOrd
     + Copy
@@ -20,6 +21,7 @@ impl<
         T: Add<Output = Self>
             + Sub<Output = Self>
             + Div<Output = Self>
+            + Rem<Output = Self>
             + AddAssign
             + PartialOrd
             + Copy
@@ -82,14 +84,22 @@ impl<T: Numeric> Iterator for RangeStep<T> {
 }
 
 fn range_step_size_hint<T: Numeric>(start: T, end: T, step: T) -> (usize, Option<usize>) {
+    if start > end {
+        return (0, Some(0));
+    }
+
     if step == T::from(0) {
         return (usize::MAX, None);
     }
 
-    let steps = (end - start + T::from(1)) / step;
+    // Remove the remainder first so Decimal division cannot round up a partial
+    // step. Count the starting value after converting the whole steps to usize.
+    let distance = end - start;
+    let steps = (distance - distance % step) / step;
     steps
         .into()
         .try_into()
+        .and_then(|u: usize| u.checked_add(1).ok_or(()))
         .map_or((usize::MAX, None), |u| (u, Some(u)))
 }
 
@@ -122,6 +132,97 @@ mod tests {
         assert_eq!(param_range.len(), 11);
         assert_eq!(param_range[0], Decimal::from(0));
         assert_eq!(param_range[10], Decimal::from(1));
+    }
+
+    #[test]
+    fn size_hint_counts_inclusive_integer_values() {
+        let mut range = RangeStep::new(0, 10, 3).unwrap();
+        for remaining in (1..=4).rev() {
+            assert_eq!(range.size_hint(), (remaining, Some(remaining)));
+            assert!(range.next().is_some());
+        }
+        assert_eq!(range.size_hint(), (0, Some(0)));
+        assert_eq!(range.next(), None);
+    }
+
+    #[test]
+    fn decimal_singleton_with_small_step_is_allowed() {
+        let range = RangeStep::new(
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::from_str("0.000001").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(range.size_hint(), (1, Some(1)));
+        assert_eq!(range.collect::<Vec<_>>(), vec![Decimal::ZERO]);
+    }
+
+    #[test]
+    fn decimal_size_hint_counts_values_not_unit_intervals() {
+        let mut range = RangeStep::new(
+            Decimal::ZERO,
+            Decimal::ONE,
+            Decimal::from_str("0.3").unwrap(),
+        )
+        .unwrap();
+        for remaining in (1..=4).rev() {
+            assert_eq!(range.size_hint(), (remaining, Some(remaining)));
+            assert!(range.next().is_some());
+        }
+        assert_eq!(range.size_hint(), (0, Some(0)));
+        assert_eq!(range.next(), None);
+    }
+
+    #[test]
+    fn parameter_limit_counts_inclusive_endpoint() {
+        let range = RangeStep::new(0, 299_997, 3).unwrap();
+        assert_eq!(range.size_hint(), (100_000, Some(100_000)));
+        assert_eq!(range.count(), 100_000);
+    }
+
+    #[test]
+    fn parameter_limit_rejects_one_too_many_values() {
+        assert!(matches!(
+            RangeStep::new(0, 300_000, 3),
+            Err(ParameterScanError::TooLarge)
+        ));
+    }
+
+    #[test]
+    fn decimal_parameter_limit_counts_inclusive_endpoint() {
+        let step = Decimal::from_str("0.000001").unwrap();
+        let range =
+            RangeStep::new(Decimal::ZERO, Decimal::from_str("0.099999").unwrap(), step).unwrap();
+        assert_eq!(range.size_hint(), (100_000, Some(100_000)));
+        assert_eq!(range.count(), 100_000);
+        assert!(matches!(
+            RangeStep::new(Decimal::ZERO, Decimal::from_str("0.1").unwrap(), step),
+            Err(ParameterScanError::TooLarge)
+        ));
+    }
+
+    #[test]
+    fn decimal_size_hint_does_not_round_up_a_partial_step() {
+        let range = RangeStep::new(
+            Decimal::ZERO,
+            Decimal::from_str("29999999999999999999999999999").unwrap(),
+            Decimal::from_str("30000000000000000000000000000").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(range.size_hint(), (1, Some(1)));
+        assert_eq!(range.count(), 1);
+    }
+
+    #[test]
+    fn decimal_parameter_limit_does_not_round_up_a_partial_step() {
+        let range = RangeStep::new(
+            Decimal::ZERO,
+            Decimal::from_str("29999999999999999999999999999").unwrap(),
+            Decimal::from_str("300000000000000000000000").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(range.size_hint(), (100_000, Some(100_000)));
+        assert_eq!(range.count(), 100_000);
     }
 
     #[test]
