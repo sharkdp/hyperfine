@@ -2,8 +2,8 @@ use std::ffi::OsString;
 
 use clap::{
     builder::styling::{AnsiColor, Effects},
-    builder::NonEmptyStringValueParser,
     builder::Styles,
+    builder::{NonEmptyStringValueParser, TypedValueParser},
     crate_version, Arg, ArgAction, ArgMatches, Command, ValueHint,
 };
 
@@ -342,6 +342,21 @@ fn build_command() -> Command {
                        all metrics for each individual run, use the JSON export format. \
                        Column names are prefixed with the metric name. \
                        Use the explicitly selected units, or base units when unspecified."),
+        )
+        .arg(
+            Arg::new("export-json-lines")
+                .long("export-json-lines")
+                .action(ArgAction::Set)
+                .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
+                .value_parser(NonEmptyStringValueParser::new().try_map(|path: String| {
+                    if path == "-" {
+                        Err("expected a file path for incremental JSON Lines output")
+                    } else {
+                        Ok(path)
+                    }
+                }))
+                .help("Write one JSON document per completed benchmark to FILE. Each line contains all runs and summary metrics for one command."),
         )
         .arg(
             Arg::new("export-json")

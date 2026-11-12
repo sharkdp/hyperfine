@@ -303,6 +303,19 @@ uvx --from 'git+https://github.com/sharkdp/hyperfine' \
 |---:|---:|
 
 
+#### JSON Lines
+
+For parameter sweeps, use `--export-json-lines results.jsonl` to write one compact
+JSON document after each completed benchmark. Each line uses the regular JSON
+schema with a single entry in `results`, including metadata, individual runs and
+summary statistics. The file is overwritten at startup and flushed after each
+record. Completed records remain available if a later command fails.
+
+```sh
+hyperfine -P threads 1 8 --env 'OMP_NUM_THREADS={threads}' \
+  --export-json-lines results.jsonl 'my_command'
+```
+
 #### CSV
 
 Use `--export-csv <file>` to export one row per command. Each metric selected by `--metrics`
