@@ -430,6 +430,7 @@ fn build_command() -> Command {
                 .action(ArgAction::Append)
                 .num_args(1)
                 .value_name("NAME")
+                .allow_hyphen_values(true)
                 .help("Give a meaningful name to a command. This can be specified multiple times \
                        if several commands are benchmarked."),
         )
