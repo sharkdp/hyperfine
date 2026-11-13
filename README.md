@@ -303,6 +303,8 @@ uvx --from 'git+https://github.com/sharkdp/hyperfine' \
 |---:|---:|
 
 
+For workloads with multiple requests per process, see [Measuring latency inside a session](doc/session-latency.md).
+
 #### CSV
 
 Use `--export-csv <file>` to export one row per command. Each metric selected by `--metrics`

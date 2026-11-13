@@ -135,7 +135,10 @@ jobs:
 
     - name: Build
       shell: bash
-      run: $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
+      # Use a package-owned path instead of Cargo's internal build-script directory.
+      run: >
+        $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
+        --config 'env.SHELL_COMPLETIONS_DIR="target/completions"'
 
     - name: Set binary name & path
       id: bin
@@ -192,10 +195,10 @@ jobs:
         cp 'doc/${{ needs.crate_metadata.outputs.name }}.1' "$ARCHIVE_DIR"
 
         # Autocompletion files
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.bash' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.fish' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}.ps1' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/completions/${{ needs.crate_metadata.outputs.name }}.bash' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/completions/${{ needs.crate_metadata.outputs.name }}.fish' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/completions/_${{ needs.crate_metadata.outputs.name }}.ps1' "$ARCHIVE_DIR/autocomplete/"
+        cp 'target/completions/_${{ needs.crate_metadata.outputs.name }}' "$ARCHIVE_DIR/autocomplete/"
 
         # base compressed package
         pushd "${PKG_STAGING}/" >/dev/null
@@ -245,9 +248,9 @@ jobs:
         gzip -n --best "${DPKG_DIR}/usr/share/man/man1/${{ needs.crate_metadata.outputs.name }}.1"
 
         # Autocompletion files
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.bash' "${DPKG_DIR}/usr/share/bash-completion/completions/${{ needs.crate_metadata.outputs.name }}"
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.fish' "${DPKG_DIR}/usr/share/fish/vendor_completions.d/${{ needs.crate_metadata.outputs.name }}.fish"
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}' "${DPKG_DIR}/usr/share/zsh/vendor-completions/_${{ needs.crate_metadata.outputs.name }}"
+        install -Dm644 'target/completions/${{ needs.crate_metadata.outputs.name }}.bash' "${DPKG_DIR}/usr/share/bash-completion/completions/${{ needs.crate_metadata.outputs.name }}"
+        install -Dm644 'target/completions/${{ needs.crate_metadata.outputs.name }}.fish' "${DPKG_DIR}/usr/share/fish/vendor_completions.d/${{ needs.crate_metadata.outputs.name }}.fish"
+        install -Dm644 'target/completions/_${{ needs.crate_metadata.outputs.name }}' "${DPKG_DIR}/usr/share/zsh/vendor-completions/_${{ needs.crate_metadata.outputs.name }}"
 
         # README and LICENSE
         install -Dm644 "README.md" "${DPKG_DIR}/usr/share/doc/${DPKG_BASENAME}/README.md"
