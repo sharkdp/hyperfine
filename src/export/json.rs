@@ -64,17 +64,16 @@ pub struct JsonExporter {
     metadata: Metadata,
 }
 
-impl Exporter for JsonExporter {
-    fn serialize(
-        &self,
-        results: &[BenchmarkResult],
+impl JsonExporter {
+    fn summary<'a>(
+        &'a self,
+        results: &'a [BenchmarkResult],
         metrics: &[MetricSelection],
-    ) -> Result<Vec<u8>> {
-        let primary = metrics[0];
-        let mut output = to_vec_pretty(&HyperfineSummary {
+    ) -> HyperfineSummary<'a> {
+        HyperfineSummary {
             schema_version: JSON_SCHEMA_VERSION,
             metadata: &self.metadata,
-            primary_metric: primary.metric.name(),
+            primary_metric: metrics[0].metric.name(),
             results: results
                 .iter()
                 .map(|result| JsonBenchmarkResult {
@@ -90,7 +89,32 @@ impl Exporter for JsonExporter {
                         .collect(),
                 })
                 .collect(),
-        })?;
+        }
+    }
+
+    pub(super) fn write_line(
+        &self,
+        writer: &mut impl std::io::Write,
+        result: &BenchmarkResult,
+        metrics: &[MetricSelection],
+    ) -> Result<()> {
+        serde_json::to_writer(
+            &mut *writer,
+            &self.summary(std::slice::from_ref(result), metrics),
+        )?;
+        writer.write_all(b"\n")?;
+        writer.flush()?;
+        Ok(())
+    }
+}
+
+impl Exporter for JsonExporter {
+    fn serialize(
+        &self,
+        results: &[BenchmarkResult],
+        metrics: &[MetricSelection],
+    ) -> Result<Vec<u8>> {
+        let mut output = to_vec_pretty(&self.summary(results, metrics))?;
         output.push(b'\n');
         Ok(output)
     }

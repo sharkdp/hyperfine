@@ -1387,3 +1387,42 @@ fn json_export_parameterized_with_reference() {
         "sleep {duration}",
     ]));
 }
+
+#[test]
+fn json_lines_preserves_completed_results_after_failure() {
+    let directory = tempfile::tempdir().unwrap();
+    let lines_path = directory.path().join("results.jsonl");
+    let json_path = directory.path().join("results.json");
+    std::fs::write(&lines_path, "previous run\n").unwrap();
+
+    hyperfine()
+        .args(["--style=none", "--runs=2", "--export-json-lines"])
+        .arg(&lines_path)
+        .arg("--export-json")
+        .arg(&json_path)
+        .args(["echo one", "echo two", "missing-hyperfine-test-command"])
+        .assert()
+        .failure();
+
+    let snapshot: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(json_path).unwrap()).unwrap();
+    let data = std::fs::read_to_string(lines_path).unwrap();
+    assert!(data.ends_with('\n'));
+    let records: Vec<serde_json::Value> = data
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(records.len(), 2);
+    for (i, record) in records.iter().enumerate() {
+        assert_eq!(record["schema_version"], snapshot["schema_version"]);
+        assert_eq!(record["primary_metric"], snapshot["primary_metric"]);
+        assert_eq!(
+            record["metadata"]["platform"],
+            snapshot["metadata"]["platform"]
+        );
+        assert_eq!(
+            record["results"],
+            serde_json::json!([snapshot["results"][i]])
+        );
+    }
+}

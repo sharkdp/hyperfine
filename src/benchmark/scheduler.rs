@@ -11,7 +11,7 @@ use anyhow::Result;
 pub struct Scheduler<'a> {
     commands: &'a Commands<'a>,
     options: &'a Options,
-    export_manager: &'a ExportManager,
+    export_manager: &'a mut ExportManager,
     results: Vec<BenchmarkResult>,
 }
 
@@ -19,7 +19,7 @@ impl<'a> Scheduler<'a> {
     pub fn new(
         commands: &'a Commands,
         options: &'a Options,
-        export_manager: &'a ExportManager,
+        export_manager: &'a mut ExportManager,
     ) -> Self {
         Self {
             commands,
@@ -39,9 +39,15 @@ impl<'a> Scheduler<'a> {
         executor.calibrate()?;
 
         for (number, cmd) in self.commands.iter().enumerate() {
-            self.results.push(
-                Benchmark::new(number, cmd, self.options, &*executor).run(self.results.first())?,
-            );
+            let result =
+                Benchmark::new(number, cmd, self.options, &*executor).run(self.results.first())?;
+            self.export_manager.write_json_line(&result)?;
+            // JSON Lines already flushed this result. Subsequent comparisons
+            // only need the first benchmark, unless a snapshot is also requested.
+            if number > 0 && self.export_manager.streams_json_lines_only() {
+                continue;
+            }
+            self.results.push(result);
 
             // We export results after each individual benchmark, because
             // we would risk losing them if a later benchmark fails.
@@ -69,11 +75,11 @@ fn generate_results(args: &[&'static str]) -> Result<Vec<BenchmarkResult>> {
     assert_eq!(options.executor_kind, ExecutorKind::Mock(None));
 
     let commands = Commands::from_cli_arguments(&cli_arguments)?;
-    let export_manager = ExportManager::from_cli_arguments(&cli_arguments, &options.metrics)?;
+    let mut export_manager = ExportManager::from_cli_arguments(&cli_arguments, &options.metrics)?;
 
     options.validate_against_command_list(&commands)?;
 
-    let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
+    let mut scheduler = Scheduler::new(&commands, &options, &mut export_manager);
 
     scheduler.run_benchmarks()?;
     Ok(scheduler.results)

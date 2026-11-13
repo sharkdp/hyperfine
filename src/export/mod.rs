@@ -65,6 +65,7 @@ struct ExporterWithTarget {
 /// Handles the management of multiple file exporters.
 pub struct ExportManager {
     exporters: Vec<ExporterWithTarget>,
+    json_lines: Option<(JsonExporter, io::BufWriter<File>)>,
     metrics: Vec<MetricSelection>,
 }
 
@@ -74,6 +75,7 @@ impl ExportManager {
     pub fn from_cli_arguments(matches: &ArgMatches, metrics: &[MetricSelection]) -> Result<Self> {
         let mut export_manager = Self {
             exporters: vec![],
+            json_lines: None,
             metrics: metrics.to_vec(),
         };
         {
@@ -88,6 +90,11 @@ impl ExportManager {
             add_exporter("export-csv", ExportType::Csv)?;
             add_exporter("export-markdown", ExportType::Markdown)?;
             add_exporter("export-orgmode", ExportType::Orgmode)?;
+        }
+        if let Some(path) = matches.get_one::<String>("export-json-lines") {
+            let file = File::create(path)
+                .with_context(|| format!("Could not create JSON Lines file '{path}'"))?;
+            export_manager.json_lines = Some((JsonExporter::default(), io::BufWriter::new(file)));
         }
         Ok(export_manager)
     }
@@ -113,6 +120,19 @@ impl ExportManager {
             },
         });
 
+        Ok(())
+    }
+
+    pub fn streams_json_lines_only(&self) -> bool {
+        self.json_lines.is_some() && self.exporters.is_empty()
+    }
+
+    pub fn write_json_line(&mut self, result: &BenchmarkResult) -> Result<()> {
+        if let Some((exporter, writer)) = &mut self.json_lines {
+            exporter
+                .write_line(writer, result, &self.metrics)
+                .context("Failed to write JSON Lines record")?;
+        }
         Ok(())
     }
 

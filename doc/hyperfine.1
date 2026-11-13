@@ -42,6 +42,8 @@ hyperfine \- command\-line benchmarking tool
 .IR FILE ]
 .RB [ \-\-export\-json
 .IR FILE ]
+.RB [ \-\-export\-json\-lines
+.IR FILE ]
 .RB [ \-\-export\-markdown
 .IR FILE ]
 .RB [ \-\-export\-orgmode
@@ -288,6 +290,11 @@ or base units (seconds, bytes, or unscaled counts) when omitted.
 Export summary statistics and individual samples for all collected metrics as
 JSON to the given \fIFILE\fP. Include the primary metric, and always use base
 units (seconds, bytes, or unscaled counts), regardless of display settings.
+.HP
+\fB\-\-export\-json\-lines\fR \fIFILE\fP
+.IP
+Write one compact JSON document to the given file after each completed benchmark.
+Each record uses the JSON export schema and contains one result.
 .HP
 \fB\-\-export\-markdown\fR \fIFILE\fP
 .IP

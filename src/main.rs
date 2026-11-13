@@ -70,9 +70,9 @@ fn run() -> Result<()> {
         }
     }
 
-    let export_manager = ExportManager::from_cli_arguments(&cli_arguments, &options.metrics)?;
+    let mut export_manager = ExportManager::from_cli_arguments(&cli_arguments, &options.metrics)?;
 
-    let mut scheduler = Scheduler::new(&commands, &options, &export_manager);
+    let mut scheduler = Scheduler::new(&commands, &options, &mut export_manager);
     scheduler.run_benchmarks()?;
     scheduler.final_export()?;
 
