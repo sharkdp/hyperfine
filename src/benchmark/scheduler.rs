@@ -42,6 +42,11 @@ impl<'a> Scheduler<'a> {
             let result =
                 Benchmark::new(number, cmd, self.options, &*executor).run(self.results.first())?;
             self.export_manager.write_json_line(&result)?;
+            // JSON Lines already flushed this result. Subsequent comparisons
+            // only need the first benchmark, unless a snapshot is also requested.
+            if number > 0 && self.export_manager.streams_json_lines_only() {
+                continue;
+            }
             self.results.push(result);
 
             // We export results after each individual benchmark, because

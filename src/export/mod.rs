@@ -123,6 +123,10 @@ impl ExportManager {
         Ok(())
     }
 
+    pub fn streams_json_lines_only(&self) -> bool {
+        self.json_lines.is_some() && self.exporters.is_empty()
+    }
+
     pub fn write_json_line(&mut self, result: &BenchmarkResult) -> Result<()> {
         if let Some((exporter, writer)) = &mut self.json_lines {
             exporter
