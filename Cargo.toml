@@ -2,7 +2,6 @@
 authors = ["David Peter <mail@david-peter.de>"]
 categories = ["command-line-utilities"]
 description = "A command-line benchmarking tool"
-homepage = "https://github.com/sharkdp/hyperfine"
 license = "MIT OR Apache-2.0"
 name = "hyperfine"
 readme = "README.md"
