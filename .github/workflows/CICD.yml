@@ -28,7 +28,7 @@ jobs:
             "name=" + .name,
             "version=" + .version,
             "maintainer=" + (.authors[0] // ""),
-            "homepage=" + (.homepage // ""),
+            "homepage=" + (.homepage // .repository // ""),
             "msrv=" + (.rust_version // ""),
             "bin-name=" + ( (.targets[] | select(.kind[0] == "bin") | .name) // .name )
           ] |
