@@ -192,10 +192,16 @@ jobs:
         cp 'doc/${{ needs.crate_metadata.outputs.name }}.1' "$ARCHIVE_DIR"
 
         # Autocompletion files
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.bash' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.fish' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}.ps1' "$ARCHIVE_DIR/autocomplete/"
-        cp 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}' "$ARCHIVE_DIR/autocomplete/"
+        for completion in '${{ needs.crate_metadata.outputs.name }}.bash' '${{ needs.crate_metadata.outputs.name }}.fish' '_${{ needs.crate_metadata.outputs.name }}.ps1' '_${{ needs.crate_metadata.outputs.name }}'; do
+          # Cargo supports both nested and legacy build-script output layouts.
+          for generated in target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}/*/out/"$completion" target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}*/out/"$completion"; do
+            if [ -f "$generated" ]; then
+              cp "$generated" "$ARCHIVE_DIR/autocomplete/"
+              break
+            fi
+          done
+          test -f "$ARCHIVE_DIR/autocomplete/$completion"
+        done
 
         # base compressed package
         pushd "${PKG_STAGING}/" >/dev/null
