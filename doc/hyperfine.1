@@ -7,6 +7,7 @@ hyperfine \- command\-line benchmarking tool
 .RB [ \-\-ignore\-failure[=MODE] ]
 .RB [ \-\-warmup
 .IR NUM ]
+.RB [ \-\-interleave ]
 .RB [ \-\-min\-runs
 .IR NUM ]
 .RB [ \-\-max\-runs
@@ -86,6 +87,17 @@ A command\-line benchmarking tool which includes:
 .IP
 Perform \fINUM\fP warmup runs before the actual benchmark. This can be used
 to fill (disk) caches for I/O\-heavy programs.
+.HP
+\fB\-\-interleave\fR
+.IP
+Alternate measured runs across commands in round\-robin order. Each command
+keeps its own run count and leaves the rotation when complete. Setup and
+warmup runs precede its first measurement; cleanup follows its last.
+Prepare and conclude hooks surround every run. Setup resources can coexist:
+use \fB\-\-prepare\fR for state that must change on each switch, such as
+selecting a Git branch. Interleaving can change cache behavior.
+Reports and exports remain in command order. File exports preserve successful
+partial measurements if a command fails.
 .HP
 \fB\-m\fR, \fB\-\-min\-runs\fR \fINUM\fP
 .IP

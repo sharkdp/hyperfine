@@ -4,6 +4,7 @@ See the breaking changes below when migrating from hyperfine 1.x.
 
 ## Features
 
+- Add `--interleave` to alternate measured runs across commands in round-robin order, with independent run counts, lifecycle hooks and partial exports on failure.
 - Add support for alternative performance metrics (peak memory usage, instructions, CPU cycles, cache misses, branch misses, ...). By default, hyperfine will now display wall-clock time and peak memory usage, but users can use the [new `--metrics` option](README.md#choosing-metrics-and-units) to select different performance metrics. The terminal output now shows an overview of all selected performance metrics, including relative changes.
 - Add `--env` to set environment variables even without an intermediate shell (which is the new default behavior, see below). For example:
 

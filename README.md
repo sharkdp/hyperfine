@@ -107,6 +107,27 @@ the zero-based `$HYPERFINE_ITERATION` environment variable inside the benchmarke
 hyperfine -S 'my-command > output-${HYPERFINE_ITERATION}.log'
 ```
 
+### Interleaved benchmarks
+
+Use `--interleave` to alternate measured runs across commands in round-robin order:
+
+```sh
+hyperfine --interleave --runs 20 './implementation-a' './implementation-b'
+```
+
+This measures A, B, A, B, and so on, spreading slow changes in machine load or thermal
+throttling across the commands being compared. Each command retains its own adaptive run
+count unless `--runs` sets an exact count. Commands that finish their required runs leave
+the rotation. Reports and exports stay in command order, with the first command as reference.
+
+Each command's setup and warmup runs occur before its first measurement. Prepare and
+conclude hooks surround every run, and cleanup runs immediately after that command's final
+measurement. Setup resources for multiple commands can therefore coexist. Put work that
+must happen on every switch, such as selecting a Git branch, in `--prepare`.
+Interleaving can change cache behavior compared with running each command's measurements
+consecutively. If a command fails, file exports retain the successful measurements collected
+so far; their sample counts may be below the requested counts.
+
 ### Intermediate shell
 
 By default, benchmarked commands, including warmup runs, are executed directly, without an intermediate shell (`--shell=none`).
