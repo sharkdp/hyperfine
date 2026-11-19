@@ -193,14 +193,16 @@ jobs:
 
         # Autocompletion files
         for completion in '${{ needs.crate_metadata.outputs.name }}.bash' '${{ needs.crate_metadata.outputs.name }}.fish' '_${{ needs.crate_metadata.outputs.name }}.ps1' '_${{ needs.crate_metadata.outputs.name }}'; do
+          completion_found=false
           # Cargo supports both nested and legacy build-script output layouts.
           for generated in target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}/*/out/"$completion" target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}*/out/"$completion"; do
             if [ -f "$generated" ]; then
               cp "$generated" "$ARCHIVE_DIR/autocomplete/"
+              completion_found=true
               break
             fi
           done
-          test -f "$ARCHIVE_DIR/autocomplete/$completion"
+          test "$completion_found" = true
         done
 
         # base compressed package
