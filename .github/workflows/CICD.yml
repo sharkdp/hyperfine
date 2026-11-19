@@ -215,6 +215,7 @@ jobs:
 
         # Let subsequent steps know where to find the compressed package
         echo "PKG_PATH=${PKG_STAGING}/${PKG_NAME}" >> $GITHUB_OUTPUT
+        echo "COMPLETIONS_DIR=${ARCHIVE_DIR}autocomplete" >> $GITHUB_OUTPUT
 
     - name: Create Debian package
       id: debian-package
@@ -253,9 +254,9 @@ jobs:
         gzip -n --best "${DPKG_DIR}/usr/share/man/man1/${{ needs.crate_metadata.outputs.name }}.1"
 
         # Autocompletion files
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.bash' "${DPKG_DIR}/usr/share/bash-completion/completions/${{ needs.crate_metadata.outputs.name }}"
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'${{ needs.crate_metadata.outputs.name }}.fish' "${DPKG_DIR}/usr/share/fish/vendor_completions.d/${{ needs.crate_metadata.outputs.name }}.fish"
-        install -Dm644 'target/${{ matrix.job.target }}/release/build/${{ needs.crate_metadata.outputs.name }}'*/out/'_${{ needs.crate_metadata.outputs.name }}' "${DPKG_DIR}/usr/share/zsh/vendor-completions/_${{ needs.crate_metadata.outputs.name }}"
+        install -Dm644 '${{ steps.package.outputs.COMPLETIONS_DIR }}/${{ needs.crate_metadata.outputs.name }}.bash' "${DPKG_DIR}/usr/share/bash-completion/completions/${{ needs.crate_metadata.outputs.name }}"
+        install -Dm644 '${{ steps.package.outputs.COMPLETIONS_DIR }}/${{ needs.crate_metadata.outputs.name }}.fish' "${DPKG_DIR}/usr/share/fish/vendor_completions.d/${{ needs.crate_metadata.outputs.name }}.fish"
+        install -Dm644 '${{ steps.package.outputs.COMPLETIONS_DIR }}/_${{ needs.crate_metadata.outputs.name }}' "${DPKG_DIR}/usr/share/zsh/vendor-completions/_${{ needs.crate_metadata.outputs.name }}"
 
         # README and LICENSE
         install -Dm644 "README.md" "${DPKG_DIR}/usr/share/doc/${DPKG_BASENAME}/README.md"
