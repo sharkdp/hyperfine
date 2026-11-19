@@ -1387,3 +1387,134 @@ fn json_export_parameterized_with_reference() {
         "sleep {duration}",
     ]));
 }
+
+#[test]
+fn interleaving_preserves_exported_measurements_and_statistics() {
+    let mut results = Vec::new();
+    for interleave in [false, true] {
+        let mut cmd = hyperfine();
+        cmd.args([
+            "--debug-mode",
+            "--style=none",
+            "--export-json=-",
+            "--min-runs=2",
+            "--min-benchmarking-time=1",
+            "--warmup=1",
+            "-L",
+            "duration",
+            "0.1,0.25",
+            "--command-name=wait {duration}",
+            "--env=DELAY={duration}",
+            "sleep {duration}",
+        ]);
+        if interleave {
+            cmd.arg("--interleave");
+        }
+        let output = cmd.assert().success().get_output().stdout.clone();
+        let json: serde_json::Value = serde_json::from_slice(&output).unwrap();
+        results.push(json["results"].clone());
+    }
+    assert_eq!(results[0], results[1]);
+    assert_eq!(results[1][0]["measurements"].as_array().unwrap().len(), 10);
+    assert_eq!(results[1][1]["measurements"].as_array().unwrap().len(), 4);
+}
+
+#[test]
+fn interleaved_failure_exports_successful_partial_measurements() {
+    for fail_first_run in [false, true] {
+        let tempdir = tempfile::tempdir().unwrap();
+        let path = tempdir.path().join("results.json");
+        let failing_command = if fail_first_run {
+            "exit 7"
+        } else if cfg!(windows) {
+            "if %HYPERFINE_ITERATION%==1 (exit /b 7) else (echo ok)"
+        } else {
+            "if [ \"$HYPERFINE_ITERATION\" = 1 ]; then exit 7; fi"
+        };
+
+        hyperfine()
+            .args([
+                "-S",
+                "--interleave",
+                "--style=none",
+                "--runs=3",
+                "--export-json",
+            ])
+            .arg(&path)
+            .args(["echo first", failing_command])
+            .assert()
+            .failure()
+            .stderr(predicate::str::contains("non-zero exit code 7"));
+
+        let json: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        let results = json["results"].as_array().unwrap();
+        assert_eq!(results.len(), if fail_first_run { 1 } else { 2 });
+        assert_eq!(results[0]["command"], "echo first");
+        assert_eq!(
+            results[0]["measurements"].as_array().unwrap().len(),
+            if fail_first_run { 1 } else { 2 }
+        );
+        if !fail_first_run {
+            assert_eq!(results[1]["measurements"].as_array().unwrap().len(), 1);
+        }
+    }
+}
+
+#[test]
+fn interleaved_ignored_failures_preserve_exit_codes() {
+    let output = hyperfine()
+        .args([
+            "-S",
+            "--interleave",
+            "--style=none",
+            "--runs=2",
+            "--ignore-failure",
+            "--export-json=-",
+            "exit 7",
+            "exit 0",
+        ])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let json: serde_json::Value = serde_json::from_slice(&output).unwrap();
+    for (number, &exit_code) in [7, 0].iter().enumerate() {
+        let measurements = json["results"][number]["measurements"].as_array().unwrap();
+        assert_eq!(measurements.len(), 2);
+        for measurement in measurements {
+            assert_eq!(measurement["exit_code"], exit_code);
+        }
+    }
+}
+
+#[test]
+fn interleaved_completed_benchmarks_are_exported_before_later_commands_run() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("results.json");
+    let check_export = if cfg!(windows) {
+        format!("findstr measurements \"{}\"", path.display())
+    } else {
+        format!(
+            "grep -q measurements {}",
+            shell_words::quote(&path.to_string_lossy())
+        )
+    };
+
+    hyperfine()
+        .args([
+            "-S",
+            "--interleave",
+            "--style=none",
+            "--runs=1",
+            "--export-json",
+        ])
+        .arg(&path)
+        .args(["echo first", &check_export])
+        .assert()
+        .success();
+
+    let json: serde_json::Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+    assert_eq!(json["results"].as_array().unwrap().len(), 2);
+}

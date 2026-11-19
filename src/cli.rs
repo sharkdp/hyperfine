@@ -104,6 +104,14 @@ fn build_command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("interleave")
+                .long("interleave")
+                .action(ArgAction::SetTrue)
+                .help("Alternate measured runs across commands in round-robin order. Each command \
+                       keeps its own run count. Setup and warmups precede its first measurement; \
+                       cleanup follows its last. Results remain in command order."),
+        )
+        .arg(
             Arg::new("min-runs")
                 .long("min-runs")
                 .short('m')

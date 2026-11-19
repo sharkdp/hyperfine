@@ -120,6 +120,85 @@ fn benchmarks_are_executed_sequentially() {
 }
 
 #[test]
+fn benchmarks_can_be_interleaved() {
+    ExecutionOrderTest::new()
+        .arg("--interleave")
+        .arg("--runs=3")
+        .command("command 1")
+        .command("command 2")
+        .command("command 3")
+        .expect_output("command 1")
+        .expect_output("command 2")
+        .expect_output("command 3")
+        .expect_output("command 1")
+        .expect_output("command 2")
+        .expect_output("command 3")
+        .expect_output("command 1")
+        .expect_output("command 2")
+        .expect_output("command 3")
+        .run();
+}
+
+#[test]
+fn interleaved_benchmarks_preserve_lifecycle_hooks() {
+    ExecutionOrderTest::new()
+        .arg("--interleave")
+        .arg("--runs=2")
+        .arg("--warmup=1")
+        .setup("setup {name}")
+        .prepare("prepare {name}")
+        .conclude("conclude {name}")
+        .cleanup("cleanup {name}")
+        .arg("-L")
+        .arg("name")
+        .arg("a,b")
+        .command("{name}")
+        // Each command warms up before its first measurement.
+        .expect_output("setup a")
+        .expect_output("prepare a")
+        .expect_output("a")
+        .expect_output("conclude a")
+        .expect_output("prepare a")
+        .expect_output("a")
+        .expect_output("conclude a")
+        .expect_output("setup b")
+        .expect_output("prepare b")
+        .expect_output("b")
+        .expect_output("conclude b")
+        .expect_output("prepare b")
+        .expect_output("b")
+        .expect_output("conclude b")
+        // The remaining measurements alternate, with cleanup after each last run.
+        .expect_output("prepare a")
+        .expect_output("a")
+        .expect_output("conclude a")
+        .expect_output("cleanup a")
+        .expect_output("prepare b")
+        .expect_output("b")
+        .expect_output("conclude b")
+        .expect_output("cleanup b")
+        .run();
+}
+
+#[test]
+fn interleaved_single_run_cleans_up_before_starting_next_command() {
+    ExecutionOrderTest::new()
+        .arg("--interleave")
+        .arg("--runs=1")
+        .setup("setup")
+        .cleanup("cleanup")
+        .command("a")
+        .command("b")
+        .expect_output("setup")
+        .expect_output("a")
+        .expect_output("cleanup")
+        .expect_output("setup")
+        .expect_output("b")
+        .expect_output("cleanup")
+        .run();
+}
+
+#[test]
 fn warmup_runs_are_executed_before_benchmarking_runs() {
     ExecutionOrderTest::new()
         .arg("--runs=2")

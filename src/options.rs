@@ -191,6 +191,9 @@ pub struct Options {
     /// Number of warmup runs
     pub warmup_count: u64,
 
+    /// Alternate measurements across commands in round-robin order.
+    pub interleave: bool,
+
     /// Minimum benchmarking time
     pub min_benchmarking_time: Time,
 
@@ -233,6 +236,7 @@ impl Default for Options {
         Options {
             run_bounds: RunBounds::default(),
             warmup_count: 0,
+            interleave: false,
             min_benchmarking_time: Time::new::<second>(3.0),
             command_failure_action: CmdFailureAction::RaiseError,
             preparation_command: None,
@@ -253,6 +257,7 @@ impl Default for Options {
 impl Options {
     pub fn from_cli_arguments<'a>(matches: &ArgMatches) -> Result<Self, OptionsError<'a>> {
         let mut options = Self::default();
+        options.interleave = matches.get_flag("interleave");
         options.warmup_count = matches
             .get_one::<u64>("warmup")
             .copied()

@@ -25,12 +25,14 @@ use benchmark_result::BenchmarkResult;
 
 use anyhow::{anyhow, ensure, Result};
 use colored::*;
+use indicatif::ProgressBar;
 
 use self::executor::Executor;
 
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Time = const_time_from_seconds(0.005);
 
+#[derive(Clone, Copy)]
 pub struct Benchmark<'a> {
     number: usize,
     command: &'a Command<'a>,
@@ -158,6 +160,14 @@ impl<'a> Benchmark<'a> {
 
     /// Run the benchmark for a single command
     pub fn run(&self, reference: Option<&BenchmarkResult>) -> Result<BenchmarkResult> {
+        let mut run = self.start()?;
+        while !run.is_complete() {
+            run.step()?;
+        }
+        run.finish(reference)
+    }
+
+    pub(super) fn start(&self) -> Result<BenchmarkRun<'a>> {
         let mut measurements = Measurements::default();
 
         let output_policy = &self.options.command_output_policies[self.number];
@@ -214,7 +224,9 @@ impl<'a> Benchmark<'a> {
 
         // Warmup phase
         if self.options.warmup_count > 0 {
-            let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
+            let progress_bar = if self.options.output_style != OutputStyleOption::Disabled
+                && !self.options.interleave
+            {
                 Some(get_progress_bar(
                     self.options.warmup_count,
                     "Performing warmup runs",
@@ -248,7 +260,9 @@ impl<'a> Benchmark<'a> {
         }
 
         // Set up progress bar (and spinner for initial measurement)
-        let progress_bar = if self.options.output_style != OutputStyleOption::Disabled {
+        let progress_bar = if self.options.output_style != OutputStyleOption::Disabled
+            && !self.options.interleave
+        {
             Some(get_progress_bar(
                 self.options.run_bounds.min,
                 if preparation_command.is_some() {
@@ -283,7 +297,7 @@ impl<'a> Benchmark<'a> {
             output_policy,
         )?;
         self.validate_measurement(&measurement)?;
-        let mut all_succeeded = measurement.exit_status.success();
+        let all_succeeded = measurement.exit_status.success();
 
         if let Some(bar) = progress_bar.as_ref() {
             let primary = self.options.metrics[0];
@@ -316,11 +330,9 @@ impl<'a> Benchmark<'a> {
                 .unwrap_or(min)
         };
 
-        let count_remaining = count - 1;
-
         // Save the first result
         let primary = self.options.metrics[0];
-        let mut primary_total = primary.metric.value(&measurement).unwrap();
+        let primary_total = primary.metric.value(&measurement).unwrap();
         measurements.push(measurement);
 
         // Re-configure the progress bar
@@ -329,43 +341,27 @@ impl<'a> Benchmark<'a> {
             bar.inc(1);
         }
 
-        // Gather statistics (perform the actual benchmark)
-        for i in 0..count_remaining {
-            let benchmark_iteration = BenchmarkIteration::Benchmark(i + 1);
+        Ok(BenchmarkRun {
+            benchmark: *self,
+            measurements,
+            count,
+            primary_total,
+            all_succeeded,
+            preparation_command,
+            conclusion_command,
+            progress_bar,
+            cleaned_up: false,
+        })
+    }
 
-            if let Some(bar) = progress_bar.as_ref() {
-                let mean = primary_total / measurements.len() as f64;
-                bar.set_message(format!(
-                    "Current estimate: {}",
-                    primary.display_unit(mean).format(mean).green()
-                ));
-            }
-
-            run_preparation_command(benchmark_iteration)?;
-
-            let measurement = self.executor.run_command_and_measure(
-                self.command,
-                benchmark_iteration,
-                None,
-                output_policy,
-            )?;
-            self.validate_measurement(&measurement)?;
-            let success = measurement.exit_status.success();
-            primary_total += primary.metric.value(&measurement).unwrap();
-            measurements.push(measurement);
-
-            all_succeeded = all_succeeded && success;
-
-            if let Some(bar) = progress_bar.as_ref() {
-                bar.inc(1)
-            }
-
-            run_conclusion_command(benchmark_iteration)?;
-        }
-
-        if let Some(bar) = progress_bar.as_ref() {
-            bar.finish_and_clear()
-        }
+    fn finish(
+        &self,
+        measurements: Measurements,
+        all_succeeded: bool,
+        cleanup: bool,
+        reference: Option<&BenchmarkResult>,
+    ) -> Result<BenchmarkResult> {
+        let primary = self.options.metrics[0];
 
         if self.options.output_style != OutputStyleOption::Disabled {
             report::print(
@@ -435,13 +431,22 @@ impl<'a> Benchmark<'a> {
             console_writeln!(io::stdout(), " ")?;
         }
 
-        self.run_cleanup_command(self.command.get_parameters().iter().cloned(), output_policy)?;
+        if cleanup {
+            self.run_cleanup_command(
+                self.command.get_parameters().iter().cloned(),
+                &self.options.command_output_policies[self.number],
+            )?;
+        }
 
+        Ok(self.result(measurements))
+    }
+
+    fn result(&self, measurements: Measurements) -> BenchmarkResult {
         let command = self.command.get_command_line();
         let name = self.command.get_name();
         let name = (name != command).then_some(name);
 
-        Ok(BenchmarkResult {
+        BenchmarkResult {
             command,
             name,
             environment: self
@@ -464,6 +469,95 @@ impl<'a> Benchmark<'a> {
                     )
                 })
                 .collect(),
-        })
+        }
+    }
+}
+
+pub(super) struct BenchmarkRun<'a> {
+    benchmark: Benchmark<'a>,
+    measurements: Measurements,
+    count: u64,
+    primary_total: f64,
+    all_succeeded: bool,
+    preparation_command: Option<Command<'a>>,
+    conclusion_command: Option<Command<'a>>,
+    progress_bar: Option<ProgressBar>,
+    cleaned_up: bool,
+}
+
+impl BenchmarkRun<'_> {
+    pub(super) fn is_complete(&self) -> bool {
+        self.measurements.len() as u64 >= self.count
+    }
+
+    pub(super) fn total_runs(&self) -> u64 {
+        self.count
+    }
+
+    pub(super) fn step(&mut self) -> Result<()> {
+        let benchmark = &self.benchmark;
+        let output_policy = &benchmark.options.command_output_policies[benchmark.number];
+        let iteration = BenchmarkIteration::Benchmark(self.measurements.len() as u64);
+        let primary = benchmark.options.metrics[0];
+
+        if let Some(bar) = &self.progress_bar {
+            let mean = self.primary_total / self.measurements.len() as f64;
+            bar.set_message(format!(
+                "Current estimate: {}",
+                primary.display_unit(mean).format(mean).green()
+            ));
+        }
+
+        if let Some(command) = &self.preparation_command {
+            benchmark.run_preparation_command(command, output_policy, iteration)?;
+        }
+
+        let measurement = benchmark.executor.run_command_and_measure(
+            benchmark.command,
+            iteration,
+            None,
+            output_policy,
+        )?;
+        benchmark.validate_measurement(&measurement)?;
+        self.all_succeeded &= measurement.exit_status.success();
+        self.primary_total += primary.metric.value(&measurement).unwrap();
+        self.measurements.push(measurement);
+
+        if let Some(bar) = &self.progress_bar {
+            bar.inc(1);
+        }
+
+        if let Some(command) = &self.conclusion_command {
+            benchmark.run_conclusion_command(command, output_policy, iteration)?;
+        }
+
+        Ok(())
+    }
+
+    pub(super) fn cleanup(&mut self) -> Result<()> {
+        if !self.cleaned_up {
+            self.benchmark.run_cleanup_command(
+                self.benchmark.command.get_parameters().iter().cloned(),
+                &self.benchmark.options.command_output_policies[self.benchmark.number],
+            )?;
+            self.cleaned_up = true;
+        }
+        Ok(())
+    }
+
+    pub(super) fn result(&self) -> BenchmarkResult {
+        self.benchmark.result(self.measurements.clone())
+    }
+
+    pub(super) fn finish(self, reference: Option<&BenchmarkResult>) -> Result<BenchmarkResult> {
+        if let Some(bar) = &self.progress_bar {
+            bar.finish_and_clear();
+        }
+        self.benchmark.finish(
+            self.measurements,
+            self.all_succeeded,
+            !self.cleaned_up,
+            reference,
+        )
     }
 }
