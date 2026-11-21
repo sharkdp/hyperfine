@@ -476,3 +476,32 @@ fn test_markup_export_manual_s() {
     |===
     "#);
 }
+
+#[test]
+fn markup_exports_keep_line_breaks_out_of_table_rows() {
+    let results = [BenchmarkResult {
+        environment: BTreeMap::new(),
+        command: String::from("echo test"),
+        name: None,
+        display_name: String::from("first\r\nsecond\rthird\nfourth"),
+        measurements: Measurements::new(vec![Measurement {
+            time_wall_clock: Time::new::<second>(0.1),
+            time_cpu: Time::new::<second>(0.1),
+            time_user: Time::new::<second>(0.1),
+            time_system: Time::zero(),
+            memory_peak_resident: Some(Information::new::<byte>(1024.)),
+            hardware_counters: Default::default(),
+            exit_status: ExitStatus::default(),
+        }]),
+        parameters: BTreeMap::new(),
+    }];
+
+    for output in [
+        get_output::<MarkdownExporter>(&results, None),
+        get_output::<AsciidocExporter>(&results, None),
+        get_output::<OrgmodeExporter>(&results, None),
+    ] {
+        assert!(!output.contains('\r'), "{}", output);
+        assert!(output.contains("first second third fourth"), "{}", output);
+    }
+}
