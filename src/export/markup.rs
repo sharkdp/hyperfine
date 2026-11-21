@@ -34,7 +34,13 @@ pub trait MarkupExporter {
         table.push_str(&self.table_divider(&cells_alignment));
 
         for (index, (result, stats)) in results.iter().zip(summaries).enumerate() {
-            let command = result.display_name.replace('|', "\\|");
+            // Markup table cells are single-line; normalize line endings the way
+            // CommonMark normalizes code spans before escaping table delimiters.
+            let command = result
+                .display_name
+                .replace("\r\n", " ")
+                .replace(['\r', '\n'], " ")
+                .replace('|', "\\|");
             let mean = unit.format_value(stats.mean);
             let stddev = stats
                 .stddev
