@@ -17,6 +17,10 @@ impl MarkupExporter for OrgmodeExporter {
         format!("|{}--|\n", "--+".repeat(cell_aligmnents.len() - 1))
     }
 
+    fn escaped_pipe(&self) -> &'static str {
+        r"\vert{}"
+    }
+
     fn command(&self, cmd: &str) -> String {
         format!("={cmd}=")
     }

@@ -36,9 +36,9 @@ fn test_markup_export_auto_ms() {
     let results = [
         BenchmarkResult {
             environment: BTreeMap::new(),
-            command: String::from("sleep 0.1"),
+            command: String::from("sleep 0.1 | cat"),
             name: None,
-            display_name: String::from("sleep 0.1"),
+            display_name: String::from("sleep 0.1 | cat"),
             measurements: Measurements::new(vec![
                 Measurement {
                     time_wall_clock: Time::new::<second>(0.09),
@@ -108,10 +108,10 @@ fn test_markup_export_auto_ms() {
         },
     ];
 
-    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @"
+    insta::assert_snapshot!(get_output::<MarkdownExporter>(&results, None), @r"
     | Command | Mean Wall Time [ms] | Change | Factor |
     |:---|---:|---:|:---|
-    | `sleep 0.1` | 110.0 ± 26.5 |  |  |
+    | `sleep 0.1 \| cat` | 110.0 ± 26.5 |  |  |
     | `sleep 2` | 3000.0 ± 1000.0 | +2627.3% | (27.3x slower) |
     ");
 
@@ -123,7 +123,7 @@ fn test_markup_export_auto_ms() {
     | Change
     | Factor
 
-    | `sleep 0.1`
+    | `sleep 0.1 \| cat`
     | 110.0 ± 26.5
     |
     |
@@ -135,10 +135,10 @@ fn test_markup_export_auto_ms() {
     |===
     "#);
 
-    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @"
+    insta::assert_snapshot!(get_output::<OrgmodeExporter>(&results, None), @r"
     | Command  |  Mean Wall Time [ms] |  Change |  Factor |
     |--+--+--+--|
-    | =sleep 0.1=  |  110.0 ± 26.5 |   |   |
+    | =sleep 0.1 \vert{} cat=  |  110.0 ± 26.5 |   |   |
     | =sleep 2=  |  3000.0 ± 1000.0 |  +2627.3% |  (27.3x slower) |
     ");
 }
