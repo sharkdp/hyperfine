@@ -34,7 +34,7 @@ pub trait MarkupExporter {
         table.push_str(&self.table_divider(&cells_alignment));
 
         for (index, (result, stats)) in results.iter().zip(summaries).enumerate() {
-            let command = result.display_name.replace('|', "\\|");
+            let command = result.display_name.replace('|', self.escaped_pipe());
             let mean = unit.format_value(stats.mean);
             let stddev = stats
                 .stddev
@@ -71,6 +71,10 @@ pub trait MarkupExporter {
 
     fn table_footer(&self, _cell_alignments: &[Alignment]) -> String {
         String::new()
+    }
+
+    fn escaped_pipe(&self) -> &'static str {
+        r"\|"
     }
 
     fn command(&self, command: &str) -> String;
