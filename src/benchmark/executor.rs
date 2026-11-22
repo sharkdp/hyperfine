@@ -1,6 +1,8 @@
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::process::ExitStatus;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 use crate::benchmark::measurement::Measurement;
 use crate::benchmark::measurement::Measurements;
@@ -76,6 +78,7 @@ fn run_command_and_measure_common(
     command_output_policy: &CommandOutputPolicy,
     command_name: &str,
     collect_hardware_counters: bool,
+    current_run: &AtomicU64,
 ) -> Result<Measurement> {
     let stdin = options.command_input_policy.get_stdin()?;
     let (stdout, stderr) = command_output_policy.get_stdout_stderr()?;
@@ -90,8 +93,10 @@ fn run_command_and_measure_common(
         command.env("HYPERFINE_ITERATION", value);
     }
 
+    current_run.store(0, Ordering::Relaxed);
     let measurement = execute_and_measure(command, collect_hardware_counters)
         .with_context(|| format!("Failed to run command '{command_name}'"))?;
+    current_run.store(0, Ordering::Relaxed);
 
     if !measurement.exit_status.success() {
         use crate::util::exit_code::extract_exit_code;
@@ -141,11 +146,15 @@ fn run_command_and_measure_common(
 
 pub struct RawExecutor<'a> {
     options: &'a Options,
+    current_run: Arc<AtomicU64>,
 }
 
 impl<'a> RawExecutor<'a> {
-    pub fn new(options: &'a Options) -> Self {
-        RawExecutor { options }
+    pub fn new(options: &'a Options, current_run: Arc<AtomicU64>) -> Self {
+        RawExecutor {
+            options,
+            current_run,
+        }
     }
 }
 
@@ -165,6 +174,7 @@ impl Executor for RawExecutor<'_> {
             output_policy,
             &command.get_command_line(),
             matches!(iteration, BenchmarkIteration::Benchmark(_)),
+            &self.current_run,
         )
     }
 
@@ -176,8 +186,12 @@ impl Executor for RawExecutor<'_> {
     ) -> Result<Measurement> {
         // Keep shell startup in the hook's duration: raw benchmarks have no
         // calibrated shell overhead to add back when estimating the run count.
-        ShellExecutor::new(&Shell::platform_default(), self.options)
-            .run_intermediate_command_and_measure(command, iteration, output_policy)
+        ShellExecutor::new(
+            &Shell::platform_default(),
+            self.options,
+            Arc::clone(&self.current_run),
+        )
+        .run_intermediate_command_and_measure(command, iteration, output_policy)
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -193,14 +207,16 @@ pub struct ShellExecutor<'a> {
     options: &'a Options,
     shell: &'a Shell,
     shell_spawning_time: Option<Measurement>,
+    current_run: Arc<AtomicU64>,
 }
 
 impl<'a> ShellExecutor<'a> {
-    pub fn new(shell: &'a Shell, options: &'a Options) -> Self {
+    pub fn new(shell: &'a Shell, options: &'a Options, current_run: Arc<AtomicU64>) -> Self {
         ShellExecutor {
             shell,
             options,
             shell_spawning_time: None,
+            current_run,
         }
     }
 }
@@ -234,6 +250,7 @@ impl Executor for ShellExecutor<'_> {
             output_policy,
             &command.get_command_line(),
             false,
+            &self.current_run,
         )?;
 
         // Subtract shell spawning time
@@ -330,11 +347,12 @@ impl Executor for ShellExecutor<'_> {
 #[derive(Clone)]
 pub struct MockExecutor {
     shell: Option<String>,
+    current_run: Arc<AtomicU64>,
 }
 
 impl MockExecutor {
-    pub fn new(shell: Option<String>) -> Self {
-        MockExecutor { shell }
+    pub fn new(shell: Option<String>, current_run: Arc<AtomicU64>) -> Self {
+        MockExecutor { shell, current_run }
     }
 
     fn extract_time<S: AsRef<str>>(sleep_command: S) -> Time {
