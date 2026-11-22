@@ -1,6 +1,8 @@
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::process::ExitStatus;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 use crate::benchmark::measurement::Measurement;
 use crate::benchmark::measurement::Measurements;
@@ -66,6 +68,12 @@ pub trait Executor {
     /// that is being used in addition to the actual runtime
     /// of the command.
     fn time_overhead(&self) -> Time;
+
+    /// Mark the start of a benchmark line, which resets the time that the line has taken
+    fn start_line(&self) {}
+
+    /// Mark the end of a benchmark line, which stops counting the time of the line
+    fn end_line(&self) {}
 }
 
 fn ensure_run_succeeded(
@@ -158,11 +166,12 @@ fn run_command_and_measure_common(
 
 pub struct RawExecutor<'a> {
     options: &'a Options,
+    lines: Arc<AtomicU64>,
 }
 
 impl<'a> RawExecutor<'a> {
-    pub fn new(options: &'a Options) -> Self {
-        RawExecutor { options }
+    pub fn new(options: &'a Options, lines: Arc<AtomicU64>) -> Self {
+        RawExecutor { options, lines }
     }
 }
 
@@ -193,8 +202,12 @@ impl Executor for RawExecutor<'_> {
     ) -> Result<Measurement> {
         // Keep shell startup in the hook's duration: raw benchmarks have no
         // calibrated shell overhead to add back when estimating the run count.
-        ShellExecutor::new(&Shell::platform_default(), self.options)
-            .run_intermediate_command_and_measure(command, iteration, output_policy)
+        ShellExecutor::new(
+            &Shell::platform_default(),
+            self.options,
+            Arc::clone(&self.lines),
+        )
+        .run_intermediate_command_and_measure(command, iteration, output_policy)
     }
 
     fn calibrate(&mut self) -> Result<()> {
@@ -204,20 +217,30 @@ impl Executor for RawExecutor<'_> {
     fn time_overhead(&self) -> Time {
         Time::zero()
     }
+
+    fn start_line(&self) {
+        self.lines.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn end_line(&self) {
+        self.lines.fetch_add(1, Ordering::Relaxed);
+    }
 }
 
 pub struct ShellExecutor<'a> {
     options: &'a Options,
     shell: &'a Shell,
     shell_spawning_time: Option<Measurement>,
+    lines: Arc<AtomicU64>,
 }
 
 impl<'a> ShellExecutor<'a> {
-    pub fn new(shell: &'a Shell, options: &'a Options) -> Self {
+    pub fn new(shell: &'a Shell, options: &'a Options, lines: Arc<AtomicU64>) -> Self {
         ShellExecutor {
             shell,
             options,
             shell_spawning_time: None,
+            lines,
         }
     }
 }
@@ -342,16 +365,25 @@ impl Executor for ShellExecutor<'_> {
     fn time_overhead(&self) -> Time {
         self.shell_spawning_time.as_ref().unwrap().time_wall_clock
     }
+
+    fn start_line(&self) {
+        self.lines.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn end_line(&self) {
+        self.lines.fetch_add(1, Ordering::Relaxed);
+    }
 }
 
 #[derive(Clone)]
 pub struct MockExecutor {
     shell: Option<String>,
+    lines: Arc<AtomicU64>,
 }
 
 impl MockExecutor {
-    pub fn new(shell: Option<String>) -> Self {
-        MockExecutor { shell }
+    pub fn new(shell: Option<String>, lines: Arc<AtomicU64>) -> Self {
+        MockExecutor { shell, lines }
     }
 
     fn extract_time<S: AsRef<str>>(sleep_command: S) -> Time {
@@ -386,6 +418,7 @@ impl Executor for MockExecutor {
             ExitStatus::from_raw(0)
         };
 
+        self.lines.fetch_add(2, Ordering::Relaxed);
         Ok(Measurement {
             time_wall_clock: Self::extract_time(command.get_command_line()),
             time_cpu: Time::zero(),

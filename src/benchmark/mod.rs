@@ -5,7 +5,10 @@ pub mod scheduler;
 
 use std::cmp;
 use std::io::{self, Write};
-use std::time::Instant;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::benchmark::benchmark_result::Parameter;
 use crate::benchmark::executor::BenchmarkIteration;
@@ -31,11 +34,57 @@ use self::executor::Executor;
 /// Threshold for warning about fast execution time
 pub const MIN_EXECUTION_TIME: Time = const_time_from_seconds(0.005);
 
+/// How often the run timer updates the elapsed time of the benchmark line in progress. It runs
+/// faster than the bar redraws, so that the first redraw of a line already knows that it started.
+const RUN_TIMER_INTERVAL: Duration = Duration::from_millis(50);
+
+/// Keeps the time that the benchmark line in progress has taken up to date. The executor counts
+/// the starts and the ends of lines in a separate counter, and the timer starts a new count of
+/// the line time when a line starts.
+struct RunTimer {
+    stop: Arc<AtomicBool>,
+}
+
+impl RunTimer {
+    fn start(current_run: Arc<AtomicU64>, lines: Arc<AtomicU64>) -> Self {
+        let stop = Arc::new(AtomicBool::new(false));
+        let should_stop = Arc::clone(&stop);
+        thread::spawn(move || {
+            let mut line_started = Instant::now();
+            let mut seen_lines = lines.load(Ordering::Relaxed);
+            while !should_stop.load(Ordering::Relaxed) {
+                thread::sleep(RUN_TIMER_INTERVAL);
+                let now = Instant::now();
+                let lines_now = lines.load(Ordering::Relaxed);
+                if lines_now != seen_lines {
+                    line_started = now;
+                    seen_lines = lines_now;
+                    current_run.store(0, Ordering::Relaxed);
+                    continue;
+                }
+                current_run.store(
+                    now.duration_since(line_started).as_millis() as u64,
+                    Ordering::Relaxed,
+                );
+            }
+        });
+        RunTimer { stop }
+    }
+}
+
+impl Drop for RunTimer {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+    }
+}
+
 pub struct Benchmark<'a> {
     number: usize,
     command: &'a Command<'a>,
     options: &'a Options,
     executor: &'a dyn Executor,
+    current_run: Arc<AtomicU64>,
+    lines: Arc<AtomicU64>,
 }
 
 impl<'a> Benchmark<'a> {
@@ -44,12 +93,16 @@ impl<'a> Benchmark<'a> {
         command: &'a Command<'a>,
         options: &'a Options,
         executor: &'a dyn Executor,
+        current_run: Arc<AtomicU64>,
+        lines: Arc<AtomicU64>,
     ) -> Self {
         Benchmark {
             number,
             command,
             options,
             executor,
+            current_run,
+            lines,
         }
     }
 
@@ -159,6 +212,8 @@ impl<'a> Benchmark<'a> {
     /// Run the benchmark for a single command
     pub fn run(&self, reference: Option<&BenchmarkResult>) -> Result<BenchmarkResult> {
         let mut measurements = Measurements::default();
+        // The timer keeps the run time current while a single benchmark line takes a while
+        let _run_timer = RunTimer::start(Arc::clone(&self.current_run), Arc::clone(&self.lines));
 
         let output_policy = &self.options.command_output_policies[self.number];
 
@@ -273,15 +328,19 @@ impl<'a> Benchmark<'a> {
         });
 
         // Initial timing run
+        let initial_run_started = Instant::now();
         if let Some(bar) = progress_bar.as_ref() {
-            start_initial_measurement(bar, Instant::now());
+            start_initial_measurement(bar, initial_run_started, Arc::clone(&self.current_run));
         }
+        self.executor.start_line();
         let measurement = self.executor.run_command_and_measure(
             self.command,
             benchmark_iteration,
             None,
             output_policy,
-        )?;
+        );
+        self.executor.end_line();
+        let measurement = measurement?;
         self.validate_measurement(&measurement)?;
         let mut all_succeeded = measurement.exit_status.success();
 
@@ -343,12 +402,15 @@ impl<'a> Benchmark<'a> {
 
             run_preparation_command(benchmark_iteration)?;
 
+            self.executor.start_line();
             let measurement = self.executor.run_command_and_measure(
                 self.command,
                 benchmark_iteration,
                 None,
                 output_policy,
-            )?;
+            );
+            self.executor.end_line();
+            let measurement = measurement?;
             self.validate_measurement(&measurement)?;
             let success = measurement.exit_status.success();
             primary_total += primary.metric.value(&measurement).unwrap();

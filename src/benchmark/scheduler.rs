@@ -6,6 +6,9 @@ use crate::command::Commands;
 use crate::export::ExportManager;
 use crate::options::{ExecutorKind, Options};
 
+use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
+
 use anyhow::Result;
 
 pub struct Scheduler<'a> {
@@ -30,17 +33,33 @@ impl<'a> Scheduler<'a> {
     }
 
     pub fn run_benchmarks(&mut self) -> Result<()> {
+        // The lines of the bar start and end in the executor, which counts them, and the
+        // progress bar counts the time of the line in progress
+        let current_run = Arc::new(AtomicU64::new(0));
+        let lines = Arc::new(AtomicU64::new(0));
         let mut executor: Box<dyn Executor> = match self.options.executor_kind {
-            ExecutorKind::Raw => Box::new(RawExecutor::new(self.options)),
-            ExecutorKind::Mock(ref shell) => Box::new(MockExecutor::new(shell.clone())),
-            ExecutorKind::Shell(ref shell) => Box::new(ShellExecutor::new(shell, self.options)),
+            ExecutorKind::Raw => Box::new(RawExecutor::new(self.options, Arc::clone(&lines))),
+            ExecutorKind::Mock(ref shell) => {
+                Box::new(MockExecutor::new(shell.clone(), Arc::clone(&lines)))
+            }
+            ExecutorKind::Shell(ref shell) => {
+                Box::new(ShellExecutor::new(shell, self.options, Arc::clone(&lines)))
+            }
         };
 
         executor.calibrate()?;
 
         for (number, cmd) in self.commands.iter().enumerate() {
             self.results.push(
-                Benchmark::new(number, cmd, self.options, &*executor).run(self.results.first())?,
+                Benchmark::new(
+                    number,
+                    cmd,
+                    self.options,
+                    &*executor,
+                    Arc::clone(&current_run),
+                    Arc::clone(&lines),
+                )
+                .run(self.results.first())?,
             );
 
             // We export results after each individual benchmark, because
