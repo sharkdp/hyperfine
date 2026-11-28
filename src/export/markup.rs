@@ -34,7 +34,7 @@ pub trait MarkupExporter {
         table.push_str(&self.table_divider(&cells_alignment));
 
         for (index, (result, stats)) in results.iter().zip(summaries).enumerate() {
-            let command = result.display_name.replace('|', "\\|");
+            let command = self.escape_cell(&result.display_name);
             let mean = unit.format_value(stats.mean);
             let stddev = stats
                 .stddev
@@ -74,6 +74,12 @@ pub trait MarkupExporter {
     }
 
     fn command(&self, command: &str) -> String;
+
+    /// Escape the characters that would otherwise end a table cell. Every format has its own
+    /// way of writing a literal `|`.
+    fn escape_cell(&self, cell: &str) -> String {
+        cell.replace('|', "\\|")
+    }
 }
 
 impl<T: MarkupExporter> Exporter for T {
