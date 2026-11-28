@@ -20,6 +20,12 @@ impl MarkupExporter for OrgmodeExporter {
     fn command(&self, cmd: &str) -> String {
         format!("={cmd}=")
     }
+
+    /// Org-mode tables have no backslash escape for a cell separator, so a literal `|` has to be
+    /// written as the `\vert{}` entity. A backslash-escaped pipe still splits the row.
+    fn escape_cell(&self, cell: &str) -> String {
+        cell.replace('|', "\\vert{}")
+    }
 }
 
 /// Check Emacs org-mode data row formatting

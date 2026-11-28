@@ -9,6 +9,26 @@ use crate::quantity::{byte, second, Information, Time, Zero};
 use std::collections::BTreeMap;
 use std::process::ExitStatus;
 
+/// A single benchmark result, for tests that only care about the command cell.
+fn one_result(display_name: &str) -> BenchmarkResult {
+    BenchmarkResult {
+        environment: BTreeMap::new(),
+        command: display_name.to_string(),
+        name: None,
+        display_name: display_name.to_string(),
+        measurements: Measurements::new(vec![Measurement {
+            time_wall_clock: Time::new::<second>(1.0),
+            time_cpu: Time::new::<second>(1.0),
+            time_user: Time::new::<second>(1.0),
+            time_system: Time::zero(),
+            memory_peak_resident: None,
+            hardware_counters: Default::default(),
+            exit_status: ExitStatus::default(),
+        }]),
+        parameters: BTreeMap::new(),
+    }
+}
+
 fn get_output<E: Exporter + Default>(results: &[BenchmarkResult], unit: Option<Unit>) -> String {
     let exporter = E::default();
     String::from_utf8(
@@ -475,4 +495,38 @@ fn test_markup_export_manual_s() {
     | (16.8x faster)
     |===
     "#);
+}
+
+/// A pipe in a command must not split the row, and each format writes it its own way.
+#[test]
+fn test_markup_export_escapes_pipes_in_the_command_cell() {
+    let results = [one_result("echo foo | wc -c")];
+
+    let markdown = get_output::<MarkdownExporter>(&results, None);
+    let markdown_row = markdown
+        .lines()
+        .find(|line| line.contains("echo foo"))
+        .expect("markdown table has a command row");
+    assert!(
+        markdown_row.starts_with(r"| `echo foo \| wc -c` |"),
+        "unexpected markdown row: {}",
+        markdown_row
+    );
+
+    let orgmode = get_output::<OrgmodeExporter>(&results, None);
+    let orgmode_row = orgmode
+        .lines()
+        .find(|line| line.contains("echo foo"))
+        .expect("org-mode table has a command row");
+    assert!(
+        orgmode_row.starts_with(r"| =echo foo \vert{} wc -c=  |"),
+        "unexpected org-mode row: {}",
+        orgmode_row
+    );
+    assert_eq!(
+        orgmode_row.matches('|').count(),
+        5,
+        "the pipe should not split the row: {}",
+        orgmode_row
+    );
 }
